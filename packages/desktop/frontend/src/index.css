@@ -1,0 +1,842 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@source '../node_modules/streamdown/dist/*.js';
+@source '../node_modules/@streamdown/*/dist/*.js';
+/* 强制打包逃生舱工具类：全局禁选后个别地方需要放开选中（如代码展示区），
+   给元素加 .select-text 即可；不显式声明则 Tailwind 按需扫描不会输出该类。 */
+@source inline("select-text");
+
+@plugin '@tailwindcss/typography';
+
+/* Shimmer relies on relative color syntax. Older browsers drop its gradient
+   while keeping the text fill transparent, so fall back to visible text. */
+@supports not (color: oklch(from red l c h)) {
+	.shimmer {
+		--shimmer-image: none;
+		--shimmer-text-fill: currentColor;
+		animation: none;
+	}
+}
+
+/* shimmer 安全网。
+   `.shimmer`（来自 shadcn 的 @utility）是「文字裁剪」效果：把
+   -webkit-text-fill-color 设为 transparent，再用一个会动的渐变背景当字色。
+   麻烦在于 -webkit-text-fill-color **会被子元素继承** —— 一旦它被加在外层容器上，
+   容器自己没有文字可画（渐变落在空处），而里面所有文字都变成透明，界面上只剩下
+   图标（例如折叠行的箭头），看起来就是个空位。
+
+   正确做法是把 shimmer 加在真正持有文字的元素上（见 ASMessageBubble 的三处与
+   tool-renderers/_shared.tsx 的 ToolCallRow）。这条规则是安全网：万一又被加错
+   地方，宁可少一点动效，也不能把内容藏起来。
+   非分层规则优先于 Tailwind 的 @layer utilities，所以这里能压住那个 utility。 */
+.shimmer :where(:not(.shimmer)) {
+	-webkit-text-fill-color: currentColor;
+}
+
+html,
+body,
+#root {
+	height: 100%;
+	width: 100%;
+}
+
+/* 全局禁止选中文字（桌面产品形态要求）。例外：
+   - 输入控件与可编辑区：否则无法正常编辑与复制；
+   - 消息正文（聊天气泡内容区，含用户消息与 AI 回复、思考块、错误提示）；
+   - Markdown 渲染的任意内容（知识库、轨迹查看器等展示型文本）；
+   - <pre> 代码块与工具输出块——这些天生就是给人看和复制的。
+   个别地方确需放开选中时，给元素加 Tailwind 的 select-text 工具类即可
+   （utilities 层优先级高于本条 base 规则）。 */
+@layer base {
+	:root {
+		user-select: none;
+		-webkit-user-select: none;
+	}
+	input,
+	textarea,
+	select,
+	[contenteditable='true'],
+	[contenteditable='plaintext-only'],
+	[data-slot='message-content'],
+	[data-slot='markdown'],
+	pre {
+		user-select: text;
+		-webkit-user-select: text;
+	}
+}
+
+svg.lucide {
+	stroke-width: 1.7;
+}
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	/* —— CoCode × MiniMax 品牌色板 ——
+	   ink/sub/faint/panel/line 与官网 website/index.html 完全一致；
+	   primary 采用品牌紫 #7A27FF（官网渐变起点），让默认按钮/激活态一眼可辨。 */
+	--text: #5f5f5a;
+	--text-h: #191919;
+	--bg: #ffffff;
+	--border: #e7e7e3;
+	--code-bg: #f4f4f1;
+	--accent: #eeeeeb;
+	--accent-bg: #eeeeeb;
+	--accent-border: #171717;
+	--social-bg: #f5f5f2;
+	--shadow: rgba(0, 0, 0, 0.06) 0 10px 20px -10px, rgba(0, 0, 0, 0.04) 0 2px 6px -2px;
+
+	/* 品牌色（官网三色渐变） */
+	--brand: #171717;
+	--brand-2: #30302e;
+	--brand-blue: #171717;
+	--brand-blue-2: #30302e;
+	--brand-pink: #171717;
+	--brand-pink-2: #30302e;
+	--grad-purple: linear-gradient(100deg, #171717, #30302e);
+	--grad-blue: linear-gradient(100deg, #171717, #30302e);
+	--grad-pink: linear-gradient(100deg, #171717, #30302e);
+
+	/*font: 18px/145% var(--sans);*/
+	/* letter-spacing: 0.18px; */
+	color-scheme: light;
+	color: var(--text);
+	background: var(--bg);
+	font-synthesis: none;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+
+	@media (max-width: 1024px) {
+		font-size: 16px;
+	}
+
+	/* --foreground: oklch(0.145 0 0); */
+
+	--background: #ffffff;
+	--foreground: #191919;
+
+	--card: #ffffff;
+
+	--card-foreground: #191919;
+
+	--popover: #ffffff;
+
+	--popover-foreground: #191919;
+
+	/* primary = 品牌紫，对应官网渐变起点 */
+	--primary: #191919;
+
+	--primary-foreground: #ffffff;
+
+	--secondary: #f5f5f3;
+
+	--secondary-foreground: #191919;
+
+	--muted: #f5f5f3;
+
+	--muted-foreground: #777772;
+
+	--accent-foreground: #191919;
+
+	--destructive: oklch(0.577 0.245 27.325);
+
+	--input: #d8d8d4;
+
+	--ring: #191919;
+
+	--chart-1: oklch(0.87 0 0);
+
+	--chart-2: oklch(0.556 0 0);
+
+	--chart-3: oklch(0.439 0 0);
+
+	--chart-4: oklch(0.371 0 0);
+
+	--chart-5: oklch(0.269 0 0);
+
+	/* 圆角：统一使用紧凑的圆边矩形，避免按钮、卡片和浮层呈胶囊形。 */
+	--radius: 0.75rem;
+
+	--sidebar: #f5f5f4;
+
+	--sidebar-foreground: #3d3d39;
+
+	--sidebar-primary: #191919;
+
+	--sidebar-primary-foreground: #ffffff;
+
+	--sidebar-accent: #e9e9e6;
+
+	--sidebar-accent-foreground: #191919;
+
+	--sidebar-border: #e4e4e0;
+
+	--sidebar-ring: #191919;
+
+	/* 实色柔和档：替代原先的 bg-primary/10、bg-destructive/10 等半透明 tint，
+	   可读性优先——任何表面不得依赖 alpha 混合表达层次。 */
+	--primary-soft: #e9e9e6;
+	--destructive-soft: #fbe9ea;
+	--destructive-soft-hover: #f6dbdc;
+	/* 弹窗遮罩：半透明压暗层。曾用不透明实色（light #7a7b7c / dark #060608），
+	   观感是「打开设置后整个 app 变全白/全黑」——背景被完全盖住、失去上下文。
+	   改回 alpha 半透明，保留背后 UI 的轮廓。 */
+	--scrim: rgba(24, 30, 37, 0.45);
+
+	--text-secondary: #4f4f4b;
+	--text-tertiary: #898984;
+	--text-data: #94948f;
+	--surface-muted: #eeeeeb;
+	--row-hover: #f0f0ed;
+	--panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 28px -22px rgba(0, 0, 0, 0.18);
+	--tab-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+@theme inline {
+	--font-heading: var(--font-sans);
+	/* 全局统一系统字体：不打包任何 webfont。
+	   -apple-system 在 macOS 上会按字符集自动回退（拉丁 → SF，中文 → 苹方），
+	   所以中英混排不需要额外声明 CJK 字体。标记区（.cn-markdown）不做覆盖，
+	   它自带代码块/公式等排版需求。 */
+	--font-sans:
+		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+		'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	/* 等宽字体全面弃用：font-mono 类（模型名/时间戳/路径/diff 等）统一
+	   渲染为系统字体。保留类名语义，恢复等宽只需还原此处字体栈。 */
+	--font-mono: var(--font-sans);
+	/* 品牌色 → Tailwind 工具类（bg-brand / text-brand / border-brand 等） */
+	--color-brand: var(--brand);
+	--color-brand-2: var(--brand-2);
+	--color-brand-blue: var(--brand-blue);
+	--color-brand-blue-2: var(--brand-blue-2);
+	--color-brand-pink: var(--brand-pink);
+	--color-brand-pink-2: var(--brand-pink-2);
+	--color-canvas: var(--bg); /* → bg-canvas (app base; panels float on it) */
+	/* Menu-item inset, tied to the corner radius: a rounder item eats more
+	   horizontal room at the text's edge, so the padding has to grow with it. */
+	--spacing-menu-item: calc(var(--radius) * 0.625);
+	--color-text-secondary: var(--text-secondary); /* → text-text-secondary */
+	--color-text-tertiary: var(--text-tertiary); /* → text-text-tertiary */
+	--color-text-data: var(--text-data); /* → text-text-data */
+	--color-surface-muted: var(--surface-muted); /* → bg-surface-muted (inline badges) */
+	--color-primary-soft: var(--primary-soft); /* → bg-primary-soft (selected tint) */
+	--color-destructive-soft: var(--destructive-soft); /* → bg-destructive-soft (error banner) */
+	--color-destructive-soft-hover: var(--destructive-soft-hover); /* → hover:bg-destructive-soft-hover */
+	--color-scrim: var(--scrim); /* → bg-scrim (opaque modal scrim) */
+	--color-row-hover: var(--row-hover); /* → hover:bg-row-hover */
+	--color-sidebar-ring: var(--sidebar-ring);
+	--color-sidebar-border: var(--sidebar-border);
+	--color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+	--color-sidebar-primary: var(--sidebar-primary);
+	--color-sidebar-foreground: var(--sidebar-foreground);
+	--color-sidebar: var(--sidebar);
+	--color-chart-5: var(--chart-5);
+	--color-chart-4: var(--chart-4);
+	--color-chart-3: var(--chart-3);
+	--color-chart-2: var(--chart-2);
+	--color-chart-1: var(--chart-1);
+	--color-ring: var(--ring);
+	--color-input: var(--input);
+	--color-border: var(--border);
+	--color-destructive: var(--destructive);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-accent: var(--accent);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-muted: var(--muted);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-secondary: var(--secondary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-primary: var(--primary);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-popover: var(--popover);
+	--color-card-foreground: var(--card-foreground);
+	--color-card: var(--card);
+	--color-foreground: var(--foreground);
+	--color-background: var(--background);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.2);
+	--radius-2xl: calc(var(--radius) * 1.2);
+	--radius-3xl: calc(var(--radius) * 1.2);
+	--radius-4xl: calc(var(--radius) * 1.2);
+	--radius-rect: 14px;
+	--radius-rect-sm: 10px;
+	--shadow-panel: var(--panel-shadow);
+	--shadow-tab: var(--tab-shadow); /* → shadow-tab (active tab) */
+}
+
+/* react-diff-view 自带 :root { --diff-font-family: Consolas, Courier, monospace }
+   （见 DiffPreview 引入的 react-diff-view/style/index.css）。macOS 默认没有
+   Consolas，会一路回退到 Courier。这里统一覆盖为系统等宽字体栈；用 :root:root
+   提高优先级，不依赖 CSS 打包顺序。 */
+:root:root {
+	--diff-font-family: var(--font-mono);
+}
+
+.dark {
+	color-scheme: dark;
+	--text: #b0b0ab;
+	--bg: #151515;
+	--background: #1b1b1a;
+	--foreground: oklch(0.985 0 0);
+	--card: #1b1b1a;
+	--card-foreground: oklch(0.985 0 0);
+	--popover: #1b1b1a;
+	--popover-foreground: oklch(0.985 0 0);
+	--primary: #f4f4f0;
+	--primary-foreground: #171717;
+	--secondary: #272726;
+	--secondary-foreground: oklch(0.985 0 0);
+	--muted: #272726;
+	--muted-foreground: oklch(0.708 0 0);
+	--accent: #2b2b29;
+	--accent-foreground: oklch(0.985 0 0);
+	--destructive: oklch(0.704 0.191 22.216);
+	--border: #363634;
+	--input: #3a3a37;
+	--ring: #f4f4f0;
+	--chart-1: oklch(0.87 0 0);
+	--chart-2: oklch(0.556 0 0);
+	--chart-3: oklch(0.439 0 0);
+	--chart-4: oklch(0.371 0 0);
+	--chart-5: oklch(0.269 0 0);
+	--sidebar: #1b1b1a;
+	--sidebar-foreground: oklch(0.985 0 0);
+	--sidebar-primary: #f4f4f0;
+	--sidebar-primary-foreground: #171717;
+	--sidebar-accent: #2b2b29;
+	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--sidebar-border: #363634;
+	--sidebar-ring: #f4f4f0;
+
+	--primary-soft: #2b2b29;
+	--destructive-soft: #402024;
+	--destructive-soft-hover: #4d262b;
+	--scrim: rgba(0, 0, 0, 0.6);
+
+	--text-secondary: #c3c7cd;
+	--text-tertiary: #868b93;
+	--text-data: #8b9099;
+	--surface-muted: #2b2b29;
+	--row-hover: #242422;
+	--panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -30px rgba(0, 0, 0, 0.8);
+	--tab-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring;
+	}
+	body {
+		@apply bg-canvas text-foreground;
+	}
+	html {
+		@apply font-sans;
+	}
+
+	/* ---- 滚动条精修：贴边悬浮式细拇指 ----
+	   Chromium 默认滚动条又宽又灰，压在浅色 UI 上很突兀。统一为
+	   8px 圆角拇指、全透明轨道，hover 才显形加深。放在 base 层：
+	   局部隐藏（skill 页的 [scrollbar-width:none] 等 utilities）仍能覆盖。 */
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: color-mix(in oklab, var(--foreground) 18%, transparent) transparent;
+	}
+	::-webkit-scrollbar {
+		width: 8px;
+		height: 8px;
+	}
+	::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	::-webkit-scrollbar-thumb {
+		border-radius: 9999px;
+		border: 2px solid transparent;
+		background-clip: content-box;
+		background-color: color-mix(in oklab, var(--foreground) 16%, transparent);
+	}
+	::-webkit-scrollbar-thumb:hover {
+		background-color: color-mix(in oklab, var(--foreground) 32%, transparent);
+	}
+	::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+
+	/* ---- 文字选中：品牌紫浅染（选中文字只出现在消息/代码等 select-text 区域）---- */
+	::selection {
+		background-color: color-mix(in oklab, var(--brand) 22%, transparent);
+	}
+}
+
+/* ---- Electron 无边框窗口（titleBarStyle: hidden）----
+   红绿灯悬浮在应用内部左上角；侧栏头部为窗口拖拽区。
+   浏览器环境下 app-region 无效，不影响。 */
+.app-drag {
+	-webkit-app-region: drag;
+}
+.app-no-drag {
+	-webkit-app-region: no-drag;
+}
+
+/* ============================================================
+   动画 / 模糊 / 玻璃化（v2 优化）
+   节奏：克制专业（150–250ms，spring 微弹）。
+   ============================================================ */
+
+/* ---- 动画令牌（暴露给 Tailwind v4 @theme inline）---- */
+@theme inline {
+	--ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+	--ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+	--ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+
+	--animate-instant: 100ms;
+	--animate-fast: 180ms;
+	--animate-base: 240ms;
+	--animate-slow: 360ms;
+
+	/* Tailwind v4 把 @theme 内的 --animate-* 编译成 animate-* 工具类 */
+	--animate-fade-in: fade-in var(--animate-fast) var(--ease-out-quart) both;
+	--animate-fade-up: fade-up var(--animate-base) var(--ease-out-quart) both;
+	--animate-scale-in: scale-in var(--animate-base) var(--ease-spring) both;
+	--animate-shimmer: shimmer 2.4s linear infinite;
+	--animate-ring-pulse: ring-pulse 1.6s var(--ease-out-quart) infinite;
+}
+
+/* ---- 通用动画 ---- */
+@keyframes fade-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+@keyframes fade-up {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+@keyframes scale-in {
+	from {
+		opacity: 0;
+		transform: scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+@keyframes ring-pulse {
+	/* 呼吸环用实色描边表达（原为透明扩散环，半透明禁用后改用边框脉冲） */
+	0% {
+		outline: 2px solid var(--ring);
+	}
+	70% {
+		outline: 2px solid var(--foreground);
+	}
+	100% {
+		outline: 2px solid var(--ring);
+	}
+}
+
+/* ---- 表面档位（v3：去玻璃化）----
+   可读性优先：所有表面一律不透明实色、无 backdrop-filter。
+   三档保留 class 名以兼容既有调用点（card variant、popover/dropdown/select、
+   dialog/sheet/drawer 浮层），视觉差异只由「底色深浅 + 阴影强度 + 边框」表达：
+   内容（--background/--card）→ glass-soft（浅色微灰）→ glass（同软档+中阴影）
+   → glass-strong（浮层最高对比边框+重阴影）。
+   深色模式浮层必须比页面底（#16171d）亮一档，避免「面板陷进背景」。 */
+.glass-soft {
+	background-color: var(--muted);
+	border: 1px solid var(--border);
+	transition:
+		background-color var(--animate-fast) var(--ease-out-quart),
+		border-color var(--animate-fast) var(--ease-out-quart),
+		box-shadow var(--animate-fast) var(--ease-out-quart);
+}
+.glass {
+	background-color: var(--muted);
+	border: 1px solid var(--border);
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.12),
+		0 12px 32px -16px rgba(0, 0, 0, 0.35);
+	transition:
+		background-color var(--animate-base) var(--ease-out-quart),
+		border-color var(--animate-base) var(--ease-out-quart),
+		box-shadow var(--animate-base) var(--ease-out-quart);
+}
+.glass-strong {
+	background-color: var(--popover);
+	border: 1px solid var(--border);
+	box-shadow:
+		0 4px 12px rgba(0, 0, 0, 0.18),
+		0 24px 56px -20px rgba(0, 0, 0, 0.45);
+	transition:
+		background-color var(--animate-base) var(--ease-out-quart),
+		border-color var(--animate-base) var(--ease-out-quart),
+		box-shadow var(--animate-base) var(--ease-out-quart);
+}
+.dark .glass-soft {
+	background-color: var(--secondary);
+	border-color: var(--border);
+}
+.dark .glass {
+	background-color: var(--secondary);
+	border-color: var(--border);
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.5),
+		0 12px 32px -16px rgba(0, 0, 0, 0.6);
+}
+.dark .glass-strong {
+	background-color: var(--popover);
+	border-color: #2b2e37;
+	box-shadow:
+		0 4px 12px rgba(0, 0, 0, 0.6),
+		0 28px 60px -20px rgba(0, 0, 0, 0.85);
+}
+
+/* ---- 卡片悬浮 / 按钮按压（公共微交互）---- */
+.lift {
+	transition:
+		transform var(--animate-fast) var(--ease-out-quart),
+		box-shadow var(--animate-fast) var(--ease-out-quart),
+		border-color var(--animate-fast) var(--ease-out-quart);
+}
+.lift:hover {
+	transform: translateY(-2px);
+	box-shadow:
+		0 2px 4px rgba(0, 0, 0, 0.04),
+		0 16px 36px -16px rgba(0, 0, 0, 0.22);
+}
+.lift:active {
+	transform: translateY(0) scale(0.99);
+	transition-duration: var(--animate-instant);
+}
+.dark .lift:hover {
+	box-shadow:
+		0 2px 4px rgba(0, 0, 0, 0.5),
+		0 18px 40px -16px rgba(0, 0, 0, 0.7);
+}
+
+.press {
+	transition: transform var(--animate-instant) var(--ease-out-quart);
+}
+.press:active {
+	transform: scale(0.97);
+}
+
+/* ---- 焦点环（外发光，呼吸一次后归位）---- */
+.focus-ring:focus-visible {
+	animation: ring-pulse 1.6s var(--ease-out-quart);
+}
+
+/* ---- 系统 reduce-motion 兜底 ---- */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+}
+
+
+/* ---- 全局交互动画 ---- */
+/* 点击反馈：所有按钮按下轻微缩放（红绿灯是系统悬浮控件，不在 DOM，无需排除） */
+button {
+	transition-property: transform, background-color, border-color, color, box-shadow, opacity;
+	transition-duration: 140ms;
+	transition-timing-function: ease;
+}
+button:active {
+	transform: scale(0.97);
+}
+@media (prefers-reduced-motion: reduce) {
+	button, button:active { transform: none; transition: none; }
+}
+/* 主题切换时颜色平滑过渡（只作用于根容器，避免全树 transition 性能开销） */
+body {
+	transition: background-color 0.25s ease, color 0.25s ease;
+}
+/* 热力图格子入场 */
+@keyframes heat-cell-in {
+	from { opacity: 0; transform: scale(0.6); }
+	to { opacity: 1; transform: scale(1); }
+}
+.heat-cell-in {
+	animation: heat-cell-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ---- 登录动效（LoginAnimation.tsx，CoCode 自有品牌风） ---- */
+@keyframes brand-breathe {
+	0%, 100% { transform: scale(1); opacity: 1; }
+	50% { transform: scale(1.06); opacity: 0.9; }
+}
+.brand-breathe { animation: brand-breathe 2.4s ease-in-out infinite; }
+
+@keyframes ring-spin { to { transform: rotate(360deg); } }
+.ring-spin { animation: ring-spin 0.9s linear infinite; }
+
+@keyframes check-circle-draw { to { stroke-dashoffset: 0; } }
+@keyframes check-mark-draw { to { stroke-dashoffset: 0; } }
+.check-circle {
+	stroke-dasharray: 151;
+	stroke-dashoffset: 151;
+	animation: check-circle-draw 0.45s ease-out forwards;
+}
+.check-mark {
+	stroke-dasharray: 34;
+	stroke-dashoffset: 34;
+	animation: check-mark-draw 0.3s ease-out 0.4s forwards;
+}
+
+@keyframes dot-pulse {
+	0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+	40% { transform: scale(1); opacity: 1; }
+}
+
+/* 极光背景：两团光斑缓漂 + 网格衬底 */
+@keyframes aurora-drift-a {
+	0%, 100% { transform: translate(-8%, -6%) scale(1); }
+	50% { transform: translate(10%, 8%) scale(1.15); }
+}
+@keyframes aurora-drift-b {
+	0%, 100% { transform: translate(8%, 10%) scale(1.1); }
+	50% { transform: translate(-10%, -8%) scale(0.95); }
+}
+.auth-aurora {
+	position: absolute;
+	width: 60%;
+	padding-bottom: 60%;
+	border-radius: 9999px;
+	filter: blur(90px);
+	opacity: 0.35;
+}
+.auth-aurora-a {
+	left: -10%;
+	top: -15%;
+	background: radial-gradient(circle, var(--color-primary, #6366f1), transparent 70%);
+	animation: aurora-drift-a 14s ease-in-out infinite;
+}
+.auth-aurora-b {
+	right: -12%;
+	bottom: -20%;
+	background: radial-gradient(circle, color-mix(in oklab, var(--color-primary, #6366f1) 55%, #22d3ee), transparent 70%);
+	animation: aurora-drift-b 18s ease-in-out infinite;
+}
+.auth-grid {
+	background-image:
+		linear-gradient(to right, color-mix(in oklab, currentColor 6%, transparent) 1px, transparent 1px),
+		linear-gradient(to bottom, color-mix(in oklab, currentColor 6%, transparent) 1px, transparent 1px);
+	background-size: 32px 32px;
+	mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 30%, transparent 75%);
+	opacity: 0.5;
+}
+@media (prefers-reduced-motion: reduce) {
+	.auth-aurora-a, .auth-aurora-b { animation: none; }
+}
+
+/* ============================================================
+   中性黑白表面：对话内容优先于装饰性渐变与彩色光晕。
+   ============================================================ */
+.text-grad-purple {
+	background: var(--grad-purple);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+.text-grad-blue {
+	background: var(--grad-blue);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+.text-grad-pink {
+	background: var(--grad-pink);
+	-webkit-background-clip: text;
+	background-clip: text;
+	color: transparent;
+}
+
+/* 品牌按钮：紫色填充 + 柔和外发光，hover 轻微上浮 */
+.btn-brand {
+	background: var(--primary);
+	color: #fff;
+	box-shadow: 0 5px 14px -8px rgba(0, 0, 0, 0.42);
+	transition: transform var(--animate-fast) var(--ease-out-quart),
+		box-shadow var(--animate-fast) var(--ease-out-quart),
+		filter var(--animate-fast) var(--ease-out-quart);
+}
+.btn-brand:hover {
+	transform: translateY(-1px);
+	filter: brightness(1.08);
+	box-shadow: 0 8px 18px -8px rgba(0, 0, 0, 0.5);
+}
+.btn-brand:active {
+	transform: translateY(0) scale(0.97);
+}
+
+/* 输入框发送键采用固定的墨黑主操作色。深色主题的 --primary 为浅色，
+   通用 disabled:opacity-50 会把它混成一枚无层次的纯灰圆块；这里保留
+   明确的可用/不可用对比，同时不改变登录、安装等其他品牌按钮。 */
+.composer-shell .btn-brand {
+	background: #171717;
+	color: #fff;
+}
+.composer-shell .btn-brand:disabled {
+	background: #30302e;
+	color: #a6a6a1;
+	opacity: 1;
+	box-shadow: none;
+	filter: none;
+}
+
+.canvas-glow {
+	background: var(--background);
+}
+.dark .canvas-glow {
+	background: var(--background);
+}
+
+/* ---- 空状态 hero 光斑 ----
+   新会话首屏：标题正后方一团品牌紫主光斑，两侧蓝/粉辅助光斑，
+   复刻官网 hero 的三色氛围。纯装饰层（pointer-events:none），
+   画布 overflow-hidden 兜底，不会产生滚动。 */
+/* 光斑尺寸用百分比（相对本层盒子）且在触边前完全淡出：
+   固定像素会撑出元素边界被硬裁切，形成生硬的矩形色块 */
+.hero-aurora {
+	position: absolute;
+	inset: -4rem -6rem;
+	pointer-events: none;
+	background: radial-gradient(45% 60% at 50% 45%, rgba(0, 0, 0, 0.045), transparent 70%);
+}
+.dark .hero-aurora {
+	background: radial-gradient(45% 60% at 50% 45%, rgba(255, 255, 255, 0.055), transparent 70%);
+}
+
+/* 深色下品牌紫提亮一档（与 --primary 的深色策略一致），
+   否则 #7A27FF 渐变压在 #16171d 面板上偏暗发闷 */
+.dark .text-grad-purple {
+	background: linear-gradient(100deg, #f4f4f0, #c9c9c3);
+}
+
+/* ---- 输入框聚焦光晕 ----
+   composer 是整个界面的视觉锚点，聚焦时用「边框染紫 + 3px 外圈 + 底部辉光」
+   三层反馈。颜色取 --primary，明暗主题自动跟随（深色下是提亮紫）。 */
+.composer-shell {
+	transition:
+		border-color var(--animate-base) var(--ease-out-quart),
+		box-shadow var(--animate-base) var(--ease-out-quart);
+}
+/* 静默时收起边框线：输入框靠底色与画布的对比已足够辨识，
+   常驻灰线会勾出第二层轮廓加重「框中框」感；
+   hover / 聚焦时边框才浮现（由下方两条规则接管）。
+   同时给一层极淡的着地阴影，让白色输入框轻轻「浮」在光斑画布上。 */
+.composer-shell:not(:hover):not(:focus-within) {
+	border-color: transparent;
+	box-shadow: 0 1px 2px rgba(24, 30, 37, 0.03), 0 10px 30px -18px rgba(24, 30, 37, 0.18);
+}
+.dark .composer-shell:not(:hover):not(:focus-within) {
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 30px -18px rgba(0, 0, 0, 0.55);
+}
+.composer-shell:hover:not(:focus-within) {
+	border-color: color-mix(in oklab, var(--foreground) 14%, var(--border));
+}
+.composer-shell:focus-within {
+	border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+	box-shadow:
+		0 1px 2px rgba(24, 30, 37, 0.04),
+		0 0 0 3px color-mix(in oklab, var(--primary) 12%, transparent),
+		0 12px 32px -16px color-mix(in oklab, var(--primary) 40%, transparent);
+}
+.voice-waveform {
+	/* 无边框的单色声场：主波、余波与中心呼吸光晕共同反映音量。 */
+	--voice-energy: 0;
+	background: linear-gradient(
+		90deg,
+		transparent 0%,
+		color-mix(in oklab, var(--foreground) 2.5%, transparent) 22%,
+		color-mix(in oklab, var(--foreground) 4%, transparent) 50%,
+		color-mix(in oklab, var(--foreground) 2.5%, transparent) 78%,
+		transparent 100%
+	);
+	-webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+	mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+	isolation: isolate;
+}
+.voice-waveform::before {
+	position: absolute;
+	inset-inline: 1.4rem;
+	top: 50%;
+	z-index: 0;
+	height: 1px;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		color-mix(in oklab, var(--foreground) 12%, transparent) 18%,
+		color-mix(in oklab, var(--foreground) 18%, transparent) 50%,
+		color-mix(in oklab, var(--foreground) 12%, transparent) 82%,
+		transparent
+	);
+	opacity: calc(0.42 + var(--voice-energy) * 0.55);
+	content: '';
+}
+.voice-waveform::after {
+	position: absolute;
+	inset: -0.75rem 18%;
+	z-index: 0;
+	background: radial-gradient(
+		ellipse at center,
+		color-mix(in oklab, var(--foreground) 13%, transparent),
+		transparent 68%
+	);
+	filter: blur(8px);
+	opacity: calc(var(--voice-energy) * 0.45);
+	transform: scaleX(calc(0.86 + var(--voice-energy) * 0.22));
+	transition: opacity 110ms linear, transform 110ms linear;
+	content: '';
+}
+.voice-wave-bar {
+	position: relative;
+	z-index: 1;
+	box-shadow: 0 0 8px color-mix(in oklab, currentColor 22%, transparent);
+	transition: box-shadow 120ms linear;
+}
+.voice-wave-bar:nth-child(3n + 1) {
+	filter: brightness(0.84);
+}
+.voice-wave-bar:nth-child(3n) {
+	filter: brightness(1.12);
+}
+.dark .composer-shell:focus-within {
+	box-shadow:
+		0 1px 2px rgba(0, 0, 0, 0.4),
+		0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent),
+		0 12px 32px -16px color-mix(in oklab, var(--primary) 50%, transparent);
+}
+
+/* 历史界面中保留的超大圆角工具类也统一收敛为圆边矩形。保持在样式表末尾，
+   确保 Tailwind 生成的同名工具类不会重新把卡片、按钮或浮层变成胶囊。 */
+:where(
+	.rounded-2xl,
+	.rounded-3xl,
+	.rounded-4xl,
+	[class~='rounded-[16px]'],
+	[class~='rounded-[22px]'],
+	[class~='rounded-[28px]'],
+	[class~='rounded-[1rem]']
+) {
+	border-radius: var(--radius-rect) !important;
+}

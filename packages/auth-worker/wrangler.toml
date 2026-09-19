@@ -1,0 +1,33 @@
+name = "cocode-auth"
+main = "src/index.js"
+compatibility_date = "2024-09-01"
+
+# 自定义域名（需 ohfun.online 托管在同一 Cloudflare 账号下；
+# custom_domain = true 会自动创建 DNS 记录 + 证书）
+routes = [
+  { pattern = "cocode.ohfun.online", custom_domain = true },
+  { pattern = "cocode-ai.ohfun.online", custom_domain = true }
+]
+
+# Resend 邮件服务（注册验证码发信）。密钥不进仓库：
+#   线上：wrangler secret put RESEND_API_KEY
+#   本地 dev：写同目录 .dev.vars（已 gitignore）
+# 发件人地址 noreply@cocode.ohfun.online 需先在 Resend 控制台验证该域名（DKIM/SPF）。
+
+# 爱发电开放平台（订阅订单兑换积分）。在爱发电「创作者中心 → 开发」获取：
+#   线上：wrangler secret put AFD_USER_ID && wrangler secret put AFD_TOKEN
+#   本地 dev：写 .dev.vars
+# 未配置时 /auth/redeem 会返回「服务端未配置爱发电 API 凭证」。
+
+# D1 数据库绑定（用户 + 会话）。数据库 id 部署时由 `wrangler d1 create cocode-auth`
+# 生成后填入；本地 dev 用 --local 自动建库，无需 id。
+[[d1_databases]]
+binding = "DB"
+database_name = "cocode-auth"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+# 注册欢迎邮件：以 Text 模块导入仓库根目录的 cocode-hello-email.html
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true

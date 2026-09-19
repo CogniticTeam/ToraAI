@@ -1,0 +1,20 @@
+{
+  "name": "vega-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Vega - 全面 Agent 工具（低 token、高效率、自接入模型），Electron + CLI 双版本",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "vega": "node packages/cli/src/index.js",
+    "serve": "node packages/core/src/asapi/server.js",
+    "serve:simple": "node packages/core/src/server.js",
+    "start": "npm run start -w packages/desktop",
+    "test": "node packages/core/test/run.js && node packages/core/test/asapi.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

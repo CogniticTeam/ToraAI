@@ -1,0 +1,45 @@
+name: Release desktop app
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: Publish macOS installer
+    runs-on: macos-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify tag matches app version
+        run: node -e "const p=require('./packages/desktop/package.json'); if (process.env.GITHUB_REF_NAME !== 'v' + p.version) throw new Error('Tag must equal v' + p.version)"
+      - run: npm ci
+      - run: npm ci --prefix packages/desktop/frontend
+      # 当前策略是未签名的手动 DMG 下载；拿到 Apple 证书后再移除 identity:null 并加入公证。
+      - run: npm run release:mac
+
+  windows:
+    name: Publish Windows installer
+    needs: macos
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm ci --prefix packages/desktop/frontend
+      # NSIS + latest.yml 会上传到同一 GitHub Release，供 electron-updater 自动下载。
+      - run: npm run release:win

@@ -1,0 +1,8 @@
+{
+  "name": "@vega/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Vega CLI：终端版 Agent（零依赖）",
+  "bin": { "vega": "src/index.js" },
+  "dependencies": {}
+}

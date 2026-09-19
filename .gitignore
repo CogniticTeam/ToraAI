@@ -1,0 +1,48 @@
+# 凭证与本地配置（绝不入库）
+.dev.vars
+*.local
+.env
+.env.*
+2.txt
+
+# 商业/运营资料（不入库）
+docs/official-model-subscription.md
+promo/
+Afadian-QRCode.jpg
+**/Afadian-QRCode.jpg
+
+# 本地大文件与外部项目
+minimind/
+minimind_cloud.zip
+*.zip
+
+# Cloudflare / D1 本地状态（含用户数据与会话）
+.wrangler/
+
+# 依赖与构建产物
+node_modules/
+dist/
+build/
+out/
+release/
+packages/desktop/release/
+
+# AI 工具会话与本地备份（个人数据，不入库）
+.claude/
+.workbuddy/
+.workbuddy-ai/
+.backups/
+.git-prepublish-backup/
+*.orig
+.output/
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 临时
+*.log
+.tmp/
+
+# 生成产物（截图等）
+output/
