@@ -1,3 +1,5 @@
+<p align="right"><a href="README.en.md">English</a> | <b>简体中文</b></p>
+
 <div align="center">
 
 <img src="logo.PNG" width="120" alt="CoCode logo" />
