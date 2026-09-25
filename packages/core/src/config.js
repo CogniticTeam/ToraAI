@@ -1,14 +1,14 @@
-// CoCode 配置管理：~/.vega/config.json + 环境变量覆盖
+// CoCode 配置管理：~/.cocode/config.json + 环境变量覆盖
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { resolveDataDirectory } from './legacy-migration.js';
 
-// 数据根目录。COCODE_HOME / VEGA_HOME 可整体重定向（测试、多 profile、
+// 数据根目录。COCODE_HOME 可整体重定向（测试、多 profile、
 // 便携模式都靠它）——**测试必须用它**，否则 rmSync 会把用户真实的
-// ~/.vega 配置/会话/技能库删掉。
-export const VEGA_DIR = process.env.COCODE_HOME || process.env.VEGA_HOME || join(homedir(), '.vega');
-export const CONFIG_PATH = join(VEGA_DIR, 'config.json');
-export const SESSIONS_DIR = join(VEGA_DIR, 'sessions');
+// ~/.cocode 配置/会话/技能库删掉。
+export const COCODE_DIR = resolveDataDirectory();
+export const CONFIG_PATH = join(COCODE_DIR, 'config.json');
+export const SESSIONS_DIR = join(COCODE_DIR, 'sessions');
 
 export const DEFAULT_CONFIG = {
   // 自接入模型：任何 OpenAI 兼容接口均可（OpenAI/DeepSeek/智谱/Moonshot/Ollama/vLLM…）
@@ -25,9 +25,9 @@ export const DEFAULT_CONFIG = {
   // 路径沙箱默认只允许工作目录；确需额外目录时在这里显式放行（绝对路径数组）
   allowedRoots: [],
   // 未选择工作目录时的默认可编辑范围：
-  //   true（默认）= 放开到整台电脑（家目录），Agent 开箱即用，无需先选文件夹；
-  //   false = 保持旧行为，未选目录时文件/终端类工具直接不可用。
-  defaultScopeFullDisk: true,
+  //   false（默认）= 仅允许对话/联网；文件、终端等本地工具必须先选择目录。
+  //   true = 用户明确选择扩展到家目录（仍受 allowedRoots 与权限模式约束）。
+  defaultScopeFullDisk: false,
   // bash 是否使用长驻 shell（cd/export/source 会保留）。默认开；个别环境下可关。
   persistentShell: true,
   // ---- 项目上下文注入 ----
@@ -46,14 +46,14 @@ export const DEFAULT_CONFIG = {
   // ---- 检查点与回滚 ----
   checkpointEnabled: true,     // 每轮写/执行前对工作目录做快照
   checkpointKeepTurns: 10,     // 每个会话保留的检查点数
-  // ---- 钩子（~/.vega/hooks.json 与 <cwd>/.cocode/hooks.json）----
+  // ---- 钩子（~/.cocode/hooks.json 与 <cwd>/.cocode/hooks.json）----
   hooksEnabled: true,          // 关掉就完全不跑钩子
   // 项目级钩子来自仓库内容，clone 一个仓库就执行其中的命令 = 任意代码执行，
   // 所以默认**不信任**。用户确认过某个仓库之后可以把它加到 trustProjectHooksFor。
   trustProjectHooks: false,
   trustProjectHooksFor: [],    // 信任项目钩子的工作目录列表（绝对路径）
   // ---- 可观测性 ----
-  traceEnabled: true,          // 把每次运行写成 ~/.vega/traces/<session>/<run>.jsonl
+  traceEnabled: true,          // 把每次运行写成 ~/.cocode/traces/<session>/<run>.jsonl
   traceFullBody: false,        // true = 连完整请求体一起记（含对话正文，已脱敏）
   // ---- 变更感知 ----
   changesAware: true,          // 把「最近改动的文件」注入系统提示词
@@ -68,7 +68,8 @@ export const DEFAULT_CONFIG = {
   // 第一条 enabled 的模型会同步到上方 baseURL/apiKey/model 作为生效配置
   modelList: [],
   // ---- 反思返工循环（Critic Self-Review）----
-  // 默认关（每轮多一次模型调用 = 双倍 token 成本）；Agent.data.review 可覆盖
+  // 默认关（每轮多一次模型调用 = 双倍 token 成本）；Agent.data.review_config 可覆盖。
+  // 桌面端把它暴露为每个 Agent 的「交付审查」，避免把成本强加给纯问答会话。
   review: {
     enabled: false,
     max_rounds: 2,
@@ -92,10 +93,10 @@ export function loadConfig() {
     try { file = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')); } catch { /* 损坏则忽略 */ }
   }
   const cfg = { ...DEFAULT_CONFIG, ...file };
-  // 环境变量优先。COCODE_* 是正式前缀，VEGA_* 保留兼容（老脚本/老文档不会失效）。
-  const envBase = process.env.COCODE_BASE_URL || process.env.VEGA_BASE_URL;
-  const envKey = process.env.COCODE_API_KEY || process.env.VEGA_API_KEY;
-  const envModel = process.env.COCODE_MODEL || process.env.VEGA_MODEL;
+  // COCODE_* 环境变量优先于配置文件。
+  const envBase = process.env.COCODE_BASE_URL;
+  const envKey = process.env.COCODE_API_KEY;
+  const envModel = process.env.COCODE_MODEL;
   if (envBase) cfg.baseURL = envBase;
   if (envKey) cfg.apiKey = envKey;
   if (envModel) cfg.model = envModel;
@@ -111,7 +112,7 @@ export function saveConfig(patch) {
     if (v !== undefined) clean[k] = v; // 允许显式传 undefined 表示"不修改"
   }
   const next = { ...cur, ...clean };
-  mkdirSync(VEGA_DIR, { recursive: true });
+  mkdirSync(COCODE_DIR, { recursive: true });
   writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2));
   return next;
 }
@@ -120,7 +121,9 @@ export function saveConfig(patch) {
 // 在模型列表增删改/切换开关后调用，保证 runAgent 直接读主字段即可
 export function syncEffectiveModel() {
   const cfg = loadConfig();
-  const active = (Array.isArray(cfg.modelList) ? cfg.modelList : []).find((m) => m.enabled);
+  const active = (Array.isArray(cfg.modelList) ? cfg.modelList : []).find(
+    (m) => m.enabled && !m.isOfficial && !String(m.baseURL || '').includes('/official/v1'),
+  );
   if (active) {
     return saveConfig({ baseURL: active.baseURL, apiKey: active.apiKey, model: active.model });
   }

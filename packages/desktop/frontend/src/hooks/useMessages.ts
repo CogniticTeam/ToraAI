@@ -18,7 +18,6 @@ import type { CreateSessionRequest } from '@/api';
 import { sessionApi, takeFreshlyCreated } from '@/api';
 import { chatApi } from '@/api';
 import { useAudioManager } from '@/context/AudioContext';
-import { emitCreditsChanged } from '@/hooks/useCreditsBalance';
 import { playNotificationSound } from '@/lib/sound';
 
 /**
@@ -264,26 +263,6 @@ export function useMessages(
 					optionsRef.current?.onStateUpdated?.(custom.value as Record<string, unknown>);
 				} else if (custom.name === 'session_updated') {
 					optionsRef.current?.onSessionUpdated?.();
-				} else if (custom.name === 'credits_changed') {
-					// 官方模型单次调用扣费落账 → 先以服务端确认的本轮用量立即扣减，
-					// 再由余额 hook 异步拉取权威值校准。
-					const creditChange = custom.value as {
-						credits?: unknown;
-						credit_delta?: unknown;
-					} | undefined;
-					const debit = creditChange?.credit_delta;
-					emitCreditsChanged(typeof debit === 'number' ? { debit } : undefined);
-					// 事件携带本条回复的累计积分（bridge 逐轮按 usage 累计）：
-					// 挂到当前流式消息 metadata 上，气泡底部实时展示。REPLY_END
-					// 后服务端以同名字段落盘，刷新后从历史加载的结果一致。
-					const credits = creditChange?.credits;
-					const reply = currentReplyRef.current;
-					if (reply && typeof credits === 'number') {
-						const updated = { ...reply, metadata: { ...reply.metadata, credits } };
-						msgsRef.current = msgsRef.current.map((m) => (m === reply ? updated : m));
-						currentReplyRef.current = updated;
-						scheduleUpdate();
-					}
 				} else if (custom.name === 'context_compacted' && custom.value) {
 					optionsRef.current?.onContextCompacted?.(
 						custom.value as {

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react';
-import { Fragment, type ReactNode } from 'react';
+import { Fragment, Suspense, type ReactNode } from 'react';
 
 import { Button } from '@/components/ui/button.tsx';
 import {
@@ -8,6 +8,7 @@ import {
 	ResizablePanelGroup,
 } from '@/components/ui/resizable.tsx';
 import { Separator } from '@/components/ui/separator';
+import { useTranslation } from '@/i18n/useI18n';
 
 /**
  * Identifier for a dockable panel. Used both as the React key and to
@@ -24,6 +25,8 @@ export type PanelKey =
 	| 'checkpoint'
 	| 'diff'
 	| 'trace'
+	| 'delivery'
+	| 'impact'
 	// 内置浏览器（Agent 的 Browser 工具也落在同一个视图里）
 	| 'browser'
 	// 内置终端（$SHELL -i：SSE 下行 + POST 上行）
@@ -155,6 +158,7 @@ export const Panel = ({ title, icon, actions, onClose, children }: PanelProps) =
  * @returns The column fragment, or `null` when no panels are open.
  */
 export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
+	const { t } = useTranslation();
 	if (layout.length === 0) return null;
 
 	return (
@@ -188,7 +192,9 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 												actions={descriptor.actions}
 												onClose={() => onClosePanel(key)}
 											>
-												{descriptor.content}
+												<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>
+													{descriptor.content}
+												</Suspense>
 											</Panel>
 										</ResizablePanel>
 									</Fragment>

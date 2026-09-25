@@ -3,26 +3,23 @@ import {
 	BookText,
 	BotMessageSquare,
 	CalendarClock,
-	Coins,
-	Crown,
 	Globe,
 	ChevronUp,
 	Languages,
+	Mail,
 	Settings,
+	Vote,
 } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { agentApi, sessionApi } from '@/api';
-import { SettingsDialog } from '@/components/dialog/SettingsDialog';
-import { SubscriptionDialog } from '@/components/dialog/SubscriptionDialog';
 import { SessionListSection } from '@/components/layout/SessionListSection';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -36,15 +33,30 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { useCreditsBalance } from '@/hooks/useCreditsBalance';
-import i18n from '@/i18n';
+import i18n, { setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
-import { OPEN_SETTINGS_EVENT, OPEN_SUBSCRIPTION_EVENT, type SettingsSection } from '@/lib/openSettings';
+import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
+import { useAccountPresence } from '@/components/auth/AccountPresence';
+const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
 
 // 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
 const NAV_INDICATOR_LAYOUT_ID = 'cocode-sidebar-nav-indicator';
+
+interface CocodeWindowBridge {
+	isMaximized(): boolean;
+	onMaximizeChange(cb: (maximized: boolean) => void): void;
+}
+
+function getWindowBridge(): CocodeWindowBridge | undefined {
+	return (window as unknown as { cocodeWindow?: CocodeWindowBridge }).cocodeWindow;
+}
+
+// 设置是用户触发的模态层；首屏任务页不预载它，缩短已登录用户的可交互时间。
+const SettingsDialog = lazy(async () => ({
+	default: (await import('@/components/dialog/SettingsDialog')).SettingsDialog,
+}));
 
 function NavIndicator({ visible }: { visible: boolean }) {
 	if (!visible) return null;
@@ -62,12 +74,37 @@ export function AppSidebar() {
 	const location = useLocation();
 	const { t } = useTranslation();
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const [messagesOpen, setMessagesOpen] = useState(false);
+	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
-	const [subscriptionOpen, setSubscriptionOpen] = useState(false);
 	const [accountName, setAccountName] = useState(() => getUsername() || getEmail()?.split('@')[0] || 'CoCode');
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-	// 侧边栏积分余额：拉取 + 登录态/积分变动事件 + 轮询（见 useCreditsBalance）
-	const { signedIn, credits } = useCreditsBalance();
+	const [pollsEnabled, setPollsEnabled] = useState(() => localStorage.getItem('cocode_polls_enabled') !== '0');
+	const [pollEntryVisible, setPollEntryVisible] = useState(() => localStorage.getItem('cocode_poll_entry_visible') !== '0');
+	useEffect(() => {
+		let alive = true;
+		const refresh = async () => {
+			try {
+				const response = await cloudFetch('/polls/config');
+				if (!response.ok) return;
+				const body = await response.json() as { enabled?: boolean; entryVisible?: boolean };
+				if (!alive) return;
+				if (typeof body.enabled === 'boolean') {
+					setPollsEnabled(body.enabled);
+					localStorage.setItem('cocode_polls_enabled', body.enabled ? '1' : '0');
+				}
+				if (typeof body.entryVisible === 'boolean') {
+					setPollEntryVisible(body.entryVisible);
+					localStorage.setItem('cocode_poll_entry_visible', body.entryVisible ? '1' : '0');
+				}
+			} catch { /* 离线沿用最近一次设置 */ }
+		};
+		void refresh();
+		const timer = window.setInterval(() => void refresh(), 30000);
+		window.addEventListener('cocode-auth-changed', refresh);
+		window.addEventListener('focus', refresh);
+		return () => { alive = false; window.clearInterval(timer); window.removeEventListener('cocode-auth-changed', refresh); window.removeEventListener('focus', refresh); };
+	}, []);
 
 	// 全局事件桥：任意页面 openSettings('model') → 此处打开设置窗口并定位板块
 	useEffect(() => {
@@ -113,13 +150,6 @@ export function AppSidebar() {
 		};
 	}, []);
 
-	// 全局事件桥：账户页「查看套餐 / 去兑换积分」→ 打开订阅窗口
-	useEffect(() => {
-		const handler = () => setSubscriptionOpen(true);
-		window.addEventListener(OPEN_SUBSCRIPTION_EVENT, handler);
-		return () => window.removeEventListener(OPEN_SUBSCRIPTION_EVENT, handler);
-	}, []);
-
 	// 「新任务」自动建会话：
 	// - 已在某会话里 → 仅回到 /chat（空态，由用户从列表挑选或再点新任务）；
 	// - 不在任何会话里（空态页/其它页面）→ 直接创建新会话并跳进去，
@@ -153,12 +183,6 @@ export function AppSidebar() {
 
 	// 无边框窗口：最大化/全屏时 macOS 红绿灯自动隐藏，CoCode 靠左；普通窗口让位红绿灯。
 	// Electron 由 preload 桥（window.cocodeWindow）提供状态；浏览器环境无红绿灯，直接靠左。
-	interface CocodeWindowBridge {
-		isMaximized(): boolean;
-		onMaximizeChange(cb: (maximized: boolean) => void): void;
-	}
-	const getWindowBridge = (): CocodeWindowBridge | undefined =>
-		(window as unknown as { cocodeWindow?: CocodeWindowBridge }).cocodeWindow;
 	const [lightedPinned, setLightedPinned] = useState(!!getWindowBridge());
 	useEffect(() => {
 		const bridge = getWindowBridge();
@@ -169,8 +193,20 @@ export function AppSidebar() {
 
 	const handleToggleLanguage = () => {
 		const next = i18n.language.startsWith('zh') ? 'en' : 'zh';
-		i18n.changeLanguage(next);
+		void setAppLanguage(next);
 	};
+
+	useEffect(() => {
+		const bridge = (window as unknown as { cocodeWindow?: { onMenuCommand?: (cb: (action: string) => void) => () => void } }).cocodeWindow;
+		return bridge?.onMenuCommand?.(action => {
+			if (action === 'new-task') void handleNewTask();
+			if (action === 'messages') setMessagesOpen(true);
+			if (action === 'settings' || action === 'models') { setSettingsTab(action === 'models' ? 'model' : 'general'); setSettingsOpen(true); }
+			if (action === 'browser') navigate('/browser');
+			if (action === 'automations') navigate('/schedule');
+			if (action === 'skills') navigate('/skill');
+		});
+	}, [handleNewTask, navigate]);
 
 	return (
 		// 展开态导航栏：256px (w-64，与 sidebar.tsx 的 SIDEBAR_WIDTH 一致)。
@@ -178,7 +214,7 @@ export function AppSidebar() {
 		// 最小宽度 24rem + 面板列 20rem，窄窗口下几乎没有余量，故收窄 64px 让位。
 		// 会话名本身是 truncate 的，且默认展开态下最多 6~8 个汉字就够分辨，
 		// 收窄后仍可用。collapsible="none" 保证永不折叠。
-		// 仅保留 新任务、自动化、Skill 中心 与 浏览器 四个入口（频道/凭证/知识库/MCP 已隐藏，
+		// 保留 新任务、自动化、Skill 中心、浏览器与可由管理员关闭的投票入口（频道/凭证/知识库/MCP 已隐藏，
 		// 对应路由与页面仍可用，只是不在导航展示）。
 		// 「自动化」复用已有的 /schedule 路由与页面（定时任务/自动化任务）。
 		// 「浏览器」是全屏内置浏览器入口，复用 /browser 路由页（常驻 webview，见 BrowserPanel）。
@@ -250,6 +286,13 @@ export function AppSidebar() {
 									<span>{t('common.browser')}</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
+							{pollsEnabled && pollEntryVisible && <SidebarMenuItem key={'polls'}>
+								<NavIndicator visible={location.pathname.startsWith('/polls')} />
+								<SidebarMenuButton isActive={location.pathname.startsWith('/polls')} onClick={() => navigate('/polls')}>
+									<Vote />
+									<span>{t('common.polls')}</span>
+								</SidebarMenuButton>
+							</SidebarMenuItem>}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
@@ -271,6 +314,10 @@ export function AppSidebar() {
 						</SidebarMenuButton>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent side="top" align="start" className="w-52 p-1">
+						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setMessagesOpen(true)}>
+							<Mail /><span className="flex-1">{t('inbox.title')}</span>
+							{unread > 0 && <span className="text-xs text-muted-foreground">{unread}</span>}
+						</DropdownMenuItem>
 						<DropdownMenuItem
 							className="py-1 text-[13px]"
 							onClick={() => {
@@ -281,18 +328,6 @@ export function AppSidebar() {
 							<Settings />
 							<span>{t('common.settings')}</span>
 						</DropdownMenuItem>
-						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setSubscriptionOpen(true)}>
-							<Crown />
-							<span>{t('common.subscription')}</span>
-						</DropdownMenuItem>
-						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setSubscriptionOpen(true)}>
-							<Coins />
-							<span className="flex-1">{t('subscription.credits')}</span>
-							<span className="tabular-nums text-xs text-muted-foreground">
-								{signedIn ? (credits === null ? '--' : credits.toLocaleString()) : '--'}
-							</span>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
 						<DropdownMenuItem className="py-1 text-[13px]" onClick={handleToggleLanguage}>
 							<Languages />
 							<span>
@@ -305,13 +340,17 @@ export function AppSidebar() {
 				</DropdownMenu>
 			</SidebarFooter>
 			{/* key=settingsTab：同一 tab 重开时靠 open effect 复位；不同 tab 重挂载强制切换 */}
-			<SettingsDialog
-				key={settingsTab}
-				open={settingsOpen}
-				onOpenChange={setSettingsOpen}
-				initialTab={settingsTab}
-			/>
-			<SubscriptionDialog open={subscriptionOpen} onOpenChange={setSubscriptionOpen} />
+			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
+			{settingsOpen && (
+				<Suspense fallback={null}>
+					<SettingsDialog
+						key={settingsTab}
+						open={settingsOpen}
+						onOpenChange={setSettingsOpen}
+						initialTab={settingsTab}
+					/>
+				</Suspense>
+			)}
 		</Sidebar>
 	);
 }

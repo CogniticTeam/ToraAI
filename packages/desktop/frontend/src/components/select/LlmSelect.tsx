@@ -15,6 +15,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { ProviderIcon } from '@/components/ui/provider-icon';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTranslation } from '@/i18n/useI18n.ts';
+import { OPEN_SETTINGS_EVENT } from '@/lib/openSettings';
 import { cn } from '@/lib/utils';
 import { credentialLabel } from '@/utils/common';
 
@@ -202,13 +203,7 @@ export function LlmSelect({
 	const allEntries: ModelEntry[] = groupEntries.flatMap(([type, usable]) =>
 		usable.flatMap(({ credential, models }) => models.map((model) => ({ type, credential, model }))),
 	);
-	// 官方模型（cocode-models 合成凭证）稳定置顶，其余凭证保持原相对顺序
-	const isOfficialEntry = (e: ModelEntry) =>
-		!!(e.credential.data as Record<string, unknown>).official_models;
-	const entries: ModelEntry[] = [
-		...allEntries.filter(isOfficialEntry),
-		...allEntries.filter((e) => !isOfficialEntry(e)),
-	];
+	const entries: ModelEntry[] = allEntries;
 	// 每个凭证首次出现的下标 —— 左列在组首渲染凭证标题
 	const firstIdxByCredential = new Map<string, number>();
 	entries.forEach((e, idx) => {
@@ -265,6 +260,11 @@ export function LlmSelect({
 	// 业务层吞掉，这里在 capture 阶段再兜一道 —— 点在 popover/触发器之外即关。
 	const [popOpen, setPopOpen] = useState(false);
 	useEffect(() => {
+		const closeForSettings = () => setPopOpen(false);
+		window.addEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
+		return () => window.removeEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
+	}, []);
+	useEffect(() => {
 		if (!popOpen) return;
 		const onDocPointerDown = (e: PointerEvent) => {
 			const t = e.target;
@@ -314,10 +314,6 @@ export function LlmSelect({
 								const selected =
 									value?.credential_id === credential.id && value?.model === model.name;
 								const showHeader = firstIdxByCredential.get(credential.id) === idx;
-								// cocode-models 合成凭证在 data.official_models 里标记官方模型名
-								const credentialData = credential.data as Record<string, unknown>;
-								const officialSet = credentialData.official_models as string[] | undefined;
-								const isOfficial = officialSet?.includes(model.name) ?? false;
 								return (
 									<div key={`${credential.id}:${model.name}`}>
 										{showHeader && (
@@ -339,11 +335,6 @@ export function LlmSelect({
 												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
 											/>
 											<span className="min-w-0 flex-1 truncate">{model.name}</span>
-											{isOfficial && (
-												<span className="shrink-0 rounded-md bg-gradient-to-r from-violet-500/15 to-pink-500/15 px-1.5 py-0.5 text-[10px] font-medium text-violet-600 dark:text-violet-300">
-															{t('common.officialModel')}
-												</span>
-											)}
 											{selected && <Check className="size-4 shrink-0 text-primary" />}
 										</button>
 									</div>
@@ -364,7 +355,10 @@ export function LlmSelect({
 							)}
 							<button
 								type="button"
-								onClick={onAddCredential}
+								onClick={() => {
+									setPopOpen(false);
+									onAddCredential?.();
+								}}
 								className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm text-muted-foreground hover:bg-accent"
 							>
 								<PlusCircle className="size-4" />

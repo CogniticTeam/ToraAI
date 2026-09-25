@@ -21,7 +21,7 @@ CoCode 的 agent 每个会话都从零开始：用户的偏好（"回复用中�
 
 ## 3. 数据模型与存储
 
-新文件 `packages/core/src/asapi/memory.js`，存储于 `ASAPI_DIR`（`VEGA_DIR/asapi/`，`VEGA_DIR = COCODE_HOME || VEGA_HOME || ~/.vega`，测试重定向天然生效）：
+新文件 `packages/core/src/asapi/memory.js`，存储于 `ASAPI_DIR`（`COCODE_DIR/asapi/`，`COCODE_DIR = COCODE_HOME || ~/.cocode`，测试重定向天然生效）：
 
 - `memories.json`：`{ memories: [...] }`——在 memory.js 内**自行实现同一存储模式**（原子写 tmp+rename、损坏隔离 .corrupt-*），不触碰 store.js（其 readJson/writeJson 为模块私有，未导出）
 - `memory-config.json`：`{ distill_enabled: false, inject_enabled: true }`（inject_enabled 预留记忆注入独立开关，v1 默认开、UI 不暴露）
@@ -68,7 +68,7 @@ CoCode 的 agent 每个会话都从零开始：用户的偏好（"回复用中�
 
 **注入指引**：工具 description 里写清"什么时候该存"（用户明确表达偏好/纠正/项目事实时），避免模型滥用。
 
-**权限归类（关键）**：4 个工具必须经 `toolCategory` 归为 **`'read'`**（tools/builtin.js）。否则未映射工具名默认归 `'execute'`，在 default 权限模式下每次调用都弹确认卡——模型会因反复被拦而回避这套工具，功能形同虚设。归 read 的理由：工具只写 CoCode 自己的数据目录（~/.vega 下记忆库），不触碰用户工作目录与系统，风险等级同 TaskCreate（会话状态写），且内容在设置面板完全可见可删，用户控制权不受损。
+**权限归类（关键）**：4 个工具必须经 `toolCategory` 归为 **`'read'`**（tools/builtin.js）。否则未映射工具名默认归 `'execute'`，在 default 权限模式下每次调用都弹确认卡——模型会因反复被拦而回避这套工具，功能形同虚设。归 read 的理由：工具只写 CoCode 自己的数据目录（~/.cocode 下记忆库），不触碰用户工作目录与系统，风险等级同 TaskCreate（会话状态写），且内容在设置面板完全可见可删，用户控制权不受损。
 
 ## 5. 上下文注入
 

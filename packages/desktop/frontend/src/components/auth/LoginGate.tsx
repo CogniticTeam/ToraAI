@@ -10,16 +10,21 @@
  * 网络异常（auth 服务不可达）时保守进入 login 态并在顶部提示，用户仍可尝试
  * 登录（登录请求本身失败会显示错误）。
  */
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import { LogoLoader, SuccessCheck } from '@/components/auth/LoginAnimation';
-import { AccountSection } from '@/components/dialog/AccountSection';
 import { useTranslation } from '@/i18n/useI18n';
 import { getToken, delToken, delEmail } from '@/utils/authStore';
 import { syncModelsFromCloud } from '@/utils/modelSync';
 
 const API_KEY = 'cocode_auth_api';
 const DEFAULT_AUTH_API = 'https://cocode.ohfun.online';
+
+// 已登录用户不应为了几乎不会打开的账户表单下载验证、头像、套餐等依赖。
+// 未登录时仍以同一个启动动画作为短暂 fallback，避免出现空白认证页。
+const AccountSection = lazy(async () => ({
+  default: (await import('@/components/dialog/AccountSection')).AccountSection,
+}));
 
 const authApi = () => (localStorage.getItem(API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
@@ -51,23 +56,33 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let alive = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 8000);
     (async () => {
       const token = getToken();
       if (!token) {
+        window.clearTimeout(timer);
         setPhase('login');
         return;
       }
       try {
         const r = await fetch(`${authApi()}/auth/me`, {
           headers: { authorization: `Bearer ${token}` },
+          signal: controller.signal,
         });
         if (!alive) return;
         if (r.ok) {
-          setPhase('success');
-        } else {
+          // 恢复已有登录直接进入工作区，成功动画仅用于用户主动登录。
+          setPhase('ok');
+          void syncModelsFromCloud();
+        } else if (r.status === 401 || r.status === 403) {
           // 401 等：token 失效，清掉重新登录
           await delToken();
           await delEmail();
+          if (alive) setPhase('login');
+        } else {
+          // 服务暂时异常不等于凭证失效，保留凭证以便下次重试。
+          setNetError(true);
           setPhase('login');
         }
       } catch {
@@ -75,9 +90,15 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
           setNetError(true);
           setPhase('login');
         }
+      } finally {
+        window.clearTimeout(timer);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, []);
 
   if (phase === 'ok') return <>{children}</>;
@@ -104,7 +125,9 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
 
       {phase === 'login' && (
         <div className="h-full w-full">
-          <AccountSection onAuthenticated={() => setPhase('success')} />
+          <Suspense fallback={<div className="flex h-full items-center justify-center"><LogoLoader /></div>}>
+            <AccountSection onAuthenticated={() => setPhase('success')} />
+          </Suspense>
         </div>
       )}
     </div>

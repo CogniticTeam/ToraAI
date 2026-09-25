@@ -1,7 +1,7 @@
 import { client } from './client';
 
 /**
- * One long-term memory record (core 侧 `~/.vega/asapi/memories.json`，
+ * One long-term memory record (core 侧 `~/.cocode/asapi/memories.json`，
  * 见 packages/core/src/asapi/memory.js）。跨会话注入 system 提示词，
  * 来源：AI 工具写入（tool）/ 自动提炼（distill）/ 手动创建（manual，API 强制）。
  */

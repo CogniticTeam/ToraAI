@@ -4,17 +4,17 @@
 // 而真正的原因往往是「第 3 轮上下文被压缩掉了关键约束」或「模型在没读文件的情况下
 // 直接写了」。这些只有 trace 能还原。
 //
-// 落盘：~/.vega/traces/<sessionId>/<runId>.jsonl（一行一个事件，追加写，
+// 落盘：~/.cocode/traces/<sessionId>/<runId>.jsonl（一行一个事件，追加写，
 // 崩了也能看到崩溃前发生了什么）。
 //
 // 隐私：请求体默认只记**结构**（几条消息、多少字符、工具名单），不记正文；
 // 打开 cfg.traceFullBody 才记全文，且所有文本都过一遍 redact()。
 import { appendFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { VEGA_DIR } from './config.js';
+import { COCODE_DIR } from './config.js';
 import { redact } from './security.js';
 
-export const TRACES_DIR = join(VEGA_DIR, 'traces');
+export const TRACES_DIR = join(COCODE_DIR, 'traces');
 const MAX_JSONL_BYTES = 8 * 1024 * 1024; // 单个 trace 上限，超了就不再写（防止长跑把盘写满）
 const PREVIEW = 600;
 

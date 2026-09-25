@@ -43,7 +43,7 @@ export function KnowledgeSearchDrawer({
 	knowledgeBaseName,
 }: Props) {
 	const { t } = useTranslation();
-	const { search } = useKnowledgeBases();
+	const { search } = useKnowledgeBases({ enabled: false });
 	const [query, setQuery] = useState('');
 	const [topK, setTopK] = useState(5);
 	const [loading, setLoading] = useState(false);

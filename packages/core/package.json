@@ -1,8 +1,8 @@
 {
-  "name": "@vega/core",
+  "name": "@cocode/core",
   "version": "0.1.0",
   "type": "module",
-  "description": "Vega Agent 引擎：模型接入 / 工具系统 / Agent 循环 / 上下文管理 / 会话持久化 / HTTP+SSE 服务",
+  "description": "CoCode Agent 引擎：模型接入 / 工具系统 / Agent 循环 / 上下文管理 / 会话持久化 / HTTP+SSE 服务",
   "main": "src/index.js",
   "exports": {
     ".": "./src/index.js"

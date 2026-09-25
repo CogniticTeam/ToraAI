@@ -1,4 +1,4 @@
-// vega config：交互式模型接入向导 + 连通性测试
+// cocode config：交互式模型接入向导 + 连通性测试
 import readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { loadConfig, saveConfig } from '../../core/src/config.js';
@@ -14,7 +14,7 @@ async function ask(rl, question, def) {
 export async function runConfigWizard() {
   const cfg = loadConfig();
   const rl = readline.createInterface({ input: stdin, output: stdout });
-  console.log(C.bold + '\nVega 模型接入向导' + C.reset + '（直接回车保留当前值）\n');
+  console.log(C.bold + '\nCoCode 模型接入向导' + C.reset + '（直接回车保留当前值）\n');
   try {
     console.log(C.dim + '支持任何 OpenAI 兼容接口：OpenAI / DeepSeek / 智谱 / Moonshot / Ollama / vLLM …' + C.reset);
     const baseURL = await ask(rl, '接口地址 baseURL', cfg.baseURL);
@@ -27,7 +27,7 @@ export async function runConfigWizard() {
       model
     });
 
-    console.log(C.green + `\n✓ 已保存到 ~/.vega/config.json` + C.reset);
+    console.log(C.green + `\n✓ 已保存到 ~/.cocode/config.json` + C.reset);
 
     // 连通性测试
     const test = (await rl.question('现在测试连通性? [Y/n] ')).trim().toLowerCase();
@@ -41,7 +41,7 @@ export async function runConfigWizard() {
         console.log(C.green + `✓ 连通正常（${Date.now() - t0}ms）：${(message.content || '').slice(0, 30)}` + C.reset);
       } catch (e) {
         console.log(C.red + `✗ 测试失败：${e.message}` + C.reset);
-        console.log(C.dim + '可稍后运行 `vega config` 重试' + C.reset);
+        console.log(C.dim + '可稍后运行 `cocode config` 重试' + C.reset);
       }
     }
   } finally {

@@ -14,7 +14,6 @@ import {
 	ChevronRight,
 	CirclePlay,
 	Copy,
-	Diamond,
 	FileText,
 	FileVideo2,
 	Info,
@@ -22,7 +21,7 @@ import {
 } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 import * as mime from 'mime-types';
-import { memo, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 
 import { renderToolCall } from './tool-renderers';
 import {
@@ -35,7 +34,7 @@ import {
 } from './tool-renderers/_shared';
 import { ChangedFilesCard } from './tool-renderers/ChangedFilesCard';
 import type { TFunction, ToolCallWithResult } from './tool-renderers/types';
-import { Markdown } from '@/components/markdown';
+import type { SkillView } from '@/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
 	Attachment,
@@ -58,11 +57,29 @@ import { Marker, MarkerContent } from '@/components/ui/marker';
 import { Message, MessageFooter, MessageContent } from '@/components/ui/message';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAudioBlock, useReplayController } from '@/context/AudioContext';
-import { useSkills } from '@/hooks/useSkills';
 import { useTranslation } from '@/i18n/useI18n';
 import { cn } from '@/lib/utils';
 import { copyToClipboard, formatTime } from '@/utils/common';
 import 'streamdown/styles.css';
+
+// Streamdown 连同代码高亮、数学与 Mermaid 插件体积很大。空会话没有任何
+// Markdown 要渲染，不该因此延后首个输入框；真正收到文本/思考块时再下载。
+const Markdown = lazy(async () => ({
+	default: (await import('@/components/markdown')).Markdown,
+}));
+
+function MarkdownFallback({ children, className }: { children: string; className?: string }) {
+	return <div className={cn('whitespace-pre-wrap break-words', className)}>{children}</div>;
+}
+
+function LazyMarkdown({ children, ...props }: React.ComponentProps<typeof Markdown>) {
+	const text = typeof children === 'string' ? children : '';
+	return (
+		<Suspense fallback={<MarkdownFallback className={props.className}>{text}</MarkdownFallback>}>
+			<Markdown {...props}>{children}</Markdown>
+		</Suspense>
+	);
+}
 
 /**
  * A run of *consecutive* tool calls (of any name) collapsed into a single
@@ -426,6 +443,8 @@ function summarizeToolGroup(calls: ToolCallWithResult[], t: TFunction) {
 
 interface MessageBubbleProps {
 	message: Msg;
+	/** 由消息列表统一读取，避免长对话中每个气泡各自订阅技能查询。 */
+	skillLibrary: SkillView[];
 	/** 首个 assistant 内容块到达前，紧贴用户消息展示的等待状态。 */
 	showThinking?: boolean;
 	/** 仅在本轮完成后允许显示时间；实际显示仍由消息悬停触发。 */
@@ -454,12 +473,12 @@ interface MessageBubbleProps {
  */
 function ASMessageBubbleComponent({
 	message,
+	skillLibrary,
 	showThinking = false,
 	showTimestamp = false,
 }: MessageBubbleProps) {
 	const isUser = message.role === 'user';
 	const { t } = useTranslation();
-	const { skills: library } = useSkills();
 
 	// 系统提示条（role=system，如「模型已从 X 更改为 Y」）：居中分隔线样式，
 	// 不渲染成气泡。放在 hooks 之后、其余渲染之前，保证不破坏条件一致性。
@@ -478,14 +497,14 @@ function ASMessageBubbleComponent({
 		const m = (message as Msg & { metadata?: Record<string, unknown> }).metadata;
 		const ids = Array.isArray(m?.selected_skill_ids) ? (m.selected_skill_ids as string[]) : null;
 		if (!ids || ids.length === 0) return [];
-		const byId = new Map(library.map((s) => [s.id, s]));
+		const byId = new Map(skillLibrary.map((s) => [s.id, s]));
 		return ids
 			.map((id) => byId.get(id))
 			.filter((s): s is NonNullable<typeof s> => Boolean(s));
-	}, [isUser, library, message]);
+	}, [isUser, skillLibrary, message]);
 
 	// hooks 规则：system 分支提前 return，因此上方所有 hooks（含
-	// useTranslation/useSkills/useMemo）必须无条件先执行完，此处返回
+	// useTranslation/useMemo）必须无条件先执行完，此处返回
 	// 才不会造成渲染间 hooks 数量不稳定。
 	if (message.role === 'system') {
 		const meta = (message as Msg & { metadata?: Record<string, unknown> }).metadata;
@@ -540,13 +559,6 @@ function ASMessageBubbleComponent({
 		.map((b) => b.text)
 		.join('\n\n');
 
-	// 本条回复累计消耗的积分：官方模型由 core 写入 metadata.credits
-	// （流式中经 credits_changed 事件实时同步）。自定义模型无此字段，不展示。
-	const bubbleMeta = (message as Msg & { metadata?: Record<string, unknown> }).metadata;
-	const creditsUsed =
-		typeof bubbleMeta?.credits === 'number' && bubbleMeta.credits > 0
-			? bubbleMeta.credits
-			: null;
 	const timestamp = showTimestamp ? (
 		<span className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
 			<MessageTimestamp value={message.created_at} />
@@ -649,14 +661,6 @@ function ASMessageBubbleComponent({
 								<CopyButton text={plainText} />
 							</span>
 						)}
-						{/* 官方模型本条回复累计消耗的积分（复制按钮右侧） */}
-						{creditsUsed !== null && (
-							<span className="pointer-events-none inline-flex items-center gap-0.5 text-xs text-muted-foreground opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
-								{t('common.creditsUsed')}
-								<Diamond className="size-3" />
-								{creditsUsed}
-							</span>
-						)}
 					</MessageFooter>
 				)}
 			</MessageContent>
@@ -714,13 +718,13 @@ function ThinkingBlockView({ block }: { block: ThinkingBlock }) {
 				</div>
 			</CollapsibleTrigger>
 			<CollapsibleContent asChild>
-				<Markdown
+				<LazyMarkdown
 					animated
 					isAnimating={isRunning}
 					className="text-muted-foreground bg-muted p-2 rounded text-sm"
 				>
 					{block.thinking}
-				</Markdown>
+				</LazyMarkdown>
 			</CollapsibleContent>
 		</Collapsible>
 	);
@@ -736,9 +740,9 @@ export function ASBlock({ block, ...props }: ASBlockProps) {
 	switch (block.type) {
 		case 'text':
 			return (
-				<Markdown animated isAnimating={!block.finished_at} {...props}>
+				<LazyMarkdown animated isAnimating={!block.finished_at} {...props}>
 					{block.text}
-				</Markdown>
+				</LazyMarkdown>
 			);
 		case 'data': {
 			const dataType = block.source.media_type.split('/')[0];

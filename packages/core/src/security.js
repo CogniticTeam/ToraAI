@@ -7,6 +7,7 @@
 //  3. redact —— 出站（发给模型 / 写日志）的文本过一遍脱敏，把已知密钥换成 ***。
 import { basename, dirname, isAbsolute, resolve, sep } from 'node:path';
 import { realpathSync } from 'node:fs';
+import { LEGACY_ENV_PREFIX } from './legacy-migration.js';
 
 // ---------------------------------------------------------------- 路径沙箱
 
@@ -113,7 +114,7 @@ export function outsideMessage(input) {
 /**
  * 密钥类环境变量名（不区分大小写）。
  * 名字里带这些词的变量一律不传给孩子进程 —— 覆盖 OPENAI_API_KEY /
- * VEGA_API_KEY / AWS_SECRET_ACCESS_KEY / GITHUB_TOKEN / *_PASSWORD 等主流形态。
+ * COCODE_API_KEY / AWS_SECRET_ACCESS_KEY / GITHUB_TOKEN / *_PASSWORD 等主流形态。
  */
 const SECRET_NAME_RE = /(^|[_-])(API[_-]?KEY|KEY|SECRET|TOKEN|PASSWORD|PASSWD|CREDENTIALS?|PASS|AUTH|COOKIE|SESSION)([_-]|$)/i;
 
@@ -124,10 +125,10 @@ const EXPLICIT_DENY = new Set([
 ]);
 
 /** 各家模型/云厂商的凭证前缀，整组剥离 */
-const PROVIDER_PREFIX_RE = /^(VEGA|COCODE|OPENAI|ANTHROPIC|DASHSCOPE|MOONSHOT|ZHIPU|GEMINI|GOOGLE|AZURE|BEDROCK|DEEPSEEK|GROQ|MISTRAL|OPENROUTER|SILICONFLOW|MINIMAX|XIAOMI)_/i;
+const PROVIDER_PREFIX_RE = /^(COCODE|OPENAI|ANTHROPIC|DASHSCOPE|MOONSHOT|ZHIPU|GEMINI|GOOGLE|AZURE|BEDROCK|DEEPSEEK|GROQ|MISTRAL|OPENROUTER|SILICONFLOW|MINIMAX|XIAOMI)_/i;
 
 export function isSecretEnvName(name) {
-  return SECRET_NAME_RE.test(name) || PROVIDER_PREFIX_RE.test(name);
+  return SECRET_NAME_RE.test(name) || PROVIDER_PREFIX_RE.test(name) || name.toUpperCase().startsWith(`${LEGACY_ENV_PREFIX}_`);
 }
 
 /**

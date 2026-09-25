@@ -1,45 +1,35 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { skillApi } from '@/api';
-import type { SkillView } from '@/api';
 
 /**
- * The user's library of installed skills.
- *
- * User-level, so unlike `useWorkspace` it needs no agent/session — an empty
- * list means the user has installed nothing yet, not that a session is
- * missing.
+ * 用户级技能库。消息列表、输入框和技能面板会同时消费它，因此使用同一个
+ * React Query 缓存来合并并发请求，并在安装/删除后统一失效。
  */
 export function useSkills() {
-	const [skills, setSkills] = useState<SkillView[]>([]);
-	// Starts true: the first paint happens before the effect fires, and
-	// a false start would flash the empty state before the spinner.
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<Error | null>(null);
-
+	const queryClient = useQueryClient();
+	const query = useQuery({
+		queryKey: ['skills'],
+		queryFn: () => skillApi.list(),
+	});
 	const refetch = useCallback(async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			setSkills(await skillApi.list());
-		} catch (e) {
-			setError(e as Error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		refetch();
-	}, [refetch]);
-
+		const result = await query.refetch();
+		return result.data ?? [];
+	}, [query.refetch]);
 	const remove = useCallback(
 		async (skillId: string) => {
 			await skillApi.remove(skillId);
-			await refetch();
+			await queryClient.invalidateQueries({ queryKey: ['skills'] });
 		},
-		[refetch],
+		[queryClient],
 	);
 
-	return { skills, loading, error, refetch, remove };
+	return {
+		skills: query.data ?? [],
+		loading: query.isPending,
+		error: query.error as Error | null,
+		refetch,
+		remove,
+	};
 }

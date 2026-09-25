@@ -242,7 +242,7 @@ Tool 节点执行时复用 `resolveTool` → 直接调 tool.execute。**不带**
 ## 5. 存储
 
 ```
-~/.vega/
+~/.cocode/
 ├── workflows/
 │   └── {id}.json          # 工作流定义
 └── workflow-runs/

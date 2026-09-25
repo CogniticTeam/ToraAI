@@ -1,6 +1,6 @@
 // MCP（Model Context Protocol）stdio 客户端：把外部工具服务器接进会话。
 //
-// 配置在 `~/.vega/config.json` 的 `mcpServers`（与 Claude Desktop 同形）：
+// 配置在 `~/.cocode/config.json` 的 `mcpServers`（与 Claude Desktop 同形）：
 //   { "fetch": { "command": "npx", "args": ["-y", "mcp-server-fetch"], "env": {} } }
 //
 // 设计取舍：

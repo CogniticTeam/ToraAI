@@ -22,6 +22,7 @@ import {
   resetAll
 } from './store.js';
 import { HubError } from './hub-error.js';
+import { accessBlockReason, setAccessBlock } from './access.js';
 import { HUBS, providerFor } from './hubs.js';
 import { toSessionView, inputToText, systemNoticeMsg } from './protocol.js';
 import { startChatRun, isRunning, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools } from './bridge.js';
@@ -33,8 +34,9 @@ import { loadCommands } from '../commands.js';
 import { detectVision } from '../model.js';
 import { describeHooks, HOOK_EVENTS } from '../hooks.js';
 import { listTraces, readTrace, renderTrace, gcTraces, traceStats } from '../trace.js';
+import { listDeliveries } from '../delivery.js';
+import { analyzeImpact } from '../impact.js';
 import { usageStats } from './usage.js';
-import { PLAN_DEFS, getPlanDef } from '../plans.js';
 import { buildSymbolIndex } from '../tools/lsp.js';
 import { normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
 import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates } from '../tools/mcp-workshop.js';
@@ -158,6 +160,15 @@ const AGENT_SCHEMA = {
           stop_on_reject: { type: 'boolean', title: 'Stop On Reject', default: true }
         }
       },
+      review_config: {
+        type: 'object', title: 'Delivery Review',
+        properties: {
+          enabled: { type: 'boolean', title: 'Enable Delivery Review', default: false },
+          max_rounds: { type: 'integer', title: 'Max Review Rounds', minimum: 0, maximum: 3, default: 1 },
+          min_tool_calls: { type: 'integer', title: 'Min Tool Calls', minimum: 1, maximum: 20, default: 1 },
+          only_after_mutation: { type: 'boolean', title: 'Only After Write or Execute', default: true }
+        }
+      },
       invite_config: {
         type: 'object', title: 'Invite Config',
         properties: {
@@ -214,8 +225,16 @@ async function readBody(req) {
 // 让添加的模型出现在前端 LlmSelect 里。bridge.js 选中 "cocode-models" 时按 model 名查 cfg.modelList。
 const COCODE_CRED_ID = 'cocode-models';
 
+function isCustomModel(m) {
+  return !m?.isOfficial && !String(m?.baseURL || '').includes('/official/v1');
+}
+
+function isRetiredOfficialModelURL(value) {
+  return String(value ?? '').toLowerCase().includes('/official/v1');
+}
+
 function enabledModels(cfg) {
-  return (Array.isArray(cfg.modelList) ? cfg.modelList : []).filter((m) => m.enabled && m.model);
+  return (Array.isArray(cfg.modelList) ? cfg.modelList : []).filter((m) => isCustomModel(m) && m.enabled && m.model);
 }
 
 function cocodeCredential(cfg) {
@@ -232,14 +251,6 @@ function cocodeCredential(cfg) {
       // "模型名 → provider key" 的映射（未列出的回退成通用图标）。
       model_providers: Object.fromEntries(
         models.map((m) => [m.model, m.provider || 'custom']),
-      ),
-      // 官方模型名列表：LlmSelect 据此在模型名旁渲染「官方」徽标，
-      // 与用户自配模型区分。isOfficial 字段来自云端 user_models.is_official。
-      official_models: models.filter((m) => m.isOfficial).map((m) => m.model),
-      // 官方模型名 → 积分档位：LlmSelect 据此在徽标上标注消耗档位
-      // （tier 由云端 /models 按倍率表解析，未知时回退 standard）。
-      official_tiers: Object.fromEntries(
-        models.filter((m) => m.isOfficial).map((m) => [m.model, m.tier || 'standard']),
       ),
     }
   };
@@ -267,13 +278,14 @@ export function startASAPIServer({ port = 0, host = '127.0.0.1' } = {}) {
   // 定时任务到点：建一个归属该 agent 的会话，用任务描述当首条消息跑一轮。
   // 无人值守，权限模式取任务配置（默认 dont_ask），失败由调度器记入执行历史。
   setScheduleFireHandler((sched) => {
+    if (accessBlockReason()) throw new Error(accessBlockReason());
     const agent = getAgent(sched.agent_id);
     if (!agent) throw new Error('agent 不存在');
     const record = createSessionRecord({
       agent_id: sched.agent_id,
       chat_model_config: sched.data?.chat_model_config || null,
       fallback_chat_model_config: null,
-      vegaCfg: loadConfig(),
+      cocodeCfg: loadConfig(),
       cwd: null,
     });
     record.state.permission_mode = sched.data?.permission_mode || 'dont_ask';
@@ -292,11 +304,20 @@ export function startASAPIServer({ port = 0, host = '127.0.0.1' } = {}) {
   });
 }
 
+export function setDesktopAccessBlocked(source, message) {
+  const previous = accessBlockReason();
+  setAccessBlock(source, message);
+  if (message && previous !== accessBlockReason()) for (const session of listSessionRecords()) interrupt(session.id);
+}
+
 async function route(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const p = url.pathname;
   const method = req.method;
   const q = Object.fromEntries(url.searchParams);
+  if (accessBlockReason() && method !== 'GET' && method !== 'OPTIONS' && !p.endsWith('/interrupt')) {
+    return apiError(res, 403, accessBlockReason());
+  }
 
   // ---------- CORS 预检 ----------
   // 浏览器 dev 环境跨端口调试：预检直接放行合法 loopback 来源。
@@ -364,6 +385,9 @@ async function route(req, res) {
   if (p === '/admin/config' && method === 'POST') {
     try {
       const body = await readBody(req);
+      if (typeof body.baseURL === 'string' && isRetiredOfficialModelURL(body.baseURL)) {
+        return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
+      }
       const patch = {};
       if (typeof body.baseURL === 'string' && body.baseURL.trim()) patch.baseURL = body.baseURL.trim().replace(/\/+$/, '');
       if (typeof body.model === 'string' && body.model.trim()) patch.model = body.model.trim();
@@ -780,21 +804,49 @@ async function route(req, res) {
     if (!killTerminal(tm[1])) return apiError(res, 404, '终端不存在或已退出');
     return json(res, 200, { status: 'ok' });
   }
-  // 代理拉模型列表：绕开浏览器 CORS 限制
-  if (p === '/admin/models' && method === 'GET') {
-    const target = (q.baseURL || loadConfig().baseURL || '').replace(/\/+$/, '');
+  // 代理拉模型列表：密钥由 POST body 传入，避免落到 URL/访问日志；保留旧 GET 兼容调用方。
+  if (p === '/admin/models' && (method === 'POST' || method === 'GET')) {
+    let input = q;
+    if (method === 'POST') {
+      try { input = await readBody(req); }
+      catch { return apiError(res, 400, '请求体必须是 JSON'); }
+      if (!input || typeof input !== 'object' || Array.isArray(input)) {
+        return apiError(res, 400, '请求体必须是对象');
+      }
+    }
+    const target = String(input.baseURL || loadConfig().baseURL || '').replace(/\/+$/, '');
     if (!/^https?:\/\//.test(target)) return apiError(res, 400, 'baseURL 必须是 http(s) 地址');
+    const provider = String(input.provider || '');
     const headers = { accept: 'application/json' };
-    if (q.apiKey) headers.authorization = `Bearer ${q.apiKey}`;
+    if (input.apiKey) {
+      if (provider === 'anthropic') headers['x-api-key'] = String(input.apiKey);
+      else headers.authorization = `Bearer ${input.apiKey}`;
+    }
+    if (provider === 'anthropic') headers['anthropic-version'] = '2023-06-01';
+    if (provider === 'google') headers['x-goog-api-client'] = 'cocode-desktop/1.0.0';
     try {
-      const upstream = await fetch(target + '/models', {
+      // Claude 模型列表默认仅返回 20 项；请求上限页即可覆盖当前可用模型。
+      const listURL = target + (provider === 'anthropic' ? '/models?limit=1000' : '/models');
+      const upstream = await fetch(listURL, {
         headers, signal: AbortSignal.timeout(12000)
       });
-      if (!upstream.ok) return apiError(res, 502, `上游 ${target}/models 返回 ${upstream.status}`);
+      if (!upstream.ok) return apiError(res, 502, `上游模型列表返回 ${upstream.status}`);
       const body = await upstream.json();
       const list = Array.isArray(body) ? body : body.data ?? body.models ?? [];
-      const ids = list.map((m) => (typeof m === 'string' ? m : m?.id ?? m?.name))
+      let ids = list.map((m) => (typeof m === 'string' ? m : m?.id ?? m?.name))
         .filter((s) => typeof s === 'string');
+      // OpenAI 的 /models 同时返回 embedding、音视频等模型；这里只展示适合
+      // CoCode Chat Completions 接入的候选项。仍可在表单中手动输入其他模型 ID。
+      if (input.provider === 'openai') {
+        ids = ids.filter((id) => /^(?:gpt-(?:[3-9]|oss)|o[1-9](?:[.-]|$)|chatgpt-|ft:gpt-[3-9])/i.test(id)
+          && !/(?:^|[-_.])(?:audio|image|realtime|transcribe|tts|search|embedding|moderation|pro|codex)(?:[-_.]|$)/i.test(id));
+      } else if (provider === 'google') {
+        ids = ids.filter((id) => /^gemini-/i.test(id)
+          && !/(?:^|[-_.])(?:audio|image|live|tts|transcribe|embedding|robotics|computer-use|research|omni)(?:[-_.]|$)/i.test(id));
+      } else if (provider === 'stepfun' || provider === 'stepfun-global') {
+        ids = ids.filter((id) => /^step-/i.test(id)
+          && !/(?:^|[-_.])(?:audio|asr|tts|music|image|realtime)(?:[-_.]|$)/i.test(id));
+      }
       return json(res, 200, { models: ids });
     } catch (e) { return apiError(res, 502, `拉取模型列表失败: ${e?.message || e}`); }
   }
@@ -804,7 +856,7 @@ async function route(req, res) {
   // 列表：apiKey 不回明文
   if (p === '/admin/models-config' && method === 'GET') {
     const cfg = loadConfig();
-    const items = (Array.isArray(cfg.modelList) ? cfg.modelList : []).map((m) => ({
+    const items = (Array.isArray(cfg.modelList) ? cfg.modelList : []).filter(isCustomModel).map((m) => ({
       id: m.id, provider: m.provider, label: m.label, model: m.model,
       baseURL: m.baseURL, enabled: !!m.enabled, apiKeySet: !!m.apiKey,
       vision: typeof m.vision === 'boolean' ? m.vision : null
@@ -819,6 +871,7 @@ async function route(req, res) {
       const body = await readBody(req);
       const models = Array.isArray(body.models) ? body.models : [];
       const list = models
+		.filter(isCustomModel)
         .map((m) => ({
           id: typeof m.id === 'string' && m.id ? m.id : `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
           provider: String(m.provider ?? 'custom'),
@@ -828,8 +881,6 @@ async function route(req, res) {
           apiKey: String(m.apiKey ?? ''),
           enabled: m.enabled !== false,
           ...(m.vision === null || typeof m.vision === 'boolean' ? { vision: m.vision } : {}),
-          ...(typeof m.isOfficial === 'boolean' ? { isOfficial: m.isOfficial } : {}),
-          ...(typeof m.tier === 'string' && m.tier ? { tier: m.tier } : {}),
         }))
         .filter((m) => m.model && /^https?:\/\//.test(m.baseURL));
       saveConfig({ modelList: list });
@@ -844,6 +895,7 @@ async function route(req, res) {
       const body = await readBody(req);
       const baseRaw = String(body.baseURL ?? '').trim().replace(/\/+$/, '');
       if (!/^https?:\/\//.test(baseRaw)) return apiError(res, 422, 'baseURL 必须是 http(s) 地址');
+      if (isRetiredOfficialModelURL(baseRaw)) return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
       const cfg = loadConfig();
       const list = Array.isArray(cfg.modelList) ? [...cfg.modelList] : [];
       const provider = String(body.provider ?? 'custom');
@@ -900,6 +952,9 @@ async function route(req, res) {
       if (idx < 0) return apiError(res, 404, '模型不存在');
       if (method === 'PATCH') {
         const body = await readBody(req);
+        if (typeof body.baseURL === 'string' && isRetiredOfficialModelURL(body.baseURL)) {
+          return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
+        }
         if (typeof body.model === 'string' && body.model.trim()) list[idx].model = body.model.trim();
         if (typeof body.baseURL === 'string' && /^https?:\/\//.test(body.baseURL.trim())) {
           list[idx].baseURL = body.baseURL.trim().replace(/\/+$/, '');
@@ -917,94 +972,6 @@ async function route(req, res) {
       const next = syncEffectiveModel();
       return json(res, 200, { status: 'ok', effective: { baseURL: next.baseURL, model: next.model, apiKeySet: !!next.apiKey } });
     } catch (e) { return apiError(res, 400, e?.message || String(e)); }
-  }
-
-  // ---------- 套餐（Coding Plan / Token Plan） ----------
-  // GET /admin/plans                 → 目录 + 各套餐接入状态
-  // POST /admin/plans/:key/connect   → {apiKey} → 按套餐默认模型批量写入 modelList（专用端点内置）
-  // DELETE /admin/plans/:key/connect → 断开（禁用该套餐专用端点的所有模型条目）
-  if (p === '/admin/plans' && method === 'GET') {
-    const cfg = loadConfig();
-    // connected：modelList 中存在 baseURL 匹配且填了 key 的条目
-    const plans = PLAN_DEFS.map((def) => {
-      const hit = (Array.isArray(cfg.modelList) ? cfg.modelList : []).find(
-        (x) => x.baseURL === def.baseURL && x.apiKey);
-      return {
-        key: def.key, name: def.name, vendor: def.vendor, note: def.note,
-        models: def.models, keyUrl: def.keyUrl, buyUrl: def.buyUrl,
-        connected: !!hit,
-      };
-    });
-    return json(res, 200, { plans });
-  }
-  if ((mm = p.match(/^\/admin\/plans\/([\w-]+)\/connect$/)) && method === 'POST') {
-    const def = getPlanDef(mm[1]);
-    if (!def) return apiError(res, 404, '套餐不存在');
-    const body = await readBody(req);
-    const apiKey = String(body.apiKey ?? '').trim();
-    if (!apiKey) return apiError(res, 422, 'apiKey 不能为空');
-    // 写入前鉴权探活：用套餐专用端点 GET /models 做一次轻量校验。
-    // 只拦截「明确的鉴权/订阅失败」；网络异常、超时或不支持列举模型的端点
-    // 一律放行，避免探针自身的兼容性误杀可用配置。
-    try {
-      const probe = await fetch(def.baseURL + '/models', {
-        headers: { authorization: `Bearer ${apiKey}` },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (probe.status === 401 || probe.status === 403) {
-        return apiError(res, probe.status,
-          `API Key 校验未通过（HTTP ${probe.status}）。请确认：1) 粘贴的是「${def.name}」套餐专属 API Key，与平台按量计费的普通 Key 不通用；2) Key 未被删除或禁用；3) 创建该 Key 的账号已订阅套餐且在有效期内。`);
-      }
-      if (probe.status === 400) {
-        const pb = await probe.text().catch(() => '');
-        if (/InvalidSubscription|does not have a valid [^"]*subscription|subscription has expired/i.test(pb)) {
-          return apiError(res, 400,
-            `该账号未订阅「${def.name}」或套餐已过期，请先完成订阅或续费后再接入。`);
-        }
-      }
-    } catch { /* 网络异常/超时不阻塞接入 */ }
-    const cfg = loadConfig();
-    const list = Array.isArray(cfg.modelList) ? [...cfg.modelList] : [];
-    let added = 0, updated = 0;
-    for (const model of def.models) {
-      const idx = list.findIndex((x) => x.baseURL === def.baseURL && x.model.toLowerCase() === model.toLowerCase());
-      if (idx >= 0) { list[idx].apiKey = apiKey; list[idx].enabled = true; updated++; }
-      else {
-        list.push({
-          id: `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
-          provider: def.key, label: def.name, model, baseURL: def.baseURL,
-          apiKey, enabled: true,
-        });
-        added++;
-      }
-    }
-    // 同步清理：套餐目录已下架/改名的旧模型条目（仅清理本套餐自动写入的条目，
-    // 用户自定义同端点条目不触碰）
-    let removed = 0;
-    for (let i = list.length - 1; i >= 0; i--) {
-      const x = list[i];
-      if (x.provider === def.key && x.baseURL === def.baseURL
-        && !def.models.some((m) => m.toLowerCase() === String(x.model ?? '').toLowerCase())) {
-        list.splice(i, 1);
-        removed++;
-      }
-    }
-    saveConfig({ modelList: list });
-    const next = syncEffectiveModel();
-    return json(res, 200, { status: 'ok', added, updated, removed, effective: { baseURL: next.baseURL, model: next.model, apiKeySet: !!next.apiKey } });
-  }
-  if ((mm = p.match(/^\/admin\/plans\/([\w-]+)\/connect$/)) && method === 'DELETE') {
-    const def = getPlanDef(mm[1]);
-    if (!def) return apiError(res, 404, '套餐不存在');
-    const cfg = loadConfig();
-    const list = Array.isArray(cfg.modelList) ? [...cfg.modelList] : [];
-    // 断开 = 彻底移除该套餐专用端点的所有条目（只禁用的话 connected 判定
-    // 仍会命中 apiKey，前端表现为"断不开"）
-    const kept = list.filter((x) => x.baseURL !== def.baseURL);
-    const removed = list.length - kept.length;
-    saveConfig({ modelList: kept });
-    const next = syncEffectiveModel();
-    return json(res, 200, { status: 'ok', removed, effective: { baseURL: next.baseURL, model: next.model, apiKeySet: !!next.apiKey } });
   }
 
   if (p === '/agent/' && method === 'GET') {
@@ -1050,6 +1017,8 @@ async function route(req, res) {
   if (p === '/sessions/' && method === 'POST') {
     const body = await readBody(req);
     if (!body.agent_id) return apiError(res, 422, 'agent_id 不能为空');
+    if ('delivery_mode' in body && typeof body.delivery_mode !== 'boolean') return apiError(res, 422, 'delivery_mode 必须是布尔值');
+    if ('delivery_criteria' in body && (typeof body.delivery_criteria !== 'string' || body.delivery_criteria.length > 1200)) return apiError(res, 422, 'delivery_criteria 必须是 1200 字以内的文字');
     // 死 agent_id 一律 404：否则会产出指向不存在 agent 的会话，
     // 前端之后每条消息都撞 404 "agent 不存在"，还无处自救。
     if (!getAgent(body.agent_id)) return apiError(res, 404, 'agent 不存在');
@@ -1057,17 +1026,21 @@ async function route(req, res) {
       agent_id: body.agent_id,
       chat_model_config: body.chat_model_config || null,
       fallback_chat_model_config: body.fallback_chat_model_config || null,
-      vegaCfg: loadConfig(),
+      cocodeCfg: loadConfig(),
       cwd: body.cwd || null,
     });
+    if (body.delivery_mode === true) record.state.delivery_mode = true;
+    if (typeof body.delivery_criteria === 'string') record.state.delivery_criteria = body.delivery_criteria.slice(0, 1200);
     // 无会话时前端把权限模式记在本地，随第一条消息带过来 —— 与 cwd 同一策略。
-    if (body.permission_mode) {
-      record.state.permission_mode = body.permission_mode;
-      record.state.permission_context = {
-        ...(record.state.permission_context && typeof record.state.permission_context === 'object'
-          ? record.state.permission_context : {}),
-        mode: body.permission_mode
-      };
+    if (body.permission_mode || body.delivery_mode === true || typeof body.delivery_criteria === 'string') {
+      if (body.permission_mode) {
+        record.state.permission_mode = body.permission_mode;
+        record.state.permission_context = {
+          ...(record.state.permission_context && typeof record.state.permission_context === 'object'
+            ? record.state.permission_context : {}),
+          mode: body.permission_mode
+        };
+      }
       saveSessionRecord(record);
     }
     return json(res, 200, { session_id: record.id });
@@ -1124,6 +1097,10 @@ async function route(req, res) {
       const s = loadSessionRecord(id);
       if (!s) return apiError(res, 404, '会话不存在');
       if (isRunning(id)) return apiError(res, 409, '会话正在运行，配置已被快照，稍后再改');
+      if ('delivery_mode' in body && typeof body.delivery_mode !== 'boolean') return apiError(res, 422, 'delivery_mode 必须是布尔值');
+      if ('delivery_criteria' in body && (typeof body.delivery_criteria !== 'string' || body.delivery_criteria.length > 1200)) return apiError(res, 422, 'delivery_criteria 必须是 1200 字以内的文字');
+      if ('delivery_mode' in body) s.state.delivery_mode = body.delivery_mode;
+      if ('delivery_criteria' in body) s.state.delivery_criteria = body.delivery_criteria;
       if (typeof body.name === 'string') {
         s.config.name = body.name.slice(0, 40);
         s.config.naming = { auto: false };
@@ -1387,6 +1364,22 @@ async function route(req, res) {
     if (diff.length > MAX) diff = diff.slice(0, MAX) + '\n…[diff 过长，已截断]';
     return json(res, 200, { diff, root });
   }
+  if (p === '/workspace/impact' && method === 'GET') {
+    if (!q.session_id) return apiError(res, 422, '需要 session_id');
+    const rec = loadSessionRecord(q.session_id);
+    const cwd = rec?.config?.cwd || null;
+    if (!cwd) return apiError(res, 422, '该会话还没有工作目录');
+    const paths = typeof q.paths === 'string' ? q.paths.split(/[\n,]/).map((v) => v.trim()).filter(Boolean) : [];
+    try { return json(res, 200, await analyzeImpact(realpathAllowMissing(cwd), { paths })); }
+    catch (e) { return apiError(res, 500, `影响分析失败: ${e?.message || String(e)}`); }
+  }
+  const deliveryMatch = /^\/sessions\/([\w-]+)\/deliveries$/.exec(p);
+  if (deliveryMatch && method === 'GET') {
+    const sessionId = deliveryMatch[1];
+    if (!loadSessionRecord(sessionId)) return apiError(res, 404, '会话不存在');
+    try { return json(res, 200, { reports: listDeliveries(sessionId) }); }
+    catch (e) { return apiError(res, 400, e?.message || String(e)); }
+  }
   // ── Git 深度集成：分支 / 工作树 / 暂存 / 提交 / 日志 ──
   // 所有端点从 session_id（或 body.cwd）取工作目录，与 /workspace/* 同一套路。
   if (p === '/git/branches' && method === 'GET') {
@@ -1493,12 +1486,14 @@ async function route(req, res) {
   if (p === '/automations' && method === 'POST') {
     const body = await readBody(req);
     const r = createAutomation(body);
+    if (r?.ok === false) return apiError(res, 400, r.error);
     return json(res, 200, r);
   }
   if ((m = p.match(/^\/automations\/([\w-]+)$/)) && method === 'PATCH') {
     const body = await readBody(req);
     const r = updateAutomation(m[1], body);
     if (!r) return apiError(res, 404, '规则不存在');
+    if (r?.ok === false) return apiError(res, 400, r.error);
     return json(res, 200, r);
   }
   if ((m = p.match(/^\/automations\/([\w-]+)$/)) && method === 'DELETE') {

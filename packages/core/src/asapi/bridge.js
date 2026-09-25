@@ -12,11 +12,11 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
-import { loadConfig, saveConfig, VEGA_DIR } from '../config.js';
+import { loadConfig, saveConfig, COCODE_DIR } from '../config.js';
 import { getCredential, loadSessionRecord, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import { recordUsage } from './usage-store.js';
-import { calcCredits } from '../credit-rates.js';
+import { accessBlockReason } from './access.js';
 import { generateTitle, placeholderTitle } from '../title.js';
 import { distillAfterRun } from './memory-distill.js';
 
@@ -111,14 +111,14 @@ export function cancelSubagentConfirms(leaderSessionId, workerSessionId, reason)
   }
 }
 
-/** 解析会话模型配置 → vega cfg（自接入：凭证 base_url/api_key + 会话级 model） */
+/** 解析会话模型配置 → cocode cfg（自接入：凭证 base_url/api_key + 会话级 model） */
 export function resolveRunCfg(session, agent) {
-  const vegaCfg = loadConfig();
+  const cocodeCfg = loadConfig();
   const mc = session.config?.chat_model_config || {};
-  let baseURL = vegaCfg.baseURL;
-  let apiKey = vegaCfg.apiKey;
+  let baseURL = cocodeCfg.baseURL;
+  let apiKey = cocodeCfg.apiKey;
   let visionOverride;
-  let officialModel = false;
+  let modelProvider;
   if (mc.credential_id) {
     const cred = getCredential(mc.credential_id);
     if (cred?.data?.base_url) {
@@ -126,44 +126,56 @@ export function resolveRunCfg(session, agent) {
       if (cred?.data?.api_key) apiKey = cred.data.api_key;
     } else {
       // 合成凭证（cocode-models，来自设置窗口模型列表）：按选中模型名解析
-      const hit = (vegaCfg.modelList || []).find((x) => x.enabled && x.model === mc.model);
+      const hit = (cocodeCfg.modelList || []).find(
+        (x) => x.enabled && !x.isOfficial && !String(x.baseURL || '').includes('/official/v1') && x.model === mc.model,
+      );
       if (hit) {
         baseURL = hit.baseURL; apiKey = hit.apiKey;
+        modelProvider = hit.provider;
         // 条目上的显式能力位（vision true/false）覆盖全局推断
         if (typeof hit.vision === 'boolean') visionOverride = hit.vision;
-        // 官方模型标记：数据面走 auth-worker 计费网关（baseURL 已指向它），
-        // 自定义模型永不为 true，不参与积分。带到 cfg 供事件/统计使用。
-        if (hit.isOfficial) officialModel = true;
       }
     }
   }
   const cfg = {
-    ...vegaCfg,
+    ...cocodeCfg,
     baseURL,
     apiKey,
-    model: mc.model || vegaCfg.model,
-    temperature: mc.parameters?.temperature ?? vegaCfg.temperature,
+    ...(modelProvider ? { provider: modelProvider } : {}),
+    model: mc.model || cocodeCfg.model,
+    temperature: mc.parameters?.temperature ?? cocodeCfg.temperature,
     // 深度思考：默认开启（显式 false 才关）；thinkingEffort 为强度档（low/medium/high）
     thinking: mc.parameters?.thinking !== false,
     thinkingEffort: typeof mc.parameters?.thinkingEffort === 'string' ? mc.parameters.thinkingEffort : undefined
   };
   if (visionOverride !== undefined) cfg.vision = visionOverride;
-  cfg.isOfficial = officialModel;
   if (agent?.data?.system_prompt) cfg.systemPrompt = agent.data.system_prompt;
   if (agent?.data?.context_config?.tool_result_limit) cfg.toolOutputLimit = agent.data.context_config.tool_result_limit;
   if (agent?.data?.react_config?.max_iters) cfg.maxTurns = agent.data.react_config.max_iters;
+  // Agent 级交付审查：继承全局默认，按当前 Agent 局部覆盖。这里只接受已知字段，
+  // 防止表单/旧数据把任意对象散落进运行配置。
+  if (agent?.data?.review_config && typeof agent.data.review_config === 'object') {
+    const review = agent.data.review_config;
+    cfg.review = {
+      ...(cocodeCfg.review || {}),
+      ...(typeof review.enabled === 'boolean' ? { enabled: review.enabled } : {}),
+      ...(Number.isInteger(review.max_rounds) ? { max_rounds: review.max_rounds } : {}),
+      ...(Number.isInteger(review.min_tool_calls) ? { min_turns: review.min_tool_calls } : {}),
+      ...(typeof review.only_after_mutation === 'boolean' ? { only_after_mutation: review.only_after_mutation } : {})
+    };
+  }
   return cfg;
 }
 
 /**
  * 加载额外工具：让 skill / 项目可以真的"带工具进来"。
- * 约定：`<工作目录>/.cocode/tools/*.js` 与 `~/.vega/tools/*.js`，
+ * 约定：`<工作目录>/.cocode/tools/*.js` 与 `~/.cocode/tools/*.js`，
  * 每个模块 default export 一个工具或工具数组：
  *   { name, description, parameters, execute(args, ctx) }
  * 这是 agent.js 里 extraTools 参数的落地入口（原先 bridge 从不传，形同虚设）。
  */
 export async function loadExtraTools(cwd) {
-  const dirs = [join(VEGA_DIR, 'tools')];
+  const dirs = [join(COCODE_DIR, 'tools')];
   if (cwd) dirs.unshift(join(cwd, '.cocode', 'tools'));
   const tools = [];
   for (const dir of dirs) {
@@ -204,6 +216,7 @@ const blkId = () => `blk-${Math.random().toString(36).slice(2, 10)}`;
  * 不能因为取名前置而变成 Promise。真正的流程在 _startChatRunAsync。
  */
 export function startChatRun(sessionId, agent, payload) {
+  if (accessBlockReason()) throw new Error(accessBlockReason());
   const bus = getBus(sessionId);
   if (bus.running) return { error: '会话正在运行中，请稍候或先中止' };
   const session = loadSessionRecord(sessionId);
@@ -301,15 +314,11 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   // 从 session.internal 反推：上下文自动压缩会 splice 掉中段历史，按索
   // 引切片会错位，按 run 标记筛选又会丢掉已被摘要的那部分。
   const replyBlocks = [];
-  // 本条回复累计消耗的积分：官方模型逐轮按 usage 以与网关一致的口径累计
-  // （逐次调用取整再求和，与实际扣费完全对齐），结束时写进消息 metadata。
-  const credits = { used: 0 };
-
-  _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, credits)
+  _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks)
     .catch((e) => {
       push(bus, E.replyEnd(sessionId, replyId, 'error', { type: 'internal', message: e?.message || String(e) }));
     })
-    .finally(() => _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg, credits));
+    .finally(() => _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg));
 
   return { replyId };
 }
@@ -328,7 +337,7 @@ function syncReplyDisplay(session, replyId, replyBlocks) {
   try { saveSessionRecord(session); } catch { /* ignore */ }
 }
 
-async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, credits) {
+async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   push(bus, E.replyStart(sessionId, replyId, 'assistant'));
   const ac = new AbortController();
   bus.ac = ac;
@@ -428,6 +437,17 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, cred
     // CoCode 包根目录。Electron 进程的 cwd 永远不是合法会话工作目录。
     const sessionCwd = session.config?.cwd || null;
     const extraTools = await loadExtraTools(sessionCwd);
+    const deliveryMode = session.state?.delivery_mode === true;
+    const deliveryCriteria = typeof session.state?.delivery_criteria === 'string' ? session.state.delivery_criteria.slice(0, 1200) : '';
+    if (deliveryMode) {
+      cfg.review = {
+        ...(cfg.review || {}),
+        enabled: true,
+        min_turns: 0,
+        only_after_mutation: true,
+        checklist: deliveryCriteria.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 12),
+      };
+    }
 
     for await (const e of runAgent({
       cfg,
@@ -436,6 +456,9 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, cred
       signal: ac.signal,
       extraTools,
       sessionId,
+      deliveryEnabled: true,
+      deliveryMode,
+      deliveryCriteria,
       permissionAsk,
       askUser,
       permissionRules: rules,
@@ -461,7 +484,9 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, cred
       // 是为了旧会话（mode 平铺在 permission_context.mode 而不是 state）兼容。
       permissionMode: session.state?.permission_mode
         ?? session.state?.permission_context?.mode
-        ?? 'bypass',
+        // 旧会话、损坏状态或第三方写入遗漏权限字段时，不得意外扩大为完全访问。
+        // 用户显式选中的 bypass 仍原样保留；缺失值一律回到可确认的 default。
+        ?? 'default',
       // 电脑控制（Computer）会话级同意：agent.gate 对 Computer 特判 ——
       // 未确认时强制弹一次确认卡（不受权限模式影响），确认后写入
       // session.state.computer_confirmed 落盘持久；本会话后续 Computer
@@ -608,20 +633,6 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, cred
           closeText();
           closeThinking();
           if (e.usage) { inputTokens += e.usage.prompt_tokens || 0; outputTokens += e.usage.completion_tokens || 0; }
-          // 官方模型网关在流结束时按 usage 扣积分——此刻扣费刚落账，按同口径
-          // 累计本条回复的消耗并广播（携带累计值，前端实时展示在气泡上）；
-          // 自定义模型不扣积分，跳过。模式口径与 model.js 的 X-CoCode-Mode 一致。
-          if (cfg.isOfficial && e.usage) {
-            const mode = String(cfg.mode || '').toLowerCase() === 'ask' ? 'ask' : 'craft';
-            const creditDelta = calcCredits(cfg.model, e.usage, mode);
-            credits.used += creditDelta;
-            // 累计值用于回复气泡；本轮增量用于前端立刻扣减侧栏余额，
-            // 避免等待下一次 /auth/me 请求才看到数值变化。
-            push(bus, E.custom('credits_changed', {
-              credits: credits.used,
-              credit_delta: creditDelta,
-            }));
-          }
           openModel(); // 纯工具轮兜底：补发 START 再 END，保证 usage 归属
           closeModel();
           break;
@@ -634,6 +645,22 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, cred
             tokensBefore: e.tokensBefore,
             tokensAfter: e.tokensAfter,
             budget: e.budget
+          }));
+          break;
+        case 'review-start':
+          push(bus, E.custom('delivery_review', {
+            phase: 'started', round: e.round, skipped: !!e.skipped, reason: e.reason || ''
+          }));
+          break;
+        case 'review-result':
+          push(bus, E.custom('delivery_review', {
+            phase: 'result', round: e.round, passed: !!e.passed,
+            issues: e.issues || [], reason: e.reason || ''
+          }));
+          break;
+        case 'review-redo':
+          push(bus, E.custom('delivery_review', {
+            phase: 'redo', round: e.round, issues: e.issues || []
           }));
           break;
         case 'done':
@@ -711,15 +738,13 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, cred
   push(bus, E.replyEnd(sessionId, replyId, reason, doneError));
 }
 
-function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg, credits) {
+function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
   // display 的 assistant Msg 直接用事件流增量构建好的块（与前端从同一
   // 事件流还原出来的视图同源）。不从 session.internal 反推，因为上下文
   // 自动压缩会在运行中 splice 掉中段历史，事后按索引或标记筛选都会错。
   if (replyBlocks.length) {
     const msg = assistantMsgShell(replyId);
     msg.content = replyBlocks;
-    // 本条回复的积分消耗写进 metadata：刷新/重进会话后气泡底部仍能展示
-    if (credits?.used > 0) msg.metadata.credits = credits.used;
     msg.finished_at = new Date().toISOString();
     delete msg.run_state;
     // 等待确认期间可能已经写过同 id 的快照 → upsert 而不是 push，否则会出现两条

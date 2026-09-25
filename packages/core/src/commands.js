@@ -3,7 +3,7 @@
 // 现状：斜杠菜单只弹技能列表（SlashCommandMenu 的数据形状就是 SkillView），
 // 不是命令系统。这里补上后端：把 markdown 文件变成可展开的提示词模板。
 //
-// 约定：`~/.vega/commands/*.md` 与 `<工作目录>/.cocode/commands/*.md`
+// 约定：`~/.cocode/commands/*.md` 与 `<工作目录>/.cocode/commands/*.md`
 // 文件名即命令名。文件可带一段极简 frontmatter：
 //   ---
 //   description: 审查当前改动
@@ -12,9 +12,9 @@
 // 正文即提示词模板；`$ARGUMENTS` 或 `{{args}}` 会被替换成用户输入的参数。
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
-import { VEGA_DIR } from './config.js';
+import { COCODE_DIR } from './config.js';
 
-export const USER_COMMANDS_DIR = join(VEGA_DIR, 'commands');
+export const USER_COMMANDS_DIR = join(COCODE_DIR, 'commands');
 
 function parseFrontmatter(text) {
   const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?/.exec(text);

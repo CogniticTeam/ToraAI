@@ -7,16 +7,16 @@
 //     起 stdio JSON-RPC 拿精确结果（含类型诊断）。任何失败（没装、握手超时、
 //     进程崩）都静默回退到本地层，并在结果里注明来源，不让模型误以为拿到了类型信息。
 //
-// 索引落盘在 ~/.vega/index/<rootHash>.symbols.json，按 mtime 增量重建。
+// 索引落盘在 ~/.cocode/index/<rootHash>.symbols.json，按 mtime 增量重建。
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { extname, join, relative, sep } from 'node:path';
 import { IGNORE_DIRS, langOf, walkCodeFiles } from './repomap.js';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 import { buildChildEnv, resolveInRoots } from '../security.js';
 
-export const INDEX_DIR = join(VEGA_DIR, 'index');
+export const INDEX_DIR = join(COCODE_DIR, 'index');
 const MAX_FILE_BYTES = 512 * 1024;
 const MAX_LINE_SCAN = 8000;
 

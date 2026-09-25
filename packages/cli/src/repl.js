@@ -42,7 +42,7 @@ export async function runRepl(cfg) {
       awaitingConfirm = true;
       console.log(`\n${C.yellow}⚠ 权限确认${C.reset}  ${C.bold}${name}${C.reset}  ${C.dim}${preview.length > 200 ? preview.slice(0, 200) + '…' : preview}${C.reset}`);
       const hint = rule
-        ? `  ${C.dim}[a] 以后都允许「${rule.rule_content}」（写入 ~/.vega/config.json）${C.reset}`
+        ? `  ${C.dim}[a] 以后都允许「${rule.rule_content}」（写入 ~/.cocode/config.json）${C.reset}`
         : '';
       rl.question(`${C.cyan}允许执行？ [y] 允许 / [n] 拒绝${rule ? ' / [a] 以后都允许' : ''}: ${C.reset}`, (ans) => {
         awaitingConfirm = false;
@@ -128,7 +128,7 @@ export async function runRepl(cfg) {
   async function handleInput(input) {
     if (!input) return;
     if (input.startsWith('/')) return handleCommand(input.slice(1));
-    // 自定义斜杠命令（~/.vega/commands/*.md 或 <cwd>/.cocode/commands/*.md）
+    // 自定义斜杠命令（~/.cocode/commands/*.md 或 <cwd>/.cocode/commands/*.md）
     const hit = matchCommand(input, cwd);
     await doRun(hit ? hit.prompt : input);
   }
@@ -200,7 +200,7 @@ export async function runRepl(cfg) {
   /stats                 当前会话统计（token 估算）
   /exit                  退出
 
-${C.dim}另外：~/.vega/commands/*.md 或 <工作目录>/.cocode/commands/*.md 里的
+${C.dim}另外：~/.cocode/commands/*.md 或 <工作目录>/.cocode/commands/*.md 里的
 markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg。${C.reset}`);
         break;
       case 'mode':
@@ -324,7 +324,7 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
         const { describeHooks } = await import('../../core/src/hooks.js');
         const info = describeHooks(cwd, cfg);
         if (!info.rows.length) {
-          console.log(C.dim + '（没配置钩子。在 ~/.vega/hooks.json 或 <工作目录>/.cocode/hooks.json 里写即可）' + C.reset);
+          console.log(C.dim + '（没配置钩子。在 ~/.cocode/hooks.json 或 <工作目录>/.cocode/hooks.json 里写即可）' + C.reset);
         } else {
           console.log(info.rows.map((r) => `${C.cyan}${r.event}${C.reset} ${C.dim}[${r.matcher}]${C.reset} ${r.command} ${C.dim}(${r.source}, ${r.timeout}s)${C.reset}`).join('\n'));
         }
@@ -363,7 +363,7 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
         const list = loadCommands(cwd);
         console.log(list.length
           ? list.map((c) => `/${c.name}  ${C.dim}${c.description} [${c.source}]${C.reset}`).join('\n')
-          : '（还没有自定义命令；在 ~/.vega/commands/ 或 .cocode/commands/ 放 .md 文件即可）');
+          : '（还没有自定义命令；在 ~/.cocode/commands/ 或 .cocode/commands/ 放 .md 文件即可）');
         break;
       }
       case 'export': {

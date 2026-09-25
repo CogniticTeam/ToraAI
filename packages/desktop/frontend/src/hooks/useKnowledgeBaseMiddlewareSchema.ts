@@ -37,7 +37,7 @@ async function fetchSchema(): Promise<JSONSchema> {
  * Returns the schema once available; `null` while loading. The schema
  * is shared across all callers via a module-level cache.
  */
-export function useKnowledgeBaseMiddlewareSchema(): {
+export function useKnowledgeBaseMiddlewareSchema(enabled = true): {
 	schema: JSONSchema | null;
 	loading: boolean;
 	error: Error | null;
@@ -47,8 +47,13 @@ export function useKnowledgeBaseMiddlewareSchema(): {
 	const [error, setError] = useState<Error | null>(null);
 
 	useEffect(() => {
+		if (!enabled) {
+			setLoading(false);
+			return;
+		}
 		if (cached) {
 			setSchema(cached);
+			setLoading(false);
 			return;
 		}
 		let cancelled = false;
@@ -66,7 +71,7 @@ export function useKnowledgeBaseMiddlewareSchema(): {
 		return () => {
 			cancelled = true;
 		};
-	}, []);
+	}, [enabled]);
 
 	return { schema, loading, error };
 }

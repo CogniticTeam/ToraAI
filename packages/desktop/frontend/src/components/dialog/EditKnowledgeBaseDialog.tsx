@@ -32,7 +32,7 @@ interface Props {
  */
 export function EditKnowledgeBaseDialog({ open, onOpenChange, knowledgeBase, onUpdated }: Props) {
 	const { t } = useTranslation();
-	const { update } = useKnowledgeBases();
+	const { update } = useKnowledgeBases({ enabled: false });
 	const [name, setName] = useState('');
 	const [description, setDescription] = useState('');
 	const [submitting, setSubmitting] = useState(false);

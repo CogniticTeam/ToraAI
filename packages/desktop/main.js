@@ -1,7 +1,6 @@
 // CoCode 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
 // 渲染层无任何 Node 集成（contextIsolation 默认开启）；前端通过 127.0.0.1 HTTP/SSE 通信，
-// 与浏览器打开完全同构。Electron 壳只在加载前预置 localStorage（server_url/username），
-// 免去前端 Setup 页——这是壳层便利性改动，前端代码保持零改动。
+// 与浏览器打开完全同构。preload 在页面脚本执行前预置本地服务连接，首屏只加载一次。
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, safeStorage, session, shell, systemPreferences } from 'electron';
 import electronUpdater from 'electron-updater';
 import { join, dirname } from 'node:path';
@@ -9,13 +8,30 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { voiceStatus, setAsrApiKey, transcribeSamples } from './voice.js';
 import { optimizePrompt } from './prompt-optimizer.js';
+import { isAppUrl, normalizeExternalHttpUrl } from './navigation-security.js';
+import { applicationMenuTemplate } from './application-menu.js';
+
+app.setName('CoCode');
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// 解除 Chromium 的 60/120 FPS 软件上限与垂直同步限制，让 CSS 动画、滚动和
+// Canvas 可以按设备与 GPU 能力运行，不被 Electron 固定在显示器刷新率。开关必须
+// 在 app ready 之前设置；backgroundThrottling 则在窗口级继续保证失焦后不降频。
+for (const chromiumSwitch of [
+  'disable-frame-rate-limit',
+  'disable-gpu-vsync',
+  'disable-renderer-backgrounding',
+]) {
+  if (!app.commandLine.hasSwitch(chromiumSwitch)) {
+    app.commandLine.appendSwitch(chromiumSwitch);
+  }
+}
 
 // 打包后的 core 被放入 resources/core；开发态仍直接加载工作区的 packages/core。
 // 这样安装包不会依赖 app.asar 外的相对路径，且本地 `electron .` 调试保持不变。
 const coreRoot = app.isPackaged ? join(process.resourcesPath, 'core') : join(__dirname, '..', 'core');
-const [{ startASAPIServer }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }] = await Promise.all([
+const [{ startASAPIServer, setDesktopAccessBlocked }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }] = await Promise.all([
   import(pathToFileURL(join(coreRoot, 'src', 'asapi', 'server.js')).href),
   import(pathToFileURL(join(coreRoot, 'src', 'tools', 'browser.js')).href),
   import(pathToFileURL(join(coreRoot, 'src', 'tools', 'web.js')).href),
@@ -25,14 +41,78 @@ const { autoUpdater } = electronUpdater;
 let win = null;
 let serverUrl = '';
 
-// 更新分发采用公开 GitHub Releases。macOS 未签名时只读取这个公开版本信息，
-// 绝不尝试替换 .app；Windows 的 NSIS 安装包则由 electron-updater 接管下载/安装。
+// preload 在页面脚本运行前同步读取 Electron 解析后的系统区域设置，供首次语言选择。
+ipcMain.on('app:get-system-locale', (event) => {
+  event.returnValue = app.getLocale();
+});
+ipcMain.on('app:get-version', (event) => {
+  event.returnValue = app.getVersion();
+});
+
+// macOS 和 Windows 均由 electron-updater 下载、校验并安装 GitHub Release。
+// macOS 更新元数据不可用时，再通过公开 Release 检测新版并提供官网下载兜底。
 const RELEASES_API_URL = 'https://api.github.com/repos/CoCodeAgent/CoCode/releases/latest';
-const RELEASES_PAGE_URL = 'https://github.com/CoCodeAgent/CoCode/releases/latest';
+const OFFICIAL_DOWNLOAD_URL = 'https://ohfun.online/#download';
 const UPDATE_INTERVAL_MS = 6 * 60 * 60 * 1000;
-let windowsUpdaterReady = false;
+let updaterReady = false;
 let updateCheckPromise = null;
 let updateChecksScheduled = false;
+let requiredUpdate = null;
+
+function observeUpdateDownload(result) {
+  // checkForUpdates 启动后台下载后立即返回；订阅 Promise 防止网络错误成为未处理拒绝。
+  if (result?.downloadPromise) void result.downloadPromise.catch((error) => {
+    console.warn('[updater] Background download failed:', error?.message || error);
+    if (requiredUpdate?.status === 'downloading') publishRequiredUpdate({ status: 'error' });
+  });
+}
+
+function publishRequiredUpdate(patch) {
+  requiredUpdate = { ...requiredUpdate, ...patch };
+  setDesktopAccessBlocked('update', '请更新 CoCode 后继续使用');
+  if (win && !win.isDestroyed()) win.webContents.send('updates:required', requiredUpdate);
+}
+function clearRequiredUpdate() {
+  if (!requiredUpdate) return;
+  requiredUpdate = null;
+  setDesktopAccessBlocked('update', '');
+  if (win && !win.isDestroyed()) win.webContents.send('updates:required', null);
+}
+ipcMain.on('updates:state', event => { event.returnValue = requiredUpdate; });
+ipcMain.handle('updates:action', async (_event, action) => {
+  if (!requiredUpdate) return;
+  if (action === 'download') return openSafeExternal(OFFICIAL_DOWNLOAD_URL);
+  if (action === 'quit') return app.quit();
+  if (action === 'install' && requiredUpdate.status === 'ready' && ['darwin', 'win32'].includes(process.platform)) {
+    autoUpdater.quitAndInstall(false, true);
+  }
+  if (action === 'retry' && requiredUpdate.status === 'error' && ['darwin', 'win32'].includes(process.platform)) {
+    publishRequiredUpdate({ status: 'downloading', percent: 0 });
+    try {
+      const result = await autoUpdater.checkForUpdates();
+      observeUpdateDownload(result);
+      if (!result?.isUpdateAvailable) clearRequiredUpdate();
+    }
+    catch { publishRequiredUpdate({ status: 'error' }); }
+  }
+});
+
+async function openSafeExternal(rawUrl) {
+  let url;
+  try {
+    url = normalizeExternalHttpUrl(rawUrl);
+  } catch (error) {
+    console.warn('[navigation] Blocked external URL:', error instanceof Error ? error.message : error);
+    return false;
+  }
+  try {
+    await shell.openExternal(url);
+    return true;
+  } catch (error) {
+    console.warn('[navigation] Failed to open external URL:', error instanceof Error ? error.message : error);
+    return false;
+  }
+}
 
 function compareVersions(left, right) {
   const parts = (version) => String(version || '')
@@ -48,7 +128,7 @@ function compareVersions(left, right) {
   return 0;
 }
 
-async function checkMacForUpdate({ openDownloadPage = false } = {}) {
+async function checkMacForUpdateFallback() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   let response;
@@ -63,53 +143,64 @@ async function checkMacForUpdate({ openDownloadPage = false } = {}) {
   if (!response.ok) throw new Error(`更新服务返回 ${response.status}`);
   const release = await response.json();
   const version = String(release.tag_name || release.name || '').replace(/^v/i, '');
+  if (release.draft || release.prerelease) return { status: 'up-to-date', currentVersion: app.getVersion() };
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('更新服务返回的版本号无效');
   if (!version || compareVersions(version, app.getVersion()) <= 0) {
     return { status: 'up-to-date', currentVersion: app.getVersion() };
   }
-  const url = typeof release.html_url === 'string' ? release.html_url : RELEASES_PAGE_URL;
-  if (openDownloadPage) await shell.openExternal(url);
-  return { status: 'available', version, url, currentVersion: app.getVersion() };
+  return { status: 'available', version, url: OFFICIAL_DOWNLOAD_URL, currentVersion: app.getVersion() };
 }
 
-function setupWindowsUpdater() {
-  if (process.platform !== 'win32' || !app.isPackaged || windowsUpdaterReady) return;
-  windowsUpdaterReady = true;
+function setupUpdater() {
+  if (!['darwin', 'win32'].includes(process.platform) || !app.isPackaged || updaterReady) return;
+  updaterReady = true;
   autoUpdater.autoDownload = true;
   autoUpdater.autoInstallOnAppQuit = false;
-  autoUpdater.on('error', (error) => console.warn('[updater] Windows update failed:', error?.message || error));
-  autoUpdater.on('update-downloaded', async (info) => {
-    const choice = await dialog.showMessageBox(win, {
-      type: 'info',
-      buttons: ['立即重启并安装', '稍后'],
-      defaultId: 0,
-      cancelId: 1,
-      title: 'CoCode 已准备好更新',
-      message: `CoCode ${info.version} 已下载完成。`,
-      detail: '重启应用后将完成安装。',
-    });
-    if (choice.response === 0) autoUpdater.quitAndInstall(false, true);
+  autoUpdater.on('error', (error) => {
+    console.warn('[updater] Update failed:', error?.message || error);
+    if (requiredUpdate) publishRequiredUpdate({ status: 'error' });
   });
+  autoUpdater.on('update-available', info => publishRequiredUpdate({ version: info.version, status: 'downloading', percent: 0, platform: process.platform }));
+  autoUpdater.on('download-progress', progress => publishRequiredUpdate({ status: 'downloading', percent: Math.round(progress.percent) }));
+  autoUpdater.on('update-downloaded', info => publishRequiredUpdate({ version: info.version, status: 'ready', percent: 100, platform: process.platform }));
 }
 
-async function checkWindowsForUpdate() {
-  setupWindowsUpdater();
-  if (!windowsUpdaterReady) return { status: 'unavailable' };
+async function checkDesktopForUpdate() {
+  setupUpdater();
+  if (!updaterReady) return { status: 'unavailable' };
   const result = await autoUpdater.checkForUpdates();
-  if (!result?.isUpdateAvailable) return { status: 'up-to-date', currentVersion: app.getVersion() };
-  // autoDownload=true：此时下载已在后台开始；完成后由 update-downloaded 提示重启安装。
+  observeUpdateDownload(result);
+  if (!result?.isUpdateAvailable) {
+    clearRequiredUpdate();
+    return { status: 'up-to-date', currentVersion: app.getVersion() };
+  }
+  // autoDownload=true：后台下载完成后由 update-downloaded 提示重启安装。
   return { status: 'downloading', version: result.updateInfo?.version || '' };
 }
 
-async function checkForUpdates({ openMacDownloadPage = false } = {}) {
+async function checkForUpdates() {
   if (!app.isPackaged) return { status: 'development' };
+  if (requiredUpdate && ['downloading', 'ready'].includes(requiredUpdate.status)) {
+    return { status: requiredUpdate.status, version: requiredUpdate.version };
+  }
   if (updateCheckPromise) return updateCheckPromise;
   updateCheckPromise = (async () => {
     try {
-      if (process.platform === 'darwin') return await checkMacForUpdate({ openDownloadPage: openMacDownloadPage });
-      if (process.platform === 'win32') return await checkWindowsForUpdate();
+      if (['darwin', 'win32'].includes(process.platform)) return await checkDesktopForUpdate();
       return { status: 'unavailable' };
     } catch (error) {
       console.warn('[updater] Check failed:', error?.message || error);
+      if (process.platform === 'darwin') {
+        try {
+          const fallback = await checkMacForUpdateFallback();
+          if (fallback.status === 'available') {
+            publishRequiredUpdate({ version: fallback.version, status: 'error', platform: 'darwin' });
+            return fallback;
+          }
+        } catch (fallbackError) {
+          console.warn('[updater] macOS fallback check failed:', fallbackError?.message || fallbackError);
+        }
+      }
       return { status: 'error', message: error instanceof Error ? error.message : String(error) };
     } finally {
       updateCheckPromise = null;
@@ -121,27 +212,11 @@ async function checkForUpdates({ openMacDownloadPage = false } = {}) {
 function scheduleUpdateChecks() {
   if (!app.isPackaged || process.platform === 'linux' || updateChecksScheduled) return;
   updateChecksScheduled = true;
-  const run = async () => {
-    const result = await checkForUpdates();
-    // 未签名 macOS 只能将用户带到发布页，因此在后台检测到新版后征求一次确认。
-    if (process.platform === 'darwin' && result.status === 'available') {
-      const choice = await dialog.showMessageBox(win, {
-        type: 'info',
-        buttons: ['打开下载页', '稍后'],
-        defaultId: 0,
-        cancelId: 1,
-        title: '发现 CoCode 新版本',
-        message: `CoCode ${result.version} 已可下载。`,
-        detail: '当前 macOS 版本未签名，需从下载页手动安装。',
-      });
-      if (choice.response === 0) await shell.openExternal(result.url || RELEASES_PAGE_URL);
-    }
-  };
-  setTimeout(() => { void run(); }, 10_000);
-  setInterval(() => { void run(); }, UPDATE_INTERVAL_MS);
+  void checkForUpdates();
+  setInterval(() => { void checkForUpdates(); }, UPDATE_INTERVAL_MS).unref();
 }
 
-ipcMain.handle('updates:check', () => checkForUpdates({ openMacDownloadPage: process.platform === 'darwin' }));
+ipcMain.handle('updates:check', () => checkForUpdates());
 
 // 窗口原生背景 = 「加载页」：首帧渲染前用户看到的就是这块底色，必须跟深浅色。
 // 取值与前端 index.css 的 --bg 保持一致（浅 #f4f5f6 / 深 #0c0d10），转场无缝。
@@ -170,30 +245,36 @@ const winBackgroundFor = (dark) => (dark ? '#0c0d10' : '#f4f5f6');
  * before-input-event 都拦不住，只能从菜单模板上把这两个 role 去掉。
  * 其余标准快捷键（⌘Q 退出、⌘C/⌘V 剪贴板、⌘W 关窗、⌘M 最小化）全部保留。
  */
-function installApplicationMenu() {
-  const isMac = process.platform === 'darwin';
-  const template = [
-    ...(isMac ? [{ role: 'appMenu' }] : []),
-    { role: 'fileMenu' },
-    { role: 'editMenu' },
-    {
-      label: '视图',
-      submenu: [
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { role: 'resetZoom' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' },
-        // 有意不放 reload / forceReload / toggleDevTools —— 这正是本函数存在的理由
-      ],
+function installApplicationMenu(language = app.getLocale()) {
+  Menu.setApplicationMenu(Menu.buildFromTemplate(applicationMenuTemplate({
+    language, isMac: process.platform === 'darwin',
+    send: action => { if (!requiredUpdate && win && !win.isDestroyed()) win.webContents.send('app:menu-command', action); },
+    checkUpdates: async () => {
+      const result = await checkForUpdates();
+      if (['available', 'downloading', 'ready'].includes(result.status)) return;
+      const zh = language.startsWith('zh');
+      await dialog.showMessageBox(win, { type: result.status === 'error' ? 'warning' : 'info', title: 'CoCode',
+        message: result.status === 'up-to-date' ? (zh ? '当前已是最新版本' : 'CoCode is up to date')
+          : result.status === 'development' ? (zh ? '开发版本不检查更新' : 'Updates are disabled in development')
+          : (zh ? '暂时无法检查更新' : 'Unable to check for updates'),
+      });
     },
-    { role: 'windowMenu' },
-  ];
-  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+    openWebsite: () => openSafeExternal('https://ohfun.online'),
+    openDownloads: () => openSafeExternal(OFFICIAL_DOWNLOAD_URL),
+    openLogs: () => shell.openPath(app.getPath('logs')),
+    about: () => app.showAboutPanel(),
+  })));
 }
+
+ipcMain.on('app:language', (_event, language) => {
+  if (language === 'zh' || language === 'en') installApplicationMenu(language);
+});
+app.setAboutPanelOptions({ applicationName: 'CoCode', applicationVersion: app.getVersion() });
 
 async function createWindow() {
   installApplicationMenu();
+  scheduleUpdateChecks();
+  setDesktopAccessBlocked('account', '正在验证 CoCode 账户');
 
   // Windows：设置 AppUserModelID，否则任务栏/通知归属到 electron.exe，
   // 图标和「固定到任务栏」都不会按 CoCode 处理。
@@ -245,6 +326,9 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
+      // 保持 requestAnimationFrame、CSS 动画及计时器在窗口失焦/被遮挡时继续运行。
+      // 与上面的 Chromium 帧率开关配合，支持高刷及无上限渲染管线。
+      backgroundThrottling: false,
       // 禁用 DevTools：屏蔽 F12 / Cmd+Opt+I / Ctrl+Shift+I 等快捷键，
       // 同时让 webContents.openDevTools() 调用失效（发布形态要求）。
       devTools: false,
@@ -286,14 +370,14 @@ async function createWindow() {
 
   // ---------------------------------------------------------------- 语音识别
   // GLM-ASR-2512 云端转写（智谱）：无需本地模型。
-  // 双通道：用户自配 Key 直连（BYOK，不耗积分）；无 Key 时用登录 token
-  // 走官方计费网关（按秒扣积分）。getSecure 在下方凭证存储块定义（函数提升）。
+  // 双通道：用户自配 Key 时直连；无 Key 时用登录 token 走免费 CoCode ASR。
+  // getSecure 在下方凭证存储块定义（函数提升）。
   ipcMain.handle('voice:status', () => voiceStatus({ token: getSecure('token') }));
   ipcMain.handle('voice:transcribe', (_e, samples) => transcribeSamples(samples, { token: getSecure('token') }));
 
   // ---------------------------------------------------------------- 提示词优化
   // DeepSeek deepseek-flash 改写输入框草稿（Key 从环境变量 DEEPSEEK_API_KEY
-  // 或 ~/.vega/.env 读取，不入库不进包；渲染层直连会被 CORS 拦截，故走主进程代理）。
+  // 或 ~/.cocode/.env 读取，不入库不进包；渲染层直连会被 CORS 拦截，故走主进程代理）。
   ipcMain.handle('prompt-optimizer:run', (_e, text) => optimizePrompt(text));
 
   // ---------------------------------------------------------------- 凭证安全存储
@@ -317,7 +401,24 @@ async function createWindow() {
     else if (safeStorage.isEncryptionAvailable()) obj[key] = safeStorage.encryptString(val).toString('base64');
     else obj[key] = val;
     writeAuthStore(obj);
+    if (key === 'token') void refreshAccountAccess();
   }
+  async function refreshAccountAccess() {
+    const token = getSecure('token');
+    if (!token) { setDesktopAccessBlocked('account', '请先登录 CoCode'); return; }
+    try {
+      const response = await fetch('https://cocode.ohfun.online/auth/me', {
+        headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000),
+      });
+      if (token !== getSecure('token')) return;
+      if (response.status === 401) { setDesktopAccessBlocked('account', '登录已过期'); return; }
+      if (!response.ok) return;
+      const account = await response.json();
+      if (token === getSecure('token')) setDesktopAccessBlocked('account', account.banned ? account.banReason || '账户已被封禁' : '');
+    } catch { /* 断网不覆盖已确认的限制状态。 */ }
+  }
+  ipcMain.handle('account:refresh', refreshAccountAccess);
+  void refreshAccountAccess();
   const KEYS = ['token', 'email', 'username'];
   for (const k of KEYS) {
     // get 同步（sendSync → returnValue）：前端与 localStorage.getItem 同步语义
@@ -374,10 +475,11 @@ async function createWindow() {
           "script-src 'self' https://challenges.cloudflare.com; " +
           "style-src 'self' 'unsafe-inline'; " +
           "img-src 'self' data: blob: https:; " +
-          "connect-src 'self' https://cocode.ohfun.online https://challenges.cloudflare.com; " +
+          "connect-src 'self' https://cocode.ohfun.online wss://cocode.ohfun.online https://challenges.cloudflare.com; " +
           "media-src 'self' blob:; " +
           "font-src 'self' data:; " +
-          "object-src 'none'; frame-src https://challenges.cloudflare.com;",
+          "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; " +
+          "frame-src https://challenges.cloudflare.com;",
         ],
       },
     });
@@ -395,23 +497,21 @@ async function createWindow() {
     if (src && src !== 'about:blank' && !/^https?:/i.test(src)) event.preventDefault();
   });
 
-  // 外部链接走系统浏览器；站内路由留在窗口内
+  // 不让主窗口被页面或 XSS 导航到外站；外链交给系统浏览器，内部弹窗也不新开
+  // 带 Electron 能力的窗口。字符串 startsWith 会误把 127.0.0.1:3210.evil 当站内，
+  // 因而必须按 URL origin 比较。
+  win.webContents.on('will-navigate', (event, url) => {
+    if (isAppUrl(url, serverUrl)) return;
+    event.preventDefault();
+    void openSafeExternal(url);
+  });
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith(serverUrl)) {
-      shell.openExternal(url);
-      return { action: 'deny' };
-    }
-    return { action: 'allow' };
+    if (!isAppUrl(url, serverUrl)) void openSafeExternal(url);
+    return { action: 'deny' };
   });
 
-  // 直接进应用，写入 localStorage 后刷新一次，让前端 hooks 拿到 baseURL。
-  // 替代之前的"先 /setup 注入再 loadURL('/')"——CoCode 不再有 Setup 页。
+  // preload 在 React 执行前写入当前 origin，无需整页刷新和重复初始化。
   await win.loadURL(serverUrl + '/');
-  await win.webContents.executeJavaScript(
-    `localStorage.setItem('server_url', ${JSON.stringify(serverUrl)});` +
-    `localStorage.setItem('username', 'vega');true`
-  );
-  await win.webContents.reload();
 
   attachBrowserDriver(win);
   scheduleUpdateChecks();
@@ -498,5 +598,5 @@ if (!gotLock) {
 
   app.whenReady().then(createWindow);
   app.on('window-all-closed', () => process.platform !== 'darwin' && app.quit());
-  app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
+  app.on('activate', () => { if (!win) createWindow(); });
 }

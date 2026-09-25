@@ -15,7 +15,8 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, appendFileSync, unl
 import { join } from 'node:path';
 
 import { runAgent } from '../agent.js';
-import { loadConfig, saveConfig } from '../config.js';
+import { loadConfig, saveConfig, COCODE_DIR } from '../config.js';
+import { createWorktree, removeWorktree } from './cocode-git.js';
 import {
   isRunning, pushCustomToLeaderBus, registerSubagentConfirm, cancelSubagentConfirms
 } from '../asapi/bridge.js';
@@ -70,6 +71,76 @@ function validateWorkerMode(captainMode, requested) {
     return `权限不足：队长模式为 ${captainMode}，无法授予 ${requested}（worker 权限不能高于队长）。`;
   }
   return null;
+}
+
+// ---------- 写入 worker 隔离 ----------
+//
+// Agent 不应该把多个会写代码的 worker 丢进同一目录。auto 的策略是：
+// 只读 worker 共享队长 cwd（无需复制仓库）；accept_edits / bypass worker 必须
+// 拿到独立 Git worktree。若用户明确选择 shared，则保留旧行为但在结果里醒目
+// 标记风险；Git 不可用时绝不静默降级为共享写入。
+const WRITABLE_WORKER_MODES = new Set(['accept_edits', 'bypass']);
+const ISOLATION_MODES = new Set(['auto', 'shared', 'worktree']);
+
+function safeSegment(value, fallback = 'worker') {
+  const out = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 24);
+  return out || fallback;
+}
+
+function workerWorktreeSpec(team, role) {
+  const stamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const teamPart = safeSegment(team.id, 'team');
+  const rolePart = safeSegment(role, 'worker');
+  const branch = `cocode/team-${teamPart}/${rolePart}-${stamp}`;
+  const path = join(COCODE_DIR, 'team-worktrees', team.id, `${rolePart}-${stamp}`);
+  return { branch, path };
+}
+
+/**
+ * 根据权限与用户意图决定 worker 的目录隔离级别。
+ * 这是纯函数，既用于实际创建前的安全判定，也方便客户端/测试展示准确预期。
+ */
+export function resolveWorkerIsolation(mode, isolation = 'auto') {
+  const requested = isolation || 'auto';
+  if (!ISOLATION_MODES.has(requested)) {
+    return { ok: false, error: `isolation 必须是 ${[...ISOLATION_MODES].join(' / ')}。` };
+  }
+  const needsIsolation = requested === 'worktree' || (requested === 'auto' && WRITABLE_WORKER_MODES.has(mode));
+  return { ok: true, isolation: needsIsolation ? 'worktree' : 'shared' };
+}
+
+async function provisionWorkerWorkspace({ team, cwd, role, mode, isolation }) {
+  const plan = resolveWorkerIsolation(mode, isolation);
+  if (!plan.ok) return plan;
+  if (plan.isolation === 'shared') {
+    return { ok: true, cwd, isolation: 'shared', worktree: null };
+  }
+  if (!cwd) {
+    return { ok: false, error: '无法创建隔离工作树：队长尚未选择项目目录。请选择一个 Git 项目，或显式指定 isolation="shared"。' };
+  }
+
+  const spec = workerWorktreeSpec(team, role);
+  mkdirSync(join(COCODE_DIR, 'team-worktrees', team.id), { recursive: true });
+  const created = await createWorktree(cwd, spec.path, spec.branch);
+  if (!created.ok) {
+    return {
+      ok: false,
+      error:
+        `无法为可写 worker 创建 Git worktree：${created.error}\n` +
+        '为避免多个 Agent 在同一目录互相覆盖，本次未创建 worker。若你确认接受共享目录风险，请显式指定 isolation="shared"。'
+    };
+  }
+  return {
+    ok: true,
+    cwd: spec.path,
+    isolation: 'worktree',
+    worktree: { path: spec.path, branch: spec.branch, source_cwd: cwd }
+  };
 }
 
 // ---------- team 结构/状态变更通知 ----------
@@ -269,7 +340,8 @@ export const agentCreateTool = {
   name: 'AgentCreate',
   description:
     '为团队创建一个 worker agent（独立的 agent + 独立 session）。' +
-    'worker 会继承队长的模型配置和工作目录，但权限模式由 agentCreatePermissions 参数决定（不高于队长）。',
+    '只读 worker 共享队长工作目录；可写 worker 默认创建独立 Git worktree，避免并行改动互相污染。' +
+    '权限模式由 agentCreatePermissions 参数决定（不高于队长）。',
   parameters: {
     type: 'object',
     properties: {
@@ -280,6 +352,13 @@ export const agentCreateTool = {
         type: 'string',
         enum: ['explore', 'accept_edits', 'bypass'],
         description: 'worker 权限：explore=只读，accept_edits=可写文件，bypass=完全访问。不能高于队长的权限模式。默认 explore。'
+      },
+      isolation: {
+        type: 'string',
+        enum: ['auto', 'worktree', 'shared'],
+        description:
+          '工作目录隔离策略：auto（默认；写入 worker 用 Git worktree，只读共享目录）、' +
+          'worktree（始终隔离）、shared（显式共享队长目录，多个写入 worker 可能冲突）。'
       }
     },
     required: ['role', 'goal']
@@ -293,42 +372,78 @@ export const agentCreateTool = {
 
     // 权限校验
     const captainSession = getCaptainSession(ctx);
-    const captainMode = captainSession?.state?.permission_mode ?? 'bypass';
+    // 队长会话记录不完整时同样按 default 处理，不能让 worker 因缺字段提升权限。
+    const captainMode = captainSession?.state?.permission_mode
+      ?? captainSession?.state?.permission_context?.mode
+      ?? 'default';
     const requested = args?.agentCreatePermissions || 'explore';
     const err = validateWorkerMode(captainMode, requested);
     if (err) return err;
 
-    // 创建 agent
-    const agent = createAgent({
-      name: String(args.role).trim(),
-      system_prompt: [
-        `你是团队 "${team.name}" 的成员，角色：${args.role}。`,
-        `核心目标：${args.goal}。`,
-        args.backstory ? `背景：${args.backstory}。` : '',
-        '\n你是 worker —— 由队长指派任务、接收队长的消息，需要时把结果汇报给队长。',
-        '不要创建新团队或新 worker；专注于完成队长分配的具体任务。'
-      ].filter(Boolean).join('\n')
-    });
-
-    // 创建 session
-    const session = createSessionRecord({
-      agent_id: agent.id,
-      chat_model_config: captainSession?.config?.chat_model_config,
-      workspace_id: captainSession?.config?.workspace_id,
+    const workspace = await provisionWorkerWorkspace({
+      team,
       cwd: ctx.cwd,
-      origin: { type: 'team', team_id: team.id },
-      team_id: team.id
+      role: args.role,
+      mode: requested,
+      isolation: args?.isolation || 'auto'
     });
+    if (!workspace.ok) return workspace.error;
 
-    // 挂权限模式
-    session.state = session.state || {};
-    session.state.permission_mode = requested;
-    saveSessionRecord(session);
+    let agent;
+    let session;
+    try {
+      // 创建 agent
+      agent = createAgent({
+        name: String(args.role).trim(),
+        system_prompt: [
+          `你是团队 "${team.name}" 的成员，角色：${args.role}。`,
+          `核心目标：${args.goal}。`,
+          args.backstory ? `背景：${args.backstory}。` : '',
+          `工作目录策略：${workspace.isolation}${workspace.worktree ? `（独立分支 ${workspace.worktree.branch}）` : '（与队长共享，只读或由用户显式确认）'}。`,
+          '\n你是 worker —— 由队长指派任务、接收队长的消息，需要时把结果汇报给队长。',
+          '不要创建新团队或新 worker；专注于完成队长分配的具体任务。'
+        ].filter(Boolean).join('\n')
+      });
 
-    addTeamMember(team.id, agent.id);
+      // 创建 session
+      session = createSessionRecord({
+        agent_id: agent.id,
+        chat_model_config: captainSession?.config?.chat_model_config,
+        workspace_id: captainSession?.config?.workspace_id,
+        cwd: workspace.cwd,
+        origin: { type: 'team', team_id: team.id, isolation: workspace.isolation, worktree: workspace.worktree },
+        team_id: team.id
+      });
+
+      // 挂权限模式
+      session.state = session.state || {};
+      session.state.permission_mode = requested;
+      saveSessionRecord(session);
+
+      addTeamMember(team.id, agent.id);
+    } catch (e) {
+      // worktree 已成功而后续元数据落盘失败时，尽量回收全新空树；回收失败也只
+      // 留下可见目录，不会影响原仓库。
+      if (workspace.worktree) {
+        try { await removeWorktree(ctx.cwd, workspace.worktree.path); } catch { /* best effort */ }
+      }
+      return `创建 worker 失败：${e?.message || e}`;
+    }
 
     notifyTeamUpdated(ctx);
-    return `Worker 创建成功：\n  agent_id: ${agent.id}\n  session_id: ${session.id}\n  角色: ${args.role}\n  权限: ${requested}`;
+    return [
+      'Worker 创建成功：',
+      `  agent_id: ${agent.id}`,
+      `  session_id: ${session.id}`,
+      `  角色: ${args.role}`,
+      `  权限: ${requested}`,
+      `  隔离: ${workspace.isolation}`,
+      `  工作目录: ${workspace.cwd}`,
+      workspace.worktree ? `  分支: ${workspace.worktree.branch}` : null,
+      workspace.isolation === 'shared' && WRITABLE_WORKER_MODES.has(requested)
+        ? '  ⚠ 该 worker 与队长共享可写目录；不要同时运行多个写入任务。'
+        : null
+    ].filter(Boolean).join('\n');
   }
 };
 
@@ -359,7 +474,10 @@ export const agentRunTool = {
     }
 
     const captainSession = getCaptainSession(ctx);
-    const captainMode = captainSession?.state?.permission_mode ?? 'bypass';
+    // 与 AgentCreate 保持同一条安全默认值，避免旧会话在 AgentRun 时得到完全访问。
+    const captainMode = captainSession?.state?.permission_mode
+      ?? captainSession?.state?.permission_context?.mode
+      ?? 'default';
 
     // 加载 worker session
     // agent_id → session：遍历 team.member_ids 找对应 session
@@ -532,7 +650,9 @@ export const agentListTool = {
         const running = isRunning(s.id);
         const status = running ? '🔄 running' : '💤 idle';
         const perm = s.state?.permission_mode || 'explore';
-        lines.push(`  ${agentId} (${role}) session=${s.id} ${status} perm=${perm}`);
+        const isolation = s.origin?.isolation || 'shared';
+        const branch = s.origin?.worktree?.branch ? ` branch=${s.origin.worktree.branch}` : '';
+        lines.push(`  ${agentId} (${role}) session=${s.id} ${status} perm=${perm} isolation=${isolation}${branch}`);
       }
     }
 
@@ -543,7 +663,7 @@ export const agentListTool = {
 // --- 7. TeamDocWrite ---
 export const teamDocWriteTool = {
   name: 'TeamDocWrite',
-  description: '写入/追加团队文档（~/.vega/team-docs/{team_id}.md）。默认覆盖整个文件，append=true 时追加到末尾。',
+  description: '写入/追加团队文档（~/.cocode/team-docs/{team_id}.md）。默认覆盖整个文件，append=true 时追加到末尾。',
   parameters: {
     type: 'object',
     properties: {

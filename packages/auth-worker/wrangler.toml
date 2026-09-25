@@ -2,6 +2,8 @@ name = "cocode-auth"
 main = "src/index.js"
 compatibility_date = "2024-09-01"
 
+# 管理后台密钥通过 wrangler secret put ADMIN_TOKEN 配置，禁止写入仓库。
+
 # 自定义域名（需 ohfun.online 托管在同一 Cloudflare 账号下；
 # custom_domain = true 会自动创建 DNS 记录 + 证书）
 routes = [
@@ -14,20 +16,23 @@ routes = [
 #   本地 dev：写同目录 .dev.vars（已 gitignore）
 # 发件人地址 noreply@cocode.ohfun.online 需先在 Resend 控制台验证该域名（DKIM/SPF）。
 
-# 爱发电开放平台（订阅订单兑换积分）。在爱发电「创作者中心 → 开发」获取：
-#   线上：wrangler secret put AFD_USER_ID && wrangler secret put AFD_TOKEN
-#   本地 dev：写 .dev.vars
-# 未配置时 /auth/redeem 会返回「服务端未配置爱发电 API 凭证」。
-
 # D1 数据库绑定（用户 + 会话）。数据库 id 部署时由 `wrangler d1 create cocode-auth`
 # 生成后填入；本地 dev 用 --local 自动建库，无需 id。
 [[d1_databases]]
 binding = "DB"
 database_name = "cocode-auth"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "9400d428-63a0-453f-8d45-e0412b1d1b97"
 
-# 注册欢迎邮件：以 Text 模块导入仓库根目录的 cocode-hello-email.html
+# 注册欢迎邮件与投票 D1 建表脚本：以 Text 模块导入
 [[rules]]
 type = "Text"
-globs = ["**/*.html"]
+globs = ["**/*.html", "**/*.sql"]
 fallthrough = true
+
+[[durable_objects.bindings]]
+name = "ACCOUNT_EVENTS"
+class_name = "AccountEvents"
+
+[[migrations]]
+tag = "account-events-v1"
+new_sqlite_classes = ["AccountEvents"]

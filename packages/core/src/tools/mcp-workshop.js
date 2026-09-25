@@ -1,4 +1,4 @@
-// MCP 工坊：把现有 MCP 配置（~/.vega/config.json 的 mcpServers）包装成
+// MCP 工坊：把现有 MCP 配置（~/.cocode/config.json 的 mcpServers）包装成
 // 可视化管理能力 —— 增删改服务器、探测连接、试调工具、预设模板。
 //
 // 底层复用 tools/mcp.js（零依赖 stdio 客户端）。本模块只做配置读写与编排。

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 
 import { knowledgeBaseApi } from '@/api';
 import type {
@@ -15,56 +16,46 @@ import type {
  * and refetches after every mutation, so the UI stays consistent with
  * the server-side state.
  */
-export function useKnowledgeBases() {
-	const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBaseView[]>([]);
-	const [loading, setLoading] = useState(false);
+export function useKnowledgeBases({ enabled = true }: { enabled?: boolean } = {}) {
+	const queryClient = useQueryClient();
 	const [creating, setCreating] = useState(false);
-	const [error, setError] = useState<Error | null>(null);
-
+	const { data, isPending, error, refetch: runRefetch } = useQuery({
+		queryKey: ['knowledge-bases'],
+		queryFn: () => knowledgeBaseApi.listAll(),
+		enabled,
+	});
+	const knowledgeBases = data ?? [];
 	const refetch = useCallback(async () => {
-		setLoading(true);
-		setError(null);
-		try {
-			// The sidebar shows every knowledge base as one flat list,
-			// so drain all pages of the paginated endpoint.
-			setKnowledgeBases(await knowledgeBaseApi.listAll());
-		} catch (e) {
-			setError(e as Error);
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => {
-		refetch();
-	}, [refetch]);
+		const result = await runRefetch();
+		return result.data ?? [];
+	}, [runRefetch]);
+	const refresh = useCallback(
+		() => queryClient.invalidateQueries({ queryKey: ['knowledge-bases'] }),
+		[queryClient],
+	);
 
 	/** Create a new knowledge base and refresh the list. */
 	const create = useCallback(
 		async (body: CreateKnowledgeBaseRequest): Promise<string> => {
 			setCreating(true);
-			setError(null);
-			try {
-				const { knowledge_base_id } = await knowledgeBaseApi.create(body);
-				await refetch();
-				return knowledge_base_id;
-			} catch (e) {
-				setError(e as Error);
-				throw e;
-			} finally {
+		try {
+			const { knowledge_base_id } = await knowledgeBaseApi.create(body);
+			await refresh();
+			return knowledge_base_id;
+		} finally {
 				setCreating(false);
 			}
 		},
-		[refetch],
+		[refresh],
 	);
 
 	/** Permanently delete a knowledge base and refresh the list. */
 	const remove = useCallback(
 		async (knowledgeBaseId: string) => {
 			await knowledgeBaseApi.delete(knowledgeBaseId);
-			await refetch();
+			await refresh();
 		},
-		[refetch],
+		[refresh],
 	);
 
 	/** Update mutable fields on a knowledge base and refresh the list. */
@@ -74,10 +65,10 @@ export function useKnowledgeBases() {
 			body: UpdateKnowledgeBaseRequest,
 		): Promise<KnowledgeBaseView> => {
 			const view = await knowledgeBaseApi.update(knowledgeBaseId, body);
-			await refetch();
+			await refresh();
 			return view;
 		},
-		[refetch],
+		[refresh],
 	);
 
 	/** Upload a document into a knowledge base. */
@@ -103,9 +94,9 @@ export function useKnowledgeBases() {
 
 	return {
 		knowledgeBases,
-		loading,
+		loading: enabled && isPending,
 		creating,
-		error,
+		error: error as Error | null,
 		refetch,
 		create,
 		remove,

@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useI18n';
 import { insertElementRef } from '@/lib/insertChatText';
+import { getSearchEngineHomeUrl, normalizeUrl, resolveAddressInput } from '@/lib/searchEngine';
 import { cn } from '@/lib/utils';
 
 /** 在页面里"读正文"的脚本。返回 JSON 字符串（跨进程传输更稳）。 */
@@ -480,14 +481,6 @@ function parseJson<T>(raw: string): T | null {
 	}
 }
 
-/** 用户输入补全协议：`example.com` → `https://example.com`。 */
-function normalizeUrl(input: string): string {
-	const s = input.trim();
-	if (!s) return '';
-	if (/^[a-z][a-z0-9+.-]*:/i.test(s)) return s;
-	return `https://${s}`;
-}
-
 /** 地址栏未编辑时的紧凑展示：host + 路径，省掉协议和根斜杠（https://baidu.com/ → baidu.com）。 */
 function prettyUrl(raw: string): string {
 	if (!raw) return '';
@@ -798,7 +791,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 
 	const go = useCallback(
 		async (raw: string) => {
-			const url = normalizeUrl(raw);
+			const url = resolveAddressInput(raw);
 			if (!url) return;
 			setError(null);
 			let tab = getActiveTab();
@@ -813,6 +806,11 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		},
 		[kind],
 	);
+
+	const createHomeTab = useCallback(() => {
+		createTab(kind);
+		void go(getSearchEngineHomeUrl());
+	}, [go, kind]);
 
 	// 默认开始页（/browser 全屏入口传入）：挂载时一个标签页都没有就自动开一个
 	// 并导航过去。go 只随 kind 变化，effect 实际只在挂载时判定一次 —— 用户
@@ -1049,7 +1047,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 					size="icon-sm"
 					className="shrink-0 self-center"
 					aria-label={t('browserPanel.createTab')}
-					onClick={() => createTab(kind)}
+					onClick={createHomeTab}
 				>
 					<Plus />
 				</Button>

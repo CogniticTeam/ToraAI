@@ -27,6 +27,13 @@ import { useTranslation } from '@/i18n/useI18n';
 import { PROVIDER_ICONS } from '@/lib/providerIcons';
 import { queryClient } from '@/lib/query-client';
 import {
+	getSearchEngine,
+	isSearchEngineId,
+	saveSearchEngine,
+	SEARCH_ENGINES,
+	type SearchEngineId,
+} from '@/lib/searchEngine';
+import {
 	clearCustomSound,
 	getCustomSound,
 	loadSoundSettings,
@@ -37,7 +44,7 @@ import {
 	type SoundSettings,
 } from '@/lib/sound';
 import { getToken } from '@/utils/authStore';
-import { cloudFetch, withOfficialToken } from '@/utils/modelSync';
+import { cloudFetch } from '@/utils/modelSync';
 
 interface Props {
 	open: boolean;
@@ -58,12 +65,12 @@ type RuntimeBehavior = {
 };
 
 type UpdateResult = {
-	status: 'available' | 'development' | 'downloading' | 'error' | 'unavailable' | 'up-to-date';
+	status: 'available' | 'development' | 'downloading' | 'ready' | 'error' | 'unavailable' | 'up-to-date';
 	version?: string;
 	message?: string;
 };
 
-type UpdateBridge = { checkForUpdates: () => Promise<UpdateResult> };
+type UpdateBridge = { checkForUpdates: () => Promise<UpdateResult>; getAppVersion?: () => string };
 
 function getUpdateBridge(): UpdateBridge | null {
 	return (window as unknown as { cocodeWindow?: UpdateBridge }).cocodeWindow ?? null;
@@ -94,7 +101,7 @@ const SECTIONS: { key: Section; label: string; icon: typeof Settings2 }[] = [
 	{ key: 'developer', label: 'settings.sections.developer', icon: SquareTerminal },
 ];
 
-// 服务商预设：全部 OpenAI 兼容接口；keyUrl = 获取 API 密钥的官网地址
+// 服务商预设：Anthropic 走原生 Messages API，其余走 OpenAI 兼容接口；keyUrl = 官网密钥页
 interface ProviderDef {
 	key: string;
 	label: string;
@@ -111,6 +118,9 @@ type ProviderDefBase = Omit<ProviderDef, 'label'>;
 
 const PROVIDER_DEFS: ProviderDefBase[] = [
 	{ key: 'custom', baseURL: '', needKey: true, icon: Box, color: 'bg-foreground text-background' },
+	{ key: 'openai', baseURL: 'https://api.openai.com/v1', keyUrl: 'https://platform.openai.com/api-keys', icon: BotMessageSquare, color: 'bg-foreground text-background' },
+	{ key: 'google', baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai', keyUrl: 'https://aistudio.google.com/apikey', icon: Cloud, color: 'bg-foreground text-background' },
+	{ key: 'anthropic', baseURL: 'https://api.anthropic.com/v1', keyUrl: 'https://console.anthropic.com/settings/keys', icon: Brain, color: 'bg-foreground text-background' },
 	{ key: 'deepseek', baseURL: 'https://api.deepseek.com/v1', keyUrl: 'https://platform.deepseek.com/api_keys', icon: Waves, color: 'bg-blue-500 text-white' },
 	{ key: 'volcengine', baseURL: 'https://ark.cn-beijing.volces.com/api/v3', keyUrl: 'https://console.volcengine.com/ark', icon: Flame, color: 'bg-indigo-500 text-white' },
 	{ key: 'minimax-cn', baseURL: 'https://api.minimax.chat/v1', keyUrl: 'https://platform.minimaxi.com', icon: AudioWaveform, color: 'bg-rose-500 text-white' },
@@ -119,6 +129,8 @@ const PROVIDER_DEFS: ProviderDefBase[] = [
 	{ key: 'dashscope', baseURL: 'https://dashscope.aliyuncs.com/compatible-mode/v1', keyUrl: 'https://bailian.console.aliyun.com', icon: Cloud, color: 'bg-orange-500 text-white' },
 	{ key: 'mimo', baseURL: 'https://api.xiaomimimo.com/v1', keyUrl: 'https://www.xiaomimimo.com', icon: Smartphone, color: 'bg-stone-500 text-white' },
 	{ key: 'siliconflow', baseURL: 'https://api.siliconflow.cn/v1', keyUrl: 'https://cloud.siliconflow.cn/account/ak', icon: Layers, color: 'bg-violet-500 text-white' },
+	{ key: 'stepfun', baseURL: 'https://api.stepfun.com/v1', keyUrl: 'https://platform.stepfun.com/interface-key', icon: Zap, color: 'bg-foreground text-background' },
+	{ key: 'stepfun-global', baseURL: 'https://api.stepfun.ai/v1', keyUrl: 'https://platform.stepfun.ai/interface-key', icon: Zap, color: 'bg-foreground text-background' },
 	{ key: 'zai', baseURL: 'https://api.z.ai/api/paas/v4', keyUrl: 'https://z.ai', icon: Zap, color: 'bg-zinc-800 text-white' },
 	{ key: 'openrouter', baseURL: 'https://openrouter.ai/api/v1', keyUrl: 'https://openrouter.ai/keys', icon: Shuffle, color: 'bg-blue-600 text-white' },
 	{ key: 'kimi-cn', baseURL: 'https://api.moonshot.cn/v1', keyUrl: 'https://platform.moonshot.cn/console/api-keys', icon: Moon, color: 'bg-neutral-800 text-white' },
@@ -137,9 +149,14 @@ const BRAND_LABEL_KEYS: Record<string, string | null> = {
 	volcengine: 'modelSection.providers.volcengine',
 	dashscope: 'modelSection.providers.dashscope',
 	siliconflow: 'modelSection.providers.siliconflow',
+	stepfun: 'modelSection.providers.stepfun',
+	'stepfun-global': 'modelSection.providers.stepfunGlobal',
 	hunyuan: 'modelSection.providers.hunyuan',
 	ollama: 'modelSection.providers.ollama',
 	// English-brand providers: no key, fall back to the hardcoded label below
+	openai: null,
+	google: null,
+	anthropic: null,
 	deepseek: null,
 	'minimax-cn': null,
 	'minimax-global': null,
@@ -153,6 +170,9 @@ const BRAND_LABEL_KEYS: Record<string, string | null> = {
 	ppio: null,
 };
 const BRAND_LABELS: Record<string, string> = {
+	openai: 'OpenAI',
+	google: 'Google Gemini',
+	anthropic: 'Anthropic',
 	deepseek: 'DeepSeek',
 	'minimax-cn': 'MiniMax CN',
 	'minimax-global': 'MiniMax Global',
@@ -187,17 +207,15 @@ interface ModelItem {
 	apiKey?: string;
 	/** 视觉输入能力：true/false 强制开关；null = 按模型名自动判断 */
 	vision?: boolean | null;
-	/** CoCode 内置官方模型：不在设置界面展示，但需同步到本地镜像供 core 运行时使用 */
-	isOfficial?: boolean;
 }
 
 function ProviderIcon({ p, size = 'size-7' }: { p: ProviderDef; size?: string }) {
 	const src = PROVIDER_ICONS[p.key];
 	if (src) {
-		// 官方品牌图：白底圆角方块，logo 原色
+		// 服务商品牌图：白底圆角方块，黑白配色
 		return (
 			<span className={`flex shrink-0 items-center justify-center overflow-hidden rounded-md border border-border bg-white ${size}`}>
-				<img src={src} alt="" className="size-[72%] object-contain" draggable={false} />
+				<img src={src} alt="" className={`${p.key === 'openai' ? 'size-full' : 'size-[72%]'} object-contain`} draggable={false} />
 			</span>
 		);
 	}
@@ -231,7 +249,7 @@ function Row({
 
 // ==================== 模型板块（三层） ====================
 
-type ModelView = 'list' | 'picker' | 'form' | 'plans';
+type ModelView = 'list' | 'picker' | 'form';
 
 export function ModelSection() {
 	const { t } = useTranslation();
@@ -248,7 +266,7 @@ export function ModelSection() {
 	const loggedIn = !!getToken();
 
 	// 表单层状态
-	const [fProvider, setFProvider] = useState('deepseek');
+	const [fProvider, setFProvider] = useState('openai');
 	const [fModel, setFModel] = useState('');
 	const [fKey, setFKey] = useState('');
 	const [fModels, setFModels] = useState<string[]>([]);
@@ -273,15 +291,12 @@ export function ModelSection() {
 				setListErr(t('modelSection.errors.loginRequired'));
 				return;
 			}
-			const res = await cloudFetch('/models?includeOfficial=1');
+			const res = await cloudFetch('/models');
 			const body = await res.json();
 			if (!res.ok) throw new Error(body?.detail || t('modelSection.errors.backend', { status: res.status }));
 			const models: ModelItem[] = body.models ?? [];
-			// 设置界面只展示用户自配模型，官方模型不在此出现
-			setItems(models.filter((m) => !m.isOfficial));
-			// 本地镜像需包含官方模型，core 运行时才能调用；官方条目 apiKey 云端恒空，
-			// 写入前必须用登录 token 填充，否则 core 会报「未配置 apiKey」
-			await syncLocalMirror(withOfficialToken(models));
+			setItems(models);
+			await syncLocalMirror(models);
 		} catch (e) {
 			setListErr(e instanceof Error ? e.message : String(e));
 		} finally {
@@ -289,7 +304,7 @@ export function ModelSection() {
 		}
 	}
 
-	/** 把完整模型列表（含 apiKey）全量写进本地 config.modelList 镜像 */
+	/** 把完整自定义模型列表（含 apiKey）全量写进本地 config.modelList 镜像 */
 	async function syncLocalMirror(models: ModelItem[]) {
 		try {
 			await fetch(apiUrl('/admin/models-config'), {
@@ -309,13 +324,16 @@ export function ModelSection() {
 	}, []);
 
 	// 按 baseURL + key 拉取模型列表（服务端代理，绕 CORS）
-	async function fetchModelList(base = effBaseURL, key = fKey) {
+	async function fetchModelList(base = effBaseURL, key = fKey, provider = fProvider) {
 		if (!base) return;
 		setFLoading(true);
 		setFErr(null);
 		try {
-			const url = `${apiUrl('/admin/models')}?baseURL=${encodeURIComponent(base)}${key ? `&apiKey=${encodeURIComponent(key)}` : ''}`;
-			const res = await fetch(url);
+			const res = await fetch(apiUrl('/admin/models'), {
+				method: 'POST',
+				headers: { 'content-type': 'application/json' },
+				body: JSON.stringify({ baseURL: base, apiKey: key, provider }),
+			});
 			const body = await res.json();
 			if (!res.ok) throw new Error(body?.detail || t('modelSection.errors.backend', { status: res.status }));
 			const ids: string[] = body.models ?? [];
@@ -348,7 +366,7 @@ export function ModelSection() {
 		setFVision('auto');
 		setView('form');
 		// 本地服务无需 Key，进入表单即拉模型列表
-		if (def && def.needKey === false) fetchModelList(def.baseURL, '');
+		if (def && def.needKey === false) fetchModelList(def.baseURL, '', def.key);
 	}
 
 	function openEdit(item: ModelItem) {
@@ -484,7 +502,7 @@ export function ModelSection() {
 							type="password"
 							value={fKey}
 							onChange={(e) => setFKey(e.target.value)}
-						onBlur={() => effBaseURL && fetchModelList()}
+						onBlur={() => effBaseURL && fKey.trim() && fetchModelList()}
 						placeholder={editingId && !fKey ? t('modelSection.form.apiKeyKeepEmpty') : t('modelSection.form.apiKeyPlaceholder')}
 						className="mt-2 h-10 w-full rounded-lg border border-input bg-muted px-3 text-sm outline-none placeholder:text-muted-foreground focus:ring-2 focus:ring-ring"
 					/>
@@ -729,20 +747,6 @@ export function ModelSection() {
 						<div className="mt-4 flex-1 overflow-y-auto pr-1">
 							<button
 								type="button"
-								className="mb-3 flex w-full items-center gap-3 rounded-xl border border-primary/0 bg-primary-soft px-4 py-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
-								onClick={() => setView('plans')}
-							>
-								<span className="flex shrink-0 items-center justify-center rounded-md size-9 bg-primary text-primary-foreground">
-									<Zap className="size-4" />
-								</span>
-								<span className="min-w-0 flex-1">
-									<span className="block font-semibold">{t('modelSection.plans.title')}</span>
-									<span className="block text-xs text-muted-foreground">{t('modelSection.plans.subtitle')}</span>
-								</span>
-								<ChevronRight className="size-4 text-muted-foreground" />
-							</button>
-							<button
-								type="button"
 								className="mb-3 flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-border hover:bg-muted hover:shadow-md"
 								onClick={() => openForm('custom')}
 							>
@@ -768,178 +772,7 @@ export function ModelSection() {
 					</div>
 				</div>
 			)}
-
-			{/* ---------- 套餐（Coding Plan / Token Plan）视图 ---------- */}
-			{view === 'plans' && <PlansView onBack={() => setView('picker')} onChanged={loadList} />}
 		</>
-	);
-}
-
-// ==================== 套餐（Plan）视图 ====================
-// 六家 Coding/Token Plan + Qwen OAuth。api_key 型粘贴套餐 Key 一键写入
-// modelList（专用端点内置）；oauth 型走设备码授权轮询。
-// 后端：GET /admin/plans、POST/DELETE /admin/plans/:key/connect、
-//       POST /admin/plans/qwen-oauth/device-flow/{start,poll}
-
-interface PlanDef {
-	key: string;
-	name: string;
-	vendor: string;
-	note: string;
-	models: string[];
-	keyUrl: string;
-	buyUrl: string;
-	connected: boolean;
-}
-
-function PlansView({ onBack, onChanged }: { onBack: () => void; onChanged?: () => void }) {
-	const { t } = useTranslation();
-	const [plans, setPlans] = useState<PlanDef[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [err, setErr] = useState<string | null>(null);
-	// 当前展开 Key 输入行的套餐 key
-	const [connecting, setConnecting] = useState<string | null>(null);
-	const [keyDraft, setKeyDraft] = useState('');
-	const [submitting, setSubmitting] = useState(false);
-
-	const load = useCallback(async () => {
-		setLoading(true);
-		setErr(null);
-		try {
-			const res = await cloudFetch('/plans');
-			const body = await res.json();
-			if (!res.ok) throw new Error(body?.detail || `HTTP ${res.status}`);
-			setPlans(body.plans ?? []);
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setLoading(false);
-		}
-	}, []);
-
-	useEffect(() => { load(); }, [load]);
-
-	async function connectApiKey(plan: PlanDef) {
-		if (!keyDraft.trim()) return;
-		setErr(null);
-		setSubmitting(true);
-		try {
-			const res = await cloudFetch(`/plans/${plan.key}/connect`, {
-				method: 'POST',
-				body: JSON.stringify({ apiKey: keyDraft.trim() }),
-			});
-			const body = await res.json();
-			if (!res.ok) throw new Error(body?.detail || `HTTP ${res.status}`);
-			setConnecting(null);
-			setKeyDraft('');
-			queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY });
-			load();
-			onChanged?.(); // 接入后同步刷新「设置→模型」列表 + 本地镜像
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setSubmitting(false);
-		}
-	}
-
-	async function disconnect(plan: PlanDef) {
-		setErr(null);
-		try {
-			const res = await cloudFetch(`/plans/${plan.key}/connect`, { method: 'DELETE' });
-			const body = await res.json();
-			if (!res.ok) throw new Error(body?.detail || `HTTP ${res.status}`);
-			queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY });
-			load();
-			onChanged?.(); // 断开后同步刷新「设置→模型」列表 + 本地镜像，让 plan 模型立即消失
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		}
-	}
-
-	return (
-		<div className="absolute inset-0 z-10 flex items-start justify-center bg-background animate-in fade-in slide-in-from-right-2 duration-250 ease-out">
-			<div className="flex max-h-full w-full flex-col px-7 py-6">
-				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						aria-label={t('modelSection.aria.back')}
-						className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
-						onClick={onBack}
-					>
-						<ChevronLeft className="size-5" />
-					</button>
-					<h3 className="text-lg font-semibold">{t('modelSection.plans.title')}</h3>
-				</div>
-				<p className="mt-1 text-xs text-muted-foreground">{t('modelSection.plans.description')}</p>
-
-				{err && (
-					<div className="mt-3 rounded-lg border border-destructive/0 bg-destructive-soft px-3 py-2 text-sm text-destructive">
-						{err}
-					</div>
-				)}
-
-				{loading ? (
-					<div className="mt-8 flex items-center justify-center text-sm text-muted-foreground">
-						<Loader2 className="mr-2 size-4 animate-spin" />{t('modelSection.plans.loading')}
-					</div>
-				) : (
-					<div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
-						{plans.map((plan) => (
-							<div key={plan.key} className="rounded-xl border border-border bg-card px-4 py-3.5">
-								<div className="flex items-center gap-3">
-									<span className="flex shrink-0 items-center justify-center rounded-md size-9 bg-primary-soft text-primary">
-										<Zap className="size-4" />
-									</span>
-									<div className="min-w-0 flex-1">
-										<div className="flex items-center gap-2">
-											<span className="truncate font-medium">{plan.name}</span>
-											{plan.connected && (
-												<Badge variant="secondary" className="shrink-0">{t('modelSection.plans.connected')}</Badge>
-											)}
-										</div>
-										<div className="truncate text-xs text-muted-foreground">{plan.note}</div>
-									</div>
-									{!plan.connected && (
-										<Button
-											size="sm" variant="outline"
-											onClick={() => { setConnecting(connecting === plan.key ? null : plan.key); setKeyDraft(''); }}
-										>
-											{t('modelSection.plans.connect')}
-										</Button>
-									)}
-									{plan.connected && (
-										<Button size="sm" variant="ghost" onClick={() => disconnect(plan)}>
-											{t('modelSection.plans.disconnect')}
-										</Button>
-									)}
-								</div>
-
-								{/* 展开 Key 输入行：粘贴套餐 Key → 一键批量写入该套餐全部默认模型 */}
-								{connecting === plan.key && (
-									<div className="mt-3 flex items-center gap-2">
-										<Input
-											className="flex-1 font-mono"
-											placeholder={t('modelSection.plans.keyPlaceholder')}
-											value={keyDraft}
-											onChange={(e) => setKeyDraft(e.target.value)}
-										/>
-										<Button size="sm" disabled={!keyDraft.trim() || submitting} onClick={() => connectApiKey(plan)}>
-											{t('modelSection.plans.save')}
-										</Button>
-										<a
-											href={plan.keyUrl} target="_blank" rel="noreferrer"
-											className="whitespace-nowrap text-xs text-primary underline-offset-2 hover:underline"
-										>
-											{t('modelSection.plans.getKey')}
-										</a>
-									</div>
-								)}
-							</div>
-						))}
-					</div>
-				)}
-			</div>
-		</div>
 	);
 }
 
@@ -1738,11 +1571,12 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 	const [section, setSection] = useState<Section>(initialTab);
 
 	const [lang, setLang] = useState(i18n.language);
+	const [searchEngine, setSearchEngine] = useState<SearchEngineId>(() => getSearchEngine());
 	const [confirmWipe, setConfirmWipe] = useState(false);
 	const [wiping, setWiping] = useState(false);
 	const [wipeError, setWipeError] = useState<string | null>(null);
 	// Agent 运行行为（上下文压缩预算 + 工具输出限制 + 最大迭代轮数）。
-	// 与主题一样：保存时 PATCH /admin/runtime，磁盘持久化到 ~/.vega/config.json。
+	// 与主题一样：保存时 PATCH /admin/runtime，磁盘持久化到 ~/.cocode/config.json。
 	const [runtime, setRuntime] = useState<RuntimeBehavior | null>(null);
 	const [runtimeBusy, setRuntimeBusy] = useState(false);
 	const [runtimeErr, setRuntimeErr] = useState<string | null>(null);
@@ -1762,6 +1596,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 		if (!open) return;
 		setSection(initialTab);
 		setLang(i18n.language);
+		setSearchEngine(getSearchEngine());
 		setConfirmWipe(false);
 		setWipeError(null);
 		setUpdateMessage(null);
@@ -1781,6 +1616,8 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 				setUpdateMessage(t('settings.about.update.available', { version: result.version || '' }));
 			} else if (result.status === 'downloading') {
 				setUpdateMessage(t('settings.about.update.downloading', { version: result.version || '' }));
+			} else if (result.status === 'ready') {
+				setUpdateMessage(t('settings.about.update.ready', { version: result.version || '' }));
 			} else if (result.status === 'up-to-date') {
 				setUpdateMessage(t('settings.about.update.upToDate'));
 			} else if (result.status === 'development') {
@@ -1829,7 +1666,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 			}
 		})();
 		return () => { cancelled = true; };
-	}, [runtimeKey]);
+	}, [runtimeKey, t]);
 
 	async function handleRuntimeSave(patch: Partial<RuntimeBehavior>) {
 		setRuntimeBusy(true);
@@ -1863,6 +1700,12 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 	function handleLang(next: string) {
 		setLang(next);
 		i18n.changeLanguage(next);
+	}
+
+	function handleSearchEngine(next: string) {
+		if (!isSearchEngineId(next)) return;
+		setSearchEngine(next);
+		saveSearchEngine(next);
 	}
 
 	async function handleWipe() {
@@ -1987,6 +1830,17 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 											]}
 										/>
 									</Row>
+									<Row title={t('settings.general.searchEngine.title')} description={t('settings.general.searchEngine.desc')}>
+										<DropdownSelect
+											className="w-44"
+											value={searchEngine}
+											onChange={handleSearchEngine}
+											options={SEARCH_ENGINES.map(({ id }) => ({
+												value: id,
+												label: t(`settings.general.searchEngine.engines.${id}`),
+											}))}
+										/>
+									</Row>
 									<SoundSection />
 								</div>
 
@@ -2068,7 +1922,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 							<>
 								<h3 className="text-lg font-semibold">{t('settings.about.title')}</h3>
 								<div className="mt-3 space-y-3">
-									<Row title="CoCode" description={t('settings.about.cocode')} />
+									<Row title="CoCode" description={t('settings.about.cocode', { version: getUpdateBridge()?.getAppVersion?.() ?? '1.0.0' })} />
 									<Row title={t('settings.about.runtimeTitle')} description={t('settings.about.runtime')} />
 									<Row title={t('settings.about.update.title')} description={t('settings.about.update.desc')}>
 										<Button variant="outline" size="sm" onClick={handleCheckForUpdates} disabled={checkingUpdate}>

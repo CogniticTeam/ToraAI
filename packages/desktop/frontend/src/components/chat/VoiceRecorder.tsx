@@ -12,7 +12,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { emitCreditsChanged } from '@/hooks/useCreditsBalance';
 import { useTranslation } from '@/i18n/useI18n.ts';
 import { cn } from '@/lib/utils';
 
@@ -156,9 +155,6 @@ export function VoiceRecorder({
 				text = (await bridge.current?.transcribe(merged)) ?? '';
 			}
 			if (text) onTranscript(text);
-			// 官方 ASR 通道按录音时长扣积分，转写成功后即时刷新侧栏余额
-			// （BYOK 通道不扣费，多刷一次 /auth/me 无副作用）
-			emitCreditsChanged();
 			setError(null);
 		} catch (e) {
 			console.error('[voice] transcribe failed', e);

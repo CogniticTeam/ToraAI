@@ -3,7 +3,7 @@
 // 这是敢开 bypass 模式的前提：模型改坏一片文件时，能「回到第 N 轮」。
 // 不用 git —— 项目可能根本不是 git 仓库，而且 git 无法回滚未提交的中间态。
 //
-// 存储布局（~/.vega/checkpoints/<sessionId>/）：
+// 存储布局（~/.cocode/checkpoints/<sessionId>/）：
 //   objects/<sha1>      内容寻址的文件快照（同内容只存一份）
 //   cp-<id>.json        时间线节点：{ id, turn, parent, label, at, cwd, entries }
 //   meta.json           { nextId, currentId } —— currentId 是工作区当前所在的节点
@@ -17,9 +17,9 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync, existsSync, statSync, unlinkSync, rmSync } from 'node:fs';
 import { dirname, join, relative, sep } from 'node:path';
 import { IGNORE_DIRS } from './repomap.js';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 
-export const CHECKPOINTS_DIR = join(VEGA_DIR, 'checkpoints');
+export const CHECKPOINTS_DIR = join(COCODE_DIR, 'checkpoints');
 const MAX_FILE_BYTES = 2 * 1024 * 1024;   // 单文件上限（超过不入快照）
 const MAX_TOTAL_BYTES = 64 * 1024 * 1024; // 单个快照总量上限
 const MAX_FILES = 8000;

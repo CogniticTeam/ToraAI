@@ -46,7 +46,40 @@ export interface TraceView {
 	model?: string | null;
 }
 
-/** One user-authored slash command (`~/.vega/commands/*.md`). */
+export interface DeliveryReport {
+	id: string;
+	sessionId: string;
+	traceId: string | null;
+	cwd: string | null;
+	startedAt: number;
+	finishedAt: number;
+	outcome: string;
+	modeEnabled?: boolean;
+	criteria?: string[];
+	changedFiles: { path: string; change: 'added' | 'modified' | 'deleted' }[];
+	changedFileCount: number;
+	checks: { command: string; status: 'passed' | 'failed' | 'blocked' | 'unknown'; traceToolId: string | null }[];
+	modelReview: { status: 'passed' | 'failed' | 'skipped' | 'unknown'; round: number; issues: string[]; reason: string } | null;
+	warnings: string[];
+	warningsEn?: string[];
+}
+
+export interface ImpactReport {
+	cwd: string;
+	source: 'git' | 'manual';
+	targets: string[];
+	affected: { path: string; via: string; depth: number }[];
+	suggestedTests: string[];
+	risk: 'low' | 'medium' | 'high' | 'unknown';
+	reasons: string[];
+	reasonsEn?: string[];
+	warnings: string[];
+	warningsEn?: string[];
+	scannedFiles: number;
+	analyzedAt: number;
+}
+
+/** One user-authored slash command (`~/.cocode/commands/*.md`). */
 export interface UserCommand {
 	name: string;
 	description: string;
@@ -258,6 +291,15 @@ export const workspaceApi = {
 	 * answering 4xx is an ordinary state, not a toast.
 	 */
 	cocode: {
+		deliveries: (sessionId: string) =>
+			client.get<{ reports: DeliveryReport[] }>(`/sessions/${encodeURIComponent(sessionId)}/deliveries`, {}, { silent: true }),
+
+		impact: (sessionId: string, paths: string[] = []) =>
+			client.get<ImpactReport>('/workspace/impact', {
+				session_id: sessionId,
+				...(paths.length ? { paths: paths.join('\n') } : {}),
+			}, { silent: true }),
+
 		checkpoints: (sessionId: string) =>
 			client.get<{ checkpoints: CheckpointView[] }>(
 				`/sessions/${sessionId}/checkpoints`,

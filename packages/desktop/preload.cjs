@@ -2,7 +2,16 @@
 // sandbox 模式下 preload 仅可使用 electron 白名单模块（contextBridge/ipcRenderer）。
 const { contextBridge, ipcRenderer } = require('electron');
 
+// 隔离世界和页面共享同一 origin 的 localStorage。先完成连接初始化，
+// 再运行页面模块，避免第一次挂载请求错误端口以及启动后整页 reload。
+if (process.isMainFrame && window.location.protocol === 'http:' && window.location.hostname === '127.0.0.1') {
+	localStorage.setItem('server_url', window.location.origin);
+	localStorage.setItem('username', 'cocode');
+}
+
 contextBridge.exposeInMainWorld('cocodeWindow', {
+	// Electron 根据操作系统与应用语言设置解析的区域（如 zh-CN / en-US）。
+	getSystemLocale: () => ipcRenderer.sendSync('app:get-system-locale'),
 	// 同步查询当前是否最大化
 	isMaximized: () => ipcRenderer.sendSync('win:is-maximized'),
 	// 订阅最大化状态变化（含全屏进入/退出）
@@ -14,9 +23,24 @@ contextBridge.exposeInMainWorld('cocodeWindow', {
 	openFolderDialog: () => ipcRenderer.invoke('dialog:open-folder'),
 	// 上报当前实际深浅，同步窗口原生背景（加载页/首帧前那块底色）。
 	reportTheme: (isDark) => ipcRenderer.send('win:set-background', Boolean(isDark)),
-	// 更新检查由主进程完成：macOS 只返回版本并打开官方发布页；Windows 则触发
-	// electron-updater 的后台下载。渲染层无权访问更新源或执行安装。
+	// 更新检查由主进程完成：macOS / Windows 均使用 electron-updater 后台下载。
+	// 渲染层无权访问更新源或直接执行安装。
 	checkForUpdates: () => ipcRenderer.invoke('updates:check'),
+	getAppVersion: () => ipcRenderer.sendSync('app:get-version'),
+	getRequiredUpdate: () => ipcRenderer.sendSync('updates:state'),
+	onRequiredUpdate: (cb) => {
+		const handler = (_event, state) => cb(state);
+		ipcRenderer.on('updates:required', handler);
+		return () => ipcRenderer.removeListener('updates:required', handler);
+	},
+	updateAction: (action) => ipcRenderer.invoke('updates:action', action),
+	refreshAccount: () => ipcRenderer.invoke('account:refresh'),
+	reportLanguage: (language) => ipcRenderer.send('app:language', language),
+	onMenuCommand: (cb) => {
+		const handler = (_event, action) => cb(action);
+		ipcRenderer.on('app:menu-command', handler);
+		return () => ipcRenderer.removeListener('app:menu-command', handler);
+	},
 });
 
 // 凭证安全存储桥：token/email/username 用 safeStorage 加密存主进程，

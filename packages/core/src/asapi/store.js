@@ -1,15 +1,16 @@
-// ASAPI 存储：agents / credentials / sessions（~/.vega/asapi/）
+// ASAPI 存储：agents / credentials / sessions（~/.cocode/asapi/）
 // sessions 双轨存储：internal（OpenAI 格式，供 runAgent/压缩治理）+ display（agentscope Msg[]，供前端）
 import { readFileSync, writeFileSync, readdirSync, unlinkSync, mkdirSync, existsSync, statSync, renameSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { loadConfig, saveConfig, VEGA_DIR } from '../config.js';
+import { loadConfig, saveConfig, COCODE_DIR } from '../config.js';
+import { LEGACY_AGENT_NAME } from '../legacy-migration.js';
 // 规则里的工具名必须归一化到 PascalCase，否则 decidePermission 查表时
 // 对不上（用户从 UI 存 "bash"，agent 里问的是 "Bash"）。builtin.js 不反向
 // 依赖 asapi，不存在循环引用。
 import { canonicalToolName } from '../tools/builtin.js';
 
-export const ASAPI_DIR = join(VEGA_DIR, 'asapi');
+export const ASAPI_DIR = join(COCODE_DIR, 'asapi');
 const AGENTS_PATH = join(ASAPI_DIR, 'agents.json');
 const CREDS_PATH = join(ASAPI_DIR, 'credentials.json');
 const SESSIONS_DIR = join(ASAPI_DIR, 'sessions');
@@ -70,19 +71,26 @@ export function listAgents() {
       editable: true,
       data: {
         name: 'Corey',
-        system_prompt: '', // 空 = 使用 vega 内置紧凑系统提示词
+        system_prompt: '', // 空 = 使用 cocode 内置紧凑系统提示词
         context_config: { trigger_ratio: 0.8, reserve_ratio: 0.2, tool_result_limit: 6000 },
         react_config: { max_iters: 40, stop_on_reject: true },
+        // 高成本的 critic 默认关闭；用户可在 Agent 表单按 Agent 开启。
+        review_config: { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true },
         invite_config: { invitable: false, invite_description: null }
       }
     }];
     writeJson(AGENTS_PATH, agents);
   } else {
-    // 迁移：历史默认 Agent（名为 Vega 旧代号 / 或 CoCode 旧默认）→ 统一改名 Corey
+    // 迁移：历史默认 Agent → 统一改名 Corey。
     let migrated = false;
     for (const a of agents) {
-      if (a.user_id === 'local' && (a.data?.name === 'Vega' || a.data?.name === 'CoCode') && !a.data.system_prompt) {
+      if (a.user_id === 'local' && (a.data?.name === LEGACY_AGENT_NAME || a.data?.name === 'CoCode') && !a.data.system_prompt) {
         a.data.name = 'Corey';
+        a.updated_at = now();
+        migrated = true;
+      }
+      if (!a.data?.review_config) {
+        a.data.review_config = { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true };
         a.updated_at = now();
         migrated = true;
       }
@@ -105,6 +113,7 @@ export function createAgent(data) {
       system_prompt: data.system_prompt || '',
       context_config: { trigger_ratio: 0.8, reserve_ratio: 0.2, tool_result_limit: 6000, ...(data.context_config || {}) },
       react_config: { max_iters: 40, stop_on_reject: true, ...(data.react_config || {}) },
+      review_config: { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true, ...(data.review_config || {}) },
       invite_config: { invitable: false, invite_description: null, ...(data.invite_config || {}) }
     }
   };
@@ -119,7 +128,7 @@ export function updateAgent(id, patch) {
   if (i < 0) return null;
   const data = { ...agents[i].data };
   for (const k of ['name', 'system_prompt']) if (patch[k] !== undefined) data[k] = patch[k];
-  for (const k of ['context_config', 'react_config', 'invite_config']) {
+  for (const k of ['context_config', 'react_config', 'review_config', 'invite_config']) {
     if (patch[k] !== undefined) data[k] = { ...data[k], ...patch[k] };
   }
   agents[i] = { ...agents[i], data, updated_at: now() };
@@ -374,13 +383,13 @@ function sessionPath(id) {
 export function defaultModelConfig(cfg) {
   return {
     type: 'openai_compatible',
-    credential_id: '', // 空 = 直接用 ~/.vega/config.json（CLI 同源配置）
+    credential_id: '', // 空 = 直接用 ~/.cocode/config.json（CLI 同源配置）
     model: cfg.model,
     parameters: {}
   };
 }
 
-export function createSessionRecord({ agent_id, chat_model_config, fallback_chat_model_config, vegaCfg, workspace_id, cwd, origin, team_id }) {
+export function createSessionRecord({ agent_id, chat_model_config, fallback_chat_model_config, cocodeCfg, workspace_id, cwd, origin, team_id }) {
   mkdirSync(SESSIONS_DIR, { recursive: true });
   const id = uid();
   const t = now();
@@ -392,7 +401,7 @@ export function createSessionRecord({ agent_id, chat_model_config, fallback_chat
     config: {
       name: '',
       naming: { auto: true },
-      chat_model_config: chat_model_config || defaultModelConfig(vegaCfg),
+      chat_model_config: chat_model_config || defaultModelConfig(cocodeCfg),
       fallback_chat_model_config: fallback_chat_model_config || null,
       tts_model_config: null,
       knowledge_config: null,
@@ -404,7 +413,7 @@ export function createSessionRecord({ agent_id, chat_model_config, fallback_chat
     // 于是干脆默认放行。现在确认卡片链路已经打通，default 才是合理默认值
     // —— 用户在模式选择器里随时可以放宽到 accept_edits / bypass。
     state: { permission_mode: 'default' },
-    // vega 内部：OpenAI 格式消息（供 runAgent），display 为 agentscope Msg[]
+    // cocode 内部：OpenAI 格式消息（供 runAgent），display 为 agentscope Msg[]
     internal: [],
     display: []
   };
@@ -441,7 +450,7 @@ export function deleteSession(id) {
 
 // ---------- 会话检索 / 分支 / 导出 ----------
 //
-// 会话原本是 ~/.vega/asapi/sessions/*.json 平铺文件：没有索引、不能搜索、
+// 会话原本是 ~/.cocode/asapi/sessions/*.json 平铺文件：没有索引、不能搜索、
 // 不能从某一轮 fork 重来。这里补上最小可用的三件事（零依赖，直接扫目录；
 // 单个用户几十~几百个会话的量级下，扫描比维护索引更省事也更不容易不一致）。
 
@@ -517,7 +526,7 @@ export function forkSession(id, { upto, name } = {}) {
     agent_id: src.agent_id,
     chat_model_config: src.config?.chat_model_config || null,
     fallback_chat_model_config: src.config?.fallback_chat_model_config || null,
-    vegaCfg: loadConfig(),
+    cocodeCfg: loadConfig(),
     cwd: src.config?.cwd || null,
   });
   record.config.name = name || `${src.config?.name || '会话'}（分支）`;
@@ -564,7 +573,7 @@ export function exportSession(id, format = 'md') {
 }
 
 // ---------- 权限规则（允许清单）----------
-// ConfirmCard 的 suggested_rules 结构 → 落盘到 ~/.vega/config.json 的
+// ConfirmCard 的 suggested_rules 结构 → 落盘到 ~/.cocode/config.json 的
 // permissionRules，由 agent.js 的 decidePermission 查表。这样"这条命令以后
 // 都别问我"才是真的持久有效，而不是只在当前这一轮的内存里。
 

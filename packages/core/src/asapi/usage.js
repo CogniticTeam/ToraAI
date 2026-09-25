@@ -1,20 +1,20 @@
 // 使用统计（设置窗口「使用统计」板块的数据源）。
 //
 // 数据源与职责：
-//   · ~/.vega/usage/daily.json —— **权威 token/工具/模型来源**。bridge 在每次
+//   · ~/.cocode/usage/daily.json —— **权威 token/工具/模型来源**。bridge 在每次
 //     模型调用结束、工具执行完成时实时写入（usage-store.js），不受 trace GC
 //     影响。首次运行时会把历史 traces 里还能找到的用量一次性迁移进来。
-//   · ~/.vega/sessions/*.json —— 聊天总数、聊天时长（created/updated 独有）。
+//   · ~/.cocode/sessions/*.json —— 聊天总数、聊天时长（created/updated 独有）。
 //
 // 注意：token **只**从 daily.json 来 —— traces 与 bridge 记录的是同一批
 // 调用，两边都算会双倍。
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 import { usageStoreDaily, usageStoreMerge, usageStoreMarkMeta } from './usage-store.js';
 
-const TRACES_DIR = join(VEGA_DIR, 'traces');
-const SESSIONS_DIR = join(VEGA_DIR, 'sessions');
+const TRACES_DIR = join(COCODE_DIR, 'traces');
+const SESSIONS_DIR = join(COCODE_DIR, 'sessions');
 
 const DAY_MS = 86400_000;
 

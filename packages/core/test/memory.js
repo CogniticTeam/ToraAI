@@ -5,9 +5,9 @@ import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, real
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.vega。
+// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.cocode。
 // 必须在 import 任何 core 模块之前设置（动态 import 保证求值顺序，
-// VEGA_DIR 在 config.js 模块顶层固化）。
+// COCODE_DIR 在 config.js 模块顶层固化）。
 process.env.COCODE_HOME = mkdtempSync(join(tmpdir(), 'cocode-memory-'));
 
 const CORE = '../src/';
@@ -16,9 +16,9 @@ const {
   loadMemoryConfig, saveMemoryConfig, renderMemoryContext, MEMORY_GUIDE,
   MemoryValidationError, MEMORY_LIMIT, CONTENT_MAX, CONTEXT_BUDGET,
 } = await import(CORE + 'asapi/memory.js');
-const { VEGA_DIR } = await import(CORE + 'config.js');
+const { COCODE_DIR } = await import(CORE + 'config.js');
 
-const MEMORY_FILE = join(VEGA_DIR, 'asapi', 'memories.json');
+const MEMORY_FILE = join(COCODE_DIR, 'asapi', 'memories.json');
 
 let passed = 0, failed = 0;
 async function test(name, fn) {
@@ -154,7 +154,7 @@ await test('renderMemoryContext：分组顺序 置顶 > 项目 > 全局，预算
 await test('损坏隔离：坏 JSON 隔离为 .corrupt-* 并自动重建', async () => {
   writeFileSync(MEMORY_FILE, '{ broken json !!');
   assert.deepEqual(listMemories(), [], '坏文件应走空 fallback');
-  const corrupted = readdirSync(join(VEGA_DIR, 'asapi')).filter((f) => f.startsWith('memories.json.corrupt-'));
+  const corrupted = readdirSync(join(COCODE_DIR, 'asapi')).filter((f) => f.startsWith('memories.json.corrupt-'));
   assert.ok(corrupted.length >= 1, '应产生 .corrupt-* 隔离文件');
   saveMemory({ content: '损坏后重建的第一条' });
   assert.equal(listMemories().length, 1, '重建后可正常写入');
@@ -164,7 +164,7 @@ await test('memory-config 读写与损坏 fallback', async () => {
   saveMemoryConfig({ distill_enabled: true });
   assert.equal(loadMemoryConfig().distill_enabled, true);
   assert.equal(loadMemoryConfig().inject_enabled, true, '未指定字段保持原值');
-  writeFileSync(join(VEGA_DIR, 'asapi', 'memory-config.json'), 'not json');
+  writeFileSync(join(COCODE_DIR, 'asapi', 'memory-config.json'), 'not json');
   assert.deepEqual(loadMemoryConfig(), { distill_enabled: false, inject_enabled: true }, '坏 config 走默认值');
 });
 

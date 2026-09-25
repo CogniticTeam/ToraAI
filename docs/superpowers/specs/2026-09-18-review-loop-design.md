@@ -27,7 +27,7 @@ ChatDev 的 review 循环、AutoGPT 的自我审查、Reflexion 的 memory-refle
 
 ## 3. 配置
 
-### 3.1 全局 config（`~/.vega/config.json`）
+### 3.1 全局 config（`~/.cocode/config.json`）
 
 ```json
 {

@@ -3,14 +3,14 @@
 // 为什么存在：聊天的 token 用量之前只经 SSE 事件（modelCallEnd）推给前端就
 // 丢弃，traces 侧只有 agent 运行才写且 GC 7 天清空 —— 使用统计面板因此
 // 几乎总是空的。现在 bridge 在每次模型调用/工具执行时写入这里，
-// ~/.vega/usage/daily.json 永不清理（一年也就几十 KB）。
+// ~/.cocode/usage/daily.json 永不清理（一年也就几十 KB）。
 //
 // 形状：{ 'YYYY-MM-DD': { tokens, runs, tools: {name: count}, models: {name: count} } }
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 
-const DIR = join(VEGA_DIR, 'usage');
+const DIR = join(COCODE_DIR, 'usage');
 const FILE = join(DIR, 'daily.json');
 
 let cache = null;

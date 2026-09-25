@@ -49,7 +49,7 @@ packages/
 │   │   ├── prompt.js           Project instruction injection (COCODE.md / AGENTS.md) + system prompt assembly
 │   │   ├── react.js            Text ReAct action parsing (used when the model lacks function calling)
 │   │   ├── discover.js         Local model auto-discovery (Ollama / LM Studio / vLLM …)
-│   │   ├── commands.js         Custom slash commands (~/.vega/commands/*.md)
+│   │   ├── commands.js         Custom slash commands (~/.cocode/commands/*.md)
 │   │   ├── tools/
 │   │   │   ├── builtin.js      Bash / Read / Write / Edit / Glob / Grep (+ image reading)
 │   │   │   ├── shell.js        Persistent shell sessions (cd / export survive across calls)
@@ -73,21 +73,21 @@ packages/
 ├── desktop/           # Desktop edition
 │   ├── main.js                Electron main process (starts ASAPI + seeds localStorage)
 │   └── frontend/              agentscope frontend (upstream + light customization: expanded navbar, settings window)
-└── auth-worker/       # Optional cloud service: accounts + subscription credits (Cloudflare Worker + D1)
-    ├── src/index.js           Sign-up / login / model-config sync / Afadian order redemption
+└── auth-worker/       # Optional cloud service: accounts, model sync, and free speech recognition (Cloudflare Worker + D1)
+    ├── src/index.js           Sign-up / login / model-config sync / free speech recognition
     └── wrangler.toml          Deployment config (D1 binding, Resend email, Turnstile)
 ```
 
-> Pure local use (with your own model credentials) requires **no auth-worker deployment and no account**; auth-worker targets users who want multi-device model-config sync or to run their own subscription service.
+> Pure local use (with your own model credentials) requires **no auth-worker deployment and no account**; auth-worker provides accounts, multi-device model-config sync, and free speech recognition.
 
 ## 🚀 Quick Start
 
 ### 0. Prepare a model
 
 ```bash
-# Config location: ~/.vega/config.json (COCODE_HOME relocates the entire data root)
-# Environment variables take priority; COCODE_* is the canonical prefix, VEGA_* kept for compatibility
-# Note: the VEGA_DIR constant in code and ~/.vega in CLI help are legacy naming (the data root is still .vega)
+# Config location: ~/.cocode/config.json (COCODE_HOME relocates the entire data root)
+# Use COCODE_* environment variables; they take priority over the config file
+# First launch copies legacy data to ~/.cocode, preserving the original; existing new data is not overwritten
 export COCODE_BASE_URL="https://api.deepseek.com/v1"
 export COCODE_API_KEY="sk-xxx"
 export COCODE_MODEL="deepseek-flash"
@@ -176,7 +176,7 @@ node packages/core/test/run.js        # 96 cases (real LSP included, auto-skippe
 node packages/core/test/asapi.js      # 65 cases
 ```
 
-Tests redirect the data root to a temp directory (`COCODE_HOME`) and **never touch your real `~/.vega`**.
+Tests redirect the data root to a temp directory (`COCODE_HOME`) and **never touch your real `~/.cocode`**.
 
 ## 🔌 Model providers
 
@@ -216,14 +216,14 @@ When asked, the card presents `suggested_rules` (Bash: first words; paths: direc
 
 ### Checkpoints & rollback
 
-Whenever a round involves write/execution tools, a content-addressed snapshot of the working directory is taken before that round starts (`~/.vega/checkpoints/<session>/`, last 10 rounds kept automatically). `/checkpoints` to view, `/restore <round>` to roll back (overwrites changed files, removes files created after the snapshot). This is the prerequisite for daring to enable `bypass`.
+Whenever a round involves write/execution tools, a content-addressed snapshot of the working directory is taken before that round starts (`~/.cocode/checkpoints/<session>/`, last 10 rounds kept automatically). `/checkpoints` to view, `/restore <round>` to roll back (overwrites changed files, removes files created after the snapshot). This is the prerequisite for daring to enable `bypass`.
 
 ## 🪶 Low-token strategy
 
 | Strategy | Description |
 |---|---|
 | Repo map (proactive) | A symbol skeleton replaces "repeated glob + grep"; a few hundred tokens replace dozens of tool calls, injected only above a threshold |
-| Local code index | Symbol index (with line numbers) and semantic inverted index persisted to `~/.vega/index/`, rebuilt incrementally by mtime; `Search` matches by words (`findUserById` splits into `find/user/by/id`), Chinese comments split by bigrams, definition lines weighted |
+| Local code index | Symbol index (with line numbers) and semantic inverted index persisted to `~/.cocode/index/`, rebuilt incrementally by mtime; `Search` matches by words (`findUserById` splits into `find/user/by/id`), Chinese comments split by bigrams, definition lines weighted |
 | Change-aware context | Injects "recently changed files + dirty git files" into the system prompt, so the model knows files on disk may no longer look like what it remembers |
 | On-demand project instructions | Convention files like `COCODE.md` / `AGENTS.md` are injected only when present, with a character cap |
 | Tool output truncation | `cfg.toolOutputLimit` (default 6000 chars); large outputs keep head+tail |
@@ -272,7 +272,7 @@ Drop `COCODE.md` / `AGENTS.md` at the project root (also recognized: `CLAUDE.md`
 
 ### Custom slash commands
 
-`~/.vega/commands/*.md` or `<project>/.cocode/commands/*.md` (project level overrides same names):
+`~/.cocode/commands/*.md` or `<project>/.cocode/commands/*.md` (project level overrides same names):
 
 ```markdown
 ---
@@ -288,7 +288,7 @@ Use `/review the latest commit` directly in the REPL; it also appears in the fro
 Without configuration, the `Lsp` tool falls back to the local symbol index (go-to-definition / find-references / diagnostics — zero-dependency and good enough, but no type info). Install a language server, add it to the config, and it switches to real LSP:
 
 ```jsonc
-// ~/.vega/config.json
+// ~/.cocode/config.json
 {
   "lspServers": {
     ".ts": {
@@ -311,7 +311,7 @@ Any failure (not installed, handshake timeout, process crash) falls back to the 
 
 ### Lifecycle hooks
 
-`~/.vega/hooks.json` (always active) and `<project>/.cocode/hooks.json` (**not executed by default**, see below):
+`~/.cocode/hooks.json` (always active) and `<project>/.cocode/hooks.json` (**not executed by default**, see below):
 
 ```json
 {
@@ -334,7 +334,7 @@ Hooks receive the event JSON on stdin (`hook_event_name` / `tool_name` / `tool_i
 
 ### Observability
 
-Every run writes a `~/.vega/traces/<session>/<run>.jsonl` (`traceEnabled: false` to disable): request structure, responses, per-round usage, every tool call (including permission decisions and whether a hook blocked it), context compaction events. By default **conversation bodies are not recorded** — only structure (counts / char sizes / tool names); with `traceFullBody` enabled, full bodies are recorded and always redacted.
+Every run writes a `~/.cocode/traces/<session>/<run>.jsonl` (`traceEnabled: false` to disable): request structure, responses, per-round usage, every tool call (including permission decisions and whether a hook blocked it), context compaction events. By default **conversation bodies are not recorded** — only structure (counts / char sizes / tool names); with `traceFullBody` enabled, full bodies are recorded and always redacted.
 
 - CLI: `/trace` to list, `/trace <id>` to print the timeline
 - Desktop: the right-side "Run History" panel
@@ -342,7 +342,7 @@ Every run writes a `~/.vega/traces/<session>/<run>.jsonl` (`traceEnabled: false`
 
 ### Custom tools
 
-`<project>/.cocode/tools/*.js` or `~/.vega/tools/*.js`, `export default` a tool object or an array of tools:
+`<project>/.cocode/tools/*.js` or `~/.cocode/tools/*.js`, `export default` a tool object or an array of tools:
 
 ```js
 export default {

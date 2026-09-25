@@ -1,4 +1,6 @@
-// CoCode 模型接入层：任何 OpenAI 兼容 Chat Completions 接口
+import { anthropicCompletion } from './anthropic.js';
+
+// CoCode 模型接入层：OpenAI 兼容 Chat Completions + Claude 原生 Messages API
 // 零依赖实现：fetch + 手写 SSE 解析，支持流式与工具调用聚合
 //
 // 能力探测：部分 OpenAI 兼容接口并不实现 function calling（一些小模型网关、
@@ -40,7 +42,7 @@ You keep changes reviewable: show diffs before overwriting, avoid touching files
  *  - 名字含 vision / multimodal 的直接兜底，其余按家族精确匹配，
  *    避免误放纯文本变体（如 doubao-pro、grok-3、kimi-k2、qwq、glm-4.6）。
  */
-const VISION_MODEL_RE = /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-5|o1(?!-mini)|o3(?!-mini)|o4|claude-(?:[3-9]|opus|sonnet|haiku)|gemini|gemma-3|qwen[\d.]*[-_]?vl|qvq|deepseek-vl|doubao-seed|seed-1\.[56]|kimi-(?:latest|vl|vision)|vision|multimodal|llava|minicpm-v|internvl|pixtral|grok-4|grok.*vision|step-1[vo]|glm-4v|glm-\d\.\dv|ernie.*vl|molmo|cogvlm)/i;
+const VISION_MODEL_RE = /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-[56]|o1(?!-mini)|o3(?!-mini)|o4|claude-(?:[3-9]|opus|sonnet|haiku)|gemini|gemma-3|qwen[\d.]*[-_]?vl|qvq|deepseek-vl|doubao-seed|seed-1\.[56]|kimi-(?:latest|vl|vision)|vision|multimodal|llava|minicpm-v|internvl|pixtral|grok-4|grok.*vision|step-1[vo]|step-3\.7-flash|glm-4v|glm-\d\.\dv|ernie.*vl|molmo|cogvlm)/i;
 
 export function detectVision(cfg) {
   if (cfg?.vision === true) return true;
@@ -50,16 +52,20 @@ export function detectVision(cfg) {
 
 export function createClient(cfg) {
   if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
-    throw new Error('未配置 apiKey：请运行 `vega config` 或设置 VEGA_API_KEY（本地模型如 Ollama 可免鉴权）');
+    throw new Error('未配置 apiKey：请运行 `cocode config` 或设置 COCODE_API_KEY（本地模型如 Ollama 可免鉴权）');
   }
   return {
     baseURL: cfg.baseURL.replace(/\/+$/, ''),
     apiKey: cfg.apiKey,
     model: cfg.model,
+    provider: cfg.provider,
     temperature: cfg.temperature,
     maxTurns: cfg.maxTurns ?? 40,
     // 能力位：tool_calls 由探测结果决定；vision 由模型名/配置推断
-    supportsTools: cfg.forceReact ? false : getToolSupport(cfg),
+    // GPT-6 Astra 的 Chat Completions 不支持 function calling；CoCode 的
+    // Responses 适配尚未提供，直接用文本 ReAct，避免每轮先撞一次 400。
+    supportsTools: cfg.forceReact || (/^https:\/\/api\.openai\.com\/v1\/?$/i.test(cfg.baseURL) && /^gpt-6-astra(?:-|$)/i.test(cfg.model))
+      ? false : getToolSupport(cfg),
     vision: detectVision(cfg),
     // prompt cache：稳定前缀 + 由厂商自动缓存（DeepSeek/智谱）时无需额外字段；
     // 需要显式声明的端点可用 promptCacheKey 传稳定键。
@@ -141,6 +147,10 @@ export function normalizeUsage(u) {
 const thinkingParamCache = new Map();
 
 export async function chatCompletion(client, { messages, tools, signal, onDelta, onThinking }) {
+	// Claude 走原生 Messages API；其他服务商继续使用 Chat Completions。
+	if (client.provider === 'anthropic' || /^https:\/\/api\.anthropic\.com\/v1\/?$/i.test(client.baseURL)) {
+		return anthropicCompletion(client, { messages, tools, signal, onDelta, onThinking });
+	}
 	// 只发送 API 标准字段（内部元数据如 tool_name 不上送）。
 	// content 支持两种形态：纯字符串，或多模态 parts 数组（[{type:'text'}, {type:'image_url'}]）。
 	// 文本部分 / tool_calls.arguments / name 都过一遍 sanitizeLoneSurrogates，
@@ -182,21 +192,32 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
   // 策略：按已缓存的可用档位尝试，被 400/422 拒就换下一档（结果缓存，
   // 同一端点后续请求直接用对的那一档）。
   const thinkingKey = `${client.baseURL}|${client.model}`;
+  const officialOpenAI = /^https:\/\/api\.openai\.com\/v1\/?$/i.test(client.baseURL);
+  const officialGoogle = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/openai\/?$/i.test(client.baseURL);
+  const openAIReasoningModel = officialOpenAI && /^(?:o[1-9](?:[.-]|$)|gpt-[5-9](?:[.-]|$))/i.test(client.model);
   const thinkingVariants = [
     { key: 'enable_thinking', extra: { enable_thinking: true } },
     { key: 'reasoning_effort', extra: { reasoning_effort: client.thinkingEffort === 'max' ? 'high' : (client.thinkingEffort ?? 'high') } },
     { key: 'none', extra: {} }
   ];
+  // Google 的兼容接口使用 reasoning_effort；这些端点不接受 enable_thinking。
+  if (officialOpenAI || officialGoogle) {
+    thinkingVariants.splice(0, officialGoogle || openAIReasoningModel ? 1 : 2);
+  }
+  // GPT-6 Sol/Luna 在 Chat Completions 中仅允许 reasoning_effort=none 时调用工具。
+  // 保持工具能力比在此端点强制思考更重要；无工具请求仍使用用户选定的思考档位。
+  const openAIChatToolsNeedNone = officialOpenAI && /^gpt-6-(?:sol|luna)(?:-|$)/i.test(client.model) && !!tools?.length;
   const knownVariant = thinkingParamCache.get(thinkingKey);
-  if (knownVariant) thinkingVariants.sort((a, b) => (a.key === knownVariant ? -1 : 1));
-  const thinkingVariantsForClient = client.thinking ? thinkingVariants : [{ key: 'none', extra: {} }];
+  if (knownVariant && !openAIChatToolsNeedNone) thinkingVariants.sort((a, b) => (a.key === knownVariant ? -1 : 1));
+  const thinkingVariantsForClient = client.thinking && !openAIChatToolsNeedNone
+    ? thinkingVariants : [{ key: 'none', extra: openAIChatToolsNeedNone ? { reasoning_effort: 'none' } : {} }];
   // 已知不支持 tool_calls 的端点：不再带 tools，省一次必然失败的往返
   const toolsEnabled = !!tools?.length && client.supportsTools !== false;
   if (toolsEnabled) {
     baseBody.tools = tools;
     baseBody.tool_choice = 'auto';
   }
-  if (client.temperature != null) baseBody.temperature = client.temperature;
+  if (client.temperature != null && !openAIReasoningModel) baseBody.temperature = client.temperature;
   if (client.promptCacheKey) baseBody.prompt_cache_key = client.promptCacheKey;
 
   // 强制流式输出：所有模型一律 stream:true，不做自动降级（用户明确要求）。
@@ -217,6 +238,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
           headers: {
             'content-type': 'application/json',
             ...(client.apiKey ? { authorization: `Bearer ${client.apiKey}` } : {}),
+            ...(officialGoogle ? { 'x-goog-api-client': 'cocode-desktop/1.0.0' } : {}),
             // 任务模式声明（ask|craft），网关按模式倍率差异化计费；非官方端点会忽略此头
             'x-cocode-mode': client.mode || 'craft'
           },
@@ -229,7 +251,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
 
       if (res.ok) {
         // 这一档能用，缓存起来 —— 同一端点后续请求直接用对的那档
-        if (client.thinking) thinkingParamCache.set(thinkingKey, variant.key);
+        if (client.thinking && !openAIChatToolsNeedNone) thinkingParamCache.set(thinkingKey, variant.key);
         break;
       }
       try { detail = (await res.text()).slice(0, 400); } catch { /* ignore */ }
@@ -252,7 +274,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
         404: '接口路径或模型不存在（检查 baseURL 是否以 /v1 结尾）',
         429: '请求过于频繁或额度不足'
       }[res.status];
-      // 上游返回 JSON 时只展示其 message（如网关 402 订阅引导、OpenAI error.message），
+      // 上游返回 JSON 时只展示其 message（如 OpenAI 兼容接口的 error.message），
       // 不倾倒原始响应体；解析不出才回退原文。业务 code 挂到 err 供前端区分引导。
       let shown = detail;
       let bizCode = '';

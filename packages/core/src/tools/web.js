@@ -3,6 +3,8 @@
 // 零依赖：只用 Node 内置 fetch（>=18）。HTML 用正则粗提取 —— 目标不是
 // 完美还原 DOM，而是把「人能读的正文」低 token 地喂给模型。
 import { redact } from '../security.js';
+import { lookup as dnsLookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 
 // 用真实形态的 Chrome UA：大量站点（含搜索引擎的 html 版）会按 UA 拒绝
 // 非浏览器流量 —— 之前带 "CoCode/0.1" 的 UA 是「fetch failed / 403」的高发原因。
@@ -19,9 +21,65 @@ const DEFAULT_TIMEOUT = 20000;
 let injectedFetcher = null;
 export function setWebFetcher(fn) { injectedFetcher = typeof fn === 'function' ? fn : null; }
 
+// DNS 也允许注入，既让安全检查可在离线测试中稳定复现，也避免把测试的
+// DNS 依赖隐藏在全局 fetch mock 后面。
+let injectedDnsLookup = null;
+export function setWebDnsLookup(fn) { injectedDnsLookup = typeof fn === 'function' ? fn : null; }
+
 function doFetch(url, init) {
   if (injectedFetcher) return injectedFetcher(url, init);
   return globalThis.fetch(url, init);
+}
+
+function isBlockedIpv4(address) {
+  const octets = address.split('.').map(Number);
+  if (octets.length !== 4 || octets.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+  const [a, b] = octets;
+  return a === 0 || a === 10 || a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && (b === 0 || b === 168)) ||
+    (a === 198 && (b === 18 || b === 19 || b === 51)) ||
+    (a === 203 && b === 0 && octets[2] === 113) ||
+    a >= 224;
+}
+
+function isBlockedIpv6(address) {
+  const ip = address.toLowerCase().replace(/^\[|\]$/g, '');
+  // unspecified / loopback / IPv4-mapped、ULA、链路本地、组播均不应由 WebFetch 触达。
+  return ip === '::' || ip === '::1' || ip.startsWith('::ffff:') ||
+    /^(fc|fd)/.test(ip) || /^fe[89ab]/.test(ip) || ip.startsWith('ff');
+}
+
+function isBlockedAddress(address) {
+  const family = isIP(address);
+  return family === 4 ? isBlockedIpv4(address) : family === 6 ? isBlockedIpv6(address) : true;
+}
+
+async function assertPublicHost(hostname) {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
+      host === 'ip6-localhost' || host === 'ip6-loopback' || host === 'broadcasthost') {
+    throw new Error('已拒绝本机或局域网地址。WebFetch 只能访问公开互联网地址。');
+  }
+  if (isIP(host)) {
+    if (isBlockedAddress(host)) throw new Error('已拒绝本机、私网或保留 IP 地址。WebFetch 只能访问公开互联网地址。');
+    return;
+  }
+
+  let records;
+  try {
+    records = injectedDnsLookup
+      ? await injectedDnsLookup(host)
+      : await dnsLookup(host, { all: true, verbatim: true });
+  } catch {
+    throw new Error(`域名无法解析：${host}`);
+  }
+  const addresses = Array.isArray(records) ? records.map((r) => typeof r === 'string' ? r : r?.address) : [];
+  if (!addresses.length || addresses.some((address) => isBlockedAddress(address || ''))) {
+    throw new Error('已拒绝解析到本机、私网或保留 IP 的地址。WebFetch 只能访问公开互联网地址。');
+  }
 }
 
 /**
@@ -112,6 +170,34 @@ export function assertHttpUrl(raw) {
   return u;
 }
 
+/**
+ * WebFetch 不应成为从模型到本机元数据服务、Docker/Redis 管理口或公司内网的跳板。
+ * 每次请求（包括重定向目标）均复核字面 IP 和 DNS 解析结果。
+ */
+export async function assertPublicHttpUrl(raw) {
+  const u = assertHttpUrl(raw);
+  await assertPublicHost(u.hostname);
+  return u;
+}
+
+function isRedirect(status) {
+  return status === 301 || status === 302 || status === 303 || status === 307 || status === 308;
+}
+
+async function fetchPublicUrl(initialUrl, init) {
+  let u = await assertPublicHttpUrl(initialUrl);
+  for (let redirects = 0; redirects <= 5; redirects++) {
+    // 禁用 fetch 自己的自动跳转；否则一次公开 URL 的 30x 可绕过后续校验。
+    const res = await doFetch(u.toString(), { ...init, redirect: 'manual' });
+    if (!isRedirect(res.status)) return { res, url: u };
+    const location = res.headers.get('location');
+    if (!location) return { res, url: u };
+    if (redirects === 5) throw new Error('重定向次数超过 5 次，已中止请求。');
+    u = await assertPublicHttpUrl(new URL(location, u).toString());
+  }
+  throw new Error('重定向次数超过 5 次，已中止请求。');
+}
+
 // ------------------------------------------------------------- WebFetch
 
 export const webFetchTool = {
@@ -125,22 +211,20 @@ export const webFetchTool = {
       url: { type: 'string', description: '要抓取的完整 URL（http/https）' },
       max_chars: { type: 'number', description: '返回正文的最大字符数，默认沿用工具输出上限' },
       raw: { type: 'boolean', description: 'true = 返回原始响应体（不转纯文本），默认 false' }
-    },
-    required: ['url']
+  },
+  required: ['url']
   },
   async execute({ url, max_chars, raw = false }, ctx) {
-    let u;
-    try { u = assertHttpUrl(url); } catch (e) { return `抓取失败: ${e.message}`; }
     const limit = Number.isFinite(max_chars) ? Math.max(500, Math.min(max_chars, 200000))
       : (ctx?.toolOutputLimit ?? 6000);
     const timeout = ctx?.webTimeout ?? DEFAULT_TIMEOUT;
-    let res;
+    let res, u;
     try {
-      res = await doFetch(u.toString(), {
+      ({ res, url: u } = await fetchPublicUrl(url, {
         redirect: 'follow',
         headers: { 'user-agent': UA, accept: 'text/html,application/json,text/plain,*/*' },
         signal: AbortSignal.timeout(timeout)
-      });
+      }));
     } catch (e) {
       return `抓取失败: ${describeFetchError(e, timeout)}`;
     }

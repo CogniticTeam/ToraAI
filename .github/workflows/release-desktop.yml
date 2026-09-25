@@ -10,10 +10,17 @@ permissions:
 
 jobs:
   macos:
+    # v1.0.0 由本机签名、公证、附票据后手动上传，避免 CI 抢先覆盖最终 DMG 元数据。
+    if: github.ref_name != 'v1.0.0'
     name: Publish macOS installer
     runs-on: macos-latest
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+      CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,12 +29,20 @@ jobs:
           cache: npm
       - name: Verify tag matches app version
         run: node -e "const p=require('./packages/desktop/package.json'); if (process.env.GITHUB_REF_NAME !== 'v' + p.version) throw new Error('Tag must equal v' + p.version)"
+      - name: Require macOS signing and notarization credentials
+        run: |
+          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Missing required macOS release secret: $name" >&2
+              exit 1
+            fi
+          done
       - run: npm ci
       - run: npm ci --prefix packages/desktop/frontend
-      # 当前策略是未签名的手动 DMG 下载；拿到 Apple 证书后再移除 identity:null 并加入公证。
       - run: npm run release:mac
 
   windows:
+    if: github.ref_name != 'v1.0.0'
     name: Publish Windows installer
     needs: macos
     runs-on: windows-latest

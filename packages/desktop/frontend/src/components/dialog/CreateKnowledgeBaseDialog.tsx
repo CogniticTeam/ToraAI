@@ -66,7 +66,7 @@ export function CreateKnowledgeBaseDialog({
 	credentialRefetchTrigger,
 }: Props) {
 	const { t } = useTranslation();
-	const { create } = useKnowledgeBases();
+	const { create } = useKnowledgeBases({ enabled: false });
 	const { providers, policy, loading } = useKbEmbeddingModels(credentialRefetchTrigger);
 	const { chunkers } = useChunkers();
 

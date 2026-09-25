@@ -1,16 +1,15 @@
 // 语音识别：GLM-ASR-2512 云端转写（智谱 open.bigmodel.cn）。
 //
-// 架构（v3：双通道）：
-//   1) BYOK：用户配置了自己的 GLM Key（~/.vega/voice-config.json）→ 直连
-//      智谱，完全不消耗 CoCode 积分（与自定义模型同等待遇）。
-//   2) 官方：未配置 Key 但已登录 → 走 auth-worker 计费网关
-//      /official/v1/audio/transcriptions，用登录 token 鉴权，按音频秒数
-//      扣积分（10 积分/秒，见 core/src/credit-rates.js）。
+// 架构（v4：双通道、均免费）：
+//   1) BYOK：用户配置了自己的 GLM Key（~/.cocode/voice-config.json）→ 直连
+//      智谱。
+//   2) 云端：未配置 Key但已登录 → 走 CoCode 免费 ASR 网关
+//      /asr/v1/audio/transcriptions，用登录 token 鉴权，不计费。
 //
 //   · 渲染层录音（16kHz 单声道 Float32 PCM）→ IPC voice:transcribe →
 //     主进程编码 WAV → multipart POST → 返回文本。
 //   · 无需下载任何本地模型/引擎。
-//   · 限制（官方）：文件 ≤25MB、时长 ≤30s。超长录音在编码前截断到 28s。
+//   · 限制：文件 ≤25MB、时长 ≤30s。超长录音在编码前截断到 28s。
 //
 // API：POST .../audio/transcriptions
 //      multipart: model=glm-asr-2512, file=<wav>
@@ -19,16 +18,15 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 
-// 与 core/config.js 同款目录解析（COCODE_HOME / VEGA_HOME 可整体重定向）
-export const VEGA_DIR = process.env.COCODE_HOME || process.env.VEGA_HOME || join(homedir(), '.vega');
-export const VOICE_DIR = join(VEGA_DIR, 'voice');
+// 主进程加载 core 时完成旧数据迁移，语音模块使用同一数据根。
+export const COCODE_DIR = process.env.COCODE_HOME || join(homedir(), '.cocode');
+export const VOICE_DIR = join(COCODE_DIR, 'voice');
 const CONFIG_FILE = join(VOICE_DIR, 'voice-config.json');
 
 const ASR_ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions';
-// 官方计费网关（与 modelSync.ts / auth-worker 同默认域名）
-const OFFICIAL_GATEWAY = 'https://cocode.ohfun.online/official/v1';
+const COCODE_ASR_GATEWAY = 'https://cocode.ohfun.online/asr/v1';
 const ASR_MODEL = 'glm-asr-2512';
-// 官方上限 30s，留 2s 余量
+// 云端上限 30s，留 2s 余量
 const MAX_SECONDS = 28;
 const SAMPLE_RATE = 16000;
 
@@ -55,7 +53,7 @@ export function setAsrApiKey(key) {
 
 /**
  * 资源状态（麦克风按钮用它决定能不能录音）。
- * 云端方案 = 有自用 Key（BYOK）或已登录可走官方网关，二者居一即可用。
+ * 云端方案 = 有自用 Key（BYOK）或已登录可走免费 CoCode ASR，二者居一即可用。
  * @param {{token?: string|null}} [opts]
  */
 export function voiceStatus(opts = {}) {
@@ -67,8 +65,7 @@ export function voiceStatus(opts = {}) {
     packagesReady: ready,
     installed: ready,
     cloud: true,
-    // 通道标识：byok = 自有 Key 不耗积分；official = 走网关按秒扣积分
-    channel: key ? 'byok' : (opts.token ? 'official' : 'none'),
+    channel: key ? 'byok' : (opts.token ? 'cloud' : 'none'),
   };
 }
 
@@ -104,7 +101,7 @@ export function encodeWav(samples) {
 
 /**
  * 转写 16kHz 单声道 PCM（渲染层经 IPC 送来的原始采样）。
- * 优先 BYOK（自用 Key 直连，不耗积分）；无 Key 时用登录 token 走官方网关（扣积分）。
+ * 优先 BYOK（自用 Key 直连）；无 Key 时用登录 token 走免费 CoCode ASR。
  * @param {Float32Array} samples
  * @param {{token?: string|null, gatewayBase?: string}} [opts]
  * @returns {Promise<string>} 识别文本（静音/空音频返回空串）
@@ -123,10 +120,10 @@ export async function transcribeSamples(samples, opts = {}) {
   form.append('stream', 'false');
   form.append('file', new Blob([wav], { type: 'audio/wav' }), 'voice-input.wav');
 
-  // BYOK 直连智谱；官方走 CoCode 计费网关注入上游 Key + 扣积分
+  // BYOK 直连智谱；云端通道由 CoCode 网关注入上游 Key，用户无需配置。
   const endpoint = key
     ? ASR_ENDPOINT
-    : `${(opts.gatewayBase || OFFICIAL_GATEWAY).replace(/\/+$/, '')}/audio/transcriptions`;
+    : `${(opts.gatewayBase || COCODE_ASR_GATEWAY).replace(/\/+$/, '')}/audio/transcriptions`;
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { authorization: `Bearer ${key || token}` },
@@ -138,9 +135,6 @@ export async function transcribeSamples(samples, opts = {}) {
       const j = JSON.parse(await res.text());
       detail = String(j?.detail?.message ?? j?.detail ?? '').slice(0, 300);
     } catch { /* ignore */ }
-    if (!key && res.status === 402) {
-      throw new Error(detail || '语音识别失败：积分不足，请先在「订阅」页兑换积分');
-    }
     throw new Error(`GLM-ASR HTTP ${res.status}：${detail}`);
   }
   const json = await res.json();

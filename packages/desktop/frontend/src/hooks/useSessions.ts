@@ -41,11 +41,9 @@ export function useSessions(agentId: string | null) {
 		queryKey: [...SESSIONS_KEY, agentId],
 		queryFn: () => sessionApi.list(agentId as string).then((res) => res.sessions),
 		enabled: agentId !== null,
-		// This list carries `is_running` and team membership, both of
-		// which move underneath the page. Sharing one copy between the
-		// two mounts is the point here, not skipping the read — so a
-		// view that needs it still re-reads it when it mounts.
-		staleTime: 0,
+		// 同一聊天页会被侧栏、路由层和视口同时读取。短缓存窗口只用于合并
+		// 同一轮挂载请求；写操作与 SSE 事件仍会主动失效或刷新它。
+		staleTime: 5_000,
 	});
 
 	/** Drop every agent's list, so both mounts re-read after a write. */

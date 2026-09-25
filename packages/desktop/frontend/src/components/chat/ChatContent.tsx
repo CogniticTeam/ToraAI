@@ -10,7 +10,7 @@ import {
 	GitBranch,
 	TriangleAlert,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
 	type SlashItem,
@@ -123,7 +123,7 @@ interface ChatContentProps {
 	/** Knowledge bases visible to the user; used by the "tools" context source. */
 	workspaceKnowledgeBases?: KnowledgeBaseView[];
 	/**
-	 * The user's own slash commands (`~/.vega/commands/*.md` and
+	 * The user's own slash commands (`~/.cocode/commands/*.md` and
 	 * `<cwd>/.cocode/commands/*.md`). They appear above the skills in the
 	 * `/` menu; picking one fills the composer with its body.
 	 */
@@ -330,6 +330,11 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 		[getSkillRecord],
 	);
 
+	// 请求触发与 SSE 首个可见块之间存在短暂空窗。用 state 而非 ref 记录流已
+	// 开始，既让 React 生命周期可追踪，也避免异步 render 中修改 ref 的竞态。
+	const [waitingForFirstResponse, setWaitingForFirstResponse] = useState(false);
+	const [observedStreaming, setObservedStreaming] = useState(false);
+
 	// Wrap onSend so the silent context block (cwd/git/turns/tools) plus the
 	// picked-skill specs travel together as ``auto_context`` — appended to the
 	// user-visible bubble only on the model side, never in the local Msg[] that
@@ -339,7 +344,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			// 本地状态先于 SSE 生命周期：技能上下文构建、创建首个会话以及
 			// 服务端接受 trigger 都可能造成短暂空窗，不能让“思考中”漏掉。
 			setWaitingForFirstResponse(true);
-			observedStreamingRef.current = false;
+			setObservedStreaming(false);
 			try {
 				const skillCtx = await buildSkillContext(pickedSkills);
 				const fullContext = [...contextBlocks, ...skillCtx];
@@ -355,8 +360,6 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	// Treating "no messages yet" as empty would flash the greeting over
 	// every session that does have history.
 	const isEmpty = !loading && msgs.length === 0;
-	const [waitingForFirstResponse, setWaitingForFirstResponse] = useState(false);
-	const observedStreamingRef = useRef(false);
 	// 从用户消息发出到第一个文本块或工具调用抵达 SSE 之间，模型已有任务
 	// 但还没有可渲染内容。仅看最后一条消息，避免历史里旧的 assistant 回复
 	// 错误地遮住当前轮的占位提示。
@@ -380,15 +383,13 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	// 内容，因此只在已经确实进入 streaming 后再由 idle 清理本地状态。
 	useEffect(() => {
 		if (!waitingForFirstResponse) return;
-		if (phase === 'streaming') observedStreamingRef.current = true;
-		if (
-			hasFirstAssistantContent ||
-			(observedStreamingRef.current && phase === 'idle')
-		) {
+		if (hasFirstAssistantContent || (observedStreaming && phase === 'idle')) {
 			setWaitingForFirstResponse(false);
-			observedStreamingRef.current = false;
+			setObservedStreaming(false);
+			return;
 		}
-	}, [hasFirstAssistantContent, phase, waitingForFirstResponse]);
+		if (phase === 'streaming') setObservedStreaming(true);
+	}, [hasFirstAssistantContent, observedStreaming, phase, waitingForFirstResponse]);
 
 	// A spinner that appears and vanishes inside a couple of frames reads
 	// as a flicker, not as feedback — so hold it back until the load has
@@ -466,6 +467,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											)}
 										<ASMessageBubble
 											message={message}
+											skillLibrary={library.skills}
 											onUserConfirm={onUserConfirm}
 											showThinking={message === waitingUserMessage}
 											showTimestamp={canShowMessageTimestamps}

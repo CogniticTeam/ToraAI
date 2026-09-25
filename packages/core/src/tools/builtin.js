@@ -82,7 +82,7 @@ export function toolCategory(name, args = {}) {
     case 'TaskGet': case 'TaskList':
       return 'read';
     case 'MemorySave': case 'MemorySearch': case 'MemoryList': case 'MemoryForget':
-      // 记忆工具只读写 ~/.vega/asapi/memories.json（用户记忆数据），不触碰
+      // 记忆工具只读写 ~/.cocode/asapi/memories.json（用户记忆数据），不触碰
       // 工作区文件，归 write 会让默认权限模式每次弹确认卡，功能形同虚设；
       // 全归 read 放行。Forget 虽是删除，但删的是记忆不是文件，且指引限定
       // 只在用户明确要求时使用。

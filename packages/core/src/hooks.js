@@ -3,7 +3,7 @@
 // 事件：UserPromptSubmit / PreToolUse / PostToolUse / Stop
 //
 // 配置（两种位置，项目级追加在用户级之后）：
-//   ~/.vega/hooks.json          用户级（总是生效）
+//   ~/.cocode/hooks.json          用户级（总是生效）
 //   <cwd>/.cocode/hooks.json    项目级（**默认不执行**，见下面的安全说明）
 //
 // 格式（兼容 Claude Code 风格，也支持扁平写法）：
@@ -33,12 +33,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { buildChildEnv } from './security.js';
-import { VEGA_DIR } from './config.js';
+import { COCODE_DIR } from './config.js';
 import { runAutomations } from './tools/automations.js';
 
 export const HOOK_EVENTS = ['UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop'];
 
-export const USER_HOOKS_PATH = join(VEGA_DIR, 'hooks.json');
+export const USER_HOOKS_PATH = join(COCODE_DIR, 'hooks.json');
 export const PROJECT_HOOKS_PATH = (cwd) => join(cwd, '.cocode', 'hooks.json');
 
 const DEFAULT_TIMEOUT = 10; // 秒
@@ -128,7 +128,7 @@ function runCommand(command, payload, { cwd, timeout }) {
     try {
       proc = spawn(shell, ['-c', command], {
         cwd: cwd || process.cwd(),
-        env: buildChildEnv(process.env, { VEGA_HOOK: '1' }),
+        env: buildChildEnv(process.env, { COCODE_HOOK: '1' }),
         stdio: ['pipe', 'pipe', 'pipe']
       });
     } catch (e) {

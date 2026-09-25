@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp, CornerDownLeft, X } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import type { UserQuestionEntry } from '@/hooks/useMessages';
 import { useTranslation } from '@/i18n/useI18n';
@@ -29,7 +29,7 @@ export function QuestionPanel({
 	onCancel: () => Promise<void> | void;
 }) {
 	const { t } = useTranslation();
-	const questions = entry.questions ?? [];
+	const questions = useMemo(() => entry.questions ?? [], [entry.questions]);
 	const supplementPage = questions.length; // index of the note page
 	const totalPages = questions.length + 1; // +1 for the supplement page
 

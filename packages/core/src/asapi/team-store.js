@@ -1,18 +1,18 @@
 // Team 存储：多智能体团队协作的元数据
 //
 // 持久化位置：
-//   ~/.vega/teams.json           —— TeamRecord[]
-//   ~/.vega/team-docs/{id}.md    —— 团队文档（队长可读写，work 共享上下文）
+//   ~/.cocode/teams.json           —— TeamRecord[]
+//   ~/.cocode/team-docs/{id}.md    —— 团队文档（队长可读写，work 共享上下文）
 //
 // TeamRecord 结构：
 //   { id, created_at, updated_at, user_id, name, description,
 //     leader_session_id, leader_agent_id, member_ids: string[], status: 'active'|'disbanded' }
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 
-const TEAMS_PATH = join(VEGA_DIR, 'teams.json');
-const TEAM_DOCS_DIR = join(VEGA_DIR, 'team-docs');
+const TEAMS_PATH = join(COCODE_DIR, 'teams.json');
+const TEAM_DOCS_DIR = join(COCODE_DIR, 'team-docs');
 
 const now = () => new Date().toISOString();
 const uid = () => 'team_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
@@ -30,7 +30,7 @@ function readJson(path, fallback) {
 }
 
 function writeJson(path, data) {
-  mkdirSync(VEGA_DIR, { recursive: true });
+  mkdirSync(COCODE_DIR, { recursive: true });
   const tmp = `${path}.tmp`;
   writeFileSync(tmp, JSON.stringify(data, null, 2));
   renameSync(tmp, path);
@@ -131,7 +131,7 @@ export function disbandTeam(team_id) {
   try { unlinkSync(getTeamDocPath(team_id)); } catch { /* 文件不存在也 OK */ }
 }
 
-/** 团队文档路径：~/.vega/team-docs/{team_id}.md */
+/** 团队文档路径：~/.cocode/team-docs/{team_id}.md */
 export function getTeamDocPath(team_id) {
   return join(TEAM_DOCS_DIR, `${team_id}.md`);
 }

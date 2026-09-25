@@ -5,16 +5,16 @@
 //  - 中文注释按 bigram 切（搜「重试」能命中注释里的「失败重试」）；
 //  - 定义行的权重高于普通引用行，所以搜一个名字时定义会排前面。
 //
-// 索引落盘 ~/.vega/index/<rootHash>.inv.json，按 mtime+size 增量重建，
+// 索引落盘 ~/.cocode/index/<rootHash>.inv.json，按 mtime+size 增量重建，
 // 只在文件真的变了才重扫 —— 这就是「几毫秒换掉几十轮 grep」的来源。
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import { IGNORE_DIRS, langOf, walkCodeFiles } from './repomap.js';
 import { extractDefinitions } from './lsp.js';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 
-const INDEX_DIR = join(VEGA_DIR, 'index');
+const INDEX_DIR = join(COCODE_DIR, 'index');
 const MAX_TOKENS = 200_000;
 const MAX_POSTINGS_PER_TOKEN = 200;
 const MAX_LINES_SCANNED = 8000;

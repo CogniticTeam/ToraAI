@@ -209,7 +209,7 @@ export function ChannelForm({ value, onChange, agents, channelTypes, mode }: Pro
 			if (card) return card;
 		}
 		return null;
-	}, [groups, value.chatModelConfig?.type, value.chatModelConfig?.model]);
+	}, [groups, value.chatModelConfig]);
 
 	return (
 		<FieldGroup className="[&>[data-orientation=horizontal]>:last-child]:w-48">

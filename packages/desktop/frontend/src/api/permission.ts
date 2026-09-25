@@ -1,7 +1,7 @@
 import { client } from './client';
 
 /**
- * One persisted permission rule. These live in `~/.vega/config.json`
+ * One persisted permission rule. These live in `~/.cocode/config.json`
  * (`permissionRules`) and are what `decidePermission` consults — they
  * outlive sessions, unlike the per-session permission context.
  */

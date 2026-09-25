@@ -6,7 +6,7 @@
 // 放在主进程的原因：渲染层直连 DeepSeek 会被 CORS 拦截，主进程 fetch 无跨域限制。
 // Key 不再硬编码（打进 asar 可被提取盗用），解析顺序：
 //     1. 环境变量 DEEPSEEK_API_KEY；
-//     2. 数据目录 `~/.vega/.env`（COCODE_HOME / VEGA_HOME 可重定向）里的
+//     2. 数据目录 `~/.cocode/.env`（COCODE_HOME 可重定向）里的
 //        `DEEPSEEK_API_KEY=sk-...` 行。
 // 关闭 thinking 模式：提示词改写是轻任务，思考链只会白白拖慢响应。
 
@@ -18,11 +18,11 @@ const DEEPSEEK_URL = 'https://api.deepseek.com/chat/completions';
 const MODEL = 'deepseek-flash';
 const TIMEOUT_MS = 60_000;
 
-/** 从环境变量或 ~/.vega/.env 解析 API Key；都没有则返回 null。 */
+/** 从环境变量或 ~/.cocode/.env 解析 API Key；都没有则返回 null。 */
 function resolveApiKey() {
   const fromEnv = String(process.env.DEEPSEEK_API_KEY ?? '').trim();
   if (fromEnv) return fromEnv;
-  const dir = process.env.COCODE_HOME || process.env.VEGA_HOME || join(homedir(), '.vega');
+  const dir = process.env.COCODE_HOME || join(homedir(), '.cocode');
   try {
     const raw = readFileSync(join(dir, '.env'), 'utf8');
     for (const line of raw.split('\n')) {
@@ -58,7 +58,7 @@ export async function optimizePrompt(text) {
 
   const apiKey = resolveApiKey();
   if (!apiKey) {
-    throw new Error('未配置提示词优化服务：请设置环境变量 DEEPSEEK_API_KEY，或写入 ~/.vega/.env（一行 DEEPSEEK_API_KEY=sk-...）');
+    throw new Error('未配置提示词优化服务：请设置环境变量 DEEPSEEK_API_KEY，或写入 ~/.cocode/.env（一行 DEEPSEEK_API_KEY=sk-...）');
   }
 
   const controller = new AbortController();

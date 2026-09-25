@@ -1,53 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 import { workspaceApi } from '@/api';
 import type { MCPClient, MCPClientStatus, Skill } from '@/api';
 import type { UploadOptions } from '@/api/workspace';
 
-export function useWorkspace(agentId: string | null, sessionId: string | null) {
-	const [mcps, setMcps] = useState<MCPClientStatus[]>([]);
-	const [skills, setSkills] = useState<Skill[]>([]);
-	const [loading, setLoading] = useState(false);
-	const [skillsLoading, setSkillsLoading] = useState(false);
-	const [error, setError] = useState<Error | null>(null);
+interface WorkspaceQueryOptions {
+	/** MCP 配置只在 MCP 面板打开时读取；技能列表始终供输入框使用。 */
+	loadMcp?: boolean;
+}
 
-	const refetch = useCallback(async () => {
-		if (!agentId || !sessionId) {
-			setMcps([]);
-			return;
-		}
-		setLoading(true);
-		setError(null);
-		try {
-			setMcps(await workspaceApi.mcp.list(agentId, sessionId));
-		} catch (e) {
-			setError(e as Error);
-		} finally {
-			setLoading(false);
-		}
-	}, [agentId, sessionId]);
+export function useWorkspace(
+	agentId: string | null,
+	sessionId: string | null,
+	{ loadMcp = true }: WorkspaceQueryOptions = {},
+) {
+	const queryClient = useQueryClient();
+	const mcpKey = ['workspace', 'mcp', agentId, sessionId] as const;
+	const skillsKey = ['workspace', 'skills', agentId, sessionId] as const;
+	const hasScope = Boolean(agentId && sessionId);
 
-	const refetchSkills = useCallback(async () => {
-		if (!agentId || !sessionId) {
-			setSkills([]);
-			return;
-		}
-		setSkillsLoading(true);
-		try {
-			setSkills(await workspaceApi.skill.list(agentId, sessionId));
-		} catch (e) {
-			setError(e as Error);
-		} finally {
-			setSkillsLoading(false);
-		}
-	}, [agentId, sessionId]);
+	const mcpQuery = useQuery<MCPClientStatus[]>({
+		queryKey: mcpKey,
+		queryFn: () => workspaceApi.mcp.list(agentId!, sessionId!),
+		enabled: hasScope && loadMcp,
+	});
+	const skillsQuery = useQuery<Skill[]>({
+		queryKey: skillsKey,
+		queryFn: () => workspaceApi.skill.list(agentId!, sessionId!),
+		enabled: hasScope,
+	});
 
-	useEffect(() => {
-		refetch();
-	}, [refetch]);
-	useEffect(() => {
-		refetchSkills();
-	}, [refetchSkills]);
+	const mcps = mcpQuery.data ?? [];
+	const skills = skillsQuery.data ?? [];
+	const refreshMcps = useCallback(
+		() => queryClient.invalidateQueries({ queryKey: mcpKey }),
+		[queryClient, agentId, sessionId],
+	);
+	const refreshSkills = useCallback(
+		() => queryClient.invalidateQueries({ queryKey: skillsKey }),
+		[queryClient, agentId, sessionId],
+	);
 
 	const addMcps = useCallback(
 		async (clients: MCPClient[]) => {
@@ -68,78 +61,74 @@ export function useWorkspace(agentId: string | null, sessionId: string | null) {
 			for (const mcp of clients) {
 				await workspaceApi.mcp.add(agentId, sessionId, mcp);
 			}
-			await refetch();
+			await refreshMcps();
 		},
-		[agentId, sessionId, mcps, refetch],
+		[agentId, sessionId, mcps, refreshMcps],
 	);
 
 	const addMcpsFromLibrary = useCallback(
 		async (mcpIds: string[]) => {
 			if (!agentId || !sessionId) throw new Error('No agent/session selected');
 			const result = await workspaceApi.mcp.addFromLibrary(agentId, sessionId, mcpIds);
-			await refetch();
-			// Reported per MCP, so a partial success is still a success for
-			// what landed; surface only what did not.
+			await refreshMcps();
 			const failures = Object.entries(result.failed);
 			if (failures.length > 0) {
 				throw new Error(failures.map(([name, why]) => `${name}: ${why}`).join('\n'));
 			}
 		},
-		[agentId, sessionId, refetch],
+		[agentId, sessionId, refreshMcps],
 	);
 
 	const removeMcp = useCallback(
 		async (mcpName: string) => {
 			if (!agentId || !sessionId) throw new Error('No agent/session selected');
 			await workspaceApi.mcp.remove(mcpName, agentId, sessionId);
-			await refetch();
+			await refreshMcps();
 		},
-		[agentId, sessionId, refetch],
+		[agentId, sessionId, refreshMcps],
 	);
 
 	const uploadSkill = useCallback(
 		async (files: File[], options: UploadOptions = {}) => {
 			if (!agentId || !sessionId) throw new Error('No agent/session selected');
 			await workspaceApi.skill.upload(agentId, sessionId, files, options);
-			await refetchSkills();
+			await refreshSkills();
 		},
-		[agentId, sessionId, refetchSkills],
+		[agentId, sessionId, refreshSkills],
 	);
 
 	const addSkillsFromLibrary = useCallback(
 		async (skillIds: string[]) => {
 			if (!agentId || !sessionId) throw new Error('No agent/session selected');
 			const result = await workspaceApi.skill.addFromLibrary(agentId, sessionId, skillIds);
-			await refetchSkills();
-			// Reported per skill, so a partial success is still a success
-			// for what landed; surface only what did not.
+			await refreshSkills();
 			const failures = Object.entries(result.failed);
 			if (failures.length > 0) {
 				throw new Error(failures.map(([name, why]) => `${name}: ${why}`).join('\n'));
 			}
 		},
-		[agentId, sessionId, refetchSkills],
+		[agentId, sessionId, refreshSkills],
 	);
 
 	const removeSkill = useCallback(
 		async (skillName: string) => {
 			if (!agentId || !sessionId) throw new Error('No agent/session selected');
 			await workspaceApi.skill.remove(skillName, agentId, sessionId);
-			await refetchSkills();
+			await refreshSkills();
 		},
-		[agentId, sessionId, refetchSkills],
+		[agentId, sessionId, refreshSkills],
 	);
 
 	return {
 		mcps,
-		loading,
-		error,
-		refetch,
+		loading: hasScope && loadMcp && mcpQuery.isPending,
+		error: (mcpQuery.error ?? skillsQuery.error) as Error | null,
+		refetch: mcpQuery.refetch,
 		addMcps,
 		addMcpsFromLibrary,
 		removeMcp,
 		skills,
-		skillsLoading,
+		skillsLoading: hasScope && skillsQuery.isPending,
 		uploadSkill,
 		addSkillsFromLibrary,
 		removeSkill,

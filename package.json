@@ -1,20 +1,28 @@
 {
-  "name": "vega-monorepo",
+  "name": "cocode-monorepo",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Vega - 全面 Agent 工具（低 token、高效率、自接入模型），Electron + CLI 双版本",
+  "description": "CoCode - 全面 Agent 工具（低 token、高效率、自接入模型），Electron + CLI 双版本",
   "workspaces": [
     "packages/*"
   ],
   "scripts": {
-    "vega": "node packages/cli/src/index.js",
+    "cocode": "node packages/cli/src/index.js",
     "serve": "node packages/core/src/asapi/server.js",
     "serve:simple": "node packages/core/src/server.js",
     "start": "npm run start -w packages/desktop",
-    "test": "node packages/core/test/run.js && node packages/core/test/asapi.js"
+    "test": "node --test packages/core/test/legacy-migration.js && node packages/core/test/run.js && node packages/core/test/asapi.js",
+    "test:ui": "node scripts/test-ui-headless.mjs",
+    "test:bundle": "node scripts/check-frontend-bundle.mjs",
+    "refresh:mac-metadata": "node scripts/refresh-mac-metadata.mjs",
+    "sbom": "npm sbom --sbom-format cyclonedx --package-lock-only",
+    "test:desktop-security": "node scripts/test-desktop-security.mjs"
   },
   "engines": {
     "node": ">=18"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.61.1"
   }
 }

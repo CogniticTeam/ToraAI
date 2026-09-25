@@ -1,8 +1,8 @@
 // 定时任务（Schedule）：cron 定时触发 agent 运行。
 //
 // 持久化：
-//   ~/.vega/schedules.json       —— 任务记录数组（结构对齐前端 ScheduleRecord）
-//   ~/.vega/schedule-runs.json   —— 执行历史 { scheduleId: [{session_id, at}] }
+//   ~/.cocode/schedules.json       —— 任务记录数组（结构对齐前端 ScheduleRecord）
+//   ~/.cocode/schedule-runs.json   —— 执行历史 { scheduleId: [{session_id, at}] }
 //
 // 运行时：startScheduler() 单例 setInterval（unref，不挂住进程退出），
 //   每 20 秒按任务各自的时区做一次 5 段 cron 匹配；同一「分钟键」只触发一次。
@@ -10,10 +10,10 @@
 //   避免本模块与 bridge/store 形成循环依赖。
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 
-const SCHEDULES_PATH = join(VEGA_DIR, 'schedules.json');
-const RUNS_PATH = join(VEGA_DIR, 'schedule-runs.json');
+const SCHEDULES_PATH = join(COCODE_DIR, 'schedules.json');
+const RUNS_PATH = join(COCODE_DIR, 'schedule-runs.json');
 const TICK_MS = 20_000;
 const MAX_RUNS_PER_SCHEDULE = 50;
 

@@ -12,14 +12,14 @@
  * 服务地址存 localStorage('cocode_auth_api')，默认线上部署地址。
  */
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, AtSign, Camera, ChevronDown, ChevronRight, Coins, Eye, EyeOff, KeyRound, Loader2, Sparkles } from 'lucide-react';
+import { ArrowLeft, AtSign, Camera, ChevronDown, Eye, EyeOff, KeyRound, Languages, Loader2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
+import i18n, { setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
-import { openSubscription } from '@/lib/openSettings';
 import {
 	getToken, getEmail, getUsername,
 	setToken as storeToken, setEmail as storeEmail, setUsername as storeUsername,
@@ -78,7 +78,7 @@ const FIELD_CLS =
 	'h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/25';
 /** 主按钮：品牌紫渐变 + 外发光（CoCode × MiniMax 主色统一），禁用整体指针语义 */
 const SUBMIT_CLS =
-	'btn-brand flex h-11 w-full items-center justify-center rounded-sm text-sm font-medium text-white active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:filter-none';
+	'btn-brand flex h-11 w-full items-center justify-center rounded-sm text-sm font-medium text-primary-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:filter-none';
 /** 返回按钮 */
 const BACK_CLS =
 	'absolute -left-2 -top-1 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
@@ -174,6 +174,7 @@ export function AccountSection({ onAuthenticated }: {
 	onAuthenticated?: (user: { email: string; createdAt?: string }) => void;
 }) {
 	const { t } = useTranslation();
+	const isZh = i18n.language.startsWith('zh');
 	const [step, setStep] = useState<Step>('home');
 	const [account, setAccount] = useState(() =>
 		getUsername() ?? getEmail() ?? '');
@@ -399,6 +400,18 @@ export function AccountSection({ onAuthenticated }: {
 	return (
 		<div className="app-drag relative flex h-full w-full items-center justify-center overflow-hidden">
 			<AuthBackdrop />
+
+			{onAuthenticated ? (
+				<button
+					type="button"
+					onClick={() => void setAppLanguage(isZh ? 'en' : 'zh')}
+					aria-label={isZh ? t('common.switchToEn') : t('common.switchToZh')}
+					className="app-no-drag absolute right-5 top-5 z-30 flex h-9 items-center gap-2 rounded-rect border border-border bg-background/90 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
+				>
+					<Languages className="size-4 text-muted-foreground" />
+					<span>{isZh ? t('common.switchToEn') : t('common.switchToZh')}</span>
+				</button>
+			) : null}
 
 			<motion.div
 				initial={{ opacity: 0, y: 24, scale: 0.97 }}
@@ -728,125 +741,6 @@ function CollapseRow({
 	);
 }
 
-// ==================== 积分与套餐（设置窗口 · 账号页） ====================
-
-interface CreditTx {
-	amount: number;
-	type: string;
-	remark: string | null;
-	created_at: string;
-}
-interface SubscriptionInfo {
-	active: boolean;
-	planKey: string | null;
-	planName: string | null;
-	expireAt: string | null;
-	daysLeft: number;
-}
-interface CreditsResp {
-	balance: number;
-	subscription: SubscriptionInfo | null;
-	transactions: CreditTx[];
-}
-
-/** 账户页积分卡片：余额 + 当前套餐 + 最近消耗，点击跳转订阅窗口兑换。 */
-function CreditsCard() {
-	const { t } = useTranslation();
-	const [data, setData] = useState<CreditsResp | null>(null);
-	const [loading, setLoading] = useState(true);
-
-	useEffect(() => {
-		let alive = true;
-		authFetch('/auth/credits')
-			.then(async (r) => (r.ok ? ((await r.json()) as CreditsResp) : null))
-			.then((b) => { if (alive) setData(b); })
-			.catch(() => {})
-			.finally(() => { if (alive) setLoading(false); });
-		return () => { alive = false; };
-	}, []);
-
-	const balance = data?.balance ?? 0;
-	const low = balance < 200;
-	const sub = data?.subscription ?? null;
-	const recent = (data?.transactions ?? []).filter((x) => x.type === 'consume').slice(0, 3);
-	const expireText = sub?.expireAt ? sub.expireAt.slice(0, 10) : '';
-
-	return (
-		<div className="overflow-hidden rounded-xl border border-border bg-card">
-			{/* 余额主区 */}
-			<div className="flex items-center gap-4 px-5 py-4">
-				<div className="flex size-10 shrink-0 items-center justify-center rounded-rect bg-violet-500/10">
-					<Coins className="size-5 text-violet-500" />
-				</div>
-				<div className="min-w-0 flex-1">
-					<div className="text-xs text-muted-foreground">{t('settings.account.credits.title')}</div>
-					{loading ? (
-						<Loader2 className="mt-1 size-4 animate-spin text-muted-foreground" />
-					) : (
-						<div className="flex items-baseline gap-2">
-							<span className="text-xl font-bold tabular-nums">{balance.toLocaleString()}</span>
-							<span className="text-xs text-muted-foreground">{t('settings.account.credits.unit')}</span>
-							{low && (
-								<span className="rounded-rect-sm bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-									{t('settings.account.credits.low')}
-								</span>
-							)}
-						</div>
-					)}
-				</div>
-				<Button type="button" size="sm" variant="outline" className="shrink-0" onClick={() => openSubscription()}>
-				<Sparkles className="size-3.5" />
-				{sub?.active ? t('settings.account.credits.renew') : t('settings.account.credits.subscribe')}
-				<ChevronRight className="size-3.5" />
-			</Button>
-		</div>
-
-		{/* 当前套餐与有效期 */}
-		<div className="flex items-center justify-between gap-3 border-t border-border px-5 py-2.5 text-xs">
-			<span className="shrink-0 text-muted-foreground">{t('settings.account.credits.currentPlan')}</span>
-			{!sub?.planKey ? (
-				<span className="font-medium">{t('settings.account.credits.noPlan')}</span>
-			) : sub.active ? (
-				<span className="flex items-center gap-2 font-medium">
-					<span>{sub.planName}</span>
-					<span className="rounded-rect-sm bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-600 dark:text-emerald-400">
-						{t('settings.account.credits.daysLeft', { days: sub.daysLeft })}
-					</span>
-					<span className="text-[10px] text-muted-foreground">
-						{t('settings.account.credits.expiresOn', { date: expireText })}
-					</span>
-				</span>
-			) : (
-				<span className="flex items-center gap-2 font-medium">
-					<span>{sub.planName}</span>
-					<span className="rounded-rect-sm bg-rose-500/10 px-2 py-0.5 text-[10px] text-rose-600 dark:text-rose-400">
-						{t('settings.account.credits.expired')}
-					</span>
-				</span>
-			)}
-		</div>
-
-			{/* 最近消耗（最多 3 条） */}
-			{recent.length > 0 && (
-				<div className="border-t border-border px-5 py-3">
-					<div className="mb-1.5 text-[11px] text-muted-foreground">
-						{t('settings.account.credits.recentUsage')}
-					</div>
-					<div className="space-y-1">
-						{recent.map((tx, i) => (
-							<div key={i} className="flex items-center justify-between gap-3 text-xs">
-								<span className="min-w-0 flex-1 truncate text-muted-foreground">{tx.remark || t('settings.account.credits.modelCall')}</span>
-								<span className="shrink-0 tabular-nums text-muted-foreground">{tx.amount}</span>
-								<span className="shrink-0 text-[10px] text-muted-foreground/70">{tx.created_at.slice(5, 16).replace('T', ' ')}</span>
-							</div>
-						))}
-					</div>
-				</div>
-			)}
-		</div>
-	);
-}
-
 function AccountManager({
 	user,
 	onEmailChanged,
@@ -1007,11 +901,6 @@ function AccountManager({
 					)}
 					<div className="mt-0.5 text-[11px] text-muted-foreground">{t('settings.account.manager.avatarHint')}</div>
 				</div>
-			</div>
-
-			{/* 积分与套餐：余额 / 当前套餐 / 最近消耗 / 跳转订阅窗口 */}
-			<div className="mt-3">
-				<CreditsCard />
 			</div>
 
 			{/* 操作反馈条 */}

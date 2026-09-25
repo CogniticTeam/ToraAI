@@ -673,7 +673,7 @@ body {
 /* 品牌按钮：紫色填充 + 柔和外发光，hover 轻微上浮 */
 .btn-brand {
 	background: var(--primary);
-	color: #fff;
+	color: var(--primary-foreground);
 	box-shadow: 0 5px 14px -8px rgba(0, 0, 0, 0.42);
 	transition: transform var(--animate-fast) var(--ease-out-quart),
 		box-shadow var(--animate-fast) var(--ease-out-quart),

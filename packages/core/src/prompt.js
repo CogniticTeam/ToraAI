@@ -19,8 +19,7 @@ export const INSTRUCTION_FILES = [
   '.cocode/AGENTS.md',
   'CLAUDE.md',
   '.cursorrules',
-  '.github/copilot-instructions.md',
-  '.vega/AGENTS.md'
+  '.github/copilot-instructions.md'
 ];
 
 export const DEFAULT_INSTRUCTION_MAX_CHARS = 6000;

@@ -2,7 +2,7 @@ import { CircleAlert, Loader2, PlusCircle } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { ContextConfig, InviteConfig, ReActConfig } from '@/api';
+import type { ContextConfig, InviteConfig, ReActConfig, ReviewConfig } from '@/api';
 import {
 	AgentFormFields,
 	defaultAgentFormValues,
@@ -69,6 +69,7 @@ export function AgentDialog({ onCreated, children }: Props) {
 					system_prompt: values.identity.system_prompt as string | undefined,
 					context_config: values.context_config as unknown as ContextConfig,
 					react_config: values.react_config as unknown as ReActConfig,
+					review_config: values.review_config as unknown as ReviewConfig,
 					invite_config: values.invite_config as unknown as InviteConfig,
 				},
 				{ silent: true },

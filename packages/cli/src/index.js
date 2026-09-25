@@ -22,7 +22,7 @@ const { values, positionals } = parseArgs({
 });
 
 function printHelp() {
-  console.log(`CoCode v${VERSION} — 低 token 终端 Agent（内部代号 CoCode）
+  console.log(`CoCode v${VERSION} — 低 token 终端 Agent
 
 用法:
   cocode                   交互式 REPL
@@ -41,7 +41,7 @@ function printHelp() {
   -v, --version            版本
 
 环境变量: COCODE_BASE_URL / COCODE_API_KEY / COCODE_MODEL
-          （兼容旧的 VEGA_* 前缀；优先级高于配置文件）
+          （优先级高于配置文件；COCODE_HOME 可指定数据目录）
 
 REPL 内命令:
   /help                    帮助
@@ -51,7 +51,7 @@ REPL 内命令:
                            查看/切换权限模式
   /rules [add <tool> <content> | rm <index> | clear]
                            查看/管理允许清单（允许清单命中即免确认）
-  /commands                列出可用的斜杠命令（~/.vega/commands 与项目 .cocode/commands）
+  /commands                列出可用的斜杠命令（~/.cocode/commands 与项目 .cocode/commands）
   /repomap                 打印仓库符号骨架
   /index [关键词]          重建符号/语义索引；带关键词直接检索
   /lsp                     检测本机 language server 并查看 lspServers 配置
@@ -62,14 +62,14 @@ REPL 内命令:
   /model <name>            切换模型        /compact  立即压缩上下文
   /tools                   列出内置工具    /exit     退出
 
-斜杠命令: 在 ~/.vega/commands/ 或 <项目>/.cocode/commands/ 放 .md 文件即可
+斜杠命令: 在 ~/.cocode/commands/ 或 <项目>/.cocode/commands/ 放 .md 文件即可
           自定义命令（支持 $ARGUMENTS 占位），然后在 REPL 里直接 /<名字> 使用。`);
 }
 
 async function main() {
   const cmd = positionals[0];
   if (values.help || cmd === 'help') return printHelp();
-  if (values.version) return console.log(`vega ${VERSION}`);
+  if (values.version) return console.log(`cocode ${VERSION}`);
 
   // 配置覆盖
   const cfg = loadConfig();

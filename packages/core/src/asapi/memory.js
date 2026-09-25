@@ -1,13 +1,13 @@
-// 跨会话记忆存储（~/.vega/asapi/memories.json + memory-config.json）
+// 跨会话记忆存储（~/.cocode/asapi/memories.json + memory-config.json）
 // 存储模式与 store.js 相同（原子写 tmp+rename、损坏隔离 .corrupt-*），但自行实现：
 // store.js 的 readJson/writeJson 为模块私有，且直接 import 会形成
 // builtin.js → tools/memory.js → 本文件 → store.js → builtin.js 的循环引用。
 import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
-import { VEGA_DIR } from '../config.js';
+import { COCODE_DIR } from '../config.js';
 
-const ASAPI_DIR = join(VEGA_DIR, 'asapi');
+const ASAPI_DIR = join(COCODE_DIR, 'asapi');
 const MEMORY_PATH = join(ASAPI_DIR, 'memories.json');
 const CONFIG_PATH = join(ASAPI_DIR, 'memory-config.json');
 

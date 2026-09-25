@@ -127,7 +127,7 @@ export function TerminalPanel({ cwd }: TerminalPanelProps) {
 			}
 			term.dispose();
 		};
-	}, [cwd, attempt]);
+	}, [cwd, attempt, zh]);
 
 	if (!cwd) {
 		return (

@@ -38,6 +38,13 @@ export interface InviteConfig {
 	invite_description?: string | null;
 }
 
+export interface ReviewConfig {
+	enabled?: boolean;
+	max_rounds?: number;
+	min_tool_calls?: number;
+	only_after_mutation?: boolean;
+}
+
 // ─── Agent ────────────────────────────────────────────────────────────────────
 
 export interface AgentData {
@@ -46,6 +53,7 @@ export interface AgentData {
 	system_prompt: string;
 	context_config: ContextConfig;
 	react_config: ReActConfig;
+	review_config: ReviewConfig;
 	invite_config: InviteConfig;
 }
 
@@ -64,6 +72,7 @@ export interface CreateAgentRequest {
 	system_prompt?: string;
 	context_config?: ContextConfig;
 	react_config?: ReActConfig;
+	review_config?: ReviewConfig;
 	invite_config?: InviteConfig;
 }
 
@@ -76,6 +85,7 @@ export interface UpdateAgentRequest {
 	system_prompt?: string;
 	context_config?: ContextConfig;
 	react_config?: ReActConfig;
+	review_config?: ReviewConfig;
 	invite_config?: InviteConfig;
 }
 
@@ -103,7 +113,7 @@ export interface AgentSchemaResponse {
  * its section grouping directly from `schema.properties`:
  *   - top-level scalar/textarea/boolean properties → "identity" section
  *   - top-level `object`-typed properties (currently `context_config`,
- *     `react_config`, and `invite_config`) → one section each
+ *     `react_config`, `review_config`, and `invite_config`) → one section each
  */
 export interface AgentSchemaV2Response {
 	schema: JSONSchema;
@@ -178,6 +188,8 @@ export interface CreateSessionRequest {
 	cwd?: string | null;
 	/** Optional initial permission mode (chosen before the session exists). */
 	permission_mode?: string;
+	delivery_mode?: boolean;
+	delivery_criteria?: string;
 }
 
 export interface CreateSessionResponse {
@@ -192,6 +204,8 @@ export interface InterruptSessionResponse {
 
 export interface UpdateSessionRequest {
 	name?: string;
+	delivery_mode?: boolean;
+	delivery_criteria?: string;
 	chat_model_config?: ChatModelConfig;
 	/**
 	 * New fallback model. PATCH semantics:

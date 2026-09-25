@@ -4,7 +4,7 @@
 // `source venv/bin/activate` 一律不保留，跨多步的构建流程根本走不通。
 //
 // 实现：长驻一条 `$SHELL -i`（加载用户 rc，所以 PATH/nvm/conda 都在），
-// 每次执行把命令写进 stdin，再写一行哨兵 `printf '__VEGA_DONE_<nonce>__%s|%s\n' "$?" "$PWD"`。
+// 每次执行把命令写进 stdin，再写一行哨兵 `printf '__COCODE_DONE_<nonce>__%s|%s\n' "$?" "$PWD"`。
 // 读到哨兵行即认为本次命令结束，同时拿到退出码与命令后的 $PWD
 // （所以 `cd` 会真实影响后续所有工具的工作目录）。
 //
@@ -31,7 +31,7 @@ function spawnOptions(cwd) {
       // 让交互式 shell 别打提示符、别写历史、别用花哨的 zle 渲染，
       // 否则输出里会混进一堆控制字符。
       PS1: '', PS2: '', PROMPT: '', PROMPT2: '', RPROMPT: '',
-      TERM: 'dumb', PROMPT_EOL_MARK: '', VEGA_SHELL: '1'
+      TERM: 'dumb', PROMPT_EOL_MARK: '', COCODE_SHELL: '1'
     }),
     stdio: ['pipe', 'pipe', 'pipe']
   };
@@ -104,7 +104,7 @@ class PersistentShell {
     if (signal?.aborted) {
       return Promise.resolve({ exitCode: -1, output: '[命令已被用户中止]', aborted: true });
     }
-    const marker = `__VEGA_DONE_${randomBytes(8).toString('hex')}__`;
+    const marker = `__COCODE_DONE_${randomBytes(8).toString('hex')}__`;
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
         if (!this.pending) return;

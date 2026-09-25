@@ -1,19 +1,19 @@
 {
-  "name": "@vega/desktop",
-  "version": "0.1.0",
+  "name": "@cocode/desktop",
+  "version": "1.0.0",
   "type": "module",
-  "description": "Vega 桌面版（Electron 壳：启动本地 ASAPI 服务并托管 agentscope 风格前端）",
+  "description": "CoCode 桌面版（Electron 壳：启动本地 ASAPI 服务并托管 agentscope 风格前端）",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "build:ui": "cd frontend && npm run build",
-    "dist:mac": "npm run build:ui && electron-builder --mac dmg --universal --publish never",
+    "dist:mac": "npm run build:ui && electron-builder --mac dmg zip --universal --publish never",
     "dist:win": "npm run build:ui && electron-builder --win nsis --x64 --publish never",
-    "release:mac": "npm run build:ui && electron-builder --mac dmg --universal --publish always",
+    "release:mac": "npm run build:ui && electron-builder --mac dmg zip --universal --publish always",
     "release:win": "npm run build:ui && electron-builder --win nsis --x64 --publish always"
   },
   "devDependencies": {
-    "electron": "33.4.11",
+    "electron": "44.4.3",
     "electron-builder": "^26.15.3"
   },
   "dependencies": {
@@ -28,6 +28,7 @@
     },
     "files": [
       "**/*",
+      "!release/**",
       "!frontend/node_modules/**",
       "!frontend/src/**",
       "!frontend/package-lock.json"
@@ -43,11 +44,17 @@
       }
     ],
     "mac": {
+      "artifactName": "${productName}-${version}-mac.${ext}",
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "icon": "assets/icon.icns",
-      "identity": null
+      "minimumSystemVersion": "13.0",
+      "hardenedRuntime": true,
+      "entitlements": "assets/entitlements.mac.plist",
+      "entitlementsInherit": "assets/entitlements.mac.inherit.plist",
+      "notarize": true
     },
     "win": {
       "target": [

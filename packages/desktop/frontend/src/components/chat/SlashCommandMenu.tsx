@@ -409,7 +409,7 @@ function SlashMenuFooter({
  * Ids are prefixed so a command and a skill can share a name without
  * colliding in the selection set (the menu keys rows by id).
  *
- * @param commands - Commands discovered in `~/.vega/commands` and
+ * @param commands - Commands discovered in `~/.cocode/commands` and
  *   `<cwd>/.cocode/commands`, project-level overriding user-level.
  * @returns Rows, in the order given (the composer sorts them first).
  */

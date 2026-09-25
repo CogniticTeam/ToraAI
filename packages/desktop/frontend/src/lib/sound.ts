@@ -1,7 +1,7 @@
 // 提示音引擎。
 //
-// - 内置音效用 Web Audio API 实时合成（振荡器 + 指数衰减包络）：零音频
-//   资源文件、零版权顾虑，也不往 dist 里塞东西。
+// - 内置音效用 Web Audio API 实时合成：多层泛音、立体声展开、短混响、
+//   动态压缩与平滑包络组成完整音色，保持零音频资源和零版权顾虑。
 // - 自定义音效存 IndexedDB（Blob）。音频文件对 localStorage 的 5MB 配额
 //   太大，IndexedDB 配额宽裕，且不需要动主进程。
 // - 开关/音量/音效种类等配置存 localStorage 的 ``cocode_sound``（应用内
@@ -122,6 +122,7 @@ export async function getCustomSound(): Promise<CustomSoundRecord | null> {
 // ---- 播放 ----
 
 let audioCtx: AudioContext | null = null;
+const reverbCache = new WeakMap<AudioContext, AudioBuffer>();
 
 function getAudioContext(): AudioContext {
 	if (!audioCtx) {
@@ -132,42 +133,192 @@ function getAudioContext(): AudioContext {
 	}
 	return audioCtx;
 }
+function getReverbImpulse(ctx: AudioContext): AudioBuffer {
+	const cached = reverbCache.get(ctx);
+	if (cached) return cached;
 
-/** 单个音符：startAt 起播，快速起音后指数衰减到静音。 */
-function tone(
-	ctx: AudioContext,
-	freq: number,
-	startAt: number,
-	dur: number,
-	vol: number,
-	type: OscillatorType,
-): void {
+	// 很短的双声道 room impulse：只负责给尾音增加空间，不制造明显回声。
+	const length = Math.floor(ctx.sampleRate * 0.72);
+	const impulse = ctx.createBuffer(2, length, ctx.sampleRate);
+	for (let channel = 0; channel < impulse.numberOfChannels; channel += 1) {
+		const data = impulse.getChannelData(channel);
+		for (let i = 0; i < length; i += 1) {
+			const progress = i / length;
+			const decay = Math.pow(1 - progress, 3.4);
+			data[i] = (Math.random() * 2 - 1) * decay * (channel === 0 ? 0.92 : 1);
+		}
+	}
+	reverbCache.set(ctx, impulse);
+	return impulse;
+}
+
+/** 每次播放独立的输出总线，避免快速连续试听时音量包络互相覆盖。 */
+function createOutputBus(ctx: AudioContext, volume: number): {
+	input: GainNode;
+	disposeAfter: (seconds: number) => void;
+} {
+	const input = ctx.createGain();
+	const dry = ctx.createGain();
+	const wet = ctx.createGain();
+	const reverb = ctx.createConvolver();
+	const colour = ctx.createBiquadFilter();
+	const compressor = ctx.createDynamicsCompressor();
+	const output = ctx.createGain();
+
+	dry.gain.value = 0.9;
+	wet.gain.value = 0.14;
+	reverb.buffer = getReverbImpulse(ctx);
+	colour.type = 'lowpass';
+	colour.frequency.value = 12_500;
+	colour.Q.value = 0.22;
+	compressor.threshold.value = -24;
+	compressor.knee.value = 18;
+	compressor.ratio.value = 3.2;
+	compressor.attack.value = 0.004;
+	compressor.release.value = 0.18;
+	output.gain.value = Math.min(1, Math.max(0, volume)) * 0.72;
+
+	input.connect(dry);
+	dry.connect(colour);
+	input.connect(reverb);
+	reverb.connect(wet);
+	wet.connect(colour);
+	colour.connect(compressor);
+	compressor.connect(output);
+	output.connect(ctx.destination);
+
+	const nodes: AudioNode[] = [input, dry, wet, reverb, colour, compressor, output];
+	return {
+		input,
+		disposeAfter(seconds) {
+			window.setTimeout(() => {
+				for (const node of nodes) node.disconnect();
+			}, Math.ceil(seconds * 1000));
+		},
+	};
+}
+
+interface VoiceOptions {
+	frequency: number;
+	startAt: number;
+	duration: number;
+	level: number;
+	type?: OscillatorType;
+	attack?: number;
+	pan?: number;
+	detune?: number;
+	glide?: number;
+}
+
+/** 平滑起音、自然衰减的单层泛音；每层都做轻微频率漂移，避免机械感。 */
+function voice(ctx: AudioContext, destination: AudioNode, options: VoiceOptions): void {
+	const {
+		frequency,
+		startAt,
+		duration,
+		level,
+		type = 'sine',
+		attack = 0.008,
+		pan = 0,
+		detune = 0,
+		glide = 0.996,
+	} = options;
 	const osc = ctx.createOscillator();
-	const gain = ctx.createGain();
+	const filter = ctx.createBiquadFilter();
+	const envelope = ctx.createGain();
+	const stereo = ctx.createStereoPanner();
+	const endAt = startAt + duration;
+
 	osc.type = type;
-	osc.frequency.value = freq;
-	gain.gain.setValueAtTime(0.0001, startAt);
-	gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, vol), startAt + 0.015);
-	gain.gain.exponentialRampToValueAtTime(0.0001, startAt + dur);
-	osc.connect(gain);
-	gain.connect(ctx.destination);
+	osc.detune.value = detune;
+	osc.frequency.setValueAtTime(frequency, startAt);
+	osc.frequency.exponentialRampToValueAtTime(frequency * glide, endAt);
+	filter.type = 'lowpass';
+	filter.frequency.value = Math.min(15_000, Math.max(3_800, frequency * 7));
+	filter.Q.value = 0.35;
+	stereo.pan.value = Math.min(1, Math.max(-1, pan));
+	envelope.gain.setValueAtTime(0.0001, startAt);
+	envelope.gain.linearRampToValueAtTime(Math.max(0.0001, level), startAt + attack);
+	envelope.gain.exponentialRampToValueAtTime(0.0001, endAt);
+
+	osc.connect(filter);
+	filter.connect(envelope);
+	envelope.connect(stereo);
+	stereo.connect(destination);
 	osc.start(startAt);
-	osc.stop(startAt + dur + 0.05);
+	osc.stop(endAt + 0.04);
+}
+
+/** 一颗带自然泛音的玻璃质感音符。 */
+function bell(
+	ctx: AudioContext,
+	destination: AudioNode,
+	frequency: number,
+	startAt: number,
+	duration: number,
+	level: number,
+	pan: number,
+): void {
+	voice(ctx, destination, { frequency, startAt, duration, level, pan });
+	voice(ctx, destination, {
+		frequency: frequency * 2.01,
+		startAt: startAt + 0.002,
+		duration: duration * 0.68,
+		level: level * 0.22,
+		pan: -pan * 0.65,
+		detune: 2,
+	});
+	voice(ctx, destination, {
+		frequency: frequency * 3.98,
+		startAt: startAt + 0.004,
+		duration: duration * 0.4,
+		level: level * 0.065,
+		pan: pan * 0.4,
+		detune: -3,
+	});
+}
+
+/** 清脆音色的极短空气瞬态，让声音清楚但不尖锐。 */
+function airTransient(ctx: AudioContext, destination: AudioNode, startAt: number): void {
+	const duration = 0.045;
+	const buffer = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * duration), ctx.sampleRate);
+	const samples = buffer.getChannelData(0);
+	for (let i = 0; i < samples.length; i += 1) {
+		const decay = Math.pow(1 - i / samples.length, 3);
+		samples[i] = (Math.random() * 2 - 1) * decay;
+	}
+	const source = ctx.createBufferSource();
+	const highpass = ctx.createBiquadFilter();
+	const gain = ctx.createGain();
+	source.buffer = buffer;
+	highpass.type = 'highpass';
+	highpass.frequency.value = 4_200;
+	highpass.Q.value = 0.5;
+	gain.gain.value = 0.035;
+	source.connect(highpass);
+	highpass.connect(gain);
+	gain.connect(destination);
+	source.start(startAt);
 }
 
 async function playSynth(kind: Exclude<SoundKind, 'custom'>, volume: number): Promise<void> {
 	const ctx = getAudioContext();
 	if (ctx.state === 'suspended') await ctx.resume().catch(() => undefined);
-	const t = ctx.currentTime + 0.01;
+	const t = ctx.currentTime + 0.025;
+	const bus = createOutputBus(ctx, volume);
 	if (kind === 'ding') {
-		tone(ctx, 880, t, 0.35, volume * 0.5, 'sine');
+		bell(ctx, bus.input, 659.25, t, 0.62, 0.34, -0.12);
+		bell(ctx, bus.input, 987.77, t + 0.075, 0.76, 0.27, 0.14);
 	} else if (kind === 'crisp') {
-		tone(ctx, 880, t, 0.12, volume * 0.45, 'sine');
-		tone(ctx, 1318.5, t + 0.1, 0.28, volume * 0.45, 'sine');
+		airTransient(ctx, bus.input, t);
+		bell(ctx, bus.input, 783.99, t, 0.24, 0.3, -0.18);
+		bell(ctx, bus.input, 1174.66, t + 0.07, 0.42, 0.3, 0.18);
 	} else {
-		tone(ctx, 523.25, t, 0.4, volume * 0.4, 'triangle');
-		tone(ctx, 659.25, t + 0.12, 0.42, volume * 0.35, 'triangle');
+		voice(ctx, bus.input, { frequency: 392, startAt: t, duration: 0.7, level: 0.2, type: 'triangle', pan: -0.16, attack: 0.028 });
+		voice(ctx, bus.input, { frequency: 493.88, startAt: t + 0.085, duration: 0.76, level: 0.17, type: 'triangle', pan: 0.08, attack: 0.032 });
+		voice(ctx, bus.input, { frequency: 587.33, startAt: t + 0.17, duration: 0.82, level: 0.14, type: 'sine', pan: 0.18, attack: 0.035 });
 	}
+	bus.disposeAfter(1.9);
 }
 
 async function play(s: SoundSettings): Promise<void> {

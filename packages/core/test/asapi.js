@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // 独立测试环境：把数据根整体重定向到临时目录。
-// 早期版本直接 rmSync(~/.vega/asapi) —— 那会删掉用户真实的
+// 早期版本直接 rmSync(~/.cocode/asapi) —— 那会删掉用户真实的
 // agents/会话/凭证/技能库，跑一次测试毁一次数据。
 const TEST_HOME = join(tmpdir(), `cocode-asapi-test-${Date.now()}`);
 process.env.COCODE_HOME = TEST_HOME;
@@ -19,6 +19,26 @@ let passed = 0, failed = 0;
 async function test(name, fn) {
   try { await fn(); passed++; console.log(`  ✓ ${name}`); }
   catch (e) { failed++; console.error(`  ✗ ${name}\n    ${e.message}`); }
+}
+
+/**
+ * 后台 Agent 运行不是同步 HTTP 请求的一部分。测试不能用固定 sleep 猜它何时
+ * 开始/结束，否则 finally 提前还原 global fetch 后，正在启动的 run 会误打到真
+ * 网络，后续用例也会被串扰。所有 mock 模型断言统一等可观测条件成立。
+ */
+async function waitFor(condition, timeout = 5000, interval = 25) {
+  const deadline = Date.now() + timeout;
+  let lastError = null;
+  while (Date.now() < deadline) {
+    try {
+      if (await condition()) return true;
+    } catch (e) {
+      lastError = e;
+    }
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+  if (lastError) throw lastError;
+  return false;
 }
 
 // mock SSE 模型：第1轮调工具，第2轮总结
@@ -47,7 +67,7 @@ const realFetch = globalThis.fetch;
 let fetchCalls = [];
 
 async function main() {
-  process.env.VEGA_API_KEY = 'test-key';
+  process.env.COCODE_API_KEY = 'test-key';
   const srv = await startASAPIServer({ port: 0 });
   const base = `http://127.0.0.1:${srv.address().port}`;
 
@@ -132,7 +152,7 @@ async function main() {
     assert.equal(sv.session.internal, undefined);
     assert.equal(sv.session.display, undefined);
     // 准备一个临时 cwd；agent.js 现在拒绝 cwd 为空的会话（避免回退到 CoCode 根）
-    const chatTmpDir = join(tmpdir(), `vega-asapi-chat-${sessionId}`);
+    const chatTmpDir = join(tmpdir(), `cocode-asapi-chat-${sessionId}`);
     mkdirSync(chatTmpDir, { recursive: true });
     await realFetch(base + `/sessions/${sessionId}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -267,7 +287,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const tmpCwd = join(tmpdir(), `vega-asapi-autocontext-${sid}`);
+    const tmpCwd = join(tmpdir(), `cocode-asapi-autocontext-${sid}`);
     mkdirSync(tmpCwd, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -282,32 +302,7 @@ async function main() {
       return sse([{ content: 'OK' }]);
     };
 
-    // 仅记录真正的反压错误：SSE 流被 ac.abort() 时 in-flight 的 reader.read()
-    // 可能抛 AbortError。这个 promise 已经不会被 await，跳掉即可，不要让它挂在
-    // 全局 unhandledRejection 上炸掉整个测试进程。
-    const swallowAbort = (p) => p.catch((e) => {
-      if (e?.name !== 'AbortError' && e?.code !== 'ABORT_ERR') throw e;
-    });
-
     try {
-      const ac = new AbortController();
-      const sseRes = await realFetch(base + `/sessions/${sid}/stream?agent_id=${agentId}`, { signal: ac.signal });
-      const reader = sseRes.body.getReader();
-      const dec = new TextDecoder();
-      let buf = '';
-      const drain = async (ms) => {
-        const deadline = Date.now() + ms;
-        while (Date.now() < deadline) {
-          const left = Math.max(1, deadline - Date.now());
-          const { done, value } = await Promise.race([
-            swallowAbort(reader.read()),
-            new Promise((r2) => setTimeout(() => r2({ value: undefined, done: false }), left)),
-          ]);
-          if (done) return;
-          if (value) buf += dec.decode(value, { stream: true });
-        }
-      };
-
       const userText = '请用一句话总结';
       const ctxText = '[Loaded context]\n- CWD: ' + tmpCwd + '\n- Skills: 无\n';
       const ctxBlock = { type: 'text', id: 'ctx-1', text: ctxText, created_at: new Date().toISOString() };
@@ -325,8 +320,11 @@ async function main() {
         })
       });
       assert.equal((await resp.json()).status, 'ok');
-      await drain(2000);
-      ac.abort();
+      assert.ok(await waitFor(() => seenBodies.length > 0), 'LLM call 未被录制');
+      assert.ok(await waitFor(async () => {
+        const status = await (await realFetch(base + `/sessions/${sid}/messages?agent_id=${agentId}`)).json();
+        return status.is_running === false && status.messages.length === 2;
+      }), 'Agent 未在期限内收尾');
 
       // 3) LLM 看到了合成文本：context 段在前、用户文本在后。
       const firstCall = seenBodies[0];
@@ -384,61 +382,11 @@ async function main() {
       });
       assert.equal((await resp.json()).status, 'ok');
 
-      // 给后台 run 一点时间把 assistant 那条也写进 display。
-      await new Promise((r2) => setTimeout(r2, 600));
-
-      const hist = await realFetch(base + `/sessions/${sid}/messages?agent_id=${agentId}`);
-      const { messages } = await hist.json();
-      const u = messages.find((m) => m.role === 'user');
-      assert.ok(u, '应有一条 user 消息');
-      assert.deepEqual(u.metadata?.selected_skill_ids, ['sk-a', 'sk-b'],
-        '技能 id 必须落盘到 metadata，否则刷新后气泡 chips 消失');
-      // display 依然干净：技能正文只在 internal
-      assert.equal(u.content[0].text, '帮我审一下');
-      assert.ok(!JSON.stringify(u.content).includes('审查 diff'));
-
-      // 但 id 本身不该出现在 LLM 看到的 prompt 里（技能正文才是给模型的）
-      const prompt = JSON.stringify(seenBodies[0]?.messages ?? []);
-      assert.ok(!prompt.includes('sk-a'), 'selected_skill_ids 不应作为裸 id 泄漏进 prompt');
-      assert.ok(prompt.includes('审查 diff'), '技能正文应通过 auto_context 进 prompt');
-
-      await realFetch(base + `/sessions/${sid}`, { method: 'DELETE' });
-    } finally {
-      globalThis.fetch = realFetch;
-    }
-  });
-
-
-  await test('selected_skill_ids 落进 display metadata，且不泄漏进 LLM prompt', async () => {
-    // 技能 chip 的还原完全依赖这条 metadata —— 不落盘的话刷新页面 chips 就没了。
-    const mk = await realFetch(base + '/sessions/', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ agent_id: agentId })
-    });
-    const { session_id: sid } = await mk.json();
-
-    const seenBodies = [];
-    globalThis.fetch = async (_u, init) => {
-      if (isTitleCall(init)) return sse([{ content: '' }]); // 取名调用旁路，不进 seenBodies
-      try { seenBodies.push(JSON.parse(init?.body || '{}')); } catch { /* ignore */ }
-      return sse([{ content: 'done' }]);
-    };
-
-    try {
-      const resp = await realFetch(base + '/chat/', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          agent_id: agentId,
-          session_id: sid,
-          input: { content: [{ type: 'text', text: '帮我审一下' }] },
-          auto_context: [{ type: 'text', text: '[Loaded context]\n\n### code-review\n\n审查 diff' }],
-          selected_skill_ids: ['sk-a', 'sk-b'],
-        })
-      });
-      assert.equal((await resp.json()).status, 'ok');
-
-      // 给后台 run 一点时间把 assistant 那条也写进 display。
-      await new Promise((r2) => setTimeout(r2, 600));
+      assert.ok(await waitFor(() => seenBodies.length > 0), 'LLM call 未被录制');
+      assert.ok(await waitFor(async () => {
+        const status = await (await realFetch(base + `/sessions/${sid}/messages?agent_id=${agentId}`)).json();
+        return status.is_running === false && status.messages.length === 2;
+      }), 'Agent 未在期限内收尾');
 
       const hist = await realFetch(base + `/sessions/${sid}/messages?agent_id=${agentId}`);
       const { messages } = await hist.json();
@@ -503,7 +451,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const cwdDir = join(tmpdir(), `vega-asapi-compact-${sid}`);
+    const cwdDir = join(tmpdir(), `cocode-asapi-compact-${sid}`);
     mkdirSync(cwdDir, { recursive: true });
     // 该用例测上下文压缩，不测权限：命令里带管道（复合命令），default 会弹确认
     await realFetch(base + `/sessions/${sid}`, {
@@ -605,7 +553,7 @@ async function main() {
   });
 
   await test('Agent 运行行为（/admin/runtime）：压缩预算 + 工具输出 + 迭代轮数', async () => {
-    // config.json 是用户真实配置（~/.vega/config.json），测试只做往返断言，
+    // config.json 是用户真实配置（~/.cocode/config.json），测试只做往返断言，
     // 结束后还原原值 —— 不能假设初始值，否则会被上一次运行或用户改动影响。
     const r0 = await realFetch(base + '/admin/runtime');
     const original = await r0.json();
@@ -701,7 +649,7 @@ async function main() {
 
     // 2) PATCH 一个临时 cwd 后，列表不再"空"也不暴露 CoCode 根，而是落回
     //    用户选的目录（这里用 tmp 内置子目录的绝对路径）。
-    const tmpDir = join(tmpdir(), `vega-asapi-ws-${Date.now()}`);
+    const tmpDir = join(tmpdir(), `cocode-asapi-ws-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     writeFileSync(join(tmpDir, 'in-workspace.txt'), 'hi');
     await realFetch(base + `/sessions/${noCwdSid}`, {
@@ -1665,7 +1613,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const hitlDir = join(tmpdir(), `vega-asapi-hitl-${sid}`);
+    const hitlDir = join(tmpdir(), `cocode-asapi-hitl-${sid}`);
     mkdirSync(hitlDir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -1752,7 +1700,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-hitl-deny-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-hitl-deny-${sid}`);
     mkdirSync(dir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -1849,7 +1797,9 @@ async function main() {
         return sse([{ tool_calls: [{ index: 0, id: 'lt1', function: { name: 'TeamCreate', arguments: JSON.stringify({ name: '测试小队' }) } }] }]);
       }
       if (leaderRound === 2) {
-        return sse([{ tool_calls: [{ index: 0, id: 'lt2', function: { name: 'AgentCreate', arguments: JSON.stringify({ role: '研究员', goal: '执行命令', agentCreatePermissions: 'accept_edits' }) } }] }]);
+        // 这里专测共享目录下的 HITL；生产默认 auto 会给可写 worker 建 worktree，
+        // 因而测试必须显式声明 shared，不能依赖隐式不隔离的旧行为。
+        return sse([{ tool_calls: [{ index: 0, id: 'lt2', function: { name: 'AgentCreate', arguments: JSON.stringify({ role: '研究员', goal: '执行命令', agentCreatePermissions: 'accept_edits', isolation: 'shared' }) } }] }]);
       }
       if (leaderRound === 3) {
         const src = msgs.find((m) => m.role === 'tool' && typeof m.content === 'string' && m.content.includes('agent_id:'));
@@ -1867,7 +1817,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-${tag}-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-${tag}-${sid}`);
     mkdirSync(dir, { recursive: true });
     // 队长 bypass：team 工具全部直通；worker 权限由 AgentCreate 请求决定
     await realFetch(base + `/sessions/${sid}`, {
@@ -2040,7 +1990,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-ckpt-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-ckpt-${sid}`);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'keep.txt'), 'v1');
     await realFetch(base + `/sessions/${sid}`, {
@@ -2084,7 +2034,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-search-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-search-${sid}`);
     mkdirSync(dir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -2134,7 +2084,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-git-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-git-${sid}`);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'a.txt'), 'hello\n');
     await realFetch(base + `/sessions/${sid}`, {
@@ -2163,7 +2113,7 @@ async function main() {
   });
 
   await test('终端：create → write 回显 → SSE 流 + 重连回放 → kill → 已退出 404', async () => {
-    const dir = join(tmpdir(), `vega-asapi-term-${Date.now()}`);
+    const dir = join(tmpdir(), `cocode-asapi-term-${Date.now()}`);
     mkdirSync(dir, { recursive: true });
     const cr = await (await realFetch(base + '/terminal/create', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -2249,7 +2199,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-cmd-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-cmd-${sid}`);
     mkdirSync(join(dir, '.cocode', 'commands'), { recursive: true });
     mkdirSync(join(dir, '.cocode', 'tools'), { recursive: true });
     writeFileSync(join(dir, '.cocode', 'commands', 'review.md'), '---\ndescription: 审查改动\n---\n请审查这些改动：$ARGUMENTS');
@@ -2437,7 +2387,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-order-${Date.now()}`);
+    const dir = join(tmpdir(), `cocode-asapi-order-${Date.now()}`);
     mkdirSync(dir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -2534,7 +2484,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `vega-asapi-git2-${sid}`);
+    const dir = join(tmpdir(), `cocode-asapi-git2-${sid}`);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'f.txt'), '1\n');
     await realFetch(base + `/sessions/${sid}`, {

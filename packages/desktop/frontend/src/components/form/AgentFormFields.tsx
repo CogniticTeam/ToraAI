@@ -10,7 +10,7 @@ import {
 	FieldSet,
 } from '@/components/ui/field';
 
-export type AgentSection = 'identity' | 'context_config' | 'react_config' | 'invite_config';
+export type AgentSection = 'identity' | 'context_config' | 'react_config' | 'review_config' | 'invite_config';
 
 export type AgentFormValues = {
 	[K in AgentSection]: Record<string, SchemaFormValue>;
@@ -32,6 +32,7 @@ interface Props {
 const NESTED_SECTIONS: Array<{ key: Exclude<AgentSection, 'identity'>; i18n: string }> = [
 	{ key: 'context_config', i18n: 'context-config' },
 	{ key: 'react_config', i18n: 'react-config' },
+	{ key: 'review_config', i18n: 'review-config' },
 	{ key: 'invite_config', i18n: 'invite-config' },
 ];
 
@@ -67,6 +68,10 @@ function sliceSchema(root: JSONSchema): Record<AgentSection, JSONSchema> {
 			properties: {},
 		},
 		react_config: (props.react_config as JSONSchema) ?? {
+			type: 'object',
+			properties: {},
+		},
+		review_config: (props.review_config as JSONSchema) ?? {
 			type: 'object',
 			properties: {},
 		},
@@ -153,6 +158,7 @@ export function defaultAgentFormValues(schema: AgentSchemaV2Response): AgentForm
 		identity: fromDefaults(sections.identity),
 		context_config: fromDefaults(sections.context_config),
 		react_config: fromDefaults(sections.react_config),
+		review_config: fromDefaults(sections.review_config),
 		invite_config: fromDefaults(sections.invite_config),
 	};
 }

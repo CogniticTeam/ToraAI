@@ -1,4 +1,4 @@
-export { loadConfig, saveConfig, VEGA_DIR, CONFIG_PATH, SESSIONS_DIR } from './config.js';
+export { loadConfig, saveConfig, COCODE_DIR, CONFIG_PATH, SESSIONS_DIR } from './config.js';
 export {
   createClient, chatCompletion, SYSTEM_PROMPT, normalizeUsage,
   getToolSupport, markToolUnsupported, markToolSupported, resetToolSupportCache, detectVision

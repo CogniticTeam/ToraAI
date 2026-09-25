@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.vega（配置/会话/检查点）。
+// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.cocode（配置/会话/检查点）。
 // 必须在 import 任何 core 模块之前设置。
 process.env.COCODE_HOME = mkdtempSync(join(tmpdir(), 'cocode-home-'));
 
@@ -29,11 +29,11 @@ async function test(name, fn) {
 }
 
 console.log('--- 工具系统 ---');
-const tmp = mkdtempSync(join(tmpdir(), 'vega-test-'));
+const tmp = mkdtempSync(join(tmpdir(), 'cocode-test-'));
 const ctx = { cwd: tmp, toolOutputLimit: 6000 };
 
 await test('Write 创建文件 / 覆盖时给出 diff 预览', async () => {
-  const r = await writeTool.execute({ path: 'a/hello.txt', content: 'hello vega\nline2' }, ctx);
+  const r = await writeTool.execute({ path: 'a/hello.txt', content: 'hello cocode\nline2' }, ctx);
   assert.match(r.text, /已创建 a\/hello\.txt/);
   // 新建与覆盖是两条不同文案，覆盖时必须带 +/- 预览（"先看改动"的最低要求）
   await writeTool.execute({ path: 'a/other.txt', content: 'x\ny\nz' }, ctx);
@@ -48,15 +48,15 @@ await test('Write 创建文件 / 覆盖时给出 diff 预览', async () => {
 
 await test('Read 带行号读取', async () => {
   const r = await readTool.execute({ path: 'a/hello.txt' }, ctx);
-  assert.match(r, /1\thello vega/);
+  assert.match(r, /1\thello cocode/);
   assert.match(r, /共 2 行/);
 });
 
 await test('Edit 精确替换（唯一匹配）', async () => {
-  const r = await editTool.execute({ path: 'a/hello.txt', old_string: 'hello vega', new_string: 'hello world vega' }, ctx);
+  const r = await editTool.execute({ path: 'a/hello.txt', old_string: 'hello cocode', new_string: 'hello world cocode' }, ctx);
   assert.match(r.text, /已修改/);
   const r2 = await readTool.execute({ path: 'a/hello.txt' }, ctx);
-  assert.match(r2, /hello world vega/);
+  assert.match(r2, /hello world cocode/);
 });
 
 await test('Edit 非唯一报错', async () => {
@@ -99,15 +99,15 @@ await test('Glob 匹配', async () => {
 });
 
 await test('Grep 内容搜索', async () => {
-  writeFileSync(join(tmp, 'needle.txt'), 'here is vega-needle-42\nsecond line');
-  const r = await grepTool.execute({ pattern: 'vega-needle' }, ctx);
+  writeFileSync(join(tmp, 'needle.txt'), 'here is cocode-needle-42\nsecond line');
+  const r = await grepTool.execute({ pattern: 'cocode-needle' }, ctx);
   assert.match(r, /needle\.txt:1:/);
 });
 
 await test('Bash 执行与 exit_code', async () => {
-  const r = await bashTool.execute({ command: 'echo vega-ok && echo err >&2; exit 0' }, ctx);
+  const r = await bashTool.execute({ command: 'echo cocode-ok && echo err >&2; exit 0' }, ctx);
   assert.match(r, /exit_code: 0/);
-  assert.match(r, /vega-ok/);
+  assert.match(r, /cocode-ok/);
 });
 
 console.log('--- 路径沙箱 ---');
@@ -278,6 +278,51 @@ await test('Agent 两轮：工具调用 → 总结', async () => {
   } finally { globalThis.fetch = origFetch; }
 });
 
+await test('默认未选工作目录：本地工具必须拒绝，不能隐式扩展到家目录', async () => {
+  const origFetch = globalThis.fetch;
+  let call = 0;
+  globalThis.fetch = async () => {
+    call++;
+    if (call === 1) {
+      return sse([{ tool_calls: [{ index: 0, id: 'no-cwd-bash', function: { name: 'Bash', arguments: '{"command":"echo must-not-run"}' } }] }]);
+    }
+    return sse([{ content: '请先选择工作目录。' }]);
+  };
+  try {
+    const cfg = { ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock' };
+    assert.equal(cfg.defaultScopeFullDisk, false, '安全默认值不得给未选目录的会话家目录权限');
+    const events = [];
+    for await (const ev of runAgent({ cfg, messages: [{ role: 'user', content: '执行命令' }], permissionMode: 'bypass' })) events.push(ev);
+    const result = events.find((ev) => ev.type === 'tool-result');
+    assert.equal(result?.ok, false);
+    assert.match(result?.result || '', /未选择工作目录/);
+    assert.equal(events.find((ev) => ev.type === 'done')?.reason, 'completed');
+  } finally { globalThis.fetch = origFetch; }
+});
+
+await test('交付审查：仅在有写入或执行动作后运行，并把通过结果公开为事件', async () => {
+  const origFetch = globalThis.fetch;
+  let call = 0;
+  globalThis.fetch = async () => {
+    call++;
+    if (call === 1) return sse([{ tool_calls: [{ index: 0, id: 'review-tool', function: { name: 'Write', arguments: '{"path":"review-output.txt","content":"changed"}' } }] }]);
+    if (call === 2) return sse([{ content: '修改完成并已验证。' }]);
+    return sse([{ content: JSON.stringify({ passed: true, issues: [], reason: '工具执行和交付说明完整' }) }]);
+  };
+  try {
+    const cfg = {
+      ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock',
+      review: { enabled: true, max_rounds: 1, min_turns: 1, only_after_mutation: true, checklist: ['是否验证变更？'] }
+    };
+    const events = [];
+    for await (const ev of runAgent({ cfg, cwd: tmp, messages: [{ role: 'user', content: '执行命令后交付' }], permissionMode: 'bypass' })) events.push(ev);
+    assert.equal(call, 3, `应在正常收尾后再调用一次 critic；events=${JSON.stringify(events.filter((e) => e.type.startsWith('review-') || e.type === 'error'))}`);
+    assert.ok(events.some((e) => e.type === 'review-start' && !e.skipped));
+    assert.ok(events.some((e) => e.type === 'review-result' && e.passed));
+    assert.equal(events.find((e) => e.type === 'done')?.reason, 'completed');
+  } finally { globalThis.fetch = origFetch; }
+});
+
 await test('上下文自动压缩：超预算触发 compact，历史被摘要但消息仍可持久化', async () => {
   const origFetch = globalThis.fetch;
   // 前 5 轮持续返回工具调用（每次产出约 3000 字符工具输出撑爆预算），
@@ -364,6 +409,12 @@ await test('工具名归一化：snake_case 与大小写写法等价', async () 
   assert.equal(toolCategory('read_file'), 'read');
   assert.equal(toolCategory('edit_file'), 'write');
   assert.equal(toolCategory('bash'), 'execute');
+});
+
+await test('未知权限模式安全回退：读可用，写入必须确认', () => {
+  assert.equal(beh('typo-mode', 'Read', { path: 'a.txt' }), 'allow');
+  assert.equal(beh('typo-mode', 'Write', { path: 'a.txt', content: 'x' }), 'ask');
+  assert.equal(beh('typo-mode', 'Bash', { command: 'npm test' }), 'ask');
 });
 
 await test('bypass 全放行（含 execute）', () => {
@@ -635,16 +686,17 @@ await test('runAgent explore 模式下 bash 被权限策略拒绝', async () => 
 console.log('--- 安全基元（路径之外的另两条底线）---');
 await test('子进程环境净化：密钥类变量被剥离，PATH/HOME 等保留', async () => {
   const { buildChildEnv } = await import(CORE + 'security.js');
+  const { LEGACY_ENV_PREFIX } = await import(CORE + 'legacy-migration.js');
   const env = buildChildEnv({
     PATH: '/usr/bin', HOME: '/tmp', LANG: 'zh_CN.UTF-8',
-    VEGA_API_KEY: 'sk-x', COCODE_API_KEY: 'sk-y', MY_TOKEN: 't',
+    [`${LEGACY_ENV_PREFIX}_API_KEY`]: 'sk-x', COCODE_API_KEY: 'sk-y', MY_TOKEN: 't',
     AWS_SECRET_ACCESS_KEY: 's', DB_PASSWORD: 'p',
     NODE_OPTIONS: '--require=./evil.js'
   });
   assert.equal(env.PATH, '/usr/bin');
   assert.equal(env.HOME, '/tmp');
   assert.equal(env.LANG, 'zh_CN.UTF-8');
-  for (const k of ['VEGA_API_KEY', 'COCODE_API_KEY', 'MY_TOKEN', 'AWS_SECRET_ACCESS_KEY', 'DB_PASSWORD', 'NODE_OPTIONS']) {
+  for (const k of [`${LEGACY_ENV_PREFIX}_API_KEY`, 'COCODE_API_KEY', 'MY_TOKEN', 'AWS_SECRET_ACCESS_KEY', 'DB_PASSWORD', 'NODE_OPTIONS']) {
     assert.ok(!(k in env), `${k} 不该出现在子进程环境里`);
   }
 });
@@ -661,7 +713,7 @@ await test('脱敏：登记密钥 + 常见形态在出站文本里被替换', as
 
 console.log('--- 项目指令 / ReAct 降级 / 持久 shell / 新工具 ---');
 await test('项目指令：COCODE.md 注入 system prompt，自称与产品名统一为 CoCode', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'vega-prompt-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cocode-prompt-'));
   writeFileSync(join(dir, 'COCODE.md'), '本项目规则：禁止使用 any 类型。');
   const origFetch = globalThis.fetch;
   let captured = null;
@@ -718,8 +770,8 @@ await test('模型不支持 tool_calls → 自动降级为文本 ReAct 并继续
 await test('持久 shell：cd 与 export 跨调用保留（否则多步构建没法连写）', async () => {
   const sh = await bashTool.execute({ command: 'mkdir -p sub && cd sub', reset: true }, ctx);
   assert.match(sh, /exit_code: 0/);
-  await bashTool.execute({ command: 'export VEGA_TEST_FOO=bar' }, ctx);
-  const r = await bashTool.execute({ command: 'pwd; echo "FOO=$VEGA_TEST_FOO"' }, ctx);
+  await bashTool.execute({ command: 'export COCODE_TEST_FOO=bar' }, ctx);
+  const r = await bashTool.execute({ command: 'pwd; echo "FOO=$COCODE_TEST_FOO"' }, ctx);
   assert.match(r, /sub/, 'cd 应跨调用保留: ' + r);
   assert.match(r, /FOO=bar/, 'export 应跨调用保留: ' + r);
   // 输出里不该混进交互式提示符（oh-my-zsh / p10k 的噪声）
@@ -727,7 +779,7 @@ await test('持久 shell：cd 与 export 跨调用保留（否则多步构建没
 });
 
 await test('RepoMap：几百 token 给出符号骨架，不必反复 glob', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'vega-map-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cocode-map-'));
   mkdirSync(join(dir, 'src'), { recursive: true });
   // 数据常量刻意不进骨架（否则骨架全是噪声、违背低 token 初衷），
   // 所以这里用箭头函数形式的常量来验证"模块级符号能被提取"
@@ -745,22 +797,49 @@ await test('RepoMap：几百 token 给出符号骨架，不必反复 glob', asyn
 });
 
 await test('WebFetch：拒绝 file:// 之外协议，HTML 转纯文本', async () => {
-  const { webFetchTool, webSearchTool } = await import(CORE + 'tools/web.js');
+  const { webFetchTool, webSearchTool, setWebDnsLookup } = await import(CORE + 'tools/web.js');
   const bad = await webFetchTool.execute({ url: 'file:///etc/passwd' }, ctx);
   assert.match(bad, /已拒绝|http/);
   const origFetch = globalThis.fetch;
+  setWebDnsLookup(async () => [{ address: '93.184.216.34' }]);
   globalThis.fetch = async () => new Response('<html><head><title>标题X</title></head><body><h1>T</h1><p>Hi &amp; more</p><script>var a=1;</script></body></html>', { status: 200, headers: { 'content-type': 'text/html' } });
   try {
     const r = await webFetchTool.execute({ url: 'https://example.com/a' }, ctx);
     assert.match(r, /标题X/);
     assert.match(r, /Hi & more/);
     assert.ok(!/var a=1/.test(r), 'script 内容应被剥掉');
-  } finally { globalThis.fetch = origFetch; }
+  } finally { globalThis.fetch = origFetch; setWebDnsLookup(null); }
   assert.ok(webSearchTool?.name === 'WebSearch');
 });
 
+await test('WebFetch：阻止内网、私网 DNS 与跳转 SSRF', async () => {
+  const { webFetchTool, assertPublicHttpUrl, setWebFetcher, setWebDnsLookup } = await import(CORE + 'tools/web.js');
+  await assert.rejects(() => assertPublicHttpUrl('http://127.1/admin'), /已拒绝/);
+  await assert.rejects(() => assertPublicHttpUrl('http://[::1]/admin'), /已拒绝/);
+
+  let calls = 0;
+  setWebDnsLookup(async (host) => {
+    if (host === 'private.example') return [{ address: '10.0.0.8' }];
+    return [{ address: '93.184.216.34' }];
+  });
+  try {
+    await assert.rejects(() => assertPublicHttpUrl('https://private.example/'), /已拒绝/);
+    setWebFetcher(async (_url, init) => {
+      calls++;
+      assert.equal(init.redirect, 'manual', '重定向必须由 WebFetch 自行逐跳校验');
+      return new Response(null, { status: 302, headers: { location: 'http://127.0.0.1:2375/containers/json' } });
+    });
+    const r = await webFetchTool.execute({ url: 'https://public.example/start' }, ctx);
+    assert.match(r, /已拒绝/);
+    assert.equal(calls, 1, '内网重定向目标不得发起第二次请求');
+  } finally {
+    setWebFetcher(null);
+    setWebDnsLookup(null);
+  }
+});
+
 await test('WebFetch：fetch failed 被翻译成可读原因（cause 链挖掘 + 错误码分类）', async () => {
-  const { webFetchTool, setWebFetcher } = await import(CORE + 'tools/web.js');
+  const { webFetchTool, setWebFetcher, setWebDnsLookup } = await import(CORE + 'tools/web.js');
   // 模拟 undici 的真实报错形态：表层 TypeError "fetch failed"，
   // 真正的原因（ENOTFOUND 等）藏在 e.cause 里。
   const cases = [
@@ -772,20 +851,23 @@ await test('WebFetch：fetch failed 被翻译成可读原因（cause 链挖掘 +
     [{ name: 'TimeoutError' }, /未响应/],
     [{ message: 'weird failure' }, /weird failure/], // 无错误码时透出原始 message
   ];
-  for (const [thrown, pattern] of cases) {
-    const err = Object.assign(new TypeError('fetch failed'), thrown);
-    setWebFetcher(() => { throw err; });
-    try {
+  setWebDnsLookup(async () => [{ address: '93.184.216.34' }]);
+  try {
+    for (const [thrown, pattern] of cases) {
+      const err = Object.assign(new TypeError('fetch failed'), thrown);
+      setWebFetcher(() => { throw err; });
       const r = await webFetchTool.execute({ url: 'https://example.com/' }, ctx);
       assert.match(r, pattern, `错误 ${JSON.stringify(thrown)} 应得到可读解释`);
       assert.ok(!/undefined/.test(r));
-    } finally { setWebFetcher(null); }
-  }
+      setWebFetcher(null);
+    }
+  } finally { setWebFetcher(null); setWebDnsLookup(null); }
 });
 
 await test('WebFetch：注入的 fetcher 优先生效（桌面端走系统代理的通道）', async () => {
-  const { webFetchTool, setWebFetcher } = await import(CORE + 'tools/web.js');
+  const { webFetchTool, setWebFetcher, setWebDnsLookup } = await import(CORE + 'tools/web.js');
   let calledWith = null;
+  setWebDnsLookup(async () => [{ address: '93.184.216.34' }]);
   setWebFetcher(async (url, init) => {
     calledWith = { url: String(url), ua: init?.headers?.['user-agent'] };
     return new Response('<html><title>注入通道</title></html>', {
@@ -798,7 +880,7 @@ await test('WebFetch：注入的 fetcher 优先生效（桌面端走系统代理
     assert.equal(calledWith.url, 'https://example.com/inject');
     // UA 必须是真实浏览器形态（站点按 UA 拒绝非浏览器流量是 fetch failed 高发原因）
     assert.match(calledWith.ua, /Chrome\/126/);
-  } finally { setWebFetcher(null); }
+  } finally { setWebFetcher(null); setWebDnsLookup(null); }
 });
 
 await test('Git 工具：拒绝白名单外子命令与破坏性 clean', async () => {
@@ -823,7 +905,7 @@ await test('服务 API：config/sessions/chat(SSE)', async () => {
   const origFetch = globalThis.fetch;
   globalThis.fetch = async () => sse([{ content: '好的' }]);
   const realFetch = origFetch;
-  process.env.VEGA_API_KEY = 'test-key-for-server'; // 服务端 loadConfig 需要 key 才能进到模型调用
+  process.env.COCODE_API_KEY = 'test-key-for-server'; // 服务端 loadConfig 需要 key 才能进到模型调用
   try {
     const srv = await startServer({ port: 0 });
     const { port } = srv.address();
@@ -869,7 +951,7 @@ await test('服务 API：config/sessions/chat(SSE)', async () => {
 
     await realFetch(base + `/api/sessions/${session.id}`, { method: 'DELETE' });
     srv.close();
-  } finally { process.env.VEGA_API_KEY = ''; globalThis.fetch = origFetch; }
+  } finally { process.env.COCODE_API_KEY = ''; globalThis.fetch = origFetch; }
 });
 
 
@@ -882,7 +964,7 @@ const semantic = await import(CORE + 'tools/semantic.js');
 const { loadHooks, runHooks, describeHooks, matcherMatches } = await import(CORE + 'hooks.js');
 const { createTrace, listTraces, renderTrace, readTrace } = await import(CORE + 'trace.js');
 const { recentChanges } = await import(CORE + 'prompt.js');
-const { VEGA_DIR } = await import(CORE + 'config.js');
+const { COCODE_DIR } = await import(CORE + 'config.js');
 
 await test('符号索引：函数/类/箭头常量都被提取，局部变量不算符号', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cocode-idx-'));
@@ -1009,8 +1091,8 @@ process.stdin.on('end', () => {
   }
 });
 `);
-  mkdirSync(join(VEGA_DIR), { recursive: true });
-  writeFileSync(join(VEGA_DIR, 'hooks.json'), JSON.stringify({
+  mkdirSync(join(COCODE_DIR), { recursive: true });
+  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
     hooks: { PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: `"${process.execPath}" guard.js`, timeout: 10 }] }] }
   }));
   const cfg = { ...loadConfig(), trustProjectHooks: false };
@@ -1024,19 +1106,19 @@ process.stdin.on('end', () => {
   assert.equal(allowed.decision, null, '没决策就是不影响');
   assert.match(allowed.additionalContext, /当前是 Read/);
   rmSync(dir, { recursive: true, force: true });
-  rmSync(join(VEGA_DIR, 'hooks.json'), { force: true });
+  rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
 });
 
 await test('runHooks：钩子以退出码 2 阻断，stderr 作为原因', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'cocode-hook2-'));
-  mkdirSync(join(VEGA_DIR), { recursive: true });
-  writeFileSync(join(VEGA_DIR, 'hooks.json'), JSON.stringify({
+  mkdirSync(join(COCODE_DIR), { recursive: true });
+  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
     UserPromptSubmit: [{ command: 'echo "别问了" >&2; exit 2' }]
   }));
   const r = await runHooks('UserPromptSubmit', { prompt: '你好' }, { cwd: dir, cfg: loadConfig() });
   assert.equal(r.decision, 'deny');
   assert.match(r.reason, /别问了/);
-  rmSync(join(VEGA_DIR, 'hooks.json'), { force: true });
+  rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -1060,18 +1142,18 @@ await test('项目级钩子默认不执行（clone 一个仓库不该等于任�
 
 await test('describeHooks：列出生效钩子与来源，坏 JSON 作为错误上报', () => {
   const dir = mkdtempSync(join(tmpdir(), 'cocode-hook4-'));
-  mkdirSync(join(VEGA_DIR), { recursive: true });
-  writeFileSync(join(VEGA_DIR, 'hooks.json'), '{ 这不是 JSON');
+  mkdirSync(join(COCODE_DIR), { recursive: true });
+  writeFileSync(join(COCODE_DIR, 'hooks.json'), '{ 这不是 JSON');
   const d = describeHooks(dir, loadConfig());
   assert.ok(d.errors.some((e) => /JSON/.test(e)), '坏配置要能被看见: ' + JSON.stringify(d.errors));
-  rmSync(join(VEGA_DIR, 'hooks.json'), { force: true });
+  rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
   rmSync(dir, { recursive: true, force: true });
 });
 
 await test('Agent 循环：UserPromptSubmit 钩子 deny → 整轮被拦下且不进模型', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'cocode-hook5-'));
-  mkdirSync(join(VEGA_DIR), { recursive: true });
-  writeFileSync(join(VEGA_DIR, 'hooks.json'), JSON.stringify({
+  mkdirSync(join(COCODE_DIR), { recursive: true });
+  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
     UserPromptSubmit: [{ command: 'echo "{\\"decision\\":\\"deny\\",\\"reason\\":\\"今天不干活\\"}"' }]
   }));
   const origFetch = globalThis.fetch;
@@ -1089,15 +1171,15 @@ await test('Agent 循环：UserPromptSubmit 钩子 deny → 整轮被拦下且�
     assert.equal(calls, 0, '被拦下的轮次不该请求模型');
   } finally {
     globalThis.fetch = origFetch;
-    rmSync(join(VEGA_DIR, 'hooks.json'), { force: true });
+    rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
 await test('Agent 循环：PreToolUse 钩子 deny → 工具不执行，模型收到的是「钩子拒绝」而不是「工具坏了」', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'cocode-hook6-'));
-  mkdirSync(join(VEGA_DIR), { recursive: true });
-  writeFileSync(join(VEGA_DIR, 'hooks.json'), JSON.stringify({
+  mkdirSync(join(COCODE_DIR), { recursive: true });
+  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
     PreToolUse: [{ matcher: 'Bash', command: 'echo "{\\"decision\\":\\"deny\\",\\"reason\\":\\"生产环境不能动\\"}"' }]
   }));
   const origFetch = globalThis.fetch;
@@ -1123,7 +1205,7 @@ await test('Agent 循环：PreToolUse 钩子 deny → 工具不执行，模型�
     assert.ok(!existsSync(join(dir, 'PWNED')), '被钩子拒绝的命令绝不能真的执行');
   } finally {
     globalThis.fetch = origFetch;
-    rmSync(join(VEGA_DIR, 'hooks.json'), { force: true });
+    rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
     rmSync(dir, { recursive: true, force: true });
   }
 });
@@ -1680,7 +1762,7 @@ process.stdin.on('data', (c) => {
 }
 
 await test('MCP：握手→列工具→调用 全链路（真实子进程）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'vega-mcp-'));
+  const dir = mkdtempSync(join(tmpdir(), 'cocode-mcp-'));
   const serverPath = writeFakeMcpServer(dir);
   const cfg = { mcpServers: { fake: { command: process.execPath, args: [serverPath] } } };
   try {
@@ -1789,6 +1871,18 @@ await test('Subagent：递归拦截与必填校验', async () => {
 
 await test('Subagent：主运行不注册 Subagent（防递归），子运行同样没有', () => {
   assert.ok(builtin.builtinTools.every((t) => t.name !== 'Subagent'), 'Subagent 不在 builtinTools（由 agent.js 按深度挂载）');
+});
+
+// ---------- Team worker 目录隔离 ----------
+const teamMod = await import(CORE + 'tools/team.js');
+
+await test('Team：可写 worker 默认 worktree，只有显式 shared 才允许共享写入目录', () => {
+  assert.deepEqual(teamMod.resolveWorkerIsolation('explore', 'auto'), { ok: true, isolation: 'shared' });
+  assert.deepEqual(teamMod.resolveWorkerIsolation('accept_edits', 'auto'), { ok: true, isolation: 'worktree' });
+  assert.deepEqual(teamMod.resolveWorkerIsolation('bypass', 'auto'), { ok: true, isolation: 'worktree' });
+  assert.deepEqual(teamMod.resolveWorkerIsolation('accept_edits', 'shared'), { ok: true, isolation: 'shared' });
+  assert.deepEqual(teamMod.resolveWorkerIsolation('explore', 'worktree'), { ok: true, isolation: 'worktree' });
+  assert.equal(teamMod.resolveWorkerIsolation('accept_edits', 'unsafe').ok, false);
 });
 
 // ---------- 深度思考（reasoning） ----------
@@ -2135,8 +2229,10 @@ await test('cocode-git：分支增删切 + 工作树增删 + 暂存/提交/日�
   assert.ok(lg.ok);
   assert.ok(lg.commits.some((c) => c.subject === 'add g'), '日志应有 add g 提交');
 
-  // 7) 删除分支（切回 main 后删 feat）
-  await G.switchBranch(repo, 'main');
+  // 7) 安全删除分支：未合并提交应被保护，合并后才允许删除。
+  assert.ok((await G.switchBranch(repo, 'main')).ok, 'switchBranch main');
+  assert.equal((await G.deleteBranch(repo, 'feat')).ok, false, '未合并的 feat 不应被删除');
+  git('merge', '--ff-only', 'feat');
   assert.ok((await G.deleteBranch(repo, 'feat')).ok, 'deleteBranch feat');
 
   rmSync(repo, { recursive: true, force: true });
@@ -2189,8 +2285,8 @@ await test('automations：create/list/update/delete + notify 队列消费式读�
   // 清场（用空数组覆盖，不删文件以免影响其它测试环境）
   const fs = await import('node:fs');
   const { join } = await import('node:path');
-  const { VEGA_DIR } = await import(CORE + 'config.js');
-  const path = join(VEGA_DIR, 'automations.json');
+  const { COCODE_DIR } = await import(CORE + 'config.js');
+  const path = join(COCODE_DIR, 'automations.json');
   const backup = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : null;
   try {
     if (fs.existsSync(path)) fs.unlinkSync(path);
@@ -2201,6 +2297,11 @@ await test('automations：create/list/update/delete + notify 队列消费式读�
     assert.equal(r.event, 'Stop');
     const list = A.listAutomations();
     assert.ok(list.some((x) => x.id === r.id), 'list 应包含新规则');
+
+    // 非法规则不得落盘；否则下一次 Agent 触发时才报错，定位成本会很高。
+    const invalid = A.createAutomation({ name: 'bad', event: 'Stop', actions: [{ type: 'shell', command: 'echo bad' }] });
+    assert.equal(invalid.ok, false);
+    assert.equal(A.listAutomations().length, 1, '非法规则不应写入存储');
 
     // 2) update（enabled 关掉）
     const u = A.updateAutomation(r.id, { enabled: false });
@@ -2213,12 +2314,83 @@ await test('automations：create/list/update/delete + notify 队列消费式读�
     assert.equal(n.length, 2, '应收到 2 条通知');
     assert.equal(A.drainNotifications('sess-1').length, 0, 'drain 后队列清空');
 
-    // 4) delete
+    // 4) 命令自动化使用脱敏环境，非零退出码必须如实失败并通知，而非静默吞掉。
+    process.env.COCODE_AUTOMATION_SECRET = 'do-not-leak';
+    const commandRule = A.createAutomation({
+      name: 'safe-command', event: 'Stop',
+      actions: [{ type: 'command', command: 'test -z "$COCODE_AUTOMATION_SECRET"' }]
+    });
+    const safeRuns = await A.runAutomations('Stop', {}, { cwd: tmp, sessionId: 'sess-safe' });
+    assert.ok(safeRuns.some((x) => x.rule_id === commandRule.id && x.ok), '密钥环境变量必须不传给自动化子进程');
+    const failRule = A.createAutomation({ name: 'failed-command', event: 'Stop', actions: [{ type: 'command', command: 'exit 7' }] });
+    const failedRuns = await A.runAutomations('Stop', {}, { cwd: tmp, sessionId: 'sess-fail' });
+    assert.ok(failedRuns.some((x) => x.rule_id === failRule.id && x.ok === false && x.code === 7), '非零退出码不能伪装成功');
+    assert.match(A.drainNotifications('sess-fail')[0]?.message || '', /failed-command.*命令失败/);
+    delete process.env.COCODE_AUTOMATION_SECRET;
+
+    // 5) delete
     A.deleteAutomation(r.id);
+    A.deleteAutomation(commandRule.id);
+    A.deleteAutomation(failRule.id);
     assert.equal(A.listAutomations().length, 0, 'delete 后列表为空');
   } finally {
     if (backup !== null) fs.writeFileSync(path, backup);
     else if (fs.existsSync(path)) fs.unlinkSync(path);
+  }
+});
+
+console.log('\n--- 定时任务（cron + 时区 + 去重触发）---');
+
+await test('schedules：cron 语义、时区换算与同一分钟恰好触发一次', async () => {
+  const S = await import(CORE + 'asapi/schedules.js');
+  const fs = await import('node:fs');
+  const { join } = await import('node:path');
+  const { COCODE_DIR } = await import(CORE + 'config.js');
+  const schedulesPath = join(COCODE_DIR, 'schedules.json');
+  const runsPath = join(COCODE_DIR, 'schedule-runs.json');
+  const backups = new Map([
+    [schedulesPath, fs.existsSync(schedulesPath) ? fs.readFileSync(schedulesPath, 'utf8') : null],
+    [runsPath, fs.existsSync(runsPath) ? fs.readFileSync(runsPath, 'utf8') : null],
+  ]);
+  try {
+    // cron 的「日期 + 星期」均受限时取或，符合标准 cron；非法表达式绝不能入库。
+    S.validateCron('*/15 8-18 * * 1-5');
+    assert.throws(() => S.validateCron('61 * * * *'), /超出范围/);
+    assert.equal(S.cronMatches('0 9 1 * 1', { minute: 0, hour: 9, day: 8, month: 1, dow: 1 }), true);
+    assert.equal(S.cronMatches('0 9 1 * 1', { minute: 0, hour: 9, day: 8, month: 1, dow: 2 }), false);
+
+    // 2026-01-01 00:00 UTC = 上海 08:00；非法时区要稳定回退 UTC。
+    const now = new Date('2026-01-01T00:00:00.000Z');
+    assert.deepEqual(
+      S.tzParts(now, 'Asia/Shanghai'),
+      { year: 2026, month: 1, day: 1, hour: 8, minute: 0, dow: 4 },
+    );
+    assert.equal(S.tzParts(now, 'not/a-timezone').hour, 0);
+
+    for (const path of backups.keys()) if (fs.existsSync(path)) fs.unlinkSync(path);
+    const schedule = S.createSchedule({
+      name: '调度测试', agent_id: 'agent-test', timezone: 'UTC',
+      cron_expression: '* * * * *', chat_model_config: { model: 'mock' },
+    });
+    let fired = 0;
+    S.setScheduleFireHandler(async (record) => {
+      fired++;
+      assert.equal(record.id, schedule.id);
+      return 'session-scheduled';
+    });
+    const first = await S.evaluateSchedules(now);
+    const second = await S.evaluateSchedules(now);
+    assert.equal(first.length, 1, '匹配分钟应触发一次');
+    assert.equal(second.length, 0, '同一分钟重评估不得重复触发');
+    assert.equal(fired, 1);
+    assert.equal(S.listRuns(schedule.id)[0]?.session_id, 'session-scheduled');
+    assert.throws(() => S.updateSchedule(schedule.id, { cron_expression: 'bad cron' }), /5 段/);
+  } finally {
+    S.setScheduleFireHandler(null);
+    for (const [path, content] of backups) {
+      if (content !== null) fs.writeFileSync(path, content);
+      else if (fs.existsSync(path)) fs.unlinkSync(path);
+    }
   }
 });
 
@@ -2228,8 +2400,8 @@ await test('mcp-workshop：add/list/update/remove + 模板列表', async () => {
   const W = await import(CORE + 'tools/mcp-workshop.js');
   const fs = await import('node:fs');
   const { join } = await import('node:path');
-  const { VEGA_DIR } = await import(CORE + 'config.js');
-  const path = join(VEGA_DIR, 'config.json');
+  const { COCODE_DIR } = await import(CORE + 'config.js');
+  const path = join(COCODE_DIR, 'config.json');
   const backup = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : null;
   try {
     // 备份后清空 mcpServers

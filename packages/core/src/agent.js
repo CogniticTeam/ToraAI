@@ -14,7 +14,7 @@
 //   hook              {event,ran,decision,notices}    钩子执行结果（含未信任项目钩子的提示）
 //   done              {reason,totalUsage}  结束（completed/aborted/max-turns/blocked/error）
 //
-// 钩子（~/.vega/hooks.json 与 <cwd>/.cocode/hooks.json）在四个点介入：
+// 钩子（~/.cocode/hooks.json 与 <cwd>/.cocode/hooks.json）在四个点介入：
 //   UserPromptSubmit 组装系统提示词之前（可注入上下文，或直接拦下整轮）
 //   PreToolUse       权限决策之前（deny 优先于任何权限放行，可改写参数、强制询问）
 //   PostToolUse      工具执行之后（可补充上下文，或标记这次结果不可接受）
@@ -34,6 +34,7 @@ import { disposeAllShells } from './tools/shell.js';
 import { parseReactAction } from './react.js';
 import { runHooks } from './hooks.js';
 import { createTrace } from './trace.js';
+import { beginDelivery, finishDelivery } from './delivery.js';
 
 // ---------------------------------------------------------------- 反思返工循环（Critic Self-Review）
 //
@@ -49,6 +50,15 @@ function countToolCalls(messages) {
     if (Array.isArray(m.tool_calls)) n += m.tool_calls.length;
   }
   return n;
+}
+
+/** 是否真的执行过会改变工作区或外部状态的动作。 */
+function hasMutatingToolCall(messages) {
+  return messages.some((m) => (m.tool_calls || []).some((call) => {
+    let args = {};
+    try { args = JSON.parse(call.function?.arguments || '{}'); } catch { /* ignore */ }
+    return ['write', 'execute'].includes(toolCategory(call.function?.name, args));
+  }));
 }
 
 /** 把 messages 里对 Critic 有用的部分挑出来，转成可读文本 */
@@ -245,7 +255,9 @@ function baseBehavior(mode, category) {
       // 无人值守：只放行不会触发询问的只读操作，其余一律拒绝
       return category === 'read' ? 'allow' : 'deny';
     default:
-      return 'allow';
+      // 配置损坏、拼写错误或第三方调用传入未知模式时，绝不能意外变成 bypass。
+      // 退回 default 的最小权限语义：读放行，写/执行需要确认。
+      return category === 'read' ? 'allow' : 'ask';
   }
 }
 
@@ -423,10 +435,18 @@ export function runAgent(opts) {
     label: opts.label || null,
     cfg
   });
+  let delivery = null;
+  if (opts.deliveryEnabled && opts.sessionId) {
+    try { delivery = beginDelivery({ sessionId: opts.sessionId, cwd: opts.cwd || null, traceId: trace.id, modeEnabled: opts.deliveryMode === true, criteria: opts.deliveryCriteria || '' }); }
+    catch { /* 交付观测失败不能阻断任务 */ }
+  }
   _runAgentImpl({ ...opts, __trace: trace }, ch).catch((e) => {
     ch.push({ type: 'error', error: e?.message || String(e) });
     trace.end('error', { error: e?.message || String(e) });
   }).finally(() => {
+    if (delivery) {
+      try { finishDelivery(delivery); } catch { /* 交付观测失败不能阻断任务 */ }
+    }
     ch.end();
     if (opts.disposeShellOnEnd !== false) disposeAllShells();
   });
@@ -451,14 +471,14 @@ async function _runAgentImpl(opts, ch) {
     __trace: trace
   } = opts;
 
-  // cwd 由调用方传入；未选择工作目录时的默认范围 = 整台电脑（家目录），
-  // 文件/终端工具开箱即用，而不是"请先选择文件夹"。显式关掉
-  // cfg.defaultScopeFullDisk 可回到旧语义（null → 工具返回不可用提示）。
+  // cwd 由调用方传入；默认不把本地工具作用域偷偷扩展到家目录。
+  // 未选择目录时仍能正常对话/联网，本地文件、终端与相关工具会给出明确引导。
+  // 仅用户显式设 cfg.defaultScopeFullDisk=true 才扩展至家目录。
   // 绝不回退到 process.cwd()——Electron 进程目录永远不是合法工作目录。
   // 只做 realpath 归一化，免得 /tmp 与 /private/tmp 这类符号链接差异让沙箱误判成"越界"。
   let cwd = opts.cwd || null;
-  // 全盘默认模式下跳过整树扫描型开销（检查点快照 / 项目上下文注入），见下方两处守卫
-  const defaultFullDisk = !cwd && cfg.defaultScopeFullDisk !== false;
+  // 显式全盘模式下跳过整树扫描型开销（检查点快照 / 项目上下文注入），见下方两处守卫
+  const defaultFullDisk = !cwd && cfg.defaultScopeFullDisk === true;
   if (defaultFullDisk) cwd = homedir();
   if (cwd) cwd = realpathAllowMissing(cwd);
 
@@ -484,7 +504,9 @@ async function _runAgentImpl(opts, ch) {
     toolMap.set(canonicalToolName(t.name).toLowerCase(), t); // 旧名/小写别名
   }
 
-  const permissionMode = opts.permissionMode ?? cfg.permissionMode ?? 'bypass';
+  // 调用方遗漏权限模式时采用 default，而非 bypass；桌面与 REPL 有确认通道，
+  // 一次性 CLI 则仍在调用处明确选择 bypass，语义不被这个兜底悄悄改变。
+  const permissionMode = opts.permissionMode ?? cfg.permissionMode ?? 'default';
   const rules = [...permissionRules];
   const sandboxRoots = cwd ? createRoots(cwd, cfg.allowedRoots) : [];
   const toolCtx = {
@@ -572,9 +594,12 @@ async function _runAgentImpl(opts, ch) {
 
   let reactMode = client.supportsTools === false;
   const basePrompt = systemPrompt || cfg.systemPrompt || SYSTEM_PROMPT;
+  const deliveryPrompt = opts.deliveryMode
+    ? `${basePrompt}\n\n【可验证交付模式】完成任务前，在合理范围内运行相关测试、构建或静态检查；未运行或无法运行的验证必须明确说明，不得声称通过。${opts.deliveryCriteria ? `\n验收要点：\n${String(opts.deliveryCriteria).slice(0, 1200)}` : ''}`
+    : basePrompt;
   const composeSystem = () => {
     const base = buildSystemPrompt({
-      basePrompt,
+      basePrompt: deliveryPrompt,
       projectContext,
       reactMode,
       toolNames: allTools.map((t) => t.name),
@@ -916,6 +941,10 @@ async function _runAgentImpl(opts, ch) {
       emit({ type: 'review-start', round: 0, skipped: true, reason: `工具调用 ${totalCalls} < ${minTurns}` });
       return await finishWithStructuredOutput();
     }
+    if (reviewCfg.only_after_mutation && !hasMutatingToolCall(messages)) {
+      emit({ type: 'review-start', round: 0, skipped: true, reason: '未发生写入或执行动作' });
+      return await finishWithStructuredOutput();
+    }
 
     const maxRounds = reviewCfg.max_rounds ?? 2;
     const checklist = Array.isArray(reviewCfg.checklist) ? reviewCfg.checklist : [];
@@ -924,11 +953,11 @@ async function _runAgentImpl(opts, ch) {
     while (round <= maxRounds) {
       round++;
       emit({ type: 'review-start', round });
-      trace.request(`review-${round}`, { promptType: 'critic', toolCalls: 0 });
 
       let critique, usage;
       try {
         const criticMsgs = buildCriticMessages(messages, checklist);
+        trace.request(`review-${round}`, { messages: criticMsgs, tools: undefined });
         ({ message: critique, usage } = await chatCompletion(client, {
           messages: criticMsgs,
           tools: undefined,

@@ -1,4 +1,41 @@
 {
+  "inbox": {
+    "detail": "消息详情",
+    "translateToChinese": "翻译为中文", "translateToEnglish": "翻译为英文", "translating": "翻译中…",
+    "showOriginal": "查看原文", "showTranslation": "查看译文", "noTranslationNeeded": "无需翻译",
+    "translationError": "翻译失败，请点击翻译按钮重试。", "translationRateLimit": "翻译请求过于频繁，请稍后重试。",
+    "title": "消息", "newMessage": "收到一条 CoCode 消息", "empty": "暂无消息", "loading": "加载中…",
+    "unread": "未读", "more": "加载更多", "back": "返回消息列表", "retry": "重试",
+    "loadError": "消息加载失败", "readError": "标记已读失败，请重试",
+    "blocked": "账户已被封禁", "blockedReason": "此账户暂时无法使用 CoCode。",
+    "unbanHint": "管理员解封后将自动恢复，无需重新登录。", "signOut": "退出登录"
+  },
+  "requiredUpdate": {
+    "title": "请更新 CoCode", "description": "新版本 {{version}} 已发布，更新后即可继续使用。",
+    "download": "打开官网下载页", "macHint": "自动更新暂不可用时，可从官网下载新版 DMG 手动替换。",
+    "downloading": "正在下载更新… {{percent}}%", "install": "重启并安装", "retry": "重试下载",
+    "error": "自动更新失败，请重试或前往官网下载。", "quit": "退出 CoCode"
+  },
+  "polls": {
+    "title": "投票", "subtitle": "参与投票，查看活动与结果", "all": "全部活动", "history": "我的投票记录",
+    "search": "搜索", "loadMore": "加载更多", "from": "开始日期", "to": "结束日期",
+    "starts": "开始", "ends": "截止", "forever": "永久有效", "refresh": "刷新投票",
+    "startsIn": "距开始 {{time}}", "startingSoon": "即将开始，正在确认状态…", "dayUnit": "天",
+    "state": { "draft": "未发布", "scheduled": "未开始", "active": "进行中", "ended": "已结束", "archived": "已归档" },
+    "type": { "single": "单选", "multiple": "多选", "score": "百分制打分" },
+    "frequency": { "once": "每人一次", "daily": "每日一次（北京时间）", "unlimited": "不限次数" },
+    "maxSelections": "最多选择 {{count}} 项", "voted": "已投票", "votedCount": "已提交 {{count}} 次",
+    "available": "可参与", "choose": "选择左侧活动查看详情", "empty": "暂无投票活动", "loading": "正在加载投票中",
+    "noHistory": "暂无投票记录", "results": "投票结果", "participants": "{{count}} 次投票",
+    "countHidden": "参与人数未公开", "detailsHidden": "选项明细未公开", "resultsUnavailable": "结果暂未公开",
+    "autoRefresh": "每 5 秒自动更新", "pieHint": "圆环显示各选项份额；多选投票的选择率之和可能超过 100%。",
+    "submit": "提交投票", "submitting": "提交中…", "confirmVote": "确认提交投票？提交后无法修改。",
+    "submitted": "投票已提交", "queued": "离线投票已保存，联网后自动提交；服务端确认前不算投票成功。",
+    "pending": "待同步投票", "waitingSync": "等待服务端确认", "retry": "重试", "remove": "移除",
+    "removePending": "移除这条待同步投票？", "selectionRequired": "请选择符合规则的选项",
+    "scoreRequired": "请为每个选项填写 0–100 的整数分", "submitError": "提交失败", "loadError": "投票加载失败",
+    "disabled": "投票功能已由管理员关闭。"
+  },
   "common": {
     "add": "添加",
     "agent": "智能体",
@@ -37,7 +74,6 @@
     "schedule": "日程",
     "selectAgent": "选择智能体",
     "settings": "设置",
-    "subscription": "订阅",
     "switchToZh": "切换为中文",
     "switchToEn": "Switch to English",
     "team": "团队",
@@ -52,15 +88,14 @@
     "my-mcp": "已安装的 MCP",
     "skill-hub": "技能中心",
     "browser": "浏览器",
+    "polls": "投票",
     "my-skill": "已安装的技能",
     "message": "消息",
     "llm": "LLM",
     "tts": "TTS",
     "embedding": "向量",
     "select": "请选择",
-    "workflow": "工作流",
-    "creditsUsed": "共消耗",
-    "officialModel": "官方模型"
+    "workflow": "工作流"
   },
   "error": {
     "description": "页面遇到意外错误。你可以重试或返回首页。",
@@ -143,9 +178,9 @@
     "pickElementHint": "选择元素：在页面上悬停高亮，点击后元素卡片附到聊天输入框（Esc 取消）",
     "openInBrowser": "在浏览器打开",
     "openInBrowserHint": "在系统默认浏览器中打开当前页面",
-    "urlPlaceholder": "输入网址后回车（例如 example.com）",
-    "noTabPick": "还没有打开任何标签页。先在地址栏输入网址回车，再选择元素。",
-    "noTabAction": "还没有打开任何标签页。点右上角 + 新建一个，或在地址栏输入网址回车。",
+    "urlPlaceholder": "输入网址或搜索内容后回车",
+    "noTabPick": "还没有打开任何标签页。先在地址栏输入网址或搜索内容并回车，再选择元素。",
+    "noTabAction": "还没有打开任何标签页。点右上角 + 新建一个，或在地址栏输入网址或搜索内容并回车。",
     "iframeFallbackHint": "当前是浏览器兜底模式（<iframe>）：同源页面可用，跨源站点大多会被 X-Frame-Options / CSP 拒绝嵌入、内容也读不到。桌面端 App 里用的是真正的内置浏览器（<webview>），没有这些限制。"
   },
   "voice": {
@@ -747,7 +782,9 @@
       "diff": "变更预览",
       "browser": "浏览器",
       "terminal": "终端",
-      "trace": "运行记录"
+      "trace": "运行记录",
+      "delivery": "可验证交付",
+      "impact": "项目影响雷达"
     },
     "knowledge": {
       "title": "知识库",
@@ -1015,43 +1052,11 @@
     "pathPlaceholder": "输入或粘贴路径",
     "empty": "此文件夹为空",
     "pressEnter": "先按回车校验该路径",
-    "pickerPlaceholder": "选择文件夹（可选）",
+    "pickerPlaceholder": "选择文件夹以执行工具",
     "recent": "最近",
     "recentEmpty": "暂无最近使用的文件夹",
     "browse": "选择文件夹",
     "gitTooltip": "{{staged}} 已暂存 · {{unstaged}} 已修改 · {{untracked}} 未跟踪\n行数不含未跟踪文件"
-  },
-  "subscription": {
-    "title": "CoCode 订阅计划",
-    "subtitle": "通过爱发电购买套餐，用订单号兑换积分，积分可用于官方模型调用",
-    "oneTime": "按月订阅",
-    "perUse": "月",
-    "credits": "积分",
-    "creditsHint": "积分用于官方模型调用，购买后请用订单号兑换",
-    "guest": "未登录用户",
-    "plans": {
-      "recommended": "推荐",
-      "subscribe": "立即订阅",
-      "liteDesc": "轻量尝鲜，适合偶尔使用",
-      "proDesc": "主力之选，全模型可用",
-      "maxDesc": "重度专业，优先响应"
-    },
-    "pay": {
-      "scanTitle": "订阅支付 · 爱发电",
-      "scanDesc": "点击下方按钮前往爱发电页面购买套餐，购买后在客户端输入订单号兑换积分",
-      "openAfadian": "前往爱发电",
-      "builtinBrowser": "CoCode 内置浏览器",
-      "systemBrowser": "系统默认浏览器",
-      "desktopOnly": "仅桌面端"
-    },
-    "redeem": {
-      "title": "订单号兑换积分",
-      "desc": "在爱发电完成支付后，复制订单号粘贴到此处兑换积分",
-      "placeholder": "请输入爱发电订单号",
-      "button": "兑换",
-      "success": "兑换成功！获得 {{credits}} 积分，有效期至 {{expire}}，当前余额 {{balance}} 积分",
-      "alreadyRedeemed": "该订单已兑换过，当前余额 {{balance}} 积分"
-    }
   },
     "settings": {
       "title": "设置",
@@ -1068,7 +1073,6 @@
       "about": "关于",
       "usage": "使用统计",
       "account": "账号",
-      "subscription": "订阅",
       "developer": "开发者&调试"
     },
     "memory": {
@@ -1123,6 +1127,20 @@
         "desc": "界面显示语言",
         "zh": "简体中文",
         "en": "English"
+      },
+      "searchEngine": {
+        "title": "搜索引擎",
+        "desc": "地址栏输入非网址内容时使用",
+        "engines": {
+          "baidu": "百度",
+          "google": "谷歌",
+          "360": "360 搜索",
+          "sogou": "搜狗",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "必应"
+        }
       },
       "sound": {
         "title": "提示音",
@@ -1202,17 +1220,18 @@
     },
     "about": {
       "title": "关于",
-      "cocode": "本地 Agent 工作台 · 版本 0.1.0",
-      "runtime": "Electron 桌面端 · 本地 ASAPI 服务 · 自接入 OpenAI 兼容模型",
+      "cocode": "本地 Agent 工作台 · 版本 {{version}}",
+      "runtime": "Electron 桌面端 · 本地 ASAPI 服务 · 自接入模型",
       "runtimeTitle": "运行方式",
       "update": {
         "title": "软件更新",
-        "desc": "检查 CoCode 新版本。macOS 将打开下载页；Windows 会在后台下载并提示安装。",
+        "desc": "检查 CoCode 新版本。macOS 和 Windows 均会在后台下载，并在下载完成后提示重启安装。",
         "check": "检查更新",
         "checking": "检查中…",
         "upToDate": "当前已是最新版本。",
-        "available": "发现 CoCode {{version}}，已在浏览器中打开下载页。",
+        "available": "发现 CoCode {{version}}，请按更新提示继续。",
         "downloading": "发现 CoCode {{version}}，正在后台下载。",
+        "ready": "CoCode {{version}} 已下载，等待重启安装。",
         "development": "开发环境无法检测正式发布版本。",
         "unavailable": "此平台暂不支持自动更新。",
         "desktopOnly": "请在 CoCode 桌面应用中检查更新。",
@@ -1380,21 +1399,6 @@
         "passwordSaved": "密码已更新",
         "emailSaved": "邮箱已更新"
       },
-      "credits": {
-        "title": "积分余额",
-        "unit": "积分",
-        "low": "余额偏低",
-        "subscribe": "查看套餐",
-        "topUp": "兑换积分",
-        "renew": "续费",
-        "currentPlan": "当前套餐",
-        "noPlan": "未开通订阅（官方模型暂不可用）",
-        "daysLeft": "剩 {{days}} 天",
-        "expiresOn": "到期 {{date}}",
-        "expired": "已到期",
-        "recentUsage": "最近消耗",
-        "modelCall": "官方模型调用"
-      },
       "accountLabel": "用户名或邮箱",
       "accountPlaceholder": "用户名或邮箱",
       "usernameLabel": "用户名（2-32 位字母、数字或中文）",
@@ -1425,18 +1429,6 @@
     "subtitle": "模型管理",
     "desc": "配置 API key 添加更多可用模型，启用的第一个模型为默认对话模型。",
     "addModel": "添加模型",
-    "plans": {
-      "title": "订阅套餐（Plan）",
-      "subtitle": "接入 GLM / MiniMax / 方舟 / MiMo / 腾讯 Coding Plan 与 Qwen 免费额度",
-      "description": "各家 Coding / Token Plan 使用套餐专属 API Key 与专用端点（已内置，自动填写）。粘贴 Key 即可批量接入套餐内全部模型。",
-      "loading": "加载套餐目录…",
-      "connected": "已接入",
-      "connect": "接入",
-      "disconnect": "断开",
-      "save": "保存",
-      "keyPlaceholder": "粘贴套餐专属 API Key",
-      "getKey": "获取 Key"
-    },
     "empty": "还没有可用模型，点击「添加模型」接入你的第一个模型",
     "loading": "加载中…",
     "tableHeaders": {
@@ -1477,7 +1469,7 @@
         "off": "不支持",
         "hint": "自动 = 按模型名判断；多模态模型（如 gpt-4o、qwen-vl）可上传图片，纯文本模型禁用上传"
       },
-      "baseUrl": "接口地址（OpenAI 兼容 Base URL）",
+      "baseUrl": "接口地址（Base URL）",
       "saveHint": "保存后会用模型列表接口验证连通性，密钥仅保存在本机",
       "reset": "重置",
       "saveEdit": "保存修改",
@@ -1494,6 +1486,8 @@
       "volcengine": "火山引擎",
       "dashscope": "阿里云",
       "siliconflow": "硅基流动",
+      "stepfun": "阶跃星辰（中国）",
+      "stepfunGlobal": "阶跃星辰（国际）",
       "hunyuan": "腾讯云",
       "ollama": "Ollama（本地）"
     }

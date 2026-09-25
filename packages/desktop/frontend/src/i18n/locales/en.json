@@ -1,4 +1,41 @@
 {
+  "inbox": {
+    "detail": "Message details",
+    "translateToChinese": "Translate to Chinese", "translateToEnglish": "Translate to English", "translating": "Translating…",
+    "showOriginal": "Show original", "showTranslation": "Show translation", "noTranslationNeeded": "No translation needed",
+    "translationError": "Translation failed. Click the translate button to retry.", "translationRateLimit": "Too many translation requests. Please try again later.",
+    "title": "Messages", "newMessage": "New message from CoCode", "empty": "No messages yet", "loading": "Loading…",
+    "unread": "Unread", "more": "Load more", "back": "Back to messages", "retry": "Retry",
+    "loadError": "Unable to load messages", "readError": "Could not mark the message as read. Try again.",
+    "blocked": "Account suspended", "blockedReason": "This account cannot currently use CoCode.",
+    "unbanHint": "Access will resume automatically when an administrator lifts the suspension.", "signOut": "Sign out"
+  },
+  "requiredUpdate": {
+    "title": "Update CoCode", "description": "Version {{version}} is available. Update to continue.",
+    "download": "Open official download page", "macHint": "If automatic updating is unavailable, download the latest DMG from the official site and replace the app manually.",
+    "downloading": "Downloading update… {{percent}}%", "install": "Restart and install", "retry": "Retry download",
+    "error": "Automatic update failed. Retry or download from the official website.", "quit": "Quit CoCode"
+  },
+  "polls": {
+    "title": "Polls", "subtitle": "Vote and follow the results", "all": "All polls", "history": "My voting history",
+    "search": "Search", "loadMore": "Load more", "from": "From", "to": "To",
+    "starts": "Starts", "ends": "Ends", "forever": "No deadline", "refresh": "Refresh polls",
+    "startsIn": "Starts in {{time}}", "startingSoon": "Starting soon, checking status…", "dayUnit": "d",
+    "state": { "draft": "Draft", "scheduled": "Not started", "active": "Open", "ended": "Ended", "archived": "Archived" },
+    "type": { "single": "Single choice", "multiple": "Multiple choice", "score": "Score out of 100" },
+    "frequency": { "once": "Once per person", "daily": "Once per day (Beijing time)", "unlimited": "Unlimited" },
+    "maxSelections": "Choose up to {{count}}", "voted": "Voted", "votedCount": "Submitted {{count}} time(s)",
+    "available": "Open to vote", "choose": "Choose a poll on the left", "empty": "No polls yet", "loading": "Loading polls…",
+    "noHistory": "No voting history", "results": "Results", "participants": "{{count}} votes",
+    "countHidden": "Voter count is private", "detailsHidden": "Option details are private", "resultsUnavailable": "Results are not public yet",
+    "autoRefresh": "Refreshes every 5 seconds", "pieHint": "The ring shows each option's share. Multiple-choice selection rates may add up to more than 100%.",
+    "submit": "Submit vote", "submitting": "Submitting…", "confirmVote": "Submit this vote? It cannot be edited afterward.",
+    "submitted": "Vote submitted", "queued": "Saved offline. It will sync when connected; it is not counted until the server confirms it.",
+    "pending": "Pending votes", "waitingSync": "Waiting for server confirmation", "retry": "Retry", "remove": "Remove",
+    "removePending": "Remove this pending vote?", "selectionRequired": "Choose valid options",
+    "scoreRequired": "Enter a whole-number score from 0 to 100 for each option", "submitError": "Vote could not be submitted", "loadError": "Polls could not be loaded",
+    "disabled": "Polls have been disabled by the administrator."
+  },
 	"common": {
 		"add": "Add",
 		"agent": "Agent",
@@ -38,7 +75,6 @@
 		"schedule": "Schedule",
 		"selectAgent": "Select an agent",
 		"settings": "Settings",
-		"subscription": "Subscription",
 		"switchToZh": "Switch to Chinese",
 		"switchToEn": "Switch to English",
 		"team": "Team",
@@ -53,14 +89,13 @@
 		"my-mcp": "Installed MCPs",
 		"skill-hub": "Skill Hub",
 		"browser": "Browser",
+		"polls": "Polls",
 		"my-skill": "Installed skills",
 		"message": "Message",
 		"llm": "LLM",
 		"tts": "TTS",
 		"embedding": "Embedding",
-		"select": "Select",
-		"creditsUsed": "Used",
-		"officialModel": "Official model"
+		"select": "Select"
 	},
 	"error": {
 		"description": "The page hit an unexpected error. You can retry or go back home.",
@@ -143,9 +178,9 @@
 		"pickElementHint": "Pick an element: hover to highlight on the page, click to attach it as a card in the chat input (Esc to cancel)",
 		"openInBrowser": "Open in browser",
 		"openInBrowserHint": "Open current page in the system browser",
-		"urlPlaceholder": "Enter a URL and press Enter (e.g. example.com)",
-		"noTabPick": "No tab is open yet. Type a URL in the address bar and press Enter, then pick an element.",
-		"noTabAction": "No tab is open yet. Click + in the top-right corner to create one, or type a URL in the address bar and press Enter.",
+		"urlPlaceholder": "Enter a URL or search query and press Enter",
+		"noTabPick": "No tab is open yet. Enter a URL or search query in the address bar, then pick an element.",
+		"noTabAction": "No tab is open yet. Click + in the top-right corner, or enter a URL or search query in the address bar.",
 		"iframeFallbackHint": "Browser fallback mode (<iframe>) is active: same-origin pages work, but cross-origin sites may reject embedding via X-Frame-Options / CSP. The desktop app uses a real built-in browser (<webview>) without these limits."
 	},
 	"voice": {
@@ -747,7 +782,9 @@
 			"diff": "Changes",
 			"browser": "Browser",
 			"terminal": "Terminal",
-			"trace": "Run history"
+			"trace": "Run history",
+			"delivery": "Verifiable delivery",
+			"impact": "Project impact radar"
 		},
 		"knowledge": {
 			"title": "Knowledge Bases",
@@ -1015,43 +1052,11 @@
 		"pathPlaceholder": "Type or paste a path",
 		"empty": "This folder is empty",
 		"pressEnter": "Press Enter to check this path first",
-		"pickerPlaceholder": "Select a folder (optional)",
+		"pickerPlaceholder": "Select a folder to use tools",
 		"recent": "Recent",
 		"recentEmpty": "No recently used folders",
 		"browse": "Select a folder",
 		"gitTooltip": "{{staged}} staged · {{unstaged}} modified · {{untracked}} untracked\nLine counts exclude untracked files"
-	},
-	"subscription": {
-		"title": "CoCode Subscription Plans",
-		"subtitle": "Purchase a plan via Afadian, then redeem your order number for credits to use official models",
-		"oneTime": "Billed monthly",
-		"perUse": "mo",
-		"credits": "credits",
-		"creditsHint": "Credits are used for official model calls. Redeem with your order number after purchase",
-		"guest": "Guest user",
-		"plans": {
-			"recommended": "Recommended",
-			"subscribe": "Subscribe",
-			"liteDesc": "Lightweight, for occasional use",
-			"proDesc": "Mainstream choice, all models available",
-			"maxDesc": "Heavy-duty professional, priority response"
-		},
-		"pay": {
-			"scanTitle": "Subscribe · Afadian",
-			"scanDesc": "Click the button below to purchase a plan on Afadian, then redeem with your order number in the app",
-			"openAfadian": "Go to Afadian",
-			"builtinBrowser": "CoCode built-in browser",
-			"systemBrowser": "System default browser",
-			"desktopOnly": "Desktop only"
-		},
-		"redeem": {
-			"title": "Redeem credits with order number",
-			"desc": "After payment on Afadian, paste your order number here to redeem credits",
-			"placeholder": "Enter your Afadian order number",
-			"button": "Redeem",
-			"success": "Redeemed! {{credits}} credits added, valid until {{expire}}. Balance: {{balance}}",
-			"alreadyRedeemed": "This order has already been redeemed, current balance {{balance}} credits"
-		}
 	},
 	"settings": {
 		"title": "Settings",
@@ -1068,7 +1073,6 @@
 			"about": "About",
 			"usage": "Usage",
 			"account": "Account",
-			"subscription": "Subscription",
 			"developer": "Developer & Debug"
 		},
 		"memory": {
@@ -1123,6 +1127,20 @@
 				"desc": "Interface language",
 				"zh": "Simplified Chinese",
 				"en": "English"
+			},
+			"searchEngine": {
+				"title": "Search engine",
+				"desc": "Used when the address bar input is not a URL",
+				"engines": {
+					"baidu": "Baidu",
+					"google": "Google",
+					"360": "360 Search",
+					"sogou": "Sogou",
+					"yahoo": "Yahoo",
+					"duckduckgo": "DuckDuckGo",
+					"ecosia": "Ecosia",
+					"bing": "Bing"
+				}
 			},
 			"sound": {
 				"title": "Notification sound",
@@ -1202,17 +1220,18 @@
 		},
 		"about": {
 			"title": "About",
-			"cocode": "Local Agent workspace · v0.1.0",
-			"runtime": "Electron desktop · Local ASAPI service · Bring-your-own OpenAI-compatible model",
+			"cocode": "Local Agent workspace · v{{version}}",
+			"runtime": "Electron desktop · Local ASAPI service · Bring your own model",
 			"runtimeTitle": "Runtime",
 			"update": {
 				"title": "Software update",
-				"desc": "Check for a new CoCode release. macOS opens the download page; Windows downloads in the background and prompts to install.",
+				"desc": "Check for a new CoCode release. macOS and Windows download in the background, then prompt you to restart and install.",
 				"check": "Check for updates",
 				"checking": "Checking…",
 				"upToDate": "You're up to date.",
-				"available": "CoCode {{version}} is available. The download page has opened in your browser.",
+				"available": "CoCode {{version}} is available. Follow the update prompt to continue.",
 				"downloading": "CoCode {{version}} is available and downloading in the background.",
+				"ready": "CoCode {{version}} has downloaded and is ready to install.",
 				"development": "Updates are unavailable in development builds.",
 				"unavailable": "Automatic updates are not available on this platform.",
 				"desktopOnly": "Check for updates from the CoCode desktop app.",
@@ -1380,21 +1399,6 @@
 				"passwordSaved": "Password updated",
 				"emailSaved": "Email updated"
 			},
-			"credits": {
-				"title": "Credit balance",
-				"unit": "credits",
-				"low": "Running low",
-				"subscribe": "View plans",
-				"topUp": "Redeem credits",
-				"renew": "Renew",
-				"currentPlan": "Current plan",
-				"noPlan": "No subscription (official models locked)",
-				"daysLeft": "{{days}} days left",
-				"expiresOn": "Renews/expires {{date}}",
-				"expired": "Expired",
-				"recentUsage": "Recent usage",
-				"modelCall": "Official model call"
-			},
 			"accountLabel": "Username or email",
 			"accountPlaceholder": "Username or email",
 			"usernameLabel": "Username (2-32 letters, digits or CJK)",
@@ -1425,18 +1429,6 @@
 		"subtitle": "Model management",
 		"desc": "Configure API keys to add more available models. The first enabled model becomes the default conversation model.",
 		"addModel": "Add model",
-		"plans": {
-			"title": "Subscription Plans",
-			"subtitle": "Connect GLM / MiniMax / Ark / MiMo / Tencent Coding Plans and Qwen free tier",
-			"description": "Coding/Token Plans use plan-exclusive API keys with dedicated endpoints (built in, filled automatically). Paste a key to add all plan models at once.",
-			"loading": "Loading plans…",
-			"connected": "Connected",
-			"connect": "Connect",
-			"disconnect": "Disconnect",
-			"save": "Save",
-			"keyPlaceholder": "Paste your plan-exclusive API key",
-			"getKey": "Get a key"
-		},
 		"empty": "No models yet — click \"Add model\" to connect your first model",
 		"loading": "Loading…",
 		"tableHeaders": {
@@ -1477,7 +1469,7 @@
 				"off": "Off",
 				"hint": "Auto detects by model name; multimodal models (e.g. gpt-4o, qwen-vl) accept images, text-only models block uploads"
 			},
-			"baseUrl": "Endpoint (OpenAI-compatible Base URL)",
+			"baseUrl": "Endpoint (Base URL)",
 			"saveHint": "Connectivity is verified via the model-list endpoint on save; the key is stored locally only",
 			"reset": "Reset",
 			"saveEdit": "Save changes",
@@ -1494,6 +1486,8 @@
 			"volcengine": "Volcengine",
 			"dashscope": "Alibaba Cloud",
 			"siliconflow": "SiliconFlow",
+			"stepfun": "StepFun China",
+			"stepfunGlobal": "StepFun Global",
 			"hunyuan": "Tencent Cloud",
 			"ollama": "Ollama (Local)"
 		}

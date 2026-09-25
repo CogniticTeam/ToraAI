@@ -10,11 +10,13 @@ import {
 	History,
 	ListTodo,
 	PanelRight,
+	ClipboardCheck,
+	Radar,
 	ShieldCheck,
 	SquareTerminal,
 	UsersRound,
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import type {
@@ -28,18 +30,7 @@ import MCPSvg from '@/assets/images/mcp.svg?react';
 import { ChatContent } from '@/components/chat/ChatContent.tsx';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { SubagentHitlCard } from '@/components/chat/SubagentHitlCard';
-import { BrowserPanel } from '@/components/panel/BrowserPanel';
-import { CheckpointPanel } from '@/components/panel/CheckpointPanel';
-import { DiffPanel } from '@/components/panel/DiffPanel';
-import { KnowledgeBasePanel } from '@/components/panel/KnowledgeBasePanel';
-import { McpPanel } from '@/components/panel/McpPanel';
 import { PanelDock, type PanelDescriptor, type PanelKey } from '@/components/panel/PanelDock.tsx';
-import { PermissionPanel } from '@/components/panel/PermissionPanel';
-import { SkillPanel } from '@/components/panel/SkillPanel';
-import { TaskPanel } from '@/components/panel/TaskPanel';
-import { TeamPanel } from '@/components/panel/TeamPanel';
-import { TerminalPanel } from '@/components/panel/TerminalPanel';
-import { TracePanel } from '@/components/panel/TracePanel';
 import { KnowledgeBaseParametersPopover } from '@/components/popover/KnowledgeBaseParametersPopover';
 import { LlmSelect } from '@/components/select/LlmSelect';
 import { PermissionModeSelect } from '@/components/select/PermissionModeSelect.tsx';
@@ -69,6 +60,21 @@ import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_PANEL_EVENT } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
+
+// 侧栏内容不属于首屏；只在用户真正打开时下载和解析对应模块。
+const BrowserPanel = lazy(async () => ({ default: (await import('@/components/panel/BrowserPanel')).BrowserPanel }));
+const CheckpointPanel = lazy(async () => ({ default: (await import('@/components/panel/CheckpointPanel')).CheckpointPanel }));
+const DiffPanel = lazy(async () => ({ default: (await import('@/components/panel/DiffPanel')).DiffPanel }));
+const KnowledgeBasePanel = lazy(async () => ({ default: (await import('@/components/panel/KnowledgeBasePanel')).KnowledgeBasePanel }));
+const McpPanel = lazy(async () => ({ default: (await import('@/components/panel/McpPanel')).McpPanel }));
+const PermissionPanel = lazy(async () => ({ default: (await import('@/components/panel/PermissionPanel')).PermissionPanel }));
+const SkillPanel = lazy(async () => ({ default: (await import('@/components/panel/SkillPanel')).SkillPanel }));
+const TaskPanel = lazy(async () => ({ default: (await import('@/components/panel/TaskPanel')).TaskPanel }));
+const TeamPanel = lazy(async () => ({ default: (await import('@/components/panel/TeamPanel')).TeamPanel }));
+const TerminalPanel = lazy(async () => ({ default: (await import('@/components/panel/TerminalPanel')).TerminalPanel }));
+const TracePanel = lazy(async () => ({ default: (await import('@/components/panel/TracePanel')).TracePanel }));
+const DeliveryPanel = lazy(async () => ({ default: (await import('@/components/panel/DeliveryPanel')).DeliveryPanel }));
+const ImpactPanel = lazy(async () => ({ default: (await import('@/components/panel/ImpactPanel')).ImpactPanel }));
 
 interface ChatViewportProps {
 	/**
@@ -118,6 +124,8 @@ const KNOWN_PANELS: Record<PanelKey, true> = {
 	checkpoint: true,
 	diff: true,
 	trace: true,
+	delivery: true,
+	impact: true,
 	browser: true,
 	terminal: true,
 };
@@ -208,6 +216,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>('default');
 	const [selectedCwd, setSelectedCwd] = useState<string | null>(null);
+	const [selectedDeliveryMode, setSelectedDeliveryMode] = useState(false);
+	const [selectedDeliveryCriteria, setSelectedDeliveryCriteria] = useState('');
 	const [projectNamesVersion, setProjectNamesVersion] = useState(0);
 	const [credentialRefetchTrigger] = useState(0);
 	const [tasksContext, setTasksContext] = useState<TaskContext | null>(null);
@@ -217,6 +227,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// panels stacked top→bottom. Open order determines placement.
 	// Persisted so leaving and returning to /chat keeps the same panels.
 	const [panelLayout, setPanelLayout] = useState<PanelKey[][]>(loadPanelLayout);
+	const [analysisRevision, setAnalysisRevision] = useState(0);
+	const openPanels = useMemo(() => new Set(panelLayout.flat()), [panelLayout]);
 
 	useEffect(() => {
 		localStorage.setItem(PANEL_LAYOUT_KEY, JSON.stringify(panelLayout));
@@ -336,7 +348,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		newSessionExtras: () => ({
 			...(selectedModel ? { chat_model_config: selectedModel } : {}),
 			...(selectedCwd ? { cwd: selectedCwd } : {}),
-			...(selectedPermissionMode !== 'default' ? { permission_mode: selectedPermissionMode } : {})
+			...(selectedPermissionMode !== 'default' ? { permission_mode: selectedPermissionMode } : {}),
+			...(selectedDeliveryMode ? { delivery_mode: true } : {}),
+			...(selectedDeliveryCriteria ? { delivery_criteria: selectedDeliveryCriteria } : {}),
 		}),
 	});
 	const {
@@ -350,9 +364,11 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		uploadSkill,
 		addSkillsFromLibrary,
 		removeSkill,
-	} = useWorkspace(agentId, sessionId);
+	} = useWorkspace(agentId, sessionId, { loadMcp: openPanels.has('mcp') });
 	const { knowledgeBases, loading: knowledgeBasesLoading } = useKnowledgeBases();
-	const { schema: kbMiddlewareSchema } = useKnowledgeBaseMiddlewareSchema();
+	const { schema: kbMiddlewareSchema } = useKnowledgeBaseMiddlewareSchema(
+		openPanels.has('knowledge'),
+	);
 
 	// 外部要求打开面板：目前是 Agent 的 Browser 工具（桌面端主进程派发事件）。
 	// 用 openPanelInLayout 而不是 togglePanel —— 已经打开时不能再点一下把它关掉。
@@ -380,10 +396,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		setPanelLayout((layout) => closePanelInLayout(layout, key));
 	}, []);
 
-	const isPanelOpen = useCallback(
-		(key: PanelKey) => panelLayout.some((column) => column.includes(key)),
-		[panelLayout],
-	);
+	const isPanelOpen = useCallback((key: PanelKey) => openPanels.has(key), [openPanels]);
 
 	// 本地导入技能：原生文件夹对话框选目录 → 后端按路径收进技能库 →
 	// 有会话时顺手装进当前工作区。纯浏览器环境（无壳层桥）由对话框侧隐藏入口。
@@ -483,7 +496,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const prevPhaseRef = useRef(phase);
 	// Checkpoints / diff / traces / hooks move for the same reason git status
 	// does: a reply just finished. One trigger drives all of them.
-	const cocode = useCocodeData(agentId, sessionId, activeCwd);
+	const cocode = useCocodeData(agentId, sessionId, activeCwd, {
+		checkpoints: openPanels.has('checkpoint'),
+		diff: openPanels.has('diff'),
+		hooks: openPanels.has('trace'),
+		traces: openPanels.has('trace'),
+	});
 	const { refresh: refreshCocode } = cocode;
 	useEffect(() => {
 		const wasRunning = prevPhaseRef.current !== 'idle';
@@ -491,8 +509,31 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		if (wasRunning && phase === 'idle') {
 			void refetchWorkspaceStatus();
 			void refreshCocode();
+			setAnalysisRevision((value) => value + 1);
 		}
 	}, [phase, refetchWorkspaceStatus, refreshCocode]);
+
+	const deliveryMode = typeof view?.session.state?.delivery_mode === 'boolean'
+		? view.session.state.delivery_mode : selectedDeliveryMode;
+	const deliveryCriteria = typeof view?.session.state?.delivery_criteria === 'string'
+		? view.session.state.delivery_criteria : selectedDeliveryCriteria;
+	const handleDeliverySettingsChange = useCallback(async (enabled: boolean, criteria: string): Promise<boolean> => {
+		if (!sessionId) {
+			setSelectedDeliveryMode(enabled);
+			setSelectedDeliveryCriteria(criteria);
+			return true;
+		}
+		if (!agentId) return false;
+		setConfigPending(true);
+		try {
+			await sessionApi.update(sessionId, agentId, { delivery_mode: enabled, delivery_criteria: criteria });
+			setSelectedDeliveryMode(enabled);
+			setSelectedDeliveryCriteria(criteria);
+			void refetchSessions();
+			return true;
+		} catch { return false; }
+		finally { setConfigPending(false); }
+	}, [sessionId, agentId, refetchSessions]);
 
 	// Build the panel descriptors with live data. Rebuilt on every
 	// data change so the dock always renders the latest state — the
@@ -651,6 +692,16 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 					/>
 				),
 			},
+			delivery: {
+				title: t('panel.workspace.delivery'),
+				icon: <ClipboardCheck className="size-4" />,
+				content: <DeliveryPanel sessionId={sessionId} revision={analysisRevision} enabled={deliveryMode} criteria={deliveryCriteria} disabled={phase !== 'idle' || configPending} onSettingsChange={handleDeliverySettingsChange} />,
+			},
+			impact: {
+				title: t('panel.workspace.impact'),
+				icon: <Radar className="size-4" />,
+				content: <ImpactPanel sessionId={sessionId} cwd={activeCwd} revision={analysisRevision} />,
+			},
 		}),
 		[
 			t,
@@ -675,6 +726,13 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			view,
 			cocode,
 			workspaceStatus?.cwd,
+			activeCwd,
+			analysisRevision,
+			deliveryMode,
+			deliveryCriteria,
+			phase,
+			configPending,
+			handleDeliverySettingsChange,
 		],
 	);
 
@@ -710,6 +768,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		setSelectedModel(null);
 		setSelectedKnowledgeConfig(null);
 		setSelectedCwd(null);
+		setSelectedDeliveryMode(false);
+		setSelectedDeliveryCriteria('');
 	}, [sessionId]);
 
 	const selectedModelCard = useMemo(() => {
@@ -1011,6 +1071,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 										>
 											<Activity />
 											{t('panel.workspace.trace')}
+										</DropdownMenuCheckboxItem>
+										<DropdownMenuCheckboxItem checked={isPanelOpen('delivery')} onCheckedChange={() => togglePanel('delivery')} onSelect={(e) => e.preventDefault()}>
+											<ClipboardCheck />{t('panel.workspace.delivery')}
+										</DropdownMenuCheckboxItem>
+										<DropdownMenuCheckboxItem checked={isPanelOpen('impact')} onCheckedChange={() => togglePanel('impact')} onSelect={(e) => e.preventDefault()}>
+											<Radar />{t('panel.workspace.impact')}
 										</DropdownMenuCheckboxItem>
 									<DropdownMenuCheckboxItem
 										checked={isPanelOpen('browser')}

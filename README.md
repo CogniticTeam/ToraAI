@@ -49,7 +49,7 @@ packages/
 │   │   ├── prompt.js           项目指令注入（COCODE.md / AGENTS.md）+ system prompt 组装
 │   │   ├── react.js            文本 ReAct 动作解析（模型不支持 function calling 时用）
 │   │   ├── discover.js         本地模型自动发现（Ollama / LM Studio / vLLM …）
-│   │   ├── commands.js         自定义斜杠命令（~/.vega/commands/*.md）
+│   │   ├── commands.js         自定义斜杠命令（~/.cocode/commands/*.md）
 │   │   ├── tools/
 │   │   │   ├── builtin.js      Bash / Read / Write / Edit / Glob / Grep（+ 图片读取）
 │   │   │   ├── shell.js        持久 shell 会话（cd / export 跨调用保留）
@@ -73,21 +73,21 @@ packages/
 ├── desktop/           # 桌面版
 │   ├── main.js                Electron 主进程（启动 ASAPI + 预置 localStorage）
 │   └── frontend/              agentscope 前端（照搬 + 少量定制：导航栏展开、设置窗口）
-└── auth-worker/       # 可选云服务：账号体系 + 订阅积分（Cloudflare Worker + D1）
-    ├── src/index.js           注册 / 登录 / 模型配置同步 / 爱发电订单兑换
+└── auth-worker/       # 可选云服务：账号、模型同步与免费语音识别（Cloudflare Worker + D1）
+    ├── src/index.js           注册 / 登录 / 模型配置同步 / 免费语音识别
     └── wrangler.toml          部署配置（D1 绑定、Resend 邮件、Turnstile）
 ```
 
-> 纯本地使用（自带模型凭证）**无需部署 auth-worker、无需账号**；auth-worker 面向想要多设备同步模型配置或自建订阅服务的用户。
+> 纯本地使用（自带模型凭证）**无需部署 auth-worker、无需账号**；auth-worker 用于账号、多设备模型配置同步和免费语音识别。
 
 ## 🚀 快速开始
 
 ### 0. 准备模型
 
 ```bash
-# 配置位置：~/.vega/config.json（COCODE_HOME 可整体搬走数据根）
-# 环境变量优先级更高；COCODE_* 是正式前缀，VEGA_* 保留兼容
-# 注：代码内 VEGA_DIR 常量与 CLI 帮助里的 ~/.vega 为历史命名（数据根仍叫 .vega），迁移另立项
+# 配置位置：~/.cocode/config.json（COCODE_HOME 可整体搬走数据根）
+# 环境变量统一使用 COCODE_*，优先级高于配置文件
+# 首次启动自动复制旧版本数据到 ~/.cocode，保留原目录；已有新目录时不覆盖
 export COCODE_BASE_URL="https://api.deepseek.com/v1"
 export COCODE_API_KEY="sk-xxx"
 export COCODE_MODEL="deepseek-flash"
@@ -175,7 +175,7 @@ node packages/core/test/run.js        # 96 用例（含真 LSP，未装 server �
 node packages/core/test/asapi.js      # 65 用例
 ```
 
-测试会把数据根重定向到临时目录（`COCODE_HOME`），**不会碰你真实的 `~/.vega`**。
+测试会把数据根重定向到临时目录（`COCODE_HOME`），**不会碰你真实的 `~/.cocode`**。
 
 ## 🔌 模型接入
 
@@ -215,14 +215,14 @@ node packages/core/test/asapi.js      # 65 用例
 
 ### 检查点与回滚
 
-每轮只要涉及写入/执行类工具，就对该轮开始前的工作目录做一次内容寻址快照（`~/.vega/checkpoints/<session>/`，自动保留最近 10 轮）。`/checkpoints` 查看、`/restore <轮号>` 回滚（覆盖已改文件、删除快照后新增的文件）。这是敢开 `bypass` 的前提。
+每轮只要涉及写入/执行类工具，就对该轮开始前的工作目录做一次内容寻址快照（`~/.cocode/checkpoints/<session>/`，自动保留最近 10 轮）。`/checkpoints` 查看、`/restore <轮号>` 回滚（覆盖已改文件、删除快照后新增的文件）。这是敢开 `bypass` 的前提。
 
 ## 🪶 低 token 策略
 
 | 策略 | 说明 |
 |---|---|
 | Repo map（主动） | 符号骨架代替"反复 glob + grep"；几百 token 换掉几十轮工具调用，超阈值才注入 |
-| 本地代码索引 | 符号索引（带行号）与语义倒排索引落盘 `~/.vega/index/`，按 mtime 增量重建；`Search` 按词匹配（`findUserById` 拆成 `find/user/by/id`），中文注释按二字切分，定义行加权 |
+| 本地代码索引 | 符号索引（带行号）与语义倒排索引落盘 `~/.cocode/index/`，按 mtime 增量重建；`Search` 按词匹配（`findUserById` 拆成 `find/user/by/id`），中文注释按二字切分，定义行加权 |
 | 变更感知上下文 | 把"最近改动的文件 + git 脏文件"注入系统提示词，模型才知道磁盘上的文件可能已经不是它记得的样子 |
 | 项目指令按需注入 | `COCODE.md` / `AGENTS.md` 等约定文件只在存在时注入，且有字符上限 |
 | 工具输出截断 | `cfg.toolOutputLimit`（默认 6000 字符）；大输出按 head+tail 保留 |
@@ -271,7 +271,7 @@ node packages/core/test/asapi.js      # 65 用例
 
 ### 自定义斜杠命令
 
-`~/.vega/commands/*.md` 或 `<项目>/.cocode/commands/*.md`（项目级覆盖同名）：
+`~/.cocode/commands/*.md` 或 `<项目>/.cocode/commands/*.md`（项目级覆盖同名）：
 
 ```markdown
 ---
@@ -287,7 +287,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 `Lsp` 工具在没配置时用本地符号索引（跳定义 / 找引用 / 诊断，零依赖、够用，但没有类型信息）。装了 language server 后写进配置即可切换成真 LSP：
 
 ```jsonc
-// ~/.vega/config.json
+// ~/.cocode/config.json
 {
   "lspServers": {
     ".ts": {
@@ -310,7 +310,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 
 ### 生命周期钩子
 
-`~/.vega/hooks.json`（总是生效）与 `<项目>/.cocode/hooks.json`（**默认不执行**，见下）：
+`~/.cocode/hooks.json`（总是生效）与 `<项目>/.cocode/hooks.json`（**默认不执行**，见下）：
 
 ```json
 {
@@ -333,7 +333,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 
 ### 可观测性
 
-每次运行写一份 `~/.vega/traces/<会话>/<运行>.jsonl`（`traceEnabled: false` 可关）：请求结构、响应、每轮 usage、每次工具调用（含权限决策与是否被钩子拦下）、上下文压缩事件。默认**不记对话正文**，只记结构（条数 / 字符数 / 工具名），开了 `traceFullBody` 才记全文且一律过脱敏。
+每次运行写一份 `~/.cocode/traces/<会话>/<运行>.jsonl`（`traceEnabled: false` 可关）：请求结构、响应、每轮 usage、每次工具调用（含权限决策与是否被钩子拦下）、上下文压缩事件。默认**不记对话正文**，只记结构（条数 / 字符数 / 工具名），开了 `traceFullBody` 才记全文且一律过脱敏。
 
 - CLI：`/trace` 列出、`/trace <id>` 打印时间线
 - 桌面端：右侧「运行记录」面板
@@ -341,7 +341,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 
 ### 自定义工具
 
-`<项目>/.cocode/tools/*.js` 或 `~/.vega/tools/*.js`，`export default` 一个工具对象或工具数组：
+`<项目>/.cocode/tools/*.js` 或 `~/.cocode/tools/*.js`，`export default` 一个工具对象或工具数组：
 
 ```js
 export default {

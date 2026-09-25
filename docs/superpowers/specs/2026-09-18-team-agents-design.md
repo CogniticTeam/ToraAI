@@ -60,7 +60,7 @@ CoCode 前端已预埋 Team 协议（TeamPanel、SessionView.team、origin.type=
 ### 4.1 目录结构
 
 ```
-~/.vega/
+~/.cocode/
 ├── teams.json                     # 索引：{ teams: [TeamRecord, ...] }
 ├── team-docs/                     # 团队共享 markdown 笔记目录
 │   └── {team_id}.md
