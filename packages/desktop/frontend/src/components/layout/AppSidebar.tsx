@@ -7,6 +7,7 @@ import {
 	ChevronUp,
 	Languages,
 	Mail,
+	RotateCcw,
 	Settings,
 	Vote,
 } from 'lucide-react';
@@ -14,7 +15,9 @@ import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 import { agentApi, sessionApi } from '@/api';
+import { useAccountPresence } from '@/components/auth/AccountPresence';
 import { SessionListSection } from '@/components/layout/SessionListSection';
+import { FIRST_RUN_CLOSE_SETTINGS_EVENT, FIRST_RUN_REPLAY_EVENT, FIRST_RUN_SETTINGS_CLOSED_EVENT } from '@/components/onboarding/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -38,7 +41,6 @@ import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
-import { useAccountPresence } from '@/components/auth/AccountPresence';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
 
 // 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
@@ -77,6 +79,15 @@ export function AppSidebar() {
 	const [messagesOpen, setMessagesOpen] = useState(false);
 	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
+	const handleSettingsOpenChange = useCallback((open: boolean) => {
+		setSettingsOpen(open);
+		if (!open) window.dispatchEvent(new Event(FIRST_RUN_SETTINGS_CLOSED_EVENT));
+	}, []);
+	useEffect(() => {
+		const close = () => handleSettingsOpenChange(false);
+		window.addEventListener(FIRST_RUN_CLOSE_SETTINGS_EVENT, close);
+		return () => window.removeEventListener(FIRST_RUN_CLOSE_SETTINGS_EVENT, close);
+	}, [handleSettingsOpenChange]);
 	const [accountName, setAccountName] = useState(() => getUsername() || getEmail()?.split('@')[0] || 'CoCode');
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 	const [pollsEnabled, setPollsEnabled] = useState(() => localStorage.getItem('cocode_polls_enabled') !== '0');
@@ -258,6 +269,7 @@ export function AppSidebar() {
 							<SidebarMenuItem key={'automation'}>
 								<NavIndicator visible={location.pathname.startsWith('/schedule')} />
 								<SidebarMenuButton
+									id="tour-automation-nav"
 									isActive={location.pathname.startsWith('/schedule')}
 									onClick={() => navigate('/schedule')}
 								>
@@ -268,6 +280,7 @@ export function AppSidebar() {
 							<SidebarMenuItem>
 								<NavIndicator visible={location.pathname.startsWith('/skill')} />
 								<SidebarMenuButton
+									id="tour-skills-nav"
 									isActive={location.pathname.startsWith('/skill')}
 									onClick={() => navigate('/skill')}
 								>
@@ -279,6 +292,7 @@ export function AppSidebar() {
 							<SidebarMenuItem key={'browser'}>
 								<NavIndicator visible={location.pathname.startsWith('/browser')} />
 								<SidebarMenuButton
+									id="tour-browser-nav"
 									isActive={location.pathname.startsWith('/browser')}
 									onClick={() => navigate('/browser')}
 								>
@@ -336,6 +350,10 @@ export function AppSidebar() {
 									: t('common.switchToZh')}
 							</span>
 						</DropdownMenuItem>
+						{getWindowBridge() && <DropdownMenuItem className="py-1 text-[13px]" onClick={() => window.dispatchEvent(new Event(FIRST_RUN_REPLAY_EVENT))}>
+							<RotateCcw />
+							<span>{t('firstRun.tour.replay')}</span>
+						</DropdownMenuItem>}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarFooter>
@@ -346,7 +364,7 @@ export function AppSidebar() {
 					<SettingsDialog
 						key={settingsTab}
 						open={settingsOpen}
-						onOpenChange={setSettingsOpen}
+						onOpenChange={handleSettingsOpenChange}
 						initialTab={settingsTab}
 					/>
 				</Suspense>

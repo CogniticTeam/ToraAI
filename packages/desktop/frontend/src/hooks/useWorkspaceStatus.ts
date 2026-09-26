@@ -12,9 +12,10 @@ import type { WorkspaceStatus } from '@/api';
  * refetch on the latter and pass `cwd` so the former re-runs on its own.
  *
  * @param agentId - Agent owning the session. `null` clears the state.
- * @param sessionId - The session to report on. `null` clears the state.
- * @param cwd - The session's working directory, included only so a
- *   change to it triggers a refetch; the server reads the stored value.
+ * @param sessionId - The session to report on; `null` may still show the
+ *   explicitly selected directory of a not-yet-created task.
+ * @param cwd - Selected working directory. Existing sessions use their
+ *   stored cwd; new tasks pass this path explicitly.
  * @returns The status, a `loading` flag and a `refetch` for manual use.
  */
 export function useWorkspaceStatus(
@@ -32,13 +33,13 @@ export function useWorkspaceStatus(
 
 	const refetch = useCallback(async () => {
 		const id = ++reqId.current;
-		if (!agentId || !sessionId) {
+		if (!agentId || (!sessionId && !cwd)) {
 			setStatus(null);
 			return;
 		}
 		setLoading(true);
 		try {
-			const next = await workspaceApi.status(agentId, sessionId);
+			const next = await workspaceApi.status(agentId, sessionId, cwd);
 			if (id === reqId.current) setStatus(next);
 		} catch {
 			// A workspace that cannot be reached is reported the same way
@@ -50,9 +51,6 @@ export function useWorkspaceStatus(
 			// spinner while its replacement is still in flight.
 			if (id === reqId.current) setLoading(false);
 		}
-		// `cwd` is not read here — it is a dependency so that moving the
-		// session re-runs this.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [agentId, sessionId, cwd]);
 
 	useEffect(() => {

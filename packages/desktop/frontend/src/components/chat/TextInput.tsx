@@ -1,6 +1,6 @@
 import type { ContentBlock, TextBlock } from '@agentscope-ai/agentscope/message';
 import {
-	Paperclip,
+	Plus,
 	Loader2,
 	XIcon,
 	FileText,
@@ -109,17 +109,12 @@ interface TextInputProps {
 	phase?: ReplyPhase;
 	onInterrupt?: () => void;
 	/**
-	 * Content rendered directly above the input pill, inside the outer
-	 * wrapper that {@link className} styles (e.g. the working directory
-	 * and git status).
-	 *
-	 * The pill keeps all four of its corners, so the two only read as one
-	 * surface if the caller gives that wrapper a background and a radius
-	 * concentric with the pill's — outer radius = 28px + the wrapper's
-	 * padding. Anything less and the pill's top corners cut into the
-	 * header's edges.
+	 * Optional project picker strip shown only on a new chat, above the card.
 	 */
 	headerSlot?: React.ReactNode;
+	/** Composer card's bottom-left and bottom-right live controls. */
+	footerLeft?: React.ReactNode;
+	footerRight?: React.ReactNode;
 	/**
 	 * Items that power the slash ("/") command menu — typically the
 	 * user's installed skills. When `undefined`, the menu stays closed
@@ -132,19 +127,14 @@ export interface TextInputRef {
 	focus: () => void;
 }
 
-/** One line box of textarea text: ``text-sm`` (14px) at a 1.5 line-height. */
-const LINE_HEIGHT_PX = 21;
-/** Height of the input in its collapsed, single-line state. */
-const COLLAPSED_HEIGHT_PX = 52;
-/**
- * Padding rather than height: a textarea top-aligns its text, so forcing the
- * height would leave dead space under the caret instead of centring the line.
- */
-const TEXTAREA_PADDING_Y_PX = (COLLAPSED_HEIGHT_PX - LINE_HEIGHT_PX) / 2;
+/** Composer text stays top-aligned above its separate action row. */
+const LINE_HEIGHT_PX = 24;
+const TEXTAREA_MIN_HEIGHT_PX = 42;
+const TEXTAREA_PADDING_Y_PX = 8;
 /** Growth stops after six lines of text; the textarea scrolls beyond that. */
 const MAX_HEIGHT_PX = LINE_HEIGHT_PX * 6 + TEXTAREA_PADDING_Y_PX * 2;
-/** Horizontal padding of the textarea, mirrored by the overlay and the ghost. */
-const TEXTAREA_PADDING_X_PX = 12;
+/** Horizontal padding mirrored by the autocomplete overlay. */
+const TEXTAREA_PADDING_X_PX = 16;
 /** 录音时横跨整个输入区的音量柱数。 */
 const VOICE_WAVE_BAR_COUNT = 56;
 
@@ -172,6 +162,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			phase = 'idle',
 			onInterrupt,
 			headerSlot,
+			footerLeft,
+			footerRight,
 			commandItems,
 		},
 		ref,
@@ -193,9 +185,6 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		const [optimizeResult, setOptimizeResult] = useState<{ original: string; optimized: string } | null>(null);
 		const [optimizeError, setOptimizeError] = useState<string | null>(null);
 		const fileInputRef = useRef<HTMLInputElement>(null);
-		const measureRef = useRef<HTMLSpanElement>(null);
-		/** ``true`` — textarea takes the full width, buttons drop to their own row. */
-		const [isStacked, setIsStacked] = useState(false);
 
 		// 录音组件逐帧回传 RMS 音量；仅改柱条 DOM，避免声音采样触发整块输入框重渲染。
 		const updateVoiceWave = useCallback((level: number) => {
@@ -295,15 +284,6 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			if (!textarea) return;
 			textarea.style.height = 'auto';
 			textarea.style.height = `${textarea.scrollHeight}px`;
-			// Stacking widens the textarea, so the line count has to be redone.
-		}, [value, isStacked]);
-
-		// Measured on the ghost, not the textarea: stacking widens the textarea, so
-		// measuring it would flip-flop (wraps → stack → fits → unstack → wraps).
-		useLayoutEffect(() => {
-			const ghost = measureRef.current;
-			if (!ghost) return;
-			setIsStacked(ghost.scrollHeight > LINE_HEIGHT_PX);
 		}, [value]);
 
 		// Calculate autocomplete suggestion using useMemo
@@ -701,14 +681,17 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 				)}
 				<div
 					id="tour-chat-input"
-					className="composer-shell relative flex w-full flex-col rounded-[14px] border bg-background px-2"
+					className={cn(
+						'composer-shell relative z-10 flex w-full flex-col rounded-[24px] border border-border bg-background px-2 pb-2 pt-2',
+						selectedCommands.length > 0 || elementRefs.length > 0 ? 'mt-2' : headerSlot ? '-mt-5' : '',
+					)}
 					data-tour="chat-input"
 				>
-					{/* 声波只占文字输入区，右侧操作按钮始终保留干净的安全区域。 */}
+					{/* 声波只占上方文字区；底部操作按钮始终清晰可点。 */}
 					{voiceRecording && (
 						<div
 							ref={voiceWaveformRef}
-							className="voice-waveform pointer-events-none absolute left-5 right-[12rem] top-1/2 z-0 flex h-10 -translate-y-1/2 items-center justify-between gap-[3px] overflow-hidden px-2"
+							className="voice-waveform pointer-events-none absolute left-5 right-5 top-2 z-0 flex h-7 items-center justify-between gap-[3px] overflow-hidden px-2"
 							aria-hidden
 						>
 							{Array.from({ length: VOICE_WAVE_BAR_COUNT }, (_, index) => (
@@ -717,7 +700,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 									ref={(element) => {
 										voiceWaveBarsRef.current[index] = element;
 									}}
-									className="voice-wave-bar h-8 w-px shrink-0 origin-center rounded-[1px] bg-foreground text-foreground will-change-transform"
+									className="voice-wave-bar h-6 w-px shrink-0 origin-center rounded-[1px] bg-foreground text-foreground will-change-transform"
 									style={{ transform: 'scaleY(0.08)', opacity: 0 }}
 								/>
 							))}
@@ -777,50 +760,12 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						</AttachmentGroup>
 					)}
 
-					{/* ``items-end`` in both layouts: the buttons are then already at the
-					    bottom before stacking moves them there, so nothing jumps. */}
-					<div className="relative z-10 flex flex-wrap items-end justify-end">
-						{/* Ghost row, always laid out side-by-side, so the width it hands
-						    the text is the narrow one whichever layout is on screen. */}
-						<div
-							aria-hidden
-							className="pointer-events-none invisible absolute inset-x-0 top-0 flex h-0 items-start overflow-hidden"
-						>
-							<div className="min-w-0 flex-1">
-								{/* Padding-x and line-height decide where text wraps, so they
-								    match the textarea; padding-y is left off on purpose. */}
-								<span
-									ref={measureRef}
-									className="block text-sm"
-									style={{
-										paddingLeft: `${TEXTAREA_PADDING_X_PX}px`,
-										paddingRight: `${TEXTAREA_PADDING_X_PX}px`,
-										lineHeight: `${LINE_HEIGHT_PX}px`,
-										whiteSpace: 'pre-wrap',
-										wordWrap: 'break-word',
-									}}
-								>
-									{value}
-								</span>
-							</div>
-							{/* Stands in for the button cluster below — keep the count, the
-							    gap and the ``size-9`` footprint in step with it. */}
-							<div className="flex shrink-0 gap-2">
-								<div className="size-9" />
-								<div className="size-9" />
-								<div className="size-9" />
-								<div className="size-9" />
-							</div>
-						</div>
-
-						{/* ``min-w-0`` lets the textarea shrink instead of pushing the
-						    buttons out of the row once the text gets long. */}
-						<div
-							className={cn('relative min-w-0', isStacked ? 'basis-full' : 'flex-1')}
-						>
+					<div className="relative z-10 flex min-w-0 flex-col">
+						<div className="relative min-w-0">
 							{/* ``block`` — inline-block would sit on the text baseline and
 							    leave a descender gap that makes the wrapper taller. */}
 							<textarea
+								id="tour-chat-textarea"
 								ref={textareaRef}
 								value={value}
 								onChange={(e) => setValue(e.target.value)}
@@ -830,11 +775,13 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 								placeholder={voiceBusy ? '' : defaultPlaceholder}
 								disabled={disabled || voiceBusy}
 								rows={1}
-								className="block w-full resize-none rounded-md border-0 bg-transparent px-3 text-sm outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+								className="block w-full resize-none border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
 								style={{
-									minHeight: `${COLLAPSED_HEIGHT_PX}px`,
+									minHeight: `${TEXTAREA_MIN_HEIGHT_PX}px`,
 									maxHeight: `${MAX_HEIGHT_PX}px`,
 									lineHeight: `${LINE_HEIGHT_PX}px`,
+									paddingLeft: `${TEXTAREA_PADDING_X_PX}px`,
+									paddingRight: `${TEXTAREA_PADDING_X_PX}px`,
 									paddingTop: `${TEXTAREA_PADDING_Y_PX}px`,
 									paddingBottom: `${TEXTAREA_PADDING_Y_PX}px`,
 									overflowY: 'auto',
@@ -846,9 +793,11 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 							    textarea's, or the suggestion drifts off the real text. */}
 							{suggestion && isFocused && (
 								<div
-									className="pointer-events-none absolute left-0 top-0 px-3 text-sm"
+									className="pointer-events-none absolute left-0 top-0 text-base"
 									style={{
 										lineHeight: `${LINE_HEIGHT_PX}px`,
+										paddingLeft: `${TEXTAREA_PADDING_X_PX}px`,
+										paddingRight: `${TEXTAREA_PADDING_X_PX}px`,
 										paddingTop: `${TEXTAREA_PADDING_Y_PX}px`,
 										paddingBottom: `${TEXTAREA_PADDING_Y_PX}px`,
 										whiteSpace: 'pre-wrap',
@@ -867,114 +816,64 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 							)}
 						</div>
 
-						{/* Collapsed-height box centring the buttons, so a single line still
-						    reads as centred while the row bottom-aligns them. */}
-						<div
-							className="relative z-10 flex shrink-0 items-center gap-2"
-							style={{ height: `${COLLAPSED_HEIGHT_PX}px` }}
-						>
-							{/* Prompt optimize — Electron only（主进程代理 DeepSeek）。
-							    把当前草稿交给 deepseek-flash 改写，预览确认后应用。 */}
-							{promptOptimizer && (
+						<div className="relative z-10 flex min-w-0 items-center justify-between gap-2 px-1 pb-1">
+							<div className="flex min-w-0 items-center gap-1">
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<Button
-										type="button"
-										variant="ghost"
-										size="icon-lg"
-										onClick={handleOptimize}
-										disabled={optimizeDisabled}
-										className="group shrink-0 rounded-rect"
-									>
-										{optimizing
-											? <Loader2 className="size-4 animate-spin text-primary" />
-											: <Sparkle className="size-4 text-muted-foreground transition duration-200 group-hover:rotate-12 group-hover:scale-110 group-hover:text-primary" />}
-									</Button>
+										<Button type="button" variant="ghost" size="icon-lg" aria-label={t('textInput.attach')}
+											onClick={() => fileInputRef.current?.click()} disabled={attachDisabled} className="shrink-0 rounded-rect">
+											<Plus className="size-5" />
+										</Button>
 									</TooltipTrigger>
-									<TooltipContent>
-										{optimizing ? t('textInput.optimizing') : t('textInput.optimize')}
-									</TooltipContent>
+									<TooltipContent>{attachDisabled && allowedInputTypes?.length === 0 ? t('textInput.attachNotSupported') : t('textInput.attach')}</TooltipContent>
 								</Tooltip>
-							)}
-
-							{/* Attachment button */}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Button
-										type="button"
-										variant="ghost"
-										size="icon-lg"
-										onClick={() => fileInputRef.current?.click()}
-										disabled={attachDisabled}
-										className="shrink-0 rounded-rect"
-									>
-										<Paperclip className="size-4" />
-									</Button>
-								</TooltipTrigger>
-								<TooltipContent>
-									{attachDisabled && allowedInputTypes?.length === 0
-										? t('textInput.attachNotSupported')
-										: t('textInput.attach')}
-								</TooltipContent>
-							</Tooltip>
-
-							{/* Voice input — Electron only (renders null in browser).
-							    Transcript splices into the composer like typed text. */}
-							<VoiceRecorder
-								disabled={disabled}
-								onBusyChange={setVoiceBusy}
-								onRecordingChange={setVoiceRecording}
-								onAudioLevelChange={updateVoiceWave}
-								onTranscript={(text) => {
-									setValue((prev) => (prev.trim() ? `${prev} ${text}` : text));
-									textareaRef.current?.focus();
-								}}
-							/>
-
-							{/* Send / Stop button — driven by ``sendButton`` config.
-							    Stop uses an inverted neutral circle + filled square so
-							    the two states read instantly apart at a glance. */}
-							<Tooltip>
-								<TooltipTrigger asChild>
-									{sendButton.mode === 'send' ? (
-										<Button
-											type="button"
-											onClick={sendButton.onClick}
-											disabled={sendButton.disabled}
-											size="icon-lg"
-											className="btn-brand shrink-0 rounded-rect border-0"
-										>
-											<ArrowUp className="h-4 w-4" />
-										</Button>
-									) : (
-										<Button
-											type="button"
-											onClick={sendButton.onClick}
-											disabled={sendButton.disabled}
-											size="icon-lg"
-											aria-label={sendButton.tooltip}
-											className={cn(
-												'shrink-0 rounded-rect border-0 bg-foreground text-background shadow-md',
-												'transition-transform duration-150 hover:scale-105 active:scale-95',
-												sendButton.mode === 'stopping' && 'animate-pulse opacity-80',
-											)}
-										>
-											<span className="block h-3 w-3 rounded-[3px] bg-current" aria-hidden />
-										</Button>
-									)}
-								</TooltipTrigger>
-								<TooltipContent>{sendButton.tooltip}</TooltipContent>
-							</Tooltip>
-
-							{/* Hidden file input */}
-							<input
-								ref={fileInputRef}
-								type="file"
-								multiple
-								accept={acceptAttr}
-								onChange={handleFileSelect}
-								className="hidden"
-							/>
+								{footerLeft}
+								{promptOptimizer && (
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button type="button" variant="ghost" size="icon-lg" aria-label={t('textInput.optimize')}
+												onClick={handleOptimize} disabled={optimizeDisabled} className="group shrink-0 rounded-rect">
+												{optimizing ? <Loader2 className="size-4 animate-spin" /> : <Sparkle className="size-4 text-muted-foreground group-hover:text-foreground" />}
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>{optimizing ? t('textInput.optimizing') : t('textInput.optimize')}</TooltipContent>
+									</Tooltip>
+								)}
+							</div>
+							<div className="flex min-w-0 items-center justify-end gap-1.5">
+								{footerRight}
+								<VoiceRecorder
+									className="rounded-full"
+									disabled={disabled}
+									onBusyChange={setVoiceBusy}
+									onRecordingChange={setVoiceRecording}
+									onAudioLevelChange={updateVoiceWave}
+									onTranscript={(text) => {
+										setValue((prev) => (prev.trim() ? `${prev} ${text}` : text));
+										textareaRef.current?.focus();
+									}}
+								/>
+								<Tooltip>
+									<TooltipTrigger asChild>
+										{sendButton.mode === 'send' ? (
+											<Button id="tour-send-button" type="button" onClick={sendButton.onClick}
+												disabled={sendButton.disabled} size="icon-lg" aria-label={sendButton.tooltip}
+												className="btn-brand size-[30px] shrink-0 rounded-full border-0">
+												<ArrowUp className="size-4" />
+											</Button>
+										) : (
+											<Button type="button" onClick={sendButton.onClick} disabled={sendButton.disabled}
+												size="icon-lg" aria-label={sendButton.tooltip}
+												className={cn('size-[30px] shrink-0 rounded-full border-0 bg-foreground text-background',
+													'hover:scale-105 active:scale-95', sendButton.mode === 'stopping' && 'animate-pulse opacity-80')}>
+												<span className="block size-3 rounded-[3px] bg-current" aria-hidden />
+											</Button>
+										)}
+									</TooltipTrigger>
+									<TooltipContent>{sendButton.tooltip}</TooltipContent>
+								</Tooltip>
+							</div>
+							<input ref={fileInputRef} type="file" multiple accept={acceptAttr} onChange={handleFileSelect} className="hidden" />
 						</div>
 					</div>
 

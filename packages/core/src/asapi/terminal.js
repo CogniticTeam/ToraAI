@@ -4,6 +4,7 @@
 // 覆盖"看输出、敲命令、跑构建"的日常场景；job control / 全屏 TUI 不在此承诺内。
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { homedir } from 'node:os';
 
 const MAX_TERMINALS = 8; // 并发上限：超出回收最旧的空闲终端
 const HISTORY_LIMIT = 200_000; // 每终端输出回放上限（字符）：面板重开能看到之前的输出
@@ -11,6 +12,22 @@ const IDLE_MS = 30 * 60 * 1000; // 无订阅者空闲多久后回收
 const EXIT_TTL = 60_000; // 已退出终端保留多久，让订阅者能收到 exit 事件
 
 const terminals = new Map(); // id -> terminal 记录
+
+function signalTerminal(t, signal) {
+  if (process.platform === 'win32' && t.proc.pid) {
+    // taskkill /T 递归停止 cmd.exe 的子命令；单独 proc.kill 可能留下后台进程。
+    try {
+      const killer = spawn('taskkill', ['/PID', String(t.proc.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
+      killer.on('error', () => { try { t.proc.kill(signal); } catch { /* gone */ } });
+      killer.unref();
+      return true;
+    } catch { /* 回退到进程句柄 */ }
+  }
+  if (process.platform !== 'win32' && t.proc.pid) {
+    try { process.kill(-t.proc.pid, signal); return true; } catch { /* shell 已退出时回退到进程句柄 */ }
+  }
+  try { return t.proc.kill(signal); } catch { return false; }
+}
 
 function pushHistory(t, chunk) {
   t.history.push(chunk);
@@ -30,12 +47,19 @@ function broadcast(t, event) {
 
 export function createTerminal({ cwd, shell } = {}) {
   sweep();
-  const sh = String(shell || process.env.SHELL || '/bin/sh');
-  const dir = cwd || process.cwd();
-  const proc = spawn(sh, ['-i'], {
+  const defaultShell = process.platform === 'win32'
+    ? (process.env.ComSpec || process.env.COMSPEC || 'cmd.exe')
+    : (process.env.SHELL || (process.platform === 'darwin' ? '/bin/zsh' : '/bin/sh'));
+  const sh = String(shell || defaultShell);
+  // 未选择项目时仍可打开终端；落在用户主目录，而非打包应用的 resources 目录。
+  const dir = cwd || homedir();
+  const proc = spawn(sh, process.platform === 'win32' ? ['/Q'] : ['-i'], {
     cwd: dir,
     env: { ...process.env, TERM: 'dumb' },
     stdio: ['pipe', 'pipe', 'pipe'],
+    // 独立进程组：Ctrl+C 与关闭终端都必须作用于正在执行的子命令，
+    // 不能只结束 shell 而留下 sleep/build 等孤儿进程。
+    detached: process.platform !== 'win32',
   });
   const t = {
     id: randomUUID(), proc, shell: sh, cwd: dir,
@@ -55,11 +79,16 @@ export function createTerminal({ cwd, shell } = {}) {
     pushHistory(t, text);
     broadcast(t, { type: 'data', stream: 'err', data: text });
   });
+
+  // shell 结束与 HTTP 写入竞态时可能产生 EPIPE；作为已退出处理而非让服务崩溃。
+  proc.stdin?.on('error', () => {});
   proc.on('error', (e) => {
     t.exited = true; t.exit_at = Date.now(); t.code = -1;
     broadcast(t, { type: 'exit', code: -1, error: e?.message || String(e) });
+    t.subs.clear();
   });
   proc.on('close', (code, signal) => {
+    if (t.exited) return;
     t.exited = true; t.exit_at = Date.now(); t.code = code;
     broadcast(t, { type: 'exit', code, signal });
     t.subs.clear();
@@ -78,17 +107,27 @@ export function writeTerminal(id, data) {
   const t = terminals.get(id);
   if (!t || t.exited) return false;
   if (typeof data !== 'string') return false;
+  if (!t.proc.stdin?.writable) return false;
   t.last_active = Date.now();
-  t.proc.stdin.write(data);
-  return true;
+  // xterm 的 Enter 发出 CR；管道 shell 按 LF 读取命令。服务端也归一化，
+  // 让旧前端和直接使用 API 的客户端都能正常执行。
+  try { t.proc.stdin.write(data.replace(/\r\n?/g, '\n')); return true; }
+  catch { return false; }
+}
+
+export function interruptTerminal(id) {
+  const t = terminals.get(id);
+  if (!t || t.exited || process.platform === 'win32') return false;
+  t.last_active = Date.now();
+  return signalTerminal(t, 'SIGINT');
 }
 
 export function killTerminal(id, reason) {
   const t = terminals.get(id);
   if (!t || t.exited) return false;
   t.kill_reason = reason || null;
-  try { t.proc.kill('SIGTERM'); } catch { /* already gone */ }
-  const hard = setTimeout(() => { try { if (!t.exited) t.proc.kill('SIGKILL'); } catch { /* gone */ } }, 2000);
+  signalTerminal(t, 'SIGTERM');
+  const hard = setTimeout(() => { if (!t.exited) signalTerminal(t, 'SIGKILL'); }, 2000);
   hard.unref?.();
   return true;
 }
@@ -119,7 +158,7 @@ function sweep() {
     if (t.exited) {
       if (t.exit_at && now - t.exit_at > EXIT_TTL) terminals.delete(id);
     } else if (t.subs.size === 0 && now - t.last_active > IDLE_MS) {
-      try { t.proc.kill('SIGKILL'); } catch { /* gone */ }
+      signalTerminal(t, 'SIGKILL');
       t.exited = true; t.exit_at = now;
       terminals.delete(id);
     }

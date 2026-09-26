@@ -1,6 +1,7 @@
 import { ChevronDown, Clock, Folder, FolderOpen } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
 
+import { FIRST_RUN_CLOSE_FOLDER_EVENT, FIRST_RUN_FOLDER_CLOSED_EVENT, FIRST_RUN_FOLDER_OPENED_EVENT } from '@/components/onboarding/constants';
 import { Button } from '@/components/ui/button';
 import {
 	Popover,
@@ -9,6 +10,7 @@ import {
 } from '@/components/ui/popover';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from '@/i18n/useI18n';
+import { cn } from '@/lib/utils';
 
 const apiBase = () =>
 	(localStorage.getItem('server_url') || 'http://127.0.0.1:3210').replace(/\/+$/, '');
@@ -16,8 +18,8 @@ const apiUrl = (p: string) => `${apiBase()}${p}`;
 
 /** The last segment of a path, which is what a folder is called. */
 function basename(path: string): string {
-	const trimmed = path.replace(/\/+$/, '');
-	const cut = trimmed.lastIndexOf('/');
+	const trimmed = path.replace(/[\\/]+$/, '');
+	const cut = Math.max(trimmed.lastIndexOf('/'), trimmed.lastIndexOf('\\'));
 	return cut === -1 ? trimmed : trimmed.slice(cut + 1);
 }
 
@@ -28,6 +30,7 @@ interface WorkspacePickerProps {
 	onChange: (cwd: string | null) => void | Promise<void>;
 	disabled?: boolean;
 	className?: string;
+	composer?: boolean;
 }
 
 /**
@@ -36,7 +39,7 @@ interface WorkspacePickerProps {
  * 点击弹出面板——上方为「最近」使用过的目录列表（名称 + 截断路径），
  * 点击即切换；底部「选择文件夹」打开完整目录浏览器。
  */
-export function WorkspacePicker({ value, onChange, disabled, className }: WorkspacePickerProps) {
+export function WorkspacePicker({ value, onChange, disabled, className, composer = false }: WorkspacePickerProps) {
 	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
 	const [, setBrowseOpen] = useState(false);
@@ -56,28 +59,41 @@ export function WorkspacePicker({ value, onChange, disabled, className }: Worksp
 	useEffect(() => {
 		if (open) void loadRecents();
 	}, [open, loadRecents]);
+	const closePicker = () => {
+		setOpen(false);
+		window.dispatchEvent(new Event(FIRST_RUN_FOLDER_CLOSED_EVENT));
+	};
+	useEffect(() => {
+		const close = () => closePicker();
+		window.addEventListener(FIRST_RUN_CLOSE_FOLDER_EVENT, close);
+		return () => window.removeEventListener(FIRST_RUN_CLOSE_FOLDER_EVENT, close);
+	}, []);
 
 	const handlePick = async (dir: string) => {
-		setOpen(false);
+		closePicker();
 		await onChange(dir);
 	};
 
-	const label = value ? basename(value) : t('workdir.pickerPlaceholder');
+	const label = value ? basename(value) : composer ? t('workdir.browse') : t('workdir.pickerPlaceholder');
 
 	return (
 		<>
-			<Popover open={open} onOpenChange={setOpen}>
+			<Popover open={open} onOpenChange={(next) => {
+				if (next) { setOpen(true); window.dispatchEvent(new Event(FIRST_RUN_FOLDER_OPENED_EVENT)); }
+				else closePicker();
+			}}>
 				<PopoverTrigger asChild>
 					<Button
+						id="tour-workspace-picker"
 						variant="ghost"
 						size="sm"
 						disabled={disabled}
-						className={className}
+						className={cn(composer && 'gap-2 font-normal', className)}
 						title={value ?? undefined}
 					>
 						<FolderOpen />
 						<span className="truncate max-w-40">{label}</span>
-						<ChevronDown className="text-muted-foreground" />
+						{!composer && <ChevronDown className="text-muted-foreground" />}
 					</Button>
 				</PopoverTrigger>
 				<PopoverContent align="start" className="w-80 p-0">
@@ -123,13 +139,13 @@ export function WorkspacePicker({ value, onChange, disabled, className }: Worksp
 								if (bridge?.openFolderDialog) {
 									const dir = await bridge.openFolderDialog();
 									if (dir) {
-										setOpen(false);
+										closePicker();
 										await onChange(dir);
 									}
 									return;
 								}
 								// Browser env (no shell): fallback to custom directory browser
-								setOpen(false);
+								closePicker();
 								setBrowseOpen(true);
 							}}
 						>

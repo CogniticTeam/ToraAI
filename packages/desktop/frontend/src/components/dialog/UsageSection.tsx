@@ -3,7 +3,7 @@
  *   · 顶部五指标卡：累计 Token / 峰值 Token / 最长聊天时长 / 当前与最长连续天数
  *   · Token 活动热力图（GitHub 风格，每日/每周/累计 三种着色 + 悬浮提示）
  *   · 活动洞察 + 最常用的工具
- * 数据来自 GET /admin/usage-stats（core 侧聚合 traces + sessions）。
+ * 数据来自 GET /admin/usage-stats（core 侧聚合本地用量 + sessions）。
  */
 import { Box, Loader2, RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';

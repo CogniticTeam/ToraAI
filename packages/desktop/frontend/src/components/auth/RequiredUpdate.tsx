@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+
 import { useTranslation } from '@/i18n/useI18n';
 
 type State = { version: string; platform: string; status: 'available' | 'downloading' | 'ready' | 'error'; percent?: number };

@@ -137,7 +137,7 @@ const ChatPageInner = () => {
 	}, [urlAgentId]);
 
 	return (
-		<div className="flex h-full w-full bg-background">
+		<div className="flex h-full w-full bg-transparent">
 			<div className="flex flex-1 min-w-0">
 				<ChatViewport
 					agentId={effectiveAgentId}

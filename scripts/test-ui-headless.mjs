@@ -21,6 +21,7 @@ const chromeCandidates = [
   '/usr/bin/chromium-browser',
 ].filter(Boolean);
 const CHROME = chromeCandidates.find((p) => existsSync(p));
+const mockModelBase = 'http://cocode-ui-smoke-model.invalid/v1';
 const shots = [];
 const out = [];
 
@@ -38,7 +39,6 @@ async function main() {
     // HTTP/SSE 调用本地 server；只有 server → 模型的外部网络边被 mock，
     // 所以能验证发送、SSE、消息气泡及 Markdown 懒加载而不消耗用户额度。
     const originalFetch = globalThis.fetch;
-    const mockModelBase = 'http://cocode-ui-smoke-model.invalid/v1';
     process.env.COCODE_BASE_URL = mockModelBase;
     process.env.COCODE_API_KEY = 'ui-smoke-key';
     globalThis.fetch = async (url, init) => {
@@ -89,7 +89,8 @@ async function main() {
     await page.route('https://cocode.ohfun.online/models', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify({ models: [] })
+      // 官方模型下架后，测试环境必须显式提供一条自定义模型；仅对自建临时服务注入。
+      body: JSON.stringify({ models: srv ? [{ id: 'ui-smoke-model', provider: 'custom', label: 'UI Smoke', model: 'ui-smoke-model', baseURL: mockModelBase, apiKey: 'ui-smoke-key', enabled: true }] : [] })
     }));
     await page.route('https://cocode.ohfun.online/polls/config', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }),
@@ -178,19 +179,6 @@ async function main() {
 
     assert.ok(hasInput, '消息输入框未渲染');
 
-    if (srv) {
-      // 空会话先选交付模式：第一条消息自动创建会话时必须带上这两个值。
-      await page.locator('button:has(svg.lucide-panel-right)').first().click({ timeout: 5000 });
-      await page.getByRole('menuitemcheckbox', { name: /Verifiable delivery/i }).click({ timeout: 5000 });
-      await page.keyboard.press('Escape');
-      await page.getByRole('switch', { name: 'Enable verifiable delivery mode' }).click({ timeout: 5000 });
-      await page.locator('#delivery-criteria').fill('Initial acceptance criterion');
-      await page.getByRole('button', { name: 'Save criteria' }).click({ timeout: 5000 });
-      await page.locator('button:has(svg.lucide-panel-right)').first().click({ timeout: 5000 });
-      await page.getByRole('menuitemcheckbox', { name: /Verifiable delivery/i }).click({ timeout: 5000 });
-      await page.keyboard.press('Escape');
-    }
-
     // 6. 真正走一次浏览器 → 本地 ASAPI → mock SSE 模型 → 浏览器的闭环。
     // 仅在脚本自建临时服务时发送：COCODE_UI_BASE 是人工调试已有环境的逃生口，
     // 不能往那里写入测试会话或消耗模型额度。
@@ -206,54 +194,12 @@ async function main() {
       assert.ok(markdownChunkLoaded, '回复后未加载 Markdown 按需块');
       out.push('流式助手回复与 Markdown 按需渲染: true');
 
-      // 新面板必须能通过真实菜单打开；交付报告要在本轮运行结束后可读取。
-      const sessionForReport = (await (await fetch(`${base}/sessions/`)).json()).sessions[0]?.session?.id;
-      assert.ok(sessionForReport, '未找到刚创建的会话');
-      const firstSession = await (await fetch(`${base}/sessions/${sessionForReport}`)).json();
-      assert.equal(firstSession.session.state.delivery_mode, true, '空会话预选交付模式应随首次消息生效');
-      assert.equal(firstSession.session.state.delivery_criteria, 'Initial acceptance criterion');
-      out.push('首次消息前预设交付模式随新会话生效: true');
-      await page.waitForFunction(async ({ baseUrl, sid }) => {
-        const response = await fetch(`${baseUrl}/sessions/${sid}/deliveries`);
-        return response.ok && ((await response.json()).reports?.length || 0) > 0;
-      }, { baseUrl: base, sid: sessionForReport }, { timeout: 10000 });
       await page.locator('button:has(svg.lucide-panel-right)').first().click({ timeout: 5000 });
-      await page.getByRole('menuitemcheckbox', { name: /Verifiable delivery/i }).click({ timeout: 5000 });
+      assert.equal(await page.getByRole('menuitemcheckbox', { name: /^(Run history|Verifiable delivery|Project impact radar)$/i }).count(), 0, '三个已移除面板不能再出现在菜单中');
+      await page.getByRole('menuitemcheckbox', { name: /Hooks/i }).click({ timeout: 5000 });
       await page.keyboard.press('Escape');
-      await page.getByText('Actual changes and verification evidence per run').waitFor({ timeout: 10000 });
-      out.push('可验证交付面板读取本轮报告: true');
-      await page.getByRole('switch', { name: 'Enable verifiable delivery mode' }).click({ timeout: 5000 });
-      await page.waitForFunction(async ({ baseUrl, sid }) => {
-        const response = await fetch(`${baseUrl}/sessions/${sid}`);
-        return response.ok && (await response.json()).session?.state?.delivery_mode === false;
-      }, { baseUrl: base, sid: sessionForReport }, { timeout: 10000 });
-      await page.getByRole('switch', { name: 'Enable verifiable delivery mode' }).click({ timeout: 5000 });
-      await page.waitForFunction(async ({ baseUrl, sid }) => {
-        const response = await fetch(`${baseUrl}/sessions/${sid}`);
-        return response.ok && (await response.json()).session?.state?.delivery_mode === true;
-      }, { baseUrl: base, sid: sessionForReport }, { timeout: 10000 });
-      await page.locator('#delivery-criteria').fill('The requested checks must pass');
-      await page.getByRole('button', { name: 'Save criteria' }).click({ timeout: 5000 });
-      await page.waitForFunction(async ({ baseUrl, sid }) => {
-        const response = await fetch(`${baseUrl}/sessions/${sid}`);
-        return response.ok && (await response.json()).session?.state?.delivery_criteria === 'The requested checks must pass';
-      }, { baseUrl: base, sid: sessionForReport }, { timeout: 10000 });
-      out.push('交付模式开关与验收要点持久化: true');
-      const reportCountBefore = (await (await fetch(`${base}/sessions/${sessionForReport}/deliveries`)).json()).reports.length;
-      await page.locator('textarea').first().fill('Please verify this small follow-up');
-      await page.locator('textarea').first().press('Enter');
-      await page.waitForFunction(async ({ baseUrl, sid, before }) => {
-        const response = await fetch(`${baseUrl}/sessions/${sid}/deliveries`);
-        if (!response.ok) return false;
-        const reports = (await response.json()).reports || [];
-        return reports.length > before && reports[0].modeEnabled === true;
-      }, { baseUrl: base, sid: sessionForReport, before: reportCountBefore }, { timeout: 15000 });
-      out.push('开启交付模式后的下一轮报告: true');
-      await page.locator('button:has(svg.lucide-panel-right)').first().click({ timeout: 5000 });
-      await page.getByRole('menuitemcheckbox', { name: /Project impact radar/i }).click({ timeout: 5000 });
-      await page.keyboard.press('Escape');
-      await page.getByText('Choose a project folder').waitFor({ timeout: 10000 });
-      out.push('项目影响雷达面板空态渲染: true');
+      await page.getByText('Not configured').waitFor({ timeout: 10000 });
+      out.push('钩子面板仍可打开: true');
     }
 
     // 7. 非聊天工作台的路由级懒加载：打开自动化页再返回聊天，验证 chunk、

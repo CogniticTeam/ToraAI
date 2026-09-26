@@ -756,33 +756,48 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		[],
 	);
 
-	// 把常驻宿主逐帧对齐到占位区。卸载（面板关闭/切页）时把宿主藏起来 ——
-	// webview 本体留在文档里不销毁，这就是"常驻"的全部机制。
-	// rAF 循环而不是 ResizeObserver：拖拽分栏时逐帧跟随，实现最简单也最不会漏。
-	// 可见性/指针事件**每帧重写**而不只在挂载时设一次：路由切换动画期间
-	// 新旧两个面板短暂共存（AppLayout 的 AnimatePresence popLayout），旧面板
-	// 卸载 cleanup 会把宿主藏掉 —— 若可见性只写一次，存活面板的宿主会被
-	// 永久藏住（表现为浏览器页一片空白）。放进循环后，存活方的下一帧自动
-	// 恢复；没有存活面板时 cleanup 的隐藏保持不变，语义两边都正确。
+	// 常驻宿主跟随占位区，但静止时不再每帧测量/重写 WebView 尺寸。
+	// 路由过渡约 220ms，打开时短暂逐帧跟踪；拖拽、滚动和缩放由事件触发。
+	// cleanup 可能与新面板的挂载重叠，所以存活面板的下一帧仍会恢复可见性。
 	useEffect(() => {
 		const placeholder = pageRef.current;
 		const host = ensurePersistentHost();
 		if (!placeholder) return;
 		let raf = 0;
+		let followUntil = performance.now() + 450;
+		const schedule = () => { if (!raf) raf = requestAnimationFrame(sync); };
+		const followTransition = () => {
+			followUntil = Math.max(followUntil, performance.now() + 260);
+			schedule();
+		};
 		const sync = () => {
+			raf = 0;
 			const r = placeholder.getBoundingClientRect();
 			// 内缩 1px：占位区的边框留在页面四周，内容被宿主圆角裁齐
-			host.style.left = `${r.left + 1}px`;
-			host.style.top = `${r.top + 1}px`;
-			host.style.width = `${Math.max(1, r.width - 2)}px`;
-			host.style.height = `${Math.max(1, r.height - 2)}px`;
-			host.style.visibility = 'visible';
-			host.style.pointerEvents = 'auto';
-			raf = requestAnimationFrame(sync);
+			const left = `${r.left + 1}px`;
+			const top = `${r.top + 1}px`;
+			const width = `${Math.max(1, r.width - 2)}px`;
+			const height = `${Math.max(1, r.height - 2)}px`;
+			if (host.style.left !== left) host.style.left = left;
+			if (host.style.top !== top) host.style.top = top;
+			if (host.style.width !== width) host.style.width = width;
+			if (host.style.height !== height) host.style.height = height;
+			if (host.style.visibility !== 'visible') host.style.visibility = 'visible';
+			if (host.style.pointerEvents !== 'auto') host.style.pointerEvents = 'auto';
+			if (performance.now() < followUntil) schedule();
 		};
-		raf = requestAnimationFrame(sync);
+		const observer = new ResizeObserver(followTransition);
+		observer.observe(placeholder);
+		window.addEventListener('resize', followTransition);
+		window.addEventListener('scroll', followTransition, true);
+		window.visualViewport?.addEventListener('resize', followTransition);
+		schedule();
 		return () => {
 			cancelAnimationFrame(raf);
+			observer.disconnect();
+			window.removeEventListener('resize', followTransition);
+			window.removeEventListener('scroll', followTransition, true);
+			window.visualViewport?.removeEventListener('resize', followTransition);
 			host.style.visibility = 'hidden';
 			host.style.pointerEvents = 'none';
 			host.style.left = '-9999px';
@@ -812,12 +827,21 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		void go(getSearchEngineHomeUrl());
 	}, [go, kind]);
 
-	// 默认开始页（/browser 全屏入口传入）：挂载时一个标签页都没有就自动开一个
-	// 并导航过去。go 只随 kind 变化，effect 实际只在挂载时判定一次 —— 用户
-	// 主动关光标签后不会反复弹出；从聊天页 dock 带过来的已有标签也不受干预。
+	// 默认开始页（/browser 全屏入口传入）：先让标签栏与工具栏完成首帧绘制，
+	// 再在浏览器空闲期创建 guest。WebView/网页初始化会抢主线程和 GPU，
+	// 与路由入场动画同时启动会被感知成整个应用卡住。
 	useEffect(() => {
 		if (!initialUrl || listTabs().length > 0) return;
-		void go(initialUrl);
+		let cancelled = false;
+		const openHome = () => {
+			if (!cancelled && listTabs().length === 0) void go(initialUrl);
+		};
+		if (typeof window.requestIdleCallback === 'function') {
+			const idle = window.requestIdleCallback(openHome, { timeout: 450 });
+			return () => { cancelled = true; window.cancelIdleCallback(idle); };
+		}
+		const timer = window.setTimeout(openHome, 100);
+		return () => { cancelled = true; window.clearTimeout(timer); };
 	}, [go, initialUrl]);
 
 	// Agent 的入口。挂成全局桥，桌面端主进程的 Browser 工具通过它落地动作。
@@ -1161,6 +1185,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 			    打开时逐帧对齐到这里；关闭/切页时宿主藏起来但页面不销毁。 */}
 			<div
 				ref={pageRef}
+				data-browser-placeholder="true"
 				className={cn(
 					'min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background',
 				)}

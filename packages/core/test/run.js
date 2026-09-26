@@ -323,6 +323,94 @@ await test('交付审查：仅在有写入或执行动作后运行，并把通�
   } finally { globalThis.fetch = origFetch; }
 });
 
+await test('交付审查：失败工具必须标为 FAIL，并驱动返工后重新审查', async () => {
+  const origFetch = globalThis.fetch;
+  let call = 0;
+  let criticSawFailure = false;
+  let criticRequest = '';
+  const outputPath = 'review-recovery-output.txt';
+  globalThis.fetch = async (_url, init) => {
+    call++;
+    if (call === 1) return sse([{ tool_calls: [{ index: 0, id: 'failed-write', function: { name: 'Write', arguments: '{"path":"../outside-review.txt","content":"bad"}' } }] }]);
+    if (call === 2) return sse([{ content: '已经完成。' }]);
+    if (call === 3) {
+      const request = JSON.parse(init.body);
+      criticRequest = JSON.stringify(request.messages);
+      criticSawFailure = request.messages.some((m) => String(m.content).includes('[tool-result] Write → FAIL'));
+      return sse([{ content: JSON.stringify({ passed: false, issues: ['写入失败，请重试'], reason: '未交付' }) }]);
+    }
+    if (call === 4) return sse([{ tool_calls: [{ index: 0, id: 'repaired-write', function: { name: 'Write', arguments: JSON.stringify({ path: outputPath, content: 'repaired' }) } }] }]);
+    if (call === 5) return sse([{ content: '已修复并写入。' }]);
+    return sse([{ content: JSON.stringify({ passed: true, issues: [], reason: '重新写入成功' }) }]);
+  };
+  try {
+    const cfg = {
+      ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock',
+      review: { enabled: true, max_rounds: 1, min_turns: 1, only_after_mutation: true, checklist: ['写入是否成功？'] }
+    };
+    const events = [];
+    for await (const ev of runAgent({ cfg, cwd: tmp, messages: [{ role: 'user', content: '写入文件' }], permissionMode: 'bypass' })) events.push(ev);
+    assert.equal(call, 6);
+    assert.equal(criticSawFailure, true, `审查轨迹应明确标记失败工具：${criticRequest.slice(-1200)}`);
+    assert.ok(events.some((ev) => ev.type === 'review-redo'));
+    assert.ok(events.some((ev) => ev.type === 'review-result' && ev.passed));
+    assert.equal(readFileSync(join(tmp, outputPath), 'utf8'), 'repaired');
+  } finally {
+    globalThis.fetch = origFetch;
+  }
+});
+
+await test('模型服务失败以 error 和 done(error) 结束，不冒充完成', async () => {
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'mock unavailable' } }), { status: 503, headers: { 'content-type': 'application/json' } });
+  try {
+    const cfg = { ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock' };
+    const events = [];
+    for await (const ev of runAgent({ cfg, cwd: tmp, messages: [{ role: 'user', content: '修复代码' }], permissionMode: 'bypass' })) events.push(ev);
+    assert.ok(events.some((ev) => ev.type === 'error' && ev.error), JSON.stringify(events));
+    assert.equal(events.at(-1)?.type, 'done');
+    assert.equal(events.at(-1)?.reason, 'error');
+  } finally { globalThis.fetch = origFetch; }
+});
+
+await test('Bash 非零退出码在事件和审查上下文中保持失败状态', async () => {
+  const origFetch = globalThis.fetch;
+  let call = 0;
+  let criticSawFailure = false;
+  globalThis.fetch = async (_url, init) => {
+    call++;
+    if (call === 1) return sse([{ tool_calls: [{ index: 0, id: 'failed-bash', function: { name: 'Bash', arguments: JSON.stringify({ command: 'node -e "process.exit(7)"' }) } }] }]);
+    if (call === 2) return sse([{ content: '测试已经通过。' }]);
+    const request = JSON.parse(init.body);
+    criticSawFailure = request.messages.some((m) => String(m.content).includes('[tool-result] Bash → FAIL'));
+    return sse([{ content: JSON.stringify({ passed: true, issues: [], reason: '测试状态已核对' }) }]);
+  };
+  try {
+    const cfg = {
+      ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock',
+      review: { enabled: true, max_rounds: 0, min_turns: 1, only_after_mutation: true, checklist: ['测试是否通过？'] }
+    };
+    const messages = [{ role: 'user', content: '运行验证命令' }];
+    const events = [];
+    for await (const ev of runAgent({ cfg, cwd: tmp, messages, permissionMode: 'bypass' })) events.push(ev);
+    assert.equal(events.find((ev) => ev.type === 'tool-result')?.ok, false);
+    assert.equal(messages.find((m) => m.role === 'tool')?.tool_state, 'error');
+    assert.equal(criticSawFailure, true);
+  } finally { globalThis.fetch = origFetch; }
+});
+
+await test('CLI 模型连接失败返回非零退出码', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { fileURLToPath } = await import('node:url');
+  const cli = fileURLToPath(new URL('../../cli/src/index.js', import.meta.url));
+  const result = spawnSync(process.execPath, [cli, '执行测试任务'], {
+    cwd: tmp,
+    env: { ...process.env, COCODE_BASE_URL: 'http://127.0.0.1:1/v1', COCODE_API_KEY: 'test', COCODE_MODEL: 'mock' },
+    encoding: 'utf8', timeout: 15_000,
+  });
+  assert.equal(result.status, 1, `CLI 不应把模型错误报告为成功：${result.stdout}\n${result.stderr}`);
+});
+
 await test('上下文自动压缩：超预算触发 compact，历史被摘要但消息仍可持久化', async () => {
   const origFetch = globalThis.fetch;
   // 前 5 轮持续返回工具调用（每次产出约 3000 字符工具输出撑爆预算），
@@ -816,6 +904,7 @@ await test('WebFetch：阻止内网、私网 DNS 与跳转 SSRF', async () => {
   const { webFetchTool, assertPublicHttpUrl, setWebFetcher, setWebDnsLookup } = await import(CORE + 'tools/web.js');
   await assert.rejects(() => assertPublicHttpUrl('http://127.1/admin'), /已拒绝/);
   await assert.rejects(() => assertPublicHttpUrl('http://[::1]/admin'), /已拒绝/);
+  await assert.rejects(() => assertPublicHttpUrl('http://198.18.1.120/'), /已拒绝/);
 
   let calls = 0;
   setWebDnsLookup(async (host) => {
@@ -836,6 +925,48 @@ await test('WebFetch：阻止内网、私网 DNS 与跳转 SSRF', async () => {
     setWebFetcher(null);
     setWebDnsLookup(null);
   }
+});
+
+await test('WebFetch：代理 Fake-IP 须经独立公网 DNS 校验，内网与校验失败仍拒绝', async () => {
+  const { webFetchTool, setWebFetcher, setWebDnsLookup } = await import(CORE + 'tools/web.js');
+  let targetCalls = 0;
+  setWebDnsLookup(async () => [{ address: '198.18.1.120' }]);
+  setWebFetcher(async (url, init) => {
+    if (String(url).startsWith('https://cloudflare-dns.com/dns-query?')) {
+      assert.equal(init.redirect, 'manual');
+      const query = new URL(url);
+      const host = query.searchParams.get('name');
+      const type = query.searchParams.get('type');
+      const address = host === 'private.example' ? '10.0.0.8' : '93.184.216.34';
+      return Response.json({ Status: 0, Answer: type === 'A' ? [{ type: 1, data: address }] : [] });
+    }
+    targetCalls++;
+    assert.equal(init.redirect, 'manual');
+    if (String(url) === 'https://public.example/redirect') {
+      return new Response(null, { status: 302, headers: { location: 'https://private.example/' } });
+    }
+    return new Response('<html><title>公网内容</title></html>', { headers: { 'content-type': 'text/html' } });
+  });
+  try {
+    const publicResult = await webFetchTool.execute({ url: 'https://public.example/' }, ctx);
+    assert.match(publicResult, /公网内容/);
+    assert.equal(targetCalls, 1);
+    const privateResult = await webFetchTool.execute({ url: 'https://private.example/' }, ctx);
+    assert.match(privateResult, /已拒绝解析到本机、私网或保留 IP/);
+    assert.equal(targetCalls, 1, '公网 DNS 回答为内网时不能请求目标');
+    const redirected = await webFetchTool.execute({ url: 'https://public.example/redirect' }, ctx);
+    assert.match(redirected, /已拒绝解析到本机、私网或保留 IP/);
+    assert.equal(targetCalls, 2, '跳转到经 Fake-IP 伪装的私网域名时不得发起第二次请求');
+
+    setWebFetcher(async (url) => {
+      if (String(url).startsWith('https://cloudflare-dns.com/dns-query?')) throw new Error('DNS offline');
+      targetCalls++;
+      throw new Error('目标不应被请求');
+    });
+    const unverified = await webFetchTool.execute({ url: 'https://public.example/' }, ctx);
+    assert.match(unverified, /无法独立核验.*安全中止/);
+    assert.equal(targetCalls, 2, '独立 DNS 失败时必须保持关闭');
+  } finally { setWebFetcher(null); setWebDnsLookup(null); }
 });
 
 await test('WebFetch：fetch failed 被翻译成可读原因（cause 链挖掘 + 错误码分类）', async () => {
@@ -962,7 +1093,6 @@ console.log('--- LSP（本地索引层）---');
 const lsp = await import(CORE + 'tools/lsp.js');
 const semantic = await import(CORE + 'tools/semantic.js');
 const { loadHooks, runHooks, describeHooks, matcherMatches } = await import(CORE + 'hooks.js');
-const { createTrace, listTraces, renderTrace, readTrace } = await import(CORE + 'trace.js');
 const { recentChanges } = await import(CORE + 'prompt.js');
 const { COCODE_DIR } = await import(CORE + 'config.js');
 
@@ -1208,77 +1338,6 @@ await test('Agent 循环：PreToolUse 钩子 deny → 工具不执行，模型�
     rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
     rmSync(dir, { recursive: true, force: true });
   }
-});
-
-// ─────────────────────────── 可观测性 ───────────────────────────
-
-console.log('--- 运行记录（trace）---');
-
-await test('trace：一次运行留下 request/response/tool/run-end，且能渲染成时间线', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-trace-'));
-  const origFetch = globalThis.fetch;
-  let callIdx = 0;
-  globalThis.fetch = async () => {
-    callIdx++;
-    if (callIdx === 1) {
-      return sse([{ tool_calls: [{ index: 0, id: 'c1', function: { name: 'Bash', arguments: '{"command":"echo traced"}' } }] }]);
-    }
-    return sse([{ content: '搞定' }], { prompt_tokens: 10, completion_tokens: 2 });
-  };
-  try {
-    const cfg = { ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock' };
-    const events = [];
-    for await (const e of runAgent({
-      cfg, cwd: dir, messages: [{ role: 'user', content: 'echo traced' }],
-      permissionMode: 'bypass', sessionId: 'trace-test-session'
-    })) events.push(e);
-
-    const list = listTraces({ sessionId: 'trace-test-session' });
-    assert.ok(list.length >= 1, '应有一条运行记录');
-    const t = list[0];
-    assert.equal(t.reason, 'completed');
-    assert.ok(t.tools >= 1, '应记录到工具调用');
-
-    const full = readTrace(t.id);
-    assert.ok(full.lines.some((l) => l.kind === 'request'), '要有请求记录');
-    assert.ok(full.lines.some((l) => l.kind === 'response'), '要有响应记录');
-    assert.ok(full.lines.some((l) => l.kind === 'tool' && l.name === 'Bash'), '要有工具记录');
-
-    const md = renderTrace(t.id);
-    assert.match(md, /# Trace /);
-    assert.match(md, /时间线/);
-    assert.match(md, /Bash/, '时间线里应出现工具名');
-  } finally {
-    globalThis.fetch = origFetch;
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-await test('trace：默认不记正文，但结构信息齐全（隐私与体积的取舍）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-trace2-'));
-  const trace = createTrace({ sessionId: 'trace-shape', cwd: dir, model: 'm', cfg: loadConfig() });
-  trace.request(1, { messages: [{ role: 'user', content: '这是很长的正文，不该被原样记下来' }], tools: [{ function: { name: 'Bash' } }] });
-  trace.end('completed');
-  const full = readTrace(trace.id);
-  const req = full.lines.find((l) => l.kind === 'request');
-  assert.ok(req.body.messageCount === 1);
-  assert.deepEqual(req.body.toolNames, ['Bash']);
-  assert.ok(!JSON.stringify(req.body).includes('不该被原样记下来'), '默认不该记正文');
-  assert.ok(req.body.chars > 0, '但要知道有多长');
-  rmSync(dir, { recursive: true, force: true });
-});
-
-await test('trace：请求体里的密钥被脱敏（即使开了全文记录）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-trace3-'));
-  const trace = createTrace({
-    sessionId: 'trace-redact', cwd: dir, model: 'm',
-    cfg: { ...loadConfig(), traceFullBody: true }
-  });
-  trace.request(1, { messages: [{ role: 'user', content: 'key 是 sk-abcdefghijklmnopqrstuvwxyz0123 别外传' }] });
-  trace.end('completed');
-  const md = JSON.stringify(readTrace(trace.id).lines);
-  assert.ok(!md.includes('sk-abcdefghijklmnopqrstuvwxyz0123'), '密钥不该以明文进 trace');
-  rmSync(dir, { recursive: true, force: true });
 });
 
 // ─────────────────────────── 变更感知上下文 ───────────────────────────
@@ -2136,7 +2195,7 @@ await test('createTerminal/write/subscribe：回显、replay、exit 收口、幂
     tick();
   });
 
-  assert.ok(T.writeTerminal(info.id, 'echo hi-mod-$((6*7))\n'), 'write 应成功');
+  assert.ok(T.writeTerminal(info.id, 'echo hi-mod-$((6*7))\r'), 'xterm Enter 的 CR 应被转换为 shell 换行');
   assert.ok(await waitFor(() => events.some((e) => e.type === 'data' && e.data.includes('hi-mod-42')), 8000),
     '订阅者应收到回显');
   assert.ok(T.replayTerminal(info.id).history.includes('hi-mod-42'), 'replay 应包含历史输出');
@@ -2158,6 +2217,36 @@ await test('createTerminal/write/subscribe：回显、replay、exit 收口、幂
   assert.equal(T.getTerminal('nope'), null);
   assert.equal(T.subscribeTerminal('nope', () => {}), null);
   unsub();
+});
+
+await test('终端未选工作区时从主目录启动，Ctrl+C 中断命令后保留 shell', async () => {
+  const { homedir } = await import('node:os');
+  const { existsSync } = await import('node:fs');
+  const shell = existsSync('/bin/zsh') ? '/bin/zsh' : existsSync('/bin/bash') ? '/bin/bash' : null;
+  if (!shell || process.platform === 'win32') return;
+  const T = await import(CORE + 'asapi/terminal.js');
+  const info = T.createTerminal({ shell });
+  const events = [];
+  const unsub = T.subscribeTerminal(info.id, (event) => events.push(event));
+  const waitFor = async (needle, ms = 4000) => {
+    const deadline = Date.now() + ms;
+    while (Date.now() < deadline) {
+      if (events.some((event) => event.type === 'data' && event.data.includes(needle))) return true;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    return false;
+  };
+  try {
+    assert.equal(info.cwd, homedir());
+    assert.ok(T.writeTerminal(info.id, 'echo INTERRUPT_READY; sleep 10\n'));
+    assert.ok(await waitFor('INTERRUPT_READY'), '前台命令应已开始');
+    assert.ok(T.interruptTerminal(info.id), 'Ctrl+C 应发送到整个终端进程组');
+    assert.ok(T.writeTerminal(info.id, 'echo AFTER_INTERRUPT\n'));
+    assert.ok(await waitFor('AFTER_INTERRUPT'), '中断后同一个 shell 应继续接受命令');
+  } finally {
+    unsub();
+    T.killTerminal(info.id);
+  }
 });
 
 console.log('\n--- Git 深度集成（分支/工作树/暂存/提交/日志）---');
@@ -2433,6 +2522,11 @@ await test('mcp-workshop：add/list/update/remove + 模板列表', async () => {
     if (backup !== null) fs.writeFileSync(path, backup);
     else if (fs.existsSync(path)) fs.unlinkSync(path);
   }
+});
+
+await test('Agent 不再生成运行记录或交付报告目录', () => {
+  assert.equal(existsSync(join(COCODE_DIR, 'traces')), false);
+  assert.equal(existsSync(join(COCODE_DIR, 'deliveries')), false);
 });
 
 rmSync(tmp, { recursive: true, force: true });

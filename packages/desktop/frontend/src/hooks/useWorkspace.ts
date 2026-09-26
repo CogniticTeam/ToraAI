@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import { workspaceApi } from '@/api';
 import type { MCPClient, MCPClientStatus, Skill } from '@/api';
@@ -10,14 +10,17 @@ interface WorkspaceQueryOptions {
 	loadMcp?: boolean;
 }
 
+const EMPTY_MCPS: MCPClientStatus[] = [];
+const EMPTY_SKILLS: Skill[] = [];
+
 export function useWorkspace(
 	agentId: string | null,
 	sessionId: string | null,
 	{ loadMcp = true }: WorkspaceQueryOptions = {},
 ) {
 	const queryClient = useQueryClient();
-	const mcpKey = ['workspace', 'mcp', agentId, sessionId] as const;
-	const skillsKey = ['workspace', 'skills', agentId, sessionId] as const;
+	const mcpKey = useMemo(() => ['workspace', 'mcp', agentId, sessionId] as const, [agentId, sessionId]);
+	const skillsKey = useMemo(() => ['workspace', 'skills', agentId, sessionId] as const, [agentId, sessionId]);
 	const hasScope = Boolean(agentId && sessionId);
 
 	const mcpQuery = useQuery<MCPClientStatus[]>({
@@ -31,15 +34,16 @@ export function useWorkspace(
 		enabled: hasScope,
 	});
 
-	const mcps = mcpQuery.data ?? [];
-	const skills = skillsQuery.data ?? [];
+	// 空状态保持引用稳定，避免每次渲染都让 addMcps 等回调失效并级联重渲染。
+	const mcps = mcpQuery.data ?? EMPTY_MCPS;
+	const skills = skillsQuery.data ?? EMPTY_SKILLS;
 	const refreshMcps = useCallback(
 		() => queryClient.invalidateQueries({ queryKey: mcpKey }),
-		[queryClient, agentId, sessionId],
+		[queryClient, mcpKey],
 	);
 	const refreshSkills = useCallback(
 		() => queryClient.invalidateQueries({ queryKey: skillsKey }),
-		[queryClient, agentId, sessionId],
+		[queryClient, skillsKey],
 	);
 
 	const addMcps = useCallback(

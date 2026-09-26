@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
 import { ChevronRight, Languages, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+
 import { useAccountPresence } from '@/components/auth/AccountPresence';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';

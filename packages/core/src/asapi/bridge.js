@@ -28,6 +28,7 @@ function getBus(sessionId) {
   if (!bus) {
     bus = {
       running: false, replyId: null, events: [], subs: new Set(), ac: null,
+      lastReplyEnd: null,
       // HITL：tool_call_id -> resolver
       pending: new Map(),
       // AskUserQuestion：ask_id -> resolver（answer 事件按 id 唤醒）
@@ -45,6 +46,7 @@ function getBus(sessionId) {
 }
 
 function push(bus, event) {
+  if (event.type === 'REPLY_END') bus.lastReplyEnd = event;
   bus.events.push(event);
   for (const send of bus.subs) {
     try { send(event); } catch { /* 订阅者已断开 */ }
@@ -152,7 +154,7 @@ export function resolveRunCfg(session, agent) {
   if (agent?.data?.system_prompt) cfg.systemPrompt = agent.data.system_prompt;
   if (agent?.data?.context_config?.tool_result_limit) cfg.toolOutputLimit = agent.data.context_config.tool_result_limit;
   if (agent?.data?.react_config?.max_iters) cfg.maxTurns = agent.data.react_config.max_iters;
-  // Agent 级交付审查：继承全局默认，按当前 Agent 局部覆盖。这里只接受已知字段，
+  // Agent 级自我复核：继承全局默认，按当前 Agent 局部覆盖。这里只接受已知字段，
   // 防止表单/旧数据把任意对象散落进运行配置。
   if (agent?.data?.review_config && typeof agent.data.review_config === 'object') {
     const review = agent.data.review_config;
@@ -437,18 +439,6 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
     // CoCode 包根目录。Electron 进程的 cwd 永远不是合法会话工作目录。
     const sessionCwd = session.config?.cwd || null;
     const extraTools = await loadExtraTools(sessionCwd);
-    const deliveryMode = session.state?.delivery_mode === true;
-    const deliveryCriteria = typeof session.state?.delivery_criteria === 'string' ? session.state.delivery_criteria.slice(0, 1200) : '';
-    if (deliveryMode) {
-      cfg.review = {
-        ...(cfg.review || {}),
-        enabled: true,
-        min_turns: 0,
-        only_after_mutation: true,
-        checklist: deliveryCriteria.split('\n').map((line) => line.trim()).filter(Boolean).slice(0, 12),
-      };
-    }
-
     for await (const e of runAgent({
       cfg,
       cwd: sessionCwd,
@@ -456,9 +446,6 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
       signal: ac.signal,
       extraTools,
       sessionId,
-      deliveryEnabled: true,
-      deliveryMode,
-      deliveryCriteria,
       permissionAsk,
       askUser,
       permissionRules: rules,
@@ -648,18 +635,18 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
           }));
           break;
         case 'review-start':
-          push(bus, E.custom('delivery_review', {
+          push(bus, E.custom('review_progress', {
             phase: 'started', round: e.round, skipped: !!e.skipped, reason: e.reason || ''
           }));
           break;
         case 'review-result':
-          push(bus, E.custom('delivery_review', {
+          push(bus, E.custom('review_progress', {
             phase: 'result', round: e.round, passed: !!e.passed,
             issues: e.issues || [], reason: e.reason || ''
           }));
           break;
         case 'review-redo':
-          push(bus, E.custom('delivery_review', {
+          push(bus, E.custom('review_progress', {
             phase: 'redo', round: e.round, issues: e.issues || []
           }));
           break;
@@ -746,6 +733,9 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
     const msg = assistantMsgShell(replyId);
     msg.content = replyBlocks;
     msg.finished_at = new Date().toISOString();
+    const end = bus.lastReplyEnd?.reply_id === replyId ? bus.lastReplyEnd : null;
+    if (end?.finished_reason) msg.finished_reason = end.finished_reason;
+    if (end?.error) msg.error = end.error;
     delete msg.run_state;
     // 等待确认期间可能已经写过同 id 的快照 → upsert 而不是 push，否则会出现两条
     const idx = session.display.findIndex((m) => m.id === replyId);
@@ -776,6 +766,7 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
     for (const ask_id of askIds) push(bus, E.custom('user_question_cancelled', { ask_id }));
   }
   bus.events = []; // 清空缓冲：历史接口已含该回复，重放会翻倍
+  bus.lastReplyEnd = null;
   bus.replyId = null;
   // 若已无订阅者，稍后回收 bus
   setTimeout(() => {

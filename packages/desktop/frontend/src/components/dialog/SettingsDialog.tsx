@@ -5,14 +5,15 @@
 
 import {
   AudioWaveform, BotMessageSquare, Box, Brain, ChartColumn, ChevronLeft, ChevronRight, CircleDot, Cloud, CloudDrizzle,
-  Cpu, Database, ExternalLink, Flame, Info, LaptopMinimal, Layers, Loader2, Moon,
-  Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Sun, Trash2, TriangleAlert, UserRound, Waves, X, Zap
+  Cpu, Database, ExternalLink, Flame, Info, Layers, Loader2, Moon,
+  Palette, Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Trash2, TriangleAlert, UserRound, Waves, X, Zap
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { agentApi, type AgentView } from '@/api';
 import { AccountSection } from '@/components/dialog/AccountSection';
 import { MemorySection } from '@/components/dialog/MemorySection';
+import { ThemeSection } from '@/components/dialog/ThemeSection';
 import { UsageSection } from '@/components/dialog/UsageSection';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -20,8 +21,6 @@ import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { AVAILABLE_MODELS_KEY } from '@/hooks/useAvailableModels';
-import { useTheme } from '@/hooks/useTheme';
-import type { ThemePreference } from '@/hooks/useTheme';
 import i18n from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { PROVIDER_ICONS } from '@/lib/providerIcons';
@@ -56,7 +55,7 @@ interface Props {
 const apiBase = () => (localStorage.getItem('server_url') || 'http://127.0.0.1:3210').replace(/\/+$/, '');
 const apiUrl = (p: string) => `${apiBase()}${p}`;
 
-type Section = 'general' | 'usage' | 'account' | 'agent' | 'model' | 'memory' | 'data' | 'about' | 'developer';
+type Section = 'general' | 'theme' | 'usage' | 'account' | 'agent' | 'model' | 'memory' | 'data' | 'about' | 'developer';
 
 type RuntimeBehavior = {
 	maxTokensBudget: number;
@@ -92,6 +91,7 @@ const RUNTIME_PRESETS: ReadonlyArray<{
 const SECTIONS: { key: Section; label: string; icon: typeof Settings2 }[] = [
 	{ key: 'account', label: 'settings.sections.account', icon: UserRound },
 	{ key: 'general', label: 'settings.sections.general', icon: Settings2 },
+	{ key: 'theme', label: 'settings.sections.theme', icon: Palette },
 	{ key: 'usage', label: 'settings.sections.usage', icon: ChartColumn },
 	{ key: 'agent', label: 'settings.sections.agent', icon: BotMessageSquare },
 	{ key: 'model', label: 'settings.sections.model', icon: Cpu },
@@ -1121,8 +1121,6 @@ interface McpServerStatus {
 
 interface AdvancedRuntime {
 	hooksEnabled?: boolean;
-	traceEnabled?: boolean;
-	traceFullBody?: boolean;
 	changesAware?: boolean;
 	lspServers?: Record<string, LspServerConfig>;
 	mcpServers?: Record<string, McpServerConfig>;
@@ -1379,24 +1377,6 @@ function AdvancedSection() {
 				/>
 			</Row>
 
-			<Row title={t('settings.advanced.trace.title')} description={t('settings.advanced.trace.desc')}>
-				<Switch
-					size="sm"
-					checked={rt?.traceEnabled !== false}
-					disabled={busy || rt === null}
-					onCheckedChange={(v) => void save({ traceEnabled: v })}
-				/>
-			</Row>
-
-			<Row title={t('settings.advanced.traceFull.title')} description={t('settings.advanced.traceFull.desc')}>
-				<Switch
-					size="sm"
-					checked={rt?.traceFullBody === true}
-					disabled={busy || rt === null || rt?.traceEnabled === false}
-					onCheckedChange={(v) => void save({ traceFullBody: v })}
-				/>
-			</Row>
-
 			<Row title={t('settings.advanced.changes.title')} description={t('settings.advanced.changes.desc')}>
 				<Switch
 					size="sm"
@@ -1576,20 +1556,12 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 	const [wiping, setWiping] = useState(false);
 	const [wipeError, setWipeError] = useState<string | null>(null);
 	// Agent 运行行为（上下文压缩预算 + 工具输出限制 + 最大迭代轮数）。
-	// 与主题一样：保存时 PATCH /admin/runtime，磁盘持久化到 ~/.cocode/config.json。
+	// 保存时 PATCH /admin/runtime，磁盘持久化到 ~/.cocode/config.json。
 	const [runtime, setRuntime] = useState<RuntimeBehavior | null>(null);
 	const [runtimeBusy, setRuntimeBusy] = useState(false);
 	const [runtimeErr, setRuntimeErr] = useState<string | null>(null);
 	const [checkingUpdate, setCheckingUpdate] = useState(false);
 	const [updateMessage, setUpdateMessage] = useState<string | null>(null);
-	const { preference: themePref, setPreference: setThemePref } = useTheme();
-
-	// Open of an unrelated dialog would keep the user's last-chosen
-	// preference across renders, but the section resets already done
-	// below cover the rest of the dialog state. Theme is read on every
-	// render so the segmented control always shows the live value — in
-	// particular when another tab changed it via the storage event the
-	// `useTheme` hook picks that up on its own.
 
 	// 打开时重置到初始板块（外部可用 key 重挂载强制指定）
 	useEffect(() => {
@@ -1733,7 +1705,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 		<div
 			aria-hidden={closing}
 			className={
-				'fixed inset-0 z-50 bg-background text-card-foreground ' +
+				'app-wallpaper fixed inset-0 z-50 text-card-foreground ' +
 				(closing
 					? 'animate-out fade-out-0 duration-200'
 					: 'animate-in fade-in-0 duration-200')
@@ -1742,7 +1714,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 			{/* 全屏设置：左侧导航保持上下文，右侧为集中阅读区。 */}
 			<div
 				className={
-					'relative flex h-full w-full overflow-hidden bg-background text-card-foreground ease-out ' +
+					'relative flex h-full w-full overflow-hidden bg-transparent text-card-foreground ease-out ' +
 					(closing
 						? 'animate-out fade-out-0 duration-200'
 						: 'animate-in fade-in-0 duration-200')
@@ -1789,36 +1761,6 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 								<h3 className="text-lg font-semibold">{t('settings.general.title')}</h3>
 								<div className="mt-2 text-xs text-muted-foreground">{t('settings.general.common')}</div>
 <div className="mt-3 space-y-3">
-							<Row title={t('settings.general.theme.title')} description={t('settings.general.theme.desc')}>
-								<div className="inline-flex items-center rounded-lg border bg-muted p-0.5">
-									{([
-										{ value: 'light', icon: Sun, label: t('settings.general.theme.light') },
-										{ value: 'dark', icon: Moon, label: t('settings.general.theme.dark') },
-										{ value: 'system', icon: LaptopMinimal, label: t('settings.general.theme.system') },
-									] as Array<{ value: ThemePreference; icon: typeof Sun; label: string }>).map(
-										({ value, icon: Icon, label }) => {
-											const active = themePref === value;
-											return (
-												<button
-													key={value}
-													type="button"
-													aria-pressed={active}
-													onClick={() => setThemePref(value)}
-													className={
-														'flex items-center gap-1 rounded-md px-2.5 py-1 text-xs transition-colors ' +
-														(active
-															? 'bg-background text-foreground shadow-sm'
-															: 'text-muted-foreground hover:text-foreground')
-													}
-												>
-													<Icon className="size-3.5" />
-													{t(label)}
-												</button>
-											);
-										},
-									)}
-								</div>
-							</Row>
 							<Row title={t('settings.general.language.title')} description={t('settings.general.language.desc')}>
 										<DropdownSelect
 											className="w-36"
@@ -1846,6 +1788,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 
 								</>
 						)}
+						{section === 'theme' && <ThemeSection />}
 
 						{section === 'usage' && (
 							<>

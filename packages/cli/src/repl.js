@@ -134,6 +134,10 @@ export async function runRepl(cfg) {
   }
 
   async function doRun(content) {
+    if (String(cfg.baseURL || '').includes('/official/v1')) {
+      console.log(C.yellow + '当前配置为桌面会话的官方模型网关；CLI 请先运行 `cocode config` 配置自接入模型。' + C.reset);
+      return;
+    }
     if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
       console.log(C.yellow + '未配置 apiKey：运行 `cocode config` 或设置环境变量 COCODE_API_KEY' + C.reset);
       return;
@@ -189,7 +193,6 @@ export async function runRepl(cfg) {
   /repomap [子目录]      打印仓库符号骨架（省 token 的入口，先看它再动手）
   /index [关键词]        重建符号/语义索引；带关键词则直接检索（按词匹配，支持中文）
   /lsp                   检测本机装了哪些 language server（配 lspServers 后 Lsp 工具走真 LSP）
-  /trace [id]            列出本会话的运行记录；带 id 则打印完整时间线（排障用）
   /hooks                 列出当前生效的钩子（含项目钩子是否被信任）
   /checkpoints           列出本会话的检查点
   /restore <轮号>        回滚工作目录到第 N 轮之前（会先让你确认）
@@ -306,18 +309,6 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
         console.log(configured.length
           ? `${C.dim}已配置：${configured.map(([e, v]) => `${e} → ${v.command || v}`).join('、')}${C.reset}`
           : `${C.dim}（还没配置 lspServers；Lsp 工具目前用本地符号索引，够用但没有类型信息）${C.reset}`);
-        break;
-      }
-      case 'trace': {
-        const { listTraces, renderTrace } = await import('../../core/src/trace.js');
-        if (arg) {
-          console.log(renderTrace(arg));
-          break;
-        }
-        const list = listTraces({ sessionId: session.id, limit: 10 });
-        console.log(list.length
-          ? list.map((t) => `${C.cyan}${t.id}${C.reset}  ${C.dim}${new Date(t.startedAt).toLocaleString('zh-CN')} · ${t.turns} 轮 · ${t.tools} 次工具 · ${t.reason}${C.reset}`).join('\n')
-          : C.dim + '（本会话还没有运行记录；traceEnabled=false 时不会记录）' + C.reset);
         break;
       }
       case 'hooks': {
@@ -451,6 +442,9 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
 
 /** 一次性任务模式：cocode "做某事" */
 export async function runOneShot(cfg, content) {
+  if (String(cfg.baseURL || '').includes('/official/v1')) {
+    throw new Error('当前配置为桌面会话的官方模型网关；CLI 请先运行 `cocode config` 配置自接入模型');
+  }
   if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
     throw new Error('未配置 apiKey：运行 `cocode config` 或设置环境变量 COCODE_API_KEY');
   }
@@ -473,6 +467,7 @@ export async function runOneShot(cfg, content) {
       checkpoint: { enabled: cfg.checkpointEnabled !== false, sessionId: session.id }
     })) {
       renderer.feed(ev);
+      if (ev.type === 'error') process.exitCode = 1;
       if (ev.type === 'done') { last = ev; break; }
     }
   } catch (e) {

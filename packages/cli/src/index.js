@@ -55,7 +55,6 @@ REPL 内命令:
   /repomap                 打印仓库符号骨架
   /index [关键词]          重建符号/语义索引；带关键词直接检索
   /lsp                     检测本机 language server 并查看 lspServers 配置
-  /trace [id]              列出运行记录 / 打印某次运行的完整时间线
   /hooks                   列出当前生效的钩子（项目钩子是否被信任）
   /checkpoints             列出检查点      /restore <turn>  回滚到第 N 轮
   /export [md|json]        导出当前会话（写到当前目录）

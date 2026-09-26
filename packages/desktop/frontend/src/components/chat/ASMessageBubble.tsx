@@ -463,7 +463,8 @@ interface MessageBubbleProps {
  * The assistant footer shows a 「已处理 x天x时x分xx秒」 elapsed-time label
  * (ticking once per second while the reply streams, frozen once
  * REPLY_END lands) plus the copy button — but the copy button only
- * appears *after* the reply finished (`finished_reason` set), so a
+ * appears *after* the reply finished (`finished_reason` or persisted
+ * `finished_at` set), so a
  * half-streamed answer can't be copied in its incomplete state.
  * Audio-playback controls still render there when the message carries
  * audio blocks, and only then.
@@ -543,10 +544,12 @@ function ASMessageBubbleComponent({
 
 	const blocks = groupToolCalls(message.content);
 
-	// 回合结束后的文件改动汇总（仅成功的 Write/Edit）。流式中 finished_reason
-	// 尚未写入，与复制按钮同一判据；无改动则得到空数组、卡片不渲染。
+	// 历史 Msg 的 finished_reason 可能为空，但 finished_at 已写入。
+	// 流式消息两者都为空；统一判据同时用于改动汇总与复制按钮。
+	const replyFinished = Boolean(message.finished_reason || message.finished_at);
+	// 回合结束后的文件改动汇总（仅成功的 Write/Edit）。
 	const changedFiles =
-		!isUser && message.finished_reason
+		!isUser && replyFinished
 			? collectChangedFiles(
 					blocks.flatMap((b) => (b.type === 'tool_call_group' ? b.calls : [])),
 				)
@@ -638,7 +641,7 @@ function ASMessageBubbleComponent({
 						{showThinking && <ThinkingStatus />}
 						{timestamp}
 						{plainText && (
-							<span className="opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+							<span className="opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100 focus-within:opacity-100">
 								<CopyButton text={plainText} />
 							</span>
 						)}
@@ -654,10 +657,9 @@ function ASMessageBubbleComponent({
 								))}
 							</div>
 						)}
-						{/* 复制按钮只在回复结束后出现 —— 流式输出中的半截
-						    文本没有复制价值，反而会引导用户复制到残缺内容。 */}
-						{plainText && message.finished_reason && (
-							<span className="opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+						{/* 流式中的半截回复不可复制；旧会话只存 finished_at 时仍要显示。 */}
+						{plainText && replyFinished && (
+							<span className="opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100 focus-within:opacity-100">
 								<CopyButton text={plainText} />
 							</span>
 						)}

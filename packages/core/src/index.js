@@ -26,7 +26,6 @@ export {
   semanticTools, searchTool, buildSemanticIndex, searchIndex, tokenize, indexStats
 } from './tools/semantic.js';
 export { loadHooks, runHooks, describeHooks, matcherMatches, HOOK_EVENTS } from './hooks.js';
-export { createTrace, listTraces, readTrace, renderTrace, gcTraces, traceStats, TRACES_DIR } from './trace.js';
 export { parseReactAction } from './react.js';
 export {
   loadProjectInstructions, loadProjectContext, buildSystemPrompt, renderProjectContext,

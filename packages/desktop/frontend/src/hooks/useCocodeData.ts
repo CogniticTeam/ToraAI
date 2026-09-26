@@ -7,12 +7,11 @@ interface CocodeDataOptions {
 	checkpoints?: boolean;
 	diff?: boolean;
 	hooks?: boolean;
-	traces?: boolean;
 }
 
 /**
  * CoCode 扩展数据。斜杠命令始终供输入框使用；其余数据仅在对应面板打开时读取，
- * 避免每次进入聊天都执行 git diff、扫描检查点与读取轨迹文件。
+	 * 避免每次进入聊天都执行 git diff、扫描检查点与读取钩子。
  */
 export function useCocodeData(
 	agentId: string | null,
@@ -21,13 +20,12 @@ export function useCocodeData(
 	options: CocodeDataOptions = {},
 ) {
 	const queryClient = useQueryClient();
-	const { checkpoints = true, diff = true, hooks = true, traces = true } = options;
+	const { checkpoints = true, diff = true, hooks = true } = options;
 	const hasSession = Boolean(sessionId);
 	const checkpointsKey = ['cocode', 'checkpoints', sessionId] as const;
 	const diffKey = ['cocode', 'diff', agentId, sessionId, cwd] as const;
 	const hooksKey = ['cocode', 'hooks', sessionId] as const;
 	const commandsKey = ['cocode', 'commands', sessionId] as const;
-	const tracesKey = ['cocode', 'traces', sessionId] as const;
 
 	const checkpointsQuery = useQuery({
 		queryKey: checkpointsKey,
@@ -53,12 +51,6 @@ export function useCocodeData(
 		enabled: hasSession,
 		retry: false,
 	});
-	const tracesQuery = useQuery({
-		queryKey: tracesKey,
-		queryFn: () => workspaceApi.cocode.traces(sessionId!),
-		enabled: hasSession && traces,
-		retry: false,
-	});
 
 	const refresh = useCallback(async () => {
 		const pending: Promise<unknown>[] = [];
@@ -66,7 +58,6 @@ export function useCocodeData(
 		if (hasSession && checkpoints) pending.push(checkpointsQuery.refetch());
 		if (agentId && sessionId && cwd && diff) pending.push(diffQuery.refetch());
 		if (hasSession && hooks) pending.push(hooksQuery.refetch());
-		if (hasSession && traces) pending.push(tracesQuery.refetch());
 		await Promise.all(pending);
 	}, [
 		hasSession,
@@ -76,12 +67,10 @@ export function useCocodeData(
 		checkpoints,
 		diff,
 		hooks,
-		traces,
 		commandsQuery.refetch,
 		checkpointsQuery.refetch,
 		diffQuery.refetch,
 		hooksQuery.refetch,
-		tracesQuery.refetch,
 	]);
 
 	const restoreCheckpoint = useCallback(
@@ -106,27 +95,20 @@ export function useCocodeData(
 		[queryClient, sessionId],
 	);
 
-	const openTrace = useCallback(async (id: string) => {
-		const result = await workspaceApi.cocode.traceMarkdown(id);
-		return result.markdown;
-	}, []);
-
 	return {
 		checkpoints: checkpointsQuery.data?.checkpoints ?? [],
 		diff: diffQuery.data?.diff ?? '',
 		diffError: diffQuery.data?.error ?? null,
+		diffErrorCode: diffQuery.data?.error_code ?? null,
 		hooks: hooksQuery.data ?? null,
 		commands: commandsQuery.data ?? [],
-		traces: tracesQuery.data?.traces ?? [],
 		loading:
 			(checkpoints && checkpointsQuery.isPending) ||
 			(diff && diffQuery.isPending) ||
 			(hooks && hooksQuery.isPending) ||
-			(hasSession && commandsQuery.isPending) ||
-			(traces && tracesQuery.isPending),
+			(hasSession && commandsQuery.isPending),
 		refresh,
 		restoreCheckpoint,
 		setProjectHooksTrusted,
-		openTrace,
 	};
 }

@@ -10,11 +10,16 @@
 // session 层注入的 CSP 为 script-src 'self'，内联脚本会被静默拦截
 // （pre-paint 不执行 → 深色模式下加载页闪白）。
 const KEY = 'cocode.theme';
-const stored = (() => {
-	try { return localStorage.getItem(KEY); } catch { return null; }
-})();
+const BACKGROUND_KEY = 'cocode.background';
+const CUSTOM_BACKGROUND_KEY = 'cocode.background.custom';
+const BACKGROUND_CHANGED_EVENT = 'cocode:background-changed';
+const BACKGROUND_OPTIONS = new Set(['lavender', 'mist', 'stone', 'midnight', 'none', 'custom']);
+const readStored = (key) => {
+	try { return localStorage.getItem(key); } catch { return null; }
+};
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
 const applyTheme = () => {
+	const stored = readStored(KEY);
 	let useDark;
 	if (stored === 'dark') useDark = true;
 	else if (stored === 'light') useDark = false;
@@ -27,5 +32,21 @@ const applyTheme = () => {
 	// 纠正主进程建窗时的猜测（跟系统），并让主进程记住本次主题。
 	window.cocodeWindow?.reportTheme?.(useDark);
 };
+const applyBackground = () => {
+	const root = document.documentElement;
+	const saved = readStored(BACKGROUND_KEY);
+	const custom = readStored(CUSTOM_BACKGROUND_KEY);
+	const safeCustom = custom && custom.length <= 2500000 && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(custom);
+	const choice = BACKGROUND_OPTIONS.has(saved) ? saved : 'lavender';
+	root.dataset.appBackground = choice === 'custom' && !safeCustom ? 'none' : choice;
+	if (choice === 'custom' && safeCustom) root.style.setProperty('--app-custom-wallpaper', `url("${custom}")`);
+	else root.style.removeProperty('--app-custom-wallpaper');
+};
 applyTheme();
+applyBackground();
 darkQuery.addEventListener('change', applyTheme);
+window.addEventListener(BACKGROUND_CHANGED_EVENT, applyBackground);
+window.addEventListener('storage', (event) => {
+	if (event.key === KEY) applyTheme();
+	if (event.key === BACKGROUND_KEY || event.key === CUSTOM_BACKGROUND_KEY) applyBackground();
+});

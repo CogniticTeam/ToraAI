@@ -4,8 +4,8 @@ import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom'
 import { RouteError } from '@/components/error/RouteError';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UploadProvider } from '@/context/UploadContext';
-import { ChatPage } from '@/pages/chat';
 import { installPollQueueSync } from '@/lib/pollQueue';
+import { ChatPage } from '@/pages/chat';
 
 // 聊天是首屏，保留同步加载；其余独立工作台按路由再取，避免账号页、知识库、
 // MCP/Skill 市场等重依赖阻塞一次对话的启动与输入。

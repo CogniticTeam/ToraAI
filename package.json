@@ -13,11 +13,13 @@
     "serve:simple": "node packages/core/src/server.js",
     "start": "npm run start -w packages/desktop",
     "test": "node --test packages/core/test/legacy-migration.js && node packages/core/test/run.js && node packages/core/test/asapi.js",
+    "lint": "npm run lint --prefix packages/desktop/frontend",
     "test:ui": "node scripts/test-ui-headless.mjs",
     "test:bundle": "node scripts/check-frontend-bundle.mjs",
     "refresh:mac-metadata": "node scripts/refresh-mac-metadata.mjs",
     "sbom": "npm sbom --sbom-format cyclonedx --package-lock-only",
-    "test:desktop-security": "node scripts/test-desktop-security.mjs"
+    "test:desktop-security": "node scripts/test-desktop-security.mjs",
+    "verify:mac-release": "node scripts/verify-mac-release.mjs"
   },
   "engines": {
     "node": ">=18"

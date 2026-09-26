@@ -10,6 +10,7 @@ import { Ban, Box, Check, ChevronDown, ChevronRight, PlusCircle } from 'lucide-r
 import { useEffect, useRef, useState } from 'react';
 
 import type { ChatModelConfig, CredentialView, ModelCard } from '@/api';
+import { FIRST_RUN_CLOSE_MODEL_EVENT } from '@/components/onboarding/constants';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ProviderIcon } from '@/components/ui/provider-icon';
@@ -164,6 +165,8 @@ function providerKeyOf(credential: CredentialView, modelName: string): string {
 
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onChange' | 'value'> {
 	value?: ChatModelConfig | null;
+	/** 输入卡片底部的紧凑文字式触发器。 */
+	composer?: boolean;
 	/**
 	 * Called when the user selects a model, or — when `allowClear` is true —
 	 * clears the selection (in which case `null` is emitted).
@@ -184,6 +187,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onC
 
 export function LlmSelect({
 	value,
+	composer = false,
 	onChange,
 	onAddCredential,
 	refetchTrigger,
@@ -262,7 +266,11 @@ export function LlmSelect({
 	useEffect(() => {
 		const closeForSettings = () => setPopOpen(false);
 		window.addEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
-		return () => window.removeEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
+		window.addEventListener(FIRST_RUN_CLOSE_MODEL_EVENT, closeForSettings);
+		return () => {
+			window.removeEventListener(OPEN_SETTINGS_EVENT, closeForSettings);
+			window.removeEventListener(FIRST_RUN_CLOSE_MODEL_EVENT, closeForSettings);
+		};
 	}, []);
 	useEffect(() => {
 		if (!popOpen) return;
@@ -282,22 +290,24 @@ export function LlmSelect({
 					variant="ghost"
 					size="sm"
 					className={cn(
-						'gap-1.5 rounded-rect border border-transparent font-normal hover:border-border hover:bg-transparent',
+						'gap-1.5 rounded-rect font-normal',
+						composer ? 'max-w-56 border-0 bg-transparent px-2 text-sm text-foreground hover:bg-muted/60' : 'border border-transparent hover:border-border hover:bg-transparent',
 						className,
 					)}
 					{...props}
 				>
-					<ProviderIcon
+					{!composer && <ProviderIcon
 						keyName={selectedEntry ? providerKeyOf(selectedEntry.credential, selectedEntry.model.name) : 'custom'}
 						size="size-4"
 						fallback={<Box className="size-3.5 shrink-0 text-muted-foreground" />}
-					/>
-					<span className="max-w-56 truncate">{displayLabel}</span>
+					/>}
+					<span className={cn('truncate', composer ? 'max-w-36' : 'max-w-56')}>{displayLabel}</span>
+					{composer && value?.model && <span className="shrink-0 text-muted-foreground">{t(`llm-select.level.${currentLevel}`)}</span>}
 					<ChevronDown className="size-3.5 text-muted-foreground" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
-				align="start"
+				align={composer ? 'end' : 'start'}
 				sideOffset={6}
 				className="w-auto gap-0 overflow-visible rounded-2xl p-0"
 			>
@@ -355,6 +365,7 @@ export function LlmSelect({
 							)}
 							<button
 								type="button"
+								id={props.id === 'tour-llm-select' ? 'tour-add-model' : undefined}
 								onClick={() => {
 									setPopOpen(false);
 									onAddCredential?.();

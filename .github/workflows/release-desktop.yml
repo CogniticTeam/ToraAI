@@ -10,8 +10,8 @@ permissions:
 
 jobs:
   macos:
-    # v1.0.0 由本机签名、公证、附票据后手动上传，避免 CI 抢先覆盖最终 DMG 元数据。
-    if: github.ref_name != 'v1.0.0'
+    # v1.0.0 与 v1.0.1 由本机签名、公证、附票据后手动上传，避免 CI 覆盖最终 DMG 元数据。
+    if: github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1'
     name: Publish macOS installer
     runs-on: macos-latest
     env:
@@ -42,7 +42,7 @@ jobs:
       - run: npm run release:mac
 
   windows:
-    if: github.ref_name != 'v1.0.0'
+    if: github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1'
     name: Publish Windows installer
     needs: macos
     runs-on: windows-latest

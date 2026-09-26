@@ -7,7 +7,6 @@ import {
 	type ToolCallBlock,
 } from '@agentscope-ai/agentscope/message';
 import {
-	GitBranch,
 	TriangleAlert,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -18,7 +17,6 @@ import {
 	fromLibrary as libraryToSlashItems,
 } from './SlashCommandMenu';
 import { Button } from '../ui/button';
-import { DiffStats } from './tool-renderers/_shared';
 import { skillApi, type SkillView, type SkillRecord } from '@/api';
 import type { GitStatus } from '@/api';
 import type { KnowledgeBaseView, Skill, UserCommand } from '@/api';
@@ -70,6 +68,23 @@ function markerStamp(at: Date, previous: Date, language: string): string {
 	}).format(at);
 }
 
+/** 空会话标题按字依次显现；文字始终保留完整的无障碍名称。 */
+function TypewriterGreeting({ text }: { text: string }) {
+	const characters = Array.from(text);
+	const interval = Math.max(18, Math.min(58, 1200 / Math.max(1, characters.length)));
+	return <h1
+		className="relative mx-auto max-w-full font-sans text-[clamp(1.875rem,3vw,2.5rem)] font-normal leading-[1.18] tracking-[-0.035em] text-balance text-foreground [overflow-wrap:anywhere]"
+		aria-label={text}
+	>
+		{characters.map((character, index) => <span
+			key={index}
+			className="chat-greeting-character"
+			style={{ animationDelay: `${Math.round(index * interval)}ms` }}
+			aria-hidden="true"
+		>{character}</span>)}
+	</h1>;
+}
+
 interface ChatContentProps {
 	msgs: Msg[];
 	/**
@@ -114,10 +129,8 @@ interface ChatContentProps {
 	projectName?: string | null;
 	/** Persists a new working directory. */
 	onCwdChange: (cwd: string | null) => void | Promise<void>;
-	/** Git state of {@link cwd}; `null` hides the branch badge entirely. */
+	/** Git state still feeds the agent's silent project context. */
 	git?: GitStatus | null;
-	/** Re-reads the git state, since nothing polls for it. */
-	onRefreshGit?: () => void | Promise<void>;
 	/** Skills currently attached to this session's workspace, used by the "tools" context source. */
 	workspaceSkills?: Skill[];
 	/** Knowledge bases visible to the user; used by the "tools" context source. */
@@ -129,11 +142,11 @@ interface ChatContentProps {
 	 */
 	userCommands?: UserCommand[];
 	/**
-	 * Controls rendered on the right side of the input header row —
-	 * to the right of the workspace picker (model selector, permission
-	 * mode, …). Owned by the viewport, which holds their state.
+	 * Live controls rendered in the composer footer. Owned by ChatViewport,
+	 * which holds model and permission state.
 	 */
-	inputControls?: React.ReactNode;
+	modelControl?: React.ReactNode;
+	permissionControl?: React.ReactNode;
 }
 
 const ChatContentComponent: React.FC<ChatContentProps> = ({
@@ -153,8 +166,8 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	projectName = null,
 	onCwdChange,
 	git,
-	onRefreshGit,
-	inputControls,
+	modelControl,
+	permissionControl,
 	workspaceSkills,
 	workspaceKnowledgeBases,
 	userCommands,
@@ -413,6 +426,9 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			.filter((tc) => tc.state === 'asking')
 			.map((tc) => ({ replyId: lastMsg.id, toolCall: tc }));
 	}, [msgs]);
+	const greeting = projectName
+		? t('chat.greetingProject', { project: projectName })
+		: t('chat.greeting');
 
 	// On an empty session the prompt and the input centre together, so every box
 	// down to the message list shrinks to its content instead of filling.
@@ -431,12 +447,8 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			) : isEmpty ? (
 				// 空态标题保持纯文字。Electron 对文字背景裁剪的兼容渲染曾将
 				// 渐变标题错误绘制成整块白色矩形，因此不再依赖 background-clip。
-				<div className="relative flex flex-col items-center gap-3 px-8 text-center">
-              <h1 className="relative animate-fade-up font-sans text-5xl font-normal leading-tight tracking-[-0.045em] text-foreground">
-						{projectName
-							? t('chat.greetingProject', { project: projectName })
-							: t('chat.greeting')}
-					</h1>
+				<div className="relative flex w-full max-w-[46rem] flex-col items-center gap-3 px-4 text-center">
+					<TypewriterGreeting key={greeting} text={greeting} />
 				</div>
 			) : (
 				<MessageScrollerProvider autoScroll={true} defaultScrollPosition={'end'}>
@@ -526,7 +538,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			    点击全部落空，用户视角就是"选不了文件夹、选不了模型、点不动"。
 			    loading 只影响上方消息区（spinner 有 SPINNER_DELAY_MS 延迟，
 			    短窗几乎无感），输入区始终可用。 */}
-			<div className="relative min-w-full max-w-full w-full pb-4">
+			<div className="relative mx-auto w-full max-w-[46rem] pb-4">
 					<FlipCard
 						visible={toConfirmedToolCalls.length > 0 || footerSlot !== null}
 						className="absolute bottom-full left-0 right-0 mb-2 z-50"
@@ -548,12 +560,9 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 							footerSlot
 						)}
 					</FlipCard>
-					{/* 输入区直接坐在画布上：WorkspacePicker 行无底无框，
-				    白色胶囊是唯一的表面。曾经包在外面的 bg-muted 圆角壳
-				    会形成「框中框」（深色下是亮框，浅色下也有包裹感），
-				    已拆除。 */}
+					{/* 新聊天保留项目入口；已创建的会话直接显示输入卡片。 */}
 					<TextInput
-						className="min-w-full max-w-full w-full"
+						className="w-full"
 						onSend={handleSend}
 						commandItems={slashItems}
 						disabled={disabled}
@@ -562,52 +571,18 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 						fileProcessor={fileProcessor}
 						phase={phase}
 						onInterrupt={onInterrupt}
-						headerSlot={
-							<div className="flex w-full flex-col gap-1">
-								<div className="flex w-full items-center justify-between gap-2 px-2 py-1 text-sm text-muted-foreground">
-									<WorkspacePicker
-										value={cwd}
-										onChange={onCwdChange}
-									/>
-								<div className="flex min-w-0 items-center gap-x-2">
-									{inputControls}
-								{git && (
-									<Button
-										className="font-mono"
-										variant="secondary"
-										size="sm"
-										onClick={() => void onRefreshGit?.()}
-										title={t('workdir.gitTooltip', {
-											staged: git.staged,
-											unstaged: git.unstaged,
-											untracked: git.untracked,
-										})}
-									>
-										<GitBranch />
-										{/* A detached HEAD has no branch to name, so
-										    fall back to the commit it sits on. The
-										    server sends no git at all when it has
-										    neither. */}
-										{git.branch ?? git.head?.slice(0, 7)}
-										{git.ahead !== null && git.ahead > 0 && (
-											<span className="text-xs">↑{git.ahead}</span>
-										)}
-										{git.behind !== null && git.behind > 0 && (
-											<span className="text-xs">↓{git.behind}</span>
-										)}
-										{/* Renders nothing when both are zero, so a
-										    clean tree shows just the branch. */}
-										<DiffStats
-											className="text-xs font-mono"
-											insertions={git.insertions}
-											deletions={git.deletions}
-										/>
-									</Button>
-								)}
-								</div>
-								</div>
+						footerLeft={permissionControl}
+						footerRight={modelControl}
+						headerSlot={isEmpty ? (
+							<div className="composer-context mx-4 flex min-w-0 items-center rounded-t-[24px] bg-muted px-5 pb-6 pt-2">
+								<WorkspacePicker
+									value={cwd}
+									onChange={onCwdChange}
+									composer
+									className="max-w-full shrink-0 bg-transparent px-1 text-sm font-normal hover:bg-transparent"
+								/>
 							</div>
-						}
+						) : undefined}
 					/>
 				</div>
 		</div>

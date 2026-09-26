@@ -33,8 +33,6 @@ import { snapshot as checkpointSnapshot } from './tools/checkpoint.js';
 import { disposeAllShells } from './tools/shell.js';
 import { parseReactAction } from './react.js';
 import { runHooks } from './hooks.js';
-import { createTrace } from './trace.js';
-import { beginDelivery, finishDelivery } from './delivery.js';
 
 // ---------------------------------------------------------------- 反思返工循环（Critic Self-Review）
 //
@@ -69,7 +67,7 @@ function serializeMessagesForCritic(messages) {
     if (m.role === 'system') continue;
     if (m.role === 'tool') {
       const txt = String(m.content ?? '').slice(0, 800);
-      lines.push(`  [tool-result] ${m.tool_name || '(unknown)'} → ${m.ok === false ? 'FAIL' : 'ok'}\n${txt}`);
+      lines.push(`  [tool-result] ${m.tool_name || '(unknown)'} → ${m.tool_state === 'error' ? 'FAIL' : 'ok'}\n${txt}`);
       continue;
     }
     const tc = m.tool_calls;
@@ -425,28 +423,10 @@ function channel() {
  */
 export function runAgent(opts) {
   const ch = channel();
-  const cfg = opts.cfg || {};
-  // trace 在 impl 之外创建：这样 impl 抛错时也能把「崩在哪一轮」写进记录
-  const trace = createTrace({
-    sessionId: opts.sessionId ?? opts.checkpoint?.sessionId ?? null,
-    cwd: opts.cwd || null,
-    model: cfg.model || null,
-    permissionMode: opts.permissionMode ?? cfg.permissionMode ?? null,
-    label: opts.label || null,
-    cfg
-  });
-  let delivery = null;
-  if (opts.deliveryEnabled && opts.sessionId) {
-    try { delivery = beginDelivery({ sessionId: opts.sessionId, cwd: opts.cwd || null, traceId: trace.id, modeEnabled: opts.deliveryMode === true, criteria: opts.deliveryCriteria || '' }); }
-    catch { /* 交付观测失败不能阻断任务 */ }
-  }
-  _runAgentImpl({ ...opts, __trace: trace }, ch).catch((e) => {
+  _runAgentImpl(opts, ch).catch((e) => {
     ch.push({ type: 'error', error: e?.message || String(e) });
-    trace.end('error', { error: e?.message || String(e) });
+    ch.push({ type: 'done', reason: 'error', totalUsage: null });
   }).finally(() => {
-    if (delivery) {
-      try { finishDelivery(delivery); } catch { /* 交付观测失败不能阻断任务 */ }
-    }
     ch.end();
     if (opts.disposeShellOnEnd !== false) disposeAllShells();
   });
@@ -467,8 +447,7 @@ async function _runAgentImpl(opts, ch) {
     checkpoint = null,
     onCwdChange = null,
     sessionState = null,
-    spawnDepth = 0,
-    __trace: trace
+    spawnDepth = 0
   } = opts;
 
   // cwd 由调用方传入；默认不把本地工具作用域偷偷扩展到家目录。
@@ -549,8 +528,8 @@ async function _runAgentImpl(opts, ch) {
 
   let totalUsage = { prompt_tokens: 0, completion_tokens: 0, cached_tokens: 0 };
 
-  /** 事件出口：既推给消费者，也落进 trace（text-delta 由 trace 自己过滤掉） */
-  const emit = (e) => { trace.event(e); ch.push(e); };
+  /** 统一事件出口。 */
+  const emit = (e) => ch.push(e);
 
   // ---- UserPromptSubmit 钩子 ----
   // 位置在组装系统提示词之前：钩子注入的上下文会进 system（缓存友好），
@@ -563,11 +542,9 @@ async function _runAgentImpl(opts, ch) {
       prompt: contentToText(lastUser?.content ?? '')
     }, { cwd: toolCtx.cwd || cwd, cfg: hookCfg });
     if (hk.ran) {
-      trace.hook({ event: 'UserPromptSubmit', ran: hk.ran, decision: hk.decision, reason: hk.reason, errors: hk.errors, notices: hk.notices });
       emit({ type: 'hook', event: 'UserPromptSubmit', ran: hk.ran, decision: hk.decision || null, notices: hk.notices, errors: hk.errors });
     }
     if (hk.decision === 'deny') {
-      trace.end('blocked', { reason: hk.reason });
       emit({ type: 'done', reason: 'blocked', message: hk.reason, totalUsage });
       return;
     }
@@ -594,12 +571,9 @@ async function _runAgentImpl(opts, ch) {
 
   let reactMode = client.supportsTools === false;
   const basePrompt = systemPrompt || cfg.systemPrompt || SYSTEM_PROMPT;
-  const deliveryPrompt = opts.deliveryMode
-    ? `${basePrompt}\n\n【可验证交付模式】完成任务前，在合理范围内运行相关测试、构建或静态检查；未运行或无法运行的验证必须明确说明，不得声称通过。${opts.deliveryCriteria ? `\n验收要点：\n${String(opts.deliveryCriteria).slice(0, 1200)}` : ''}`
-    : basePrompt;
   const composeSystem = () => {
     const base = buildSystemPrompt({
-      basePrompt: deliveryPrompt,
+      basePrompt,
       projectContext,
       reactMode,
       toolNames: allTools.map((t) => t.name),
@@ -645,7 +619,6 @@ async function _runAgentImpl(opts, ch) {
         tool_input: args
       }, { cwd: toolCtx.cwd || cwd, cfg: hookCfg });
       if (hk.ran || hk.errors.length) {
-        trace.hook({ event: 'PreToolUse', ran: hk.ran, decision: hk.decision, reason: hk.reason, errors: hk.errors, notices: hk.notices });
         emit({ type: 'hook', event: 'PreToolUse', tool: canonical, ran: hk.ran, decision: hk.decision || null, reason: hk.reason || '', notices: hk.notices, errors: hk.errors });
       }
       if (hk.updatedInput) effectiveArgs = { ...args, ...hk.updatedInput };
@@ -751,6 +724,14 @@ async function _runAgentImpl(opts, ch) {
         ok = false;
       } else {
         result = await tool.execute(args, toolCtx);
+        const name = canonicalToolName(tc.function?.name);
+        // Write/Edit 成功时返回带 diff 的对象；字符串是可读错误提示。
+        if (['Write', 'Edit'].includes(name) && typeof result === 'string') ok = false;
+        if (name === 'Bash' && typeof result === 'string') {
+          const exitCode = /\bexit_code:\s*(-?\d+|null)\b/.exec(result)?.[1];
+          if (exitCode !== '0' || /^(?:命令已被用户中止|命令超时|命令输出超过)/.test(result)) ok = false;
+        }
+        if (result && typeof result === 'object' && result.ok === false) ok = false;
       }
     } catch (e) {
       ok = false;
@@ -791,7 +772,6 @@ async function _runAgentImpl(opts, ch) {
       return res;
     }
     if (hk.ran || hk.errors.length) {
-      trace.hook({ event: 'PostToolUse', ran: hk.ran, decision: hk.decision, reason: hk.reason, errors: hk.errors, notices: hk.notices });
       emit({ type: 'hook', event: 'PostToolUse', tool: name, ran: hk.ran, decision: hk.decision || null, reason: hk.reason || '', notices: hk.notices, errors: hk.errors });
     }
     if (hk.decision === 'deny' || hk.decision === 'ask') {
@@ -802,21 +782,7 @@ async function _runAgentImpl(opts, ch) {
     return res;
   }
 
-  /** 把工具调用写进 trace（权限决策、是否被钩子/策略拦下都记下来） */
-  function logTool(tc, g, res) {
-    trace.tool({
-      id: tc.id,
-      name: canonicalToolName(tc.function?.name),
-      args: g?.args,
-      ok: res.ok,
-      durationMs: res.durationMs,
-      result: res.result,
-      permission: g ? g.behavior : null,
-      blockedBy: g?.hookDenied ? 'hook' : (g?.noChannel ? 'noChannel' : (g?.behavior !== 'allow' ? 'policy' : null))
-    });
-  }
-
-  /** 统一收尾：Stop 钩子 → trace 收尾 → done 事件 */
+  /** 统一收尾：Stop 钩子 → done 事件 */
   async function finish(reason, { runStopHook = true } = {}) {
     if (runStopHook) {
       try {
@@ -826,14 +792,12 @@ async function _runAgentImpl(opts, ch) {
           usage: totalUsage
         }, { cwd: toolCtx.cwd || cwd, cfg: hookCfg });
         if (hk.ran) {
-          trace.hook({ event: 'Stop', ran: hk.ran, decision: hk.decision, reason: hk.reason, errors: hk.errors, notices: hk.notices });
           emit({ type: 'hook', event: 'Stop', ran: hk.ran, decision: hk.decision || null, context: hk.additionalContext || '', notices: hk.notices, errors: hk.errors });
         }
       } catch (e) {
         emit({ type: 'hook', event: 'Stop', ran: 0, errors: [e?.message || String(e)] });
       }
     }
-    trace.end(reason, { usage: totalUsage });
     emit({ type: 'done', reason, totalUsage });
   }
 
@@ -881,7 +845,6 @@ async function _runAgentImpl(opts, ch) {
       while (round <= maxRounds) {
         round++;
         emit({ type: 'structured-start', round });
-        trace.request(`structured-${round}`, { promptType: 'structured' });
 
         let message, usage;
         try {
@@ -895,7 +858,6 @@ async function _runAgentImpl(opts, ch) {
             totalUsage.prompt_tokens += usage.prompt_tokens || 0;
             totalUsage.completion_tokens += usage.completion_tokens || 0;
           }
-          trace.response(`structured-${round}`, { content: message?.content, usage });
         } catch (e) {
           emit({ type: 'structured-failed', errors: [`chatCompletion 失败: ${e?.message || e}`] });
           break;
@@ -957,7 +919,6 @@ async function _runAgentImpl(opts, ch) {
       let critique, usage;
       try {
         const criticMsgs = buildCriticMessages(messages, checklist);
-        trace.request(`review-${round}`, { messages: criticMsgs, tools: undefined });
         ({ message: critique, usage } = await chatCompletion(client, {
           messages: criticMsgs,
           tools: undefined,
@@ -967,7 +928,6 @@ async function _runAgentImpl(opts, ch) {
           totalUsage.prompt_tokens += usage.prompt_tokens || 0;
           totalUsage.completion_tokens += usage.completion_tokens || 0;
         }
-        trace.response(`review-${round}`, { content: critique?.content, usage });
       } catch (e) {
         emit({ type: 'review-result', round, passed: false, issues: [`Critic 调用失败: ${e?.message || e}`], reason: 'critic-error' });
         break;
@@ -1056,7 +1016,6 @@ async function _runAgentImpl(opts, ch) {
             let res;
             if (g.behavior === 'allow') res = await invokeWithHooks(c.tc, g.args ?? c.args);
             else res = { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 };
-            logTool(c.tc, g, res);
             recordToolMessage(c.tc, c.tc.function?.name, res);
             emit({ type: 'tool-result', id: c.tc.id, name: canonicalToolName(c.tc.function?.name), ok: res.ok, result: res.result, durationMs: res.durationMs, meta: res.meta ?? undefined });
           }
@@ -1134,8 +1093,6 @@ async function _runAgentImpl(opts, ch) {
 
     // ---- 模型调用（含能力降级重试）----
     let message, usage;
-    const reqT0 = Date.now();
-    trace.request(turn, { messages, tools: reactMode ? undefined : toolDefs });
     try {
       ({ message, usage } = await chatCompletion(client, {
         messages,
@@ -1144,13 +1101,6 @@ async function _runAgentImpl(opts, ch) {
         onDelta: (text) => emit({ type: 'text-delta', text }),
         onThinking: (text) => emit({ type: 'thinking-delta', text })
       }));
-      trace.response(turn, {
-        content: message?.content,
-        toolCalls: message?.tool_calls,
-        usage,
-        durationMs: Date.now() - reqT0,
-        finishReason: message?.finish_reason
-      });
     } catch (e) {
       if (e.code === 'ABORTED' || signal?.aborted) {
         return await finish('aborted', { runStopHook: false });
@@ -1197,7 +1147,6 @@ async function _runAgentImpl(opts, ch) {
       } else {
         res = await invokeWithHooks(tc, g.args ?? action.args ?? {});
       }
-      logTool(tc, g, res);
       messages.push({
         role: 'user',
         content: `工具 ${canonicalToolName(name)} 的执行结果（${res.ok ? '成功' : '失败'}）：\n${res.result}`
@@ -1237,15 +1186,14 @@ async function _runAgentImpl(opts, ch) {
 
     if (canParallel) {
       const results = await Promise.all(calls.map(async (c) => {
-        if (signal?.aborted) return { c, res: { ok: false, result: '已中止', image: null, durationMs: 0 }, g: null };
+        if (signal?.aborted) return { c, res: { ok: false, result: '已中止', image: null, durationMs: 0 } };
         const g = await gate(c.tc, c.args);
         if (g.behavior !== 'allow') {
-          return { c, g, res: { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 } };
+          return { c, res: { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 } };
         }
-        return { c, g, res: await invokeWithHooks(c.tc, g.args ?? c.args) };
+        return { c, res: await invokeWithHooks(c.tc, g.args ?? c.args) };
       }));
-      for (const { c, res, g } of results) {
-        logTool(c.tc, g, res);
+      for (const { c, res } of results) {
         recordToolMessage(c.tc, c.tc.function?.name, res);
         emit({ type: 'tool-result', id: c.tc.id, name: canonicalToolName(c.tc.function?.name), ok: res.ok, result: res.result, durationMs: res.durationMs, meta: res.meta ?? undefined });
       }
@@ -1261,7 +1209,6 @@ async function _runAgentImpl(opts, ch) {
       } else {
         res = { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 };
       }
-      logTool(c.tc, g, res);
       recordToolMessage(c.tc, c.tc.function?.name, res);
       emit({ type: 'tool-result', id: c.tc.id, name: canonicalToolName(c.tc.function?.name), ok: res.ok, result: res.result, durationMs: res.durationMs, meta: res.meta ?? undefined });
     }

@@ -52,9 +52,6 @@ export const DEFAULT_CONFIG = {
   // 所以默认**不信任**。用户确认过某个仓库之后可以把它加到 trustProjectHooksFor。
   trustProjectHooks: false,
   trustProjectHooksFor: [],    // 信任项目钩子的工作目录列表（绝对路径）
-  // ---- 可观测性 ----
-  traceEnabled: true,          // 把每次运行写成 ~/.cocode/traces/<session>/<run>.jsonl
-  traceFullBody: false,        // true = 连完整请求体一起记（含对话正文，已脱敏）
   // ---- 变更感知 ----
   changesAware: true,          // 把「最近改动的文件」注入系统提示词
   changesLimit: 12,
@@ -69,7 +66,7 @@ export const DEFAULT_CONFIG = {
   modelList: [],
   // ---- 反思返工循环（Critic Self-Review）----
   // 默认关（每轮多一次模型调用 = 双倍 token 成本）；Agent.data.review_config 可覆盖。
-  // 桌面端把它暴露为每个 Agent 的「交付审查」，避免把成本强加给纯问答会话。
+  // 桌面端把它暴露为每个 Agent 的「自我复核」，避免把成本强加给纯问答会话。
   review: {
     enabled: false,
     max_rounds: 2,

@@ -12,15 +12,21 @@ export interface TerminalSession {
 export type TerminalStreamEvent =
 	| { type: 'data'; data: string }
 	| { type: 'replay'; data: string }
-	| { type: 'exit'; code: number | null };
+	| { type: 'exit'; code: number | null; error?: string };
 
 export const terminalApi = {
-	/** 起一个持久 shell（$SHELL -i，TERM=dumb），返回会话句柄。 */
-	create: (cwd: string) => client.post<TerminalSession>('/terminal/create', { cwd }),
+	/** 起一个持久 shell（$SHELL -i，TERM=dumb）；未选择项目时后端使用主目录。 */
+	create: (cwd: string | null) => client.post<TerminalSession>('/terminal/create', cwd ? { cwd } : {}),
 
 	/** 向终端写入输入（回车即 \n）。进程已退出返回 404 —— 静默，调用方自行处理。 */
 	write: (id: string, data: string) =>
 		client.post<{ status: string }>(`/terminal/${id}/write`, { data }, undefined, {
+			silent: true,
+		}),
+
+	/** Ctrl+C：中断当前前台命令，同时保留 shell 会话（POSIX）。 */
+	interrupt: (id: string) =>
+		client.post<{ status: string }>(`/terminal/${id}/interrupt`, undefined, undefined, {
 			silent: true,
 		}),
 

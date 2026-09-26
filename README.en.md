@@ -23,7 +23,6 @@ A self-hosting-friendly coding agent. The frontend adopts an [agentscope](https:
 - **Human-in-the-loop (HITL)**: 5 permission modes + ask-confirmation cards + an allowlist ("always allow" persists in one click)
 - **Lifecycle hooks**: four hook points — `UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Stop` — driven by arbitrary commands for decisions and context injection
 - **Rollback-able**: a checkpoint is created automatically before every write/execution round; one-click rollback via CLI `/restore` or the desktop "Checkpoints" panel
-- **Debuggable**: every run leaves a replayable timeline (requests / tool calls / permission decisions / context compaction) — CLI `/trace`, desktop "Run History" panel
 - **Two editions**:
   - **CLI** — terminal REPL with ANSI streaming output and interactive permission confirmations
   - **Electron desktop** — agentscope-style web UI, local server + Electron shell
@@ -122,7 +121,6 @@ REPL commands:
 | `/commands` | List available custom slash commands |
 | `/index [keyword]` | Rebuild the symbol/semantic index; with a keyword, search directly (word-based, Chinese supported) |
 | `/lsp` | Detect local language servers, inspect `lspServers` config |
-| `/trace [id]` | List run records / print the full timeline of a run |
 | `/hooks` | List active hooks (including whether project hooks are trusted) |
 | `/new` `/sessions` `/load <id>` | Session management |
 | `/model <name>` `/compact` `/stats` | Model & context |
@@ -147,10 +145,10 @@ The Electron main process will:
 - **Left navbar**: expanded by default (with text labels), `collapsible="none"` — never collapses
 - **Settings window**: click "Settings" at the bottom of the sidebar to open; configure backend URL and username, test the connection, clear data
 - **Permission confirmation card**: floats above the input box when a tool needs authorization; `↑↓` to choose, `Enter` to confirm; choosing "always allow" writes the rule into the allowlist
-- **Right panel** (enable via the top-bar panel menu): Plan / Skills / **Change preview** (uncommitted `git diff`, per-line coloring + add/remove stats) / **Checkpoints** (snapshot before each round's changes, in-place second confirmation before rollback) / **Run History** (timeline per run + active hooks, including an "untrusted project hooks" notice)
+- **Right panel** (enable via the top-bar panel menu): Plan / Skills / **Change preview** (uncommitted `git diff`, per-line coloring + add/remove stats) / **Checkpoints** (snapshot before each round's changes, in-place second confirmation before rollback) / **Hooks** (active hooks and workspace trust controls)
 - **`/` menu**: top half lists custom slash commands (selecting one pastes the template body into the input for you to edit), bottom half lists skills (selecting one attaches it as a chip)
 - **Browser panel** (enable via the top-bar panel menu, or opened automatically by the Agent): address bar + back/forward/reload + the page itself
-- **Settings → General → Advanced**: hook toggles, trace toggle (including "record full request bodies"), change-awareness toggle, language servers (one-click enable/disable; auto-adds `tsserver.path` when detected), code index (rebuild + size), project hook trust (trust/revoke per directory)
+- **Settings → General → Advanced**: hook toggles, change-awareness toggle, language servers (one-click enable/disable; auto-adds `tsserver.path` when detected), code index (rebuild + size), project hook trust (trust/revoke per directory)
 - **No separate "connect to server" onboarding page** — you land straight on the chat page; connection info lives in the settings window
 
 > Frontend customization is concentrated in `frontend/src/components/layout/AppSidebar.tsx`, `frontend/src/components/dialog/SettingsDialog.tsx`, and `frontend/src/App.tsx`; the rest of the upstream code stays untouched.
@@ -168,12 +166,12 @@ node packages/core/src/asapi/server.js 3210
 npm test        # = the two commands below
 
 # Core engine: tools / sandbox / permission decisions / HITL / context / project instructions / ReAct fallback / persistent shell
-#              LSP + semantic index / all four hook points / trace & redaction / change awareness / HTTP
-node packages/core/test/run.js        # 96 cases (real LSP included, auto-skipped if no server installed; Browser uses a fake driver)
+#              LSP + semantic index / all four hook points / change awareness / HTTP
+node packages/core/test/run.js        # Real LSP is auto-skipped if unavailable; Browser uses a fake driver
 
 # ASAPI protocol adapter: agentscope-frontend endpoints + SSE chat stream + permissions/checkpoints/git/commands
-#                         index / hook trust / trace replay / HITL event ordering
-node packages/core/test/asapi.js      # 65 cases
+#                         index / hook trust / HITL event ordering
+node packages/core/test/asapi.js
 ```
 
 Tests redirect the data root to a temp directory (`COCODE_HOME`) and **never touch your real `~/.cocode`**.
@@ -331,14 +329,6 @@ Hooks receive the event JSON on stdin (`hook_event_name` / `tool_name` / `tool_i
 - `exit 2` to block, with stderr as the reason
 
 ⚠️ **Project-level hooks are untrusted by default**: they come from repository content — cloning a repo and executing its commands equals arbitrary code execution. You must explicitly trust the directory in settings (or via `POST /hooks/trust`) before they run; while untrusted, the event stream and UI show "detected but skipped".
-
-### Observability
-
-Every run writes a `~/.cocode/traces/<session>/<run>.jsonl` (`traceEnabled: false` to disable): request structure, responses, per-round usage, every tool call (including permission decisions and whether a hook blocked it), context compaction events. By default **conversation bodies are not recorded** — only structure (counts / char sizes / tool names); with `traceFullBody` enabled, full bodies are recorded and always redacted.
-
-- CLI: `/trace` to list, `/trace <id>` to print the timeline
-- Desktop: the right-side "Run History" panel
-- HTTP: `GET /traces` / `GET /traces/:id` / `GET /traces/:id/markdown` / `GET /traces/:id/events` (replay the event stream) / `DELETE /traces?keep_days=7`
 
 ### Custom tools
 

@@ -136,7 +136,7 @@ svg.lucide {
 
 	--muted: #f5f5f3;
 
-	--muted-foreground: #777772;
+	--muted-foreground: #6b6b66;
 
 	--accent-foreground: #191919;
 
@@ -186,8 +186,8 @@ svg.lucide {
 	--scrim: rgba(24, 30, 37, 0.45);
 
 	--text-secondary: #4f4f4b;
-	--text-tertiary: #898984;
-	--text-data: #94948f;
+	--text-tertiary: #70706b;
+	--text-data: #6b6b66;
 	--surface-muted: #eeeeeb;
 	--row-hover: #f0f0ed;
 	--panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 28px -22px rgba(0, 0, 0, 0.18);
@@ -327,6 +327,36 @@ svg.lucide {
 	--panel-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 40px -30px rgba(0, 0, 0, 0.8);
 	--tab-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
+
+/* 背景统一由 html[data-app-background] 选择，工作区/设置/登录共用。
+   无背景时完全去掉图片；卡片保持实色，叠层只保护背景上的文字对比。 */
+:root {
+	--app-wallpaper-image: url('/images/cocode-soft-backdrop.jpg');
+	--app-wallpaper-scrim: rgba(255, 255, 255, 0.2);
+}
+html[data-app-background='mist'] { --app-wallpaper-image: url('/images/cocode-mist.jpg'); }
+html[data-app-background='stone'] { --app-wallpaper-image: url('/images/cocode-stone.jpg'); }
+html[data-app-background='midnight'] {
+	--app-wallpaper-image: url('/images/cocode-midnight.jpg');
+	--app-wallpaper-scrim: rgba(255, 255, 255, 0.85);
+}
+html[data-app-background='custom'] {
+	--app-wallpaper-image: var(--app-custom-wallpaper, none);
+	--app-wallpaper-scrim: rgba(255, 255, 255, 0.6);
+}
+html.dark { --app-wallpaper-scrim: rgba(25, 25, 26, 0.86); }
+html.dark[data-app-background='midnight'] { --app-wallpaper-scrim: rgba(25, 25, 26, 0.25); }
+html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(25, 25, 26, 0.82); }
+.app-wallpaper {
+	background-color: var(--background);
+	background-image:
+		linear-gradient(var(--app-wallpaper-scrim), var(--app-wallpaper-scrim)),
+		var(--app-wallpaper-image);
+	background-position: center;
+	background-repeat: no-repeat;
+	background-size: cover;
+}
+html[data-app-background='none'] .app-wallpaper { background-image: none; }
 
 @layer base {
 	* {
@@ -695,6 +725,10 @@ body {
 	background: #171717;
 	color: #fff;
 }
+.dark .composer-shell .btn-brand {
+	background: #f5f5f4;
+	color: #171717;
+}
 .composer-shell .btn-brand:disabled {
 	background: #30302e;
 	color: #a6a6a1;
@@ -704,10 +738,7 @@ body {
 }
 
 .canvas-glow {
-	background: var(--background);
-}
-.dark .canvas-glow {
-	background: var(--background);
+	background: transparent;
 }
 
 /* ---- 空状态 hero 光斑 ----
@@ -732,34 +763,31 @@ body {
 	background: linear-gradient(100deg, #f4f4f0, #c9c9c3);
 }
 
-/* ---- 输入框聚焦光晕 ----
-   composer 是整个界面的视觉锚点，聚焦时用「边框染紫 + 3px 外圈 + 底部辉光」
-   三层反馈。颜色取 --primary，明暗主题自动跟随（深色下是提亮紫）。 */
+/* 项目状态条和输入卡片共享一条中轴，卡片轻盖住灰色状态条的下沿。 */
+.composer-context { background: color-mix(in oklab, var(--foreground) 5%, var(--background)); }
+
+/* 新输入卡片用黑白灰边框与轻阴影；聚焦时保持克制，不引入品牌色光晕。 */
 .composer-shell {
 	transition:
 		border-color var(--animate-base) var(--ease-out-quart),
 		box-shadow var(--animate-base) var(--ease-out-quart);
 }
-/* 静默时收起边框线：输入框靠底色与画布的对比已足够辨识，
-   常驻灰线会勾出第二层轮廓加重「框中框」感；
-   hover / 聚焦时边框才浮现（由下方两条规则接管）。
-   同时给一层极淡的着地阴影，让白色输入框轻轻「浮」在光斑画布上。 */
 .composer-shell:not(:hover):not(:focus-within) {
-	border-color: transparent;
-	box-shadow: 0 1px 2px rgba(24, 30, 37, 0.03), 0 10px 30px -18px rgba(24, 30, 37, 0.18);
+	border-color: var(--border);
+	box-shadow: 0 3px 14px rgba(24, 30, 37, 0.035), 0 12px 30px -18px rgba(24, 30, 37, 0.16);
 }
 .dark .composer-shell:not(:hover):not(:focus-within) {
-	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 10px 30px -18px rgba(0, 0, 0, 0.55);
+	box-shadow: 0 3px 14px rgba(0, 0, 0, 0.22), 0 12px 30px -18px rgba(0, 0, 0, 0.42);
 }
 .composer-shell:hover:not(:focus-within) {
-	border-color: color-mix(in oklab, var(--foreground) 14%, var(--border));
+	border-color: color-mix(in oklab, var(--foreground) 18%, var(--border));
 }
 .composer-shell:focus-within {
-	border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+	border-color: color-mix(in oklab, var(--foreground) 24%, var(--border));
 	box-shadow:
 		0 1px 2px rgba(24, 30, 37, 0.04),
-		0 0 0 3px color-mix(in oklab, var(--primary) 12%, transparent),
-		0 12px 32px -16px color-mix(in oklab, var(--primary) 40%, transparent);
+		0 0 0 3px color-mix(in oklab, var(--foreground) 5%, transparent),
+		0 12px 32px -16px rgba(24, 30, 37, 0.2);
 }
 .voice-waveform {
 	/* 无边框的单色声场：主波、余波与中心呼吸光晕共同反映音量。 */
@@ -823,8 +851,8 @@ body {
 .dark .composer-shell:focus-within {
 	box-shadow:
 		0 1px 2px rgba(0, 0, 0, 0.4),
-		0 0 0 3px color-mix(in oklab, var(--primary) 16%, transparent),
-		0 12px 32px -16px color-mix(in oklab, var(--primary) 50%, transparent);
+		0 0 0 3px color-mix(in oklab, var(--foreground) 9%, transparent),
+		0 12px 32px -16px rgba(0, 0, 0, 0.5);
 }
 
 /* 历史界面中保留的超大圆角工具类也统一收敛为圆边矩形。保持在样式表末尾，
@@ -839,4 +867,168 @@ body {
 	[class~='rounded-[1rem]']
 ) {
 	border-radius: var(--radius-rect) !important;
+}
+
+/* 首次启动：只使用 CSS 和品牌图形，不下载动画素材或占用持续运行的 Canvas。 */
+.first-launch-root {
+	position: fixed;
+	inset: 0;
+	z-index: 290;
+	display: grid;
+	place-items: center;
+	overflow: hidden;
+	background: var(--background);
+	color: var(--foreground);
+}
+.first-launch-grid {
+	position: absolute;
+	inset: -45%;
+	background-image:
+		linear-gradient(color-mix(in oklab, var(--foreground) 7%, transparent) 1px, transparent 1px),
+		linear-gradient(90deg, color-mix(in oklab, var(--foreground) 7%, transparent) 1px, transparent 1px);
+	background-size: 38px 38px;
+	transform: perspective(650px) rotateX(65deg) translateY(30%);
+	mask-image: radial-gradient(ellipse, black 5%, transparent 58%);
+	animation: first-launch-grid-enter 3.5s ease-out both;
+}
+.first-launch-orbit {
+	position: absolute;
+	width: var(--orbit-size);
+	aspect-ratio: 1;
+	border: 1px solid color-mix(in oklab, var(--foreground) 18%, transparent);
+	border-radius: 50%;
+	box-shadow: inset 0 0 36px color-mix(in oklab, var(--foreground) 4%, transparent);
+	animation: first-launch-orbit-spin var(--orbit-duration) linear infinite;
+}
+.first-launch-orbit::after {
+	position: absolute;
+	top: 5%;
+	left: 49%;
+	width: 5px;
+	height: 5px;
+	border-radius: 50%;
+	background: var(--foreground);
+	box-shadow: 0 0 16px var(--foreground);
+	content: '';
+}
+.first-launch-orbit-a { --orbit-size: 260px; --orbit-duration: 8s; }
+.first-launch-orbit-b { --orbit-size: 370px; --orbit-duration: 13s; opacity: .7; animation-direction: reverse; }
+.first-launch-orbit-c { --orbit-size: 485px; --orbit-duration: 18s; opacity: .45; }
+.first-launch-ready .first-launch-orbit { animation-play-state: paused; }
+.first-launch-beam {
+	position: absolute;
+	width: 1px;
+	height: 190%;
+	background: linear-gradient(transparent, color-mix(in oklab, var(--foreground) 20%, transparent), transparent);
+	transform: rotate(27deg);
+	opacity: .4;
+}
+.first-launch-beam-b { transform: rotate(-27deg); opacity: .2; }
+.first-launch-center { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.first-launch-mark {
+	display: grid;
+	place-items: center;
+	width: 84px;
+	height: 84px;
+	border-radius: 22px;
+	background: var(--foreground);
+	color: var(--background);
+	font: 500 38px ui-monospace, monospace;
+	box-shadow: 0 0 80px color-mix(in oklab, var(--foreground) 22%, transparent);
+	animation: first-launch-mark-enter 1.2s cubic-bezier(.17,.8,.2,1) both;
+}
+.first-launch-center h1 { margin: 24px 0 0; font-size: 32px; font-weight: 500; letter-spacing: -.04em; animation: first-launch-text-enter .9s .5s both; }
+.first-launch-center p { margin: 5px 0 0; color: var(--muted-foreground); font-size: 13px; letter-spacing: .08em; animation: first-launch-text-enter .9s .7s both; }
+.first-launch-progress { width: 185px; height: 2px; margin-top: 30px; overflow: hidden; background: var(--border); }
+.first-launch-progress span { display: block; width: 100%; height: 100%; background: var(--foreground); animation: first-launch-load 3s cubic-bezier(.2,.6,.1,1) both; }
+.first-launch-status { margin-top: 9px; color: var(--muted-foreground); font: 400 10px ui-monospace, monospace; letter-spacing: .12em; }
+.first-launch-enter { margin-top: 24px; padding: 10px 18px; border: 1px solid var(--foreground); border-radius: 10px; background: var(--foreground); color: var(--background); font-size: 12px; animation: first-launch-text-enter .9s 1.15s both; }
+.first-launch-enter span { margin-left: 10px; }
+.first-launch-enter:hover { opacity: .82; }
+.first-launch-skip { position: absolute; z-index: 2; top: 22px; right: 24px; border: 0; background: transparent; color: var(--muted-foreground); font-size: 12px; }
+.first-launch-corner { position: absolute; bottom: 20px; left: 24px; color: var(--muted-foreground); font: 400 10px ui-monospace, monospace; letter-spacing: .08em; }
+@keyframes first-launch-orbit-spin { to { transform: rotate(360deg); } }
+@keyframes first-launch-grid-enter { from { opacity: 0; transform: perspective(650px) rotateX(65deg) translateY(54%); } to { opacity: 1; transform: perspective(650px) rotateX(65deg) translateY(30%); } }
+@keyframes first-launch-mark-enter { from { opacity: 0; filter: blur(12px); transform: scale(.48) rotate(-18deg); } to { opacity: 1; filter: blur(0); transform: scale(1); } }
+@keyframes first-launch-text-enter { from { opacity: 0; transform: translateY(16px); letter-spacing: .18em; } to { opacity: 1; transform: translateY(0); } }
+@keyframes first-launch-load { from { width: 0; } to { width: 100%; } }
+@media (max-width: 520px) { .first-launch-orbit-c { --orbit-size: 340px; } }
+@media (prefers-reduced-motion: reduce) {
+	.first-launch-grid, .first-launch-orbit, .first-launch-mark, .first-launch-center h1,
+	.first-launch-center p, .first-launch-progress span, .first-launch-enter { animation: none !important; }
+}
+
+/* 空会话标题逐字显现，不通过计时器反复触发 React 重渲染。 */
+.chat-greeting-character { white-space: pre; animation: chat-greeting-character-in .08s ease-out both; }
+@keyframes chat-greeting-character-in { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .chat-greeting-character { animation: none !important; opacity: 1; } }
+
+/* xterm 默认把滚动视口涂黑；跟随应用主题，防止浅色主题出现黑底深字。 */
+.cocode-terminal .xterm-viewport { background-color: var(--background) !important; }
+
+/* 首次使用引导：1px 的实色遮罩由合成层缩放，避免巨大阴影反复绘制整屏。 */
+.first-run-mask-layer { position: fixed; z-index: 220; inset: 0; pointer-events: none; opacity: .68; }
+.first-run-shade { position: absolute; top: 0; left: 0; width: 1px; height: 1px; transform-origin: top left; pointer-events: none; will-change: transform; background: #000; }
+.first-run-corner { position: absolute; top: 0; left: 0; pointer-events: none; will-change: transform; }
+.first-run-blocker { position: fixed; z-index: 222; background: transparent; }
+.first-run-focus {
+	position: fixed;
+	z-index: 221;
+	pointer-events: none;
+	will-change: transform;
+	border: 2px solid var(--foreground);
+	border-radius: 12px;
+	box-shadow: 0 0 0 5px color-mix(in oklab, var(--foreground) 15%, transparent), 0 0 24px color-mix(in oklab, var(--foreground) 28%, transparent);
+}
+.first-run-coach {
+	position: fixed;
+	z-index: 240;
+	width: min(320px, calc(100vw - 24px));
+	padding: 18px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-rect);
+	background: var(--card);
+	color: var(--card-foreground);
+	box-shadow: 0 22px 60px rgba(0, 0, 0, .24);
+}
+.first-run-coach button { border: 0; background: transparent; color: var(--muted-foreground); }
+.first-run-coach button:hover { color: var(--foreground); }
+.first-run-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 9px 13px;
+	border: 1px solid var(--foreground) !important;
+	border-radius: 10px;
+	background: var(--foreground) !important;
+	color: var(--background) !important;
+	font-size: 12px;
+}
+.first-run-coach .first-run-primary { margin-top: 14px; }
+.first-run-secondary { display: inline-flex; align-items: center; gap: 6px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: transparent; color: var(--foreground); font-size: 12px; }
+.first-run-demo {
+	position: fixed;
+	z-index: 225;
+	top: 47%;
+	left: 54%;
+	width: min(480px, calc(100vw - 32px));
+	transform: translate(-50%, -50%);
+	padding: 20px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-rect);
+	background: var(--card);
+	color: var(--card-foreground);
+	box-shadow: 0 18px 50px rgba(0, 0, 0, .22);
+}
+.first-run-demo button { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 16px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--muted); color: var(--foreground); text-align: left; font-size: 12px; }
+.first-run-demo button:hover { background: var(--accent); }
+.first-run-paused { position: fixed; z-index: 250; bottom: 17px; left: 50%; display: flex; align-items: center; gap: 16px; max-width: calc(100vw - 24px); padding: 10px 12px; transform: translateX(-50%); border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--card-foreground); box-shadow: 0 10px 32px rgba(0, 0, 0, .18); font-size: 12px; }
+.first-run-paused button { flex: none; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; color: var(--foreground); }
+.first-run-finish-backdrop { position: fixed; z-index: 250; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .68); }
+.first-run-finish { width: min(390px, 100%); padding: 28px; border: 1px solid var(--border); border-radius: var(--radius-rect); background: var(--card); color: var(--card-foreground); text-align: center; box-shadow: 0 26px 70px rgba(0, 0, 0, .28); }
+.first-run-finish-mark { display: grid; place-items: center; width: 45px; height: 45px; margin: 0 auto; border-radius: 11px; background: var(--foreground); color: var(--background); font-size: 22px; }
+@media (max-width: 600px) {
+	.first-run-demo { top: 47%; left: 50%; }
+	.first-run-paused { width: calc(100vw - 24px); }
 }

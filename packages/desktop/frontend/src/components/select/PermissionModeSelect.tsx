@@ -4,12 +4,14 @@ import {
 	Compass,
 	Hand,
 	ShieldCheck,
+	ShieldAlert,
 	TriangleAlert,
 	UserRoundKey,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { PermissionMode } from '@/api/types';
+import { FIRST_RUN_CLOSE_PERMISSION_EVENT, FIRST_RUN_PERMISSION_CLOSED_EVENT, FIRST_RUN_PERMISSION_OPENED_EVENT } from '@/components/onboarding/constants';
 import { Button } from '@/components/ui/button';
 import {
 	DropdownMenu,
@@ -62,6 +64,7 @@ const PERMISSION_MODES: {
 
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onChange' | 'value'> {
 	className?: string;
+	composer?: boolean;
 	value?: PermissionMode;
 	disabled?: boolean;
 	/** 菜单头部显示「了解更多」，点击打开权限规则面板（聊天页用；表单里不传） */
@@ -71,6 +74,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onC
 
 export function PermissionModeSelect({
 	className,
+	composer = false,
 	value,
 	disabled,
 	learnMore,
@@ -79,27 +83,43 @@ export function PermissionModeSelect({
 }: Props) {
 	const { t } = useTranslation();
 	const [open, setOpen] = useState(false);
+	useEffect(() => {
+		const close = () => setOpen(false);
+		window.addEventListener(FIRST_RUN_CLOSE_PERMISSION_EVENT, close);
+		return () => window.removeEventListener(FIRST_RUN_CLOSE_PERMISSION_EVENT, close);
+	}, []);
 
 	const displayLabel = value
 		? t(PERMISSION_MODES.find((m) => m.value === value)?.labelKey ?? value)
 		: t('permission-mode.placeholder');
+	const ModeIcon = composer
+		? value === 'bypass' ? ShieldAlert : (PERMISSION_MODES.find((mode) => mode.value === value)?.icon ?? UserRoundKey)
+		: UserRoundKey;
 
 	return (
-		<DropdownMenu open={open} onOpenChange={setOpen}>
+		<DropdownMenu modal={false} open={open} onOpenChange={(next) => {
+			setOpen(next);
+			window.dispatchEvent(new Event(next ? FIRST_RUN_PERMISSION_OPENED_EVENT : FIRST_RUN_PERMISSION_CLOSED_EVENT));
+		}}>
 			<DropdownMenuTrigger asChild>
 				<Button
-					variant="outline"
+					variant={composer ? 'ghost' : 'outline'}
 					size="sm"
-					className={cn('justify-between gap-1 font-normal', className)}
+					className={cn(
+						'justify-between gap-1 font-normal',
+						composer && 'h-9 border-0 bg-transparent px-2 text-sm hover:bg-muted/60',
+						composer && value === 'bypass' && 'text-orange-600 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-400',
+						className,
+					)}
 					disabled={disabled}
 					tooltip={t('permission-mode.trigger-tooltip')}
 					{...props}
 				>
 					<div className="flex flex-row items-center gap-x-2">
-						<UserRoundKey />
+						<ModeIcon className="size-4" />
 						<span className="truncate">{displayLabel}</span>
 					</div>
-					<ChevronDown className="size-3.5 text-muted-foreground" />
+					{!composer && <ChevronDown className="size-3.5 text-muted-foreground" />}
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-84! p-1.5">

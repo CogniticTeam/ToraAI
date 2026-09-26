@@ -16,6 +16,36 @@
     "downloading": "Downloading update… {{percent}}%", "install": "Restart and install", "retry": "Retry download",
     "error": "Automatic update failed. Retry or download from the official website.", "quit": "Quit CoCode"
   },
+  "firstRun": {
+    "intro": {
+      "aria": "CoCode first-launch welcome animation", "tagline": "Turn ideas into action.",
+      "initializing": "Preparing your workspace", "ready": "Ready when you are",
+      "enter": "Get started", "skip": "Skip animation"
+    },
+    "tour": {
+      "replay": "Replay the getting-started guide", "skip": "Skip guide", "later": "Set up later", "next": "Next",
+      "pauseSettings": "Model management is open. Close Settings when you're done and the guide will continue.", "pauseFolder": "Choose a project folder, or close the menu to continue.", "pausePermission": "Review or select an approval mode, then close the menu to continue.",
+      "demoSend": "Simulate sending; nothing will be submitted", "clickHint": "Click the highlighted control to continue", "loading": "Finding the control…",
+      "demoTag": "Guided demo · no real command will run", "demoMessage": "Check this project's build scripts and give me a plan first.",
+      "demoResponse": "CoCode first understands the task, then asks for any tool permissions it needs. You can review each step and decide whether to continue.",
+      "demoApprove": "Allow this time (demo)", "demoCheckpoint": "View checkpoint (demo)",
+      "completeTitle": "You're ready to create.", "completeBody": "You can change your model, folder, and permissions at any time. Review uncertain actions before proceeding.",
+      "startWorking": "Enter CoCode", "startAgain": "Watch the guide again",
+      "steps": [
+        { "chapter": "Get ready", "title": "Choose your own model", "body": "CoCode uses models you add. Click the model picker to see where you connect your provider." },
+        { "chapter": "Get ready", "title": "Add a model provider", "body": "Click Add model to open model management. Choose a provider and enter your model details. The guide resumes when you finish or skip setup." },
+        { "chapter": "Get ready", "title": "Set your project scope", "body": "Click the folder control to choose a project. The Agent reads, edits, and runs tools within the workspace you authorize. You can do this later." },
+        { "chapter": "Get ready", "title": "Stay in control", "body": "Click the permission mode to see your options. Manual approval is a good starting point; higher-risk actions wait for your decision." },
+        { "chapter": "Start a task", "title": "Describe a clear goal", "body": "Click the message box. State what to achieve, what not to touch, and how you'll know it's done." },
+        { "chapter": "Start a task", "title": "Start your first task", "body": "This is the send button. The next steps only simulate execution: no model credits are used and no real message is sent." },
+        { "chapter": "Review and recover", "title": "You approve each important step", "body": "This is a permission-request demo. Read what a tool intends to do before allowing or denying it." },
+        { "chapter": "Review and recover", "title": "Recover from a wrong turn", "body": "Checkpoints record the state before changes. Review which files would be affected before a real restore." },
+        { "chapter": "Extend CoCode", "title": "Reuse workflows with skills", "body": "Click Skills. Import or install trusted skills to make useful workflows repeatable." },
+        { "chapter": "Extend CoCode", "title": "Verify results in the browser", "body": "Click the built-in browser. You and the Agent can inspect, debug, and verify a web app on the same page." },
+        { "chapter": "Extend CoCode", "title": "Schedule repetitive work", "body": "Click Automations to schedule recurring checks or organization tasks and review each run." }
+      ]
+    }
+  },
   "polls": {
     "title": "Polls", "subtitle": "Vote and follow the results", "all": "All polls", "history": "My voting history",
     "search": "Search", "loadMore": "Load more", "from": "From", "to": "To",
@@ -252,7 +282,7 @@
 		"otherPlaceholder": "Type here"
 	},
 	"chat": {
-		"inputPlaceholder": "Type a message...",
+		"inputPlaceholder": "Ask anything",
 		"confirmToolCall": "Allow this action?",
 		"subagentConfirmTitle": "{{name}} requests confirmation",
 		"newSession": "New Session",
@@ -782,9 +812,7 @@
 			"diff": "Changes",
 			"browser": "Browser",
 			"terminal": "Terminal",
-			"trace": "Run history",
-			"delivery": "Verifiable delivery",
-			"impact": "Project impact radar"
+			"hooks": "Hooks"
 		},
 		"knowledge": {
 			"title": "Knowledge Bases",
@@ -1066,6 +1094,7 @@
 		"loadingRuntime": "Loading runtime config…",
 		"sections": {
 			"general": "General",
+			"theme": "Theme",
 			"agent": "Agent",
 			"model": "Models",
 			"memory": "Memory",
@@ -1112,16 +1141,34 @@
 				"distill": "Distilled"
 			}
 		},
+		"theme": {
+			"title": "Theme",
+			"subtitle": "Choose the appearance and workspace background",
+			"modeTitle": "Appearance",
+			"modeDesc": "Light, dark, or follow the system",
+			"light": "Light",
+			"dark": "Dark",
+			"system": "System",
+			"backgroundTitle": "Background",
+			"backgroundDesc": "Shared by the workspace, settings, and sign-in screens",
+			"lavender": "Soft lavender",
+			"mist": "Blue mist",
+			"stone": "Warm stone",
+			"midnight": "Midnight",
+			"none": "None",
+			"custom": "Custom",
+			"import": "Import image",
+			"replace": "Replace image",
+			"remove": "Remove custom background",
+			"localOnly": "Custom backgrounds stay on this device and are never uploaded. PNG, JPEG, and WebP up to 16 MB.",
+			"invalidType": "Choose a PNG, JPEG, or WebP image",
+			"tooLarge": "Images must be under 16 MB",
+			"processFailed": "Could not read this image. Try another file.",
+			"storageFailed": "Could not save the background. Local storage may be full."
+		},
 		"general": {
 			"title": "General",
 			"common": "Common",
-			"theme": {
-				"title": "Appearance",
-				"desc": "Light / Dark / System",
-				"light": "Light",
-				"dark": "Dark",
-				"system": "System"
-			},
 			"language": {
 				"title": "Language",
 				"desc": "Interface language",
@@ -1169,7 +1216,7 @@
 		},
 		"developer": {
 			"title": "Developer & Debug",
-			"desc": "Agent runtime behavior, hooks, run traces, code index and language servers. Changes apply to the next run.",
+			"desc": "Agent runtime behavior, hooks, code index and language servers. Changes apply to the next run.",
 			"behavior": "Behavior"
 		},
 		"behavior": {
@@ -1246,18 +1293,10 @@
 		},
 		"advanced": {
 			"title": "Advanced",
-			"subtitle": "Hooks, run traces, code index and language servers. Changes apply to the next run.",
+			"subtitle": "Hooks, code index and language servers. Changes apply to the next run.",
 			"hooks": {
 				"title": "Lifecycle hooks",
 				"desc": "Run your own commands at UserPromptSubmit / PreToolUse / PostToolUse / Stop. Off means no hook runs at all."
-			},
-			"trace": {
-				"title": "Record run traces",
-				"desc": "Write a replayable timeline per run (request shape, tool calls, permission decisions, context compaction)."
-			},
-			"traceFull": {
-				"title": "Include full request bodies in traces",
-				"desc": "Also record the conversation text (still redacted). Better for debugging, but larger files and the text lands on disk."
 			},
 			"changes": {
 				"title": "Change-aware context",

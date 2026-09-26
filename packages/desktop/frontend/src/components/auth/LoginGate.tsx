@@ -104,7 +104,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
   if (phase === 'ok') return <>{children}</>;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background">
+    <div className="app-wallpaper fixed inset-0 z-[100]">
       {netError && phase === 'login' && (
         <div className="absolute left-1/2 top-5 z-20 -translate-x-1/2 rounded-rect bg-destructive-soft px-4 py-1.5 text-xs text-destructive">
           {t('settings.account.networkWarning')}

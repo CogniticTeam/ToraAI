@@ -23,7 +23,6 @@
 - **人类在环（HITL）**：5 档权限模式 + 询问确认卡 + 允许清单（"以后都这样"一键固化）
 - **生命周期钩子**：`UserPromptSubmit` / `PreToolUse` / `PostToolUse` / `Stop` 四个挂点，可用任意命令做决策与注入
 - **可回滚**：每轮写入/执行前自动建检查点，CLI `/restore`、桌面端「检查点」面板一键回滚
-- **可排障**：每次运行留一份可回放的时间线（请求 / 工具调用 / 权限决策 / 上下文压缩），CLI `/trace`、桌面端「运行记录」面板
 - **双版本**：
   - **CLI** — 终端 REPL，ANSI 流式输出，交互式权限确认
   - **Electron 桌面端** — agentscope 风格 Web UI，本地服务 + Electron 壳
@@ -121,7 +120,6 @@ REPL 内命令：
 | `/commands` | 列出可用的自定义斜杠命令 |
 | `/index [关键词]` | 重建符号/语义索引；带关键词直接检索（按词匹配，支持中文） |
 | `/lsp` | 检测本机 language server，查看 `lspServers` 配置 |
-| `/trace [id]` | 列出运行记录 / 打印某次运行的完整时间线 |
 | `/hooks` | 列出当前生效的钩子（含项目钩子是否被信任） |
 | `/new` `/sessions` `/load <id>` | 会话管理 |
 | `/model <name>` `/compact` `/stats` | 模型与上下文 |
@@ -146,10 +144,10 @@ Electron 主进程会：
 - **左侧导航栏**：默认展开（带文字标签），`collapsible="none"` 永不折叠
 - **设置窗口**：点侧栏底部「设置」打开，可配置后端地址、用户名，测试连接，清空数据
 - **权限确认卡**：工具需要授权时浮在输入框上方，`↑↓` 选择、`Enter` 确认；选「以后都允许」会把规则写进允许清单
-- **右侧面板**（顶栏面板菜单开启）：计划 / 技能 / **变更预览**（未提交的 `git diff`，逐行着色 + 增删行统计）/ **检查点**（每轮改动前快照，就地二次确认后回滚）/ **运行记录**（每次运行的时间线 + 当前生效的钩子，含"项目钩子未信任"提示）
+- **右侧面板**（顶栏面板菜单开启）：计划 / 技能 / **变更预览**（未提交的 `git diff`，逐行着色 + 增删行统计）/ **检查点**（每轮改动前快照，就地二次确认后回滚）/ **钩子**（当前生效的钩子与项目级信任控制）
 - **`/` 菜单**：上半是自定义斜杠命令（选中即把模板正文铺进输入框供你改），下半是技能（选中挂成 chip）
 - **浏览器面板**（顶栏面板菜单开启，或由 Agent 自动打开）：地址栏 + 后退/前进/刷新 + 页面本体
-- **设置 → 通用 → 高级**：钩子开关、轨迹开关（含"记录完整请求体"）、变更感知开关、语言服务（一键启用/停用，探测到就自动带上 `tsserver.path`）、代码索引（重建 + 规模）、项目钩子信任（按目录信任/撤销）
+- **设置 → 通用 → 高级**：钩子开关、变更感知开关、语言服务（一键启用/停用，探测到就自动带上 `tsserver.path`）、代码索引（重建 + 规模）、项目钩子信任（按目录信任/撤销）
 - **没有独立的"连接服务器"引导页**——首次进入直接到达聊天页，连接信息在设置窗口里改
 
 > 前端定制集中在 `frontend/src/components/layout/AppSidebar.tsx`、`frontend/src/components/dialog/SettingsDialog.tsx`、`frontend/src/App.tsx` 三处，其余上游代码保持原样。
@@ -167,12 +165,12 @@ node packages/core/src/asapi/server.js 3210
 npm test        # = 下面两条
 
 # 核心引擎：工具 / 沙箱 / 权限决策 / HITL / 上下文 / 项目指令 / ReAct 降级 / 持久 shell
-#           LSP+语义索引 / 钩子四个挂点 / trace 与脱敏 / 变更感知 / HTTP
-node packages/core/test/run.js        # 96 用例（含真 LSP，未装 server 时自动跳过；Browser 用假驱动）
+#           LSP+语义索引 / 钩子四个挂点 / 变更感知 / HTTP
+node packages/core/test/run.js        # 含真 LSP（未装 server 时自动跳过）；Browser 用假驱动
 
 # ASAPI 协议适配：agentscope 前端所需端点 + SSE 聊天流 + 权限/检查点/git/命令
-#                      索引 / 钩子信任 / trace 回放 / HITL 事件顺序
-node packages/core/test/asapi.js      # 65 用例
+#                      索引 / 钩子信任 / HITL 事件顺序
+node packages/core/test/asapi.js
 ```
 
 测试会把数据根重定向到临时目录（`COCODE_HOME`），**不会碰你真实的 `~/.cocode`**。
@@ -330,14 +328,6 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 - `exit 2` 阻断，stderr 作为原因
 
 ⚠️ **项目级钩子默认不信任**：它来自仓库内容，clone 一个仓库就执行其中的命令等于任意代码执行。需要在设置里（或 `POST /hooks/trust`）显式信任该目录后才会执行；未信任时会在事件流与 UI 里提示"检测到但已跳过"。
-
-### 可观测性
-
-每次运行写一份 `~/.cocode/traces/<会话>/<运行>.jsonl`（`traceEnabled: false` 可关）：请求结构、响应、每轮 usage、每次工具调用（含权限决策与是否被钩子拦下）、上下文压缩事件。默认**不记对话正文**，只记结构（条数 / 字符数 / 工具名），开了 `traceFullBody` 才记全文且一律过脱敏。
-
-- CLI：`/trace` 列出、`/trace <id>` 打印时间线
-- 桌面端：右侧「运行记录」面板
-- HTTP：`GET /traces` / `GET /traces/:id` / `GET /traces/:id/markdown` / `GET /traces/:id/events`（回放事件流）/ `DELETE /traces?keep_days=7`
 
 ### 自定义工具
 

@@ -57,6 +57,36 @@ function isBlockedAddress(address) {
   return family === 4 ? isBlockedIpv4(address) : family === 6 ? isBlockedIpv6(address) : true;
 }
 
+// 部分系统代理会把所有公网域名解析为 198.18.0.0/15（Fake-IP）。这仍是
+// 保留地址，不能直接放行；仅当本机 DNS 的全部结果均落在该段时，才用独立的
+// HTTPS DNS 查询核验真实 A/AAAA 记录。校验失败一律拒绝，不把 Fake-IP 当公网。
+function isProxyFakeIp(address) {
+  if (isIP(address) !== 4) return false;
+  const [a, b] = address.split('.').map(Number);
+  return a === 198 && (b === 18 || b === 19);
+}
+
+async function lookupRealAddresses(host) {
+  try {
+    const answers = await Promise.all(['A', 'AAAA'].map(async (type) => {
+      const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(host)}&type=${type}`;
+      const res = await doFetch(url, {
+        headers: { accept: 'application/dns-json' },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(6000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json();
+      if (body?.Status !== 0) throw new Error(`DNS status ${body?.Status}`);
+      const recordType = type === 'A' ? 1 : 28;
+      return (body.Answer || []).filter((entry) => entry.type === recordType).map((entry) => entry.data);
+    }));
+    return answers.flat();
+  } catch {
+    throw new Error('当前网络返回代理虚拟 IP，但无法独立核验目标域名的公网地址；已安全中止抓取。');
+  }
+}
+
 async function assertPublicHost(hostname) {
   const host = hostname.toLowerCase().replace(/^\[|\]$/g, '');
   if (!host || host === 'localhost' || host.endsWith('.localhost') || host.endsWith('.local') ||
@@ -76,7 +106,10 @@ async function assertPublicHost(hostname) {
   } catch {
     throw new Error(`域名无法解析：${host}`);
   }
-  const addresses = Array.isArray(records) ? records.map((r) => typeof r === 'string' ? r : r?.address) : [];
+  let addresses = Array.isArray(records) ? records.map((r) => typeof r === 'string' ? r : r?.address) : [];
+  if (addresses.length && addresses.every(isProxyFakeIp)) {
+    addresses = await lookupRealAddresses(host);
+  }
   if (!addresses.length || addresses.some((address) => isBlockedAddress(address || ''))) {
     throw new Error('已拒绝解析到本机、私网或保留 IP 的地址。WebFetch 只能访问公开互联网地址。');
   }
@@ -88,6 +121,9 @@ async function assertPublicHost(hostname) {
  * connect → getaddrinfo ENOTFOUND），沿链找第一个带 code 的错误定类。
  */
 export function describeFetchError(e, timeout) {
+  if (/^(已拒绝|域名无法解析|无法解析 URL|只允许 http\/https|重定向次数|当前网络返回代理虚拟 IP)/.test(e?.message || '')) {
+    return e.message;
+  }
   if (e?.name === 'TimeoutError' || e?.name === 'AbortError') {
     return `请求超过 ${timeout}ms 未响应（站点太慢或网络不通，可稍后重试）`;
   }
@@ -113,7 +149,7 @@ export function describeFetchError(e, timeout) {
   const reason = HINTS[code] || detail || '未知网络错误';
   const proxyHint = injectedFetcher
     ? ''
-    : '若你的网络需要代理才能上网：Node 直连不走系统代理，可设置 HTTPS_PROXY/HTTP_PROXY 环境变量后重启，或改用桌面端（已走系统代理）。';
+    : '当前 CLI 的 Node fetch 未接入系统代理；仅设置 HTTPS_PROXY/HTTP_PROXY 未必生效。可改用桌面端的系统代理通道。';
   return `${reason}${code ? ` [${code}]` : ''}。${proxyHint}`;
 }
 

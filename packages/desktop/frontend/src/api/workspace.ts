@@ -33,52 +33,6 @@ export interface CheckpointView {
 	current?: boolean;
 }
 
-/** One recorded agent run. */
-export interface TraceView {
-	id: string;
-	sessionId: string;
-	runId: string;
-	startedAt: number;
-	durationMs: number | null;
-	turns: number;
-	tools: number;
-	reason: string;
-	model?: string | null;
-}
-
-export interface DeliveryReport {
-	id: string;
-	sessionId: string;
-	traceId: string | null;
-	cwd: string | null;
-	startedAt: number;
-	finishedAt: number;
-	outcome: string;
-	modeEnabled?: boolean;
-	criteria?: string[];
-	changedFiles: { path: string; change: 'added' | 'modified' | 'deleted' }[];
-	changedFileCount: number;
-	checks: { command: string; status: 'passed' | 'failed' | 'blocked' | 'unknown'; traceToolId: string | null }[];
-	modelReview: { status: 'passed' | 'failed' | 'skipped' | 'unknown'; round: number; issues: string[]; reason: string } | null;
-	warnings: string[];
-	warningsEn?: string[];
-}
-
-export interface ImpactReport {
-	cwd: string;
-	source: 'git' | 'manual';
-	targets: string[];
-	affected: { path: string; via: string; depth: number }[];
-	suggestedTests: string[];
-	risk: 'low' | 'medium' | 'high' | 'unknown';
-	reasons: string[];
-	reasonsEn?: string[];
-	warnings: string[];
-	warningsEn?: string[];
-	scannedFiles: number;
-	analyzedAt: number;
-}
-
 /** One user-authored slash command (`~/.cocode/commands/*.md`). */
 export interface UserCommand {
 	name: string;
@@ -213,10 +167,10 @@ export const workspaceApi = {
 	 * being unavailable is an ordinary answer, not something to raise a
 	 * toast over.
 	 */
-	status: (agentId: string, sessionId: string) =>
+	status: (agentId: string, sessionId: string | null, cwd: string | null = null) =>
 		client.get<WorkspaceStatus>(
 			'/workspace/status',
-			{ agent_id: agentId, session_id: sessionId },
+			{ agent_id: agentId, ...(sessionId ? { session_id: sessionId } : cwd ? { cwd } : {}) },
 			{ silent: true },
 		),
 
@@ -284,22 +238,13 @@ export const workspaceApi = {
 
 	/**
 	 * CoCode extensions that the agent's own runtime backs: checkpoints,
-	 * change preview, run traces, hooks and slash commands.
+	 * change preview, hooks and slash commands.
 	 *
 	 * Everything here is `silent` — these are panels and menus, and a
 	 * backend that predates them (or a session with no workspace yet)
 	 * answering 4xx is an ordinary state, not a toast.
 	 */
 	cocode: {
-		deliveries: (sessionId: string) =>
-			client.get<{ reports: DeliveryReport[] }>(`/sessions/${encodeURIComponent(sessionId)}/deliveries`, {}, { silent: true }),
-
-		impact: (sessionId: string, paths: string[] = []) =>
-			client.get<ImpactReport>('/workspace/impact', {
-				session_id: sessionId,
-				...(paths.length ? { paths: paths.join('\n') } : {}),
-			}, { silent: true }),
-
 		checkpoints: (sessionId: string) =>
 			client.get<{ checkpoints: CheckpointView[] }>(
 				`/sessions/${sessionId}/checkpoints`,
@@ -315,7 +260,7 @@ export const workspaceApi = {
 			),
 
 		diff: (agentId: string, sessionId: string, opts: { staged?: boolean; path?: string } = {}) =>
-			client.get<{ diff: string; root?: string; error?: string }>(
+			client.get<{ diff: string; root?: string; error?: string; error_code?: 'not_git_repository' | 'git_unavailable' | 'git_diff_failed' }>(
 				'/workspace/diff',
 				{
 					agent_id: agentId,
@@ -323,20 +268,6 @@ export const workspaceApi = {
 					...(opts.staged ? { staged: '1' } : {}),
 					...(opts.path ? { path: opts.path } : {}),
 				},
-				{ silent: true },
-			),
-
-		traces: (sessionId: string, limit = 50) =>
-			client.get<{ traces: TraceView[] }>(
-				'/traces',
-				{ session_id: sessionId, limit: String(limit) },
-				{ silent: true },
-			),
-
-		traceMarkdown: (id: string) =>
-			client.get<{ markdown: string }>(
-				`/traces/${encodeURIComponent(id)}/markdown`,
-				{},
 				{ silent: true },
 			),
 

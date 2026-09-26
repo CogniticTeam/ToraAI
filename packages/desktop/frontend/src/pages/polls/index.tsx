@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useTranslation } from '@/i18n/useI18n';
-import { cloudFetch } from '@/utils/modelSync';
 import { currentAccount, deviceId, QUEUE_EVENT, readQueue, saveQueue, syncPendingVotes, type PendingVote } from '@/lib/pollQueue';
+import { cloudFetch } from '@/utils/modelSync';
 
 type PollType = 'single' | 'multiple' | 'score';
 type PollState = 'draft' | 'scheduled' | 'active' | 'ended' | 'archived';

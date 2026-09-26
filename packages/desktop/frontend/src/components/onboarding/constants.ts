@@ -1,0 +1,13 @@
+export const FIRST_RUN_INTRO_KEY = 'cocode:first-run:intro:v1';
+export const FIRST_RUN_TOUR_KEY = 'cocode:first-run:tour:v1';
+export const FIRST_RUN_STEP_KEY = 'cocode:first-run:step:v1';
+export const FIRST_RUN_REPLAY_EVENT = 'cocode:first-run:replay';
+export const FIRST_RUN_SETTINGS_CLOSED_EVENT = 'cocode:first-run:settings-closed';
+export const FIRST_RUN_CLOSE_SETTINGS_EVENT = 'cocode:first-run:close-settings';
+export const FIRST_RUN_CLOSE_MODEL_EVENT = 'cocode:first-run:close-model';
+export const FIRST_RUN_FOLDER_CLOSED_EVENT = 'cocode:first-run:folder-closed';
+export const FIRST_RUN_FOLDER_OPENED_EVENT = 'cocode:first-run:folder-opened';
+export const FIRST_RUN_CLOSE_FOLDER_EVENT = 'cocode:first-run:close-folder';
+export const FIRST_RUN_PERMISSION_CLOSED_EVENT = 'cocode:first-run:permission-closed';
+export const FIRST_RUN_PERMISSION_OPENED_EVENT = 'cocode:first-run:permission-opened';
+export const FIRST_RUN_CLOSE_PERMISSION_EVENT = 'cocode:first-run:close-permission';

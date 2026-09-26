@@ -21,12 +21,10 @@ export type PanelKey =
 	| 'permission'
 	| 'knowledge'
 	| 'team'
-	// CoCode 独有：改动前快照 / 未提交改动 / 运行记录
+	// CoCode 独有：改动前快照 / 未提交改动 / 项目钩子
 	| 'checkpoint'
 	| 'diff'
-	| 'trace'
-	| 'delivery'
-	| 'impact'
+	| 'hooks'
 	// 内置浏览器（Agent 的 Browser 工具也落在同一个视图里）
 	| 'browser'
 	// 内置终端（$SHELL -i：SSE 下行 + POST 上行）
@@ -115,7 +113,7 @@ interface PanelProps {
  */
 export const Panel = ({ title, icon, actions, onClose, children }: PanelProps) => {
 	return (
-		<div className="flex flex-1 flex-col h-full p-2 min-h-0">
+		<div className="flex flex-1 flex-col h-full p-2 min-h-0 text-foreground">
 			<div className="flex items-center justify-between px-2">
 				<span className="flex items-center gap-x-1.5 text-sm">
 					{icon}

@@ -33,14 +33,11 @@ import { discoverLocalModels } from '../discover.js';
 import { loadCommands } from '../commands.js';
 import { detectVision } from '../model.js';
 import { describeHooks, HOOK_EVENTS } from '../hooks.js';
-import { listTraces, readTrace, renderTrace, gcTraces, traceStats } from '../trace.js';
-import { listDeliveries } from '../delivery.js';
-import { analyzeImpact } from '../impact.js';
 import { usageStats } from './usage.js';
 import { buildSymbolIndex } from '../tools/lsp.js';
 import { normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
 import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates } from '../tools/mcp-workshop.js';
-import { createTerminal, writeTerminal, killTerminal, getTerminal, subscribeTerminal, replayTerminal } from './terminal.js';
+import { createTerminal, writeTerminal, interruptTerminal, killTerminal, getTerminal, subscribeTerminal, replayTerminal } from './terminal.js';
 import { listCheckpoints, restore as restoreCheckpoint, clearCheckpoints } from '../tools/checkpoint.js';
 import { listBranches, createBranch, switchBranch, deleteBranch, listWorktrees, createWorktree, removeWorktree, stageFiles, unstageFiles, statusFiles, commit, log as gitLog } from '../tools/cocode-git.js';
 import { listAutomations, createAutomation, updateAutomation, deleteAutomation, drainNotifications } from '../tools/automations.js';
@@ -125,7 +122,8 @@ const API_PREFIXES = [
   '/agent', '/sessions', '/chat', '/credential', '/model', '/workspace',
   '/schedule', '/channels', '/hub', '/skill', '/mcp', '/mcp-workshop', '/knowledge',
   '/health', '/tts-model', '/embedding-model', '/permission', '/commands',
-  '/tools', '/traces', '/hooks', '/admin', '/memories', '/memory-config', '/terminal', '/git', '/automations', '/notifications',
+  // 旧 /traces 仍需走 API 的 404，不能误落到 SPA 静态首页。
+  '/tools', '/hooks', '/traces', '/admin', '/memories', '/memory-config', '/terminal', '/git', '/automations', '/notifications',
   '/teams',
 ];
 
@@ -161,9 +159,9 @@ const AGENT_SCHEMA = {
         }
       },
       review_config: {
-        type: 'object', title: 'Delivery Review',
+        type: 'object', title: 'Self Review',
         properties: {
-          enabled: { type: 'boolean', title: 'Enable Delivery Review', default: false },
+          enabled: { type: 'boolean', title: 'Enable Self Review', default: false },
           max_rounds: { type: 'integer', title: 'Max Review Rounds', minimum: 0, maximum: 3, default: 1 },
           min_tool_calls: { type: 'integer', title: 'Min Tool Calls', minimum: 1, maximum: 20, default: 1 },
           only_after_mutation: { type: 'boolean', title: 'Only After Write or Execute', default: true }
@@ -370,7 +368,7 @@ async function route(req, res) {
     return json(res, 200, { status: 'ok', ...counts });
   }
 
-  // 使用统计（设置窗口「使用统计」板块）：聚合 traces 的 token/工具/时长
+  // 使用统计（设置窗口「使用统计」板块）：聚合本地用量与会话数据
   // 与 sessions 的创建/更新时间，纯读操作。
   if (p === '/admin/usage-stats' && method === 'GET') {
     return json(res, 200, usageStats());
@@ -413,8 +411,6 @@ async function route(req, res) {
       hooksEnabled: cfg.hooksEnabled !== false,
       trustProjectHooks: cfg.trustProjectHooks === true,
       trustProjectHooksFor: cfg.trustProjectHooksFor || [],
-      traceEnabled: cfg.traceEnabled !== false,
-      traceFullBody: cfg.traceFullBody === true,
       changesAware: cfg.changesAware !== false,
       changesLimit: cfg.changesLimit ?? 12,
       lspServers: cfg.lspServers || {},
@@ -443,7 +439,7 @@ async function route(req, res) {
       // 行为开关（布尔）
       for (const k of [
         'persistentShell', 'injectProjectContext', 'repoMapInject', 'checkpointEnabled',
-        'hooksEnabled', 'trustProjectHooks', 'traceEnabled', 'traceFullBody', 'changesAware'
+        'hooksEnabled', 'trustProjectHooks', 'changesAware'
       ]) {
         if (typeof body[k] === 'boolean') patch[k] = body[k];
       }
@@ -504,8 +500,6 @@ async function route(req, res) {
         hooksEnabled: next.hooksEnabled !== false,
         trustProjectHooks: next.trustProjectHooks === true,
         trustProjectHooksFor: next.trustProjectHooksFor || [],
-        traceEnabled: next.traceEnabled !== false,
-        traceFullBody: next.traceFullBody === true,
         changesAware: next.changesAware !== false,
         changesLimit: next.changesLimit ?? 12,
         lspServers: next.lspServers || {}
@@ -567,36 +561,6 @@ async function route(req, res) {
       const tools = await loadExtraTools(cwd || null);
       return json(res, 200, tools.map((t) => ({ name: t.name, description: t.description || '' })));
     } catch (e) { return apiError(res, 500, e?.message || String(e)); }
-  }
-
-  // ---------- 可观测性：trace / 回放 ----------
-  // trace 是排障入口：用户说「它瞎改了一通」时，先看 trace 里第几轮上下文被压掉了。
-  if (p === '/traces' && method === 'GET') {
-    const traces = listTraces({ sessionId: q.session_id || null, limit: Number(q.limit) || 50 });
-    return json(res, 200, { traces, total: traces.length, stats: traceStats() });
-  }
-  if (p === '/traces' && method === 'DELETE') {
-    return json(res, 200, { status: 'ok', ...gcTraces({ keepDays: Number(q.keep_days) || 7 }) });
-  }
-  if (p.startsWith('/traces/') && method === 'GET') {
-    const rest = decodeURIComponent(p.slice('/traces/'.length));
-    if (rest.endsWith('/events')) {
-      const t = readTrace(rest.slice(0, -'/events'.length));
-      if (!t) return apiError(res, 404, 'trace 不存在');
-      return json(res, 200, { id: t.id, lines: t.lines });
-    }
-    if (rest.endsWith('/markdown')) {
-      const md = renderTrace(rest.slice(0, -'/markdown'.length));
-      return json(res, 200, { markdown: md });
-    }
-    const t = readTrace(rest);
-    if (!t) return apiError(res, 404, 'trace 不存在');
-    // 回放需要的原始事件流（前端可以按顺序重演一遍）
-    return json(res, 200, {
-      id: t.id,
-      start: t.start, end: t.end,
-      turns: t.turns, tools: t.tools, events: t.events, hooks: t.hooks
-    });
   }
 
   // ---------- 钩子 ----------
@@ -764,7 +728,7 @@ async function route(req, res) {
   if (p === '/terminal/create' && method === 'POST') {
     try {
       const body = await readBody(req);
-      const cwd = typeof body.cwd === 'string' && body.cwd ? realpathAllowMissing(body.cwd) : process.cwd();
+      const cwd = typeof body.cwd === 'string' && body.cwd ? realpathAllowMissing(body.cwd) : undefined;
       return json(res, 200, createTerminal({ cwd, shell: typeof body.shell === 'string' ? body.shell : undefined }));
     } catch (e) { return apiError(res, 400, e?.message || String(e)); }
   }
@@ -772,6 +736,11 @@ async function route(req, res) {
     const body = await readBody(req);
     if (typeof body.data !== 'string') return apiError(res, 422, 'data 必须是字符串');
     if (!writeTerminal(tm[1], body.data)) return apiError(res, 404, '终端不存在或已退出');
+    return json(res, 200, { status: 'ok' });
+  }
+  if ((tm = p.match(/^\/terminal\/([\w-]+)\/interrupt$/)) && method === 'POST') {
+    if (process.platform === 'win32') return apiError(res, 501, '当前系统暂不支持终端中断');
+    if (!interruptTerminal(tm[1])) return apiError(res, 404, '终端不存在或已退出');
     return json(res, 200, { status: 'ok' });
   }
   if ((tm = p.match(/^\/terminal\/([\w-]+)\/stream$/)) && method === 'GET') {
@@ -1017,8 +986,6 @@ async function route(req, res) {
   if (p === '/sessions/' && method === 'POST') {
     const body = await readBody(req);
     if (!body.agent_id) return apiError(res, 422, 'agent_id 不能为空');
-    if ('delivery_mode' in body && typeof body.delivery_mode !== 'boolean') return apiError(res, 422, 'delivery_mode 必须是布尔值');
-    if ('delivery_criteria' in body && (typeof body.delivery_criteria !== 'string' || body.delivery_criteria.length > 1200)) return apiError(res, 422, 'delivery_criteria 必须是 1200 字以内的文字');
     // 死 agent_id 一律 404：否则会产出指向不存在 agent 的会话，
     // 前端之后每条消息都撞 404 "agent 不存在"，还无处自救。
     if (!getAgent(body.agent_id)) return apiError(res, 404, 'agent 不存在');
@@ -1029,10 +996,8 @@ async function route(req, res) {
       cocodeCfg: loadConfig(),
       cwd: body.cwd || null,
     });
-    if (body.delivery_mode === true) record.state.delivery_mode = true;
-    if (typeof body.delivery_criteria === 'string') record.state.delivery_criteria = body.delivery_criteria.slice(0, 1200);
     // 无会话时前端把权限模式记在本地，随第一条消息带过来 —— 与 cwd 同一策略。
-    if (body.permission_mode || body.delivery_mode === true || typeof body.delivery_criteria === 'string') {
+    if (body.permission_mode) {
       if (body.permission_mode) {
         record.state.permission_mode = body.permission_mode;
         record.state.permission_context = {
@@ -1097,10 +1062,6 @@ async function route(req, res) {
       const s = loadSessionRecord(id);
       if (!s) return apiError(res, 404, '会话不存在');
       if (isRunning(id)) return apiError(res, 409, '会话正在运行，配置已被快照，稍后再改');
-      if ('delivery_mode' in body && typeof body.delivery_mode !== 'boolean') return apiError(res, 422, 'delivery_mode 必须是布尔值');
-      if ('delivery_criteria' in body && (typeof body.delivery_criteria !== 'string' || body.delivery_criteria.length > 1200)) return apiError(res, 422, 'delivery_criteria 必须是 1200 字以内的文字');
-      if ('delivery_mode' in body) s.state.delivery_mode = body.delivery_mode;
-      if ('delivery_criteria' in body) s.state.delivery_criteria = body.delivery_criteria;
       if (typeof body.name === 'string') {
         s.config.name = body.name.slice(0, 40);
         s.config.naming = { auto: false };
@@ -1330,11 +1291,14 @@ async function route(req, res) {
     return json(res, 200, { path: target, entries });
   }
   if (p === '/workspace/status' && method === 'GET') {
-    // 同上：cwd 严格取自 session.config.cwd；未选工作目录时诚实返回 null。
+    // 已建会话严格读取 session.config.cwd；新任务尚无 session 时，仅在用户
+    // 明确选择 cwd 后允许预览该目录的 Git 状态，不回退进程工作目录。
     let cwd = null;
     if (q.session_id) {
       const rec = loadSessionRecord(q.session_id);
       cwd = rec?.config?.cwd || null;
+    } else if (q.cwd) {
+      cwd = q.cwd;
     }
     if (!cwd) return json(res, 200, { workdir: null, cwd: null, git: null });
     // git 字段从占位 null 变成真实状态（分支/脏文件/ahead-behind）
@@ -1351,34 +1315,28 @@ async function route(req, res) {
     const cwd = rec?.config?.cwd || null;
     if (!cwd) return apiError(res, 422, '该会话还没有工作目录');
     const root = realpathAllowMissing(cwd);
+    const repo = await runGit(['rev-parse', '--is-inside-work-tree'], root);
+    if (repo.code === -1) {
+      return json(res, 200, { diff: '', error_code: 'git_unavailable', error: 'Git 不可用，无法读取变更预览' });
+    }
+    if (repo.stdout.trim() === 'false' || /not a git repository/i.test(repo.stderr || '')) {
+      return json(res, 200, { diff: '', error_code: 'not_git_repository', error: '当前文件夹不是 Git 仓库' });
+    }
+    if (!repo.ok) {
+      return json(res, 200, { diff: '', error_code: 'git_diff_failed', error: '无法读取 Git 改动，请稍后重试' });
+    }
     // 参数数组直接透传，避免 shell 注入；只允许只读的 diff 相关写法
     const args = ['diff'];
     if (q.staged === '1') args.push('--cached');
     if (q.path) args.push('--', String(q.path));
     const r = await runGit(args, root);
-    if (!r.ok && r.code !== 0) {
-      return json(res, 200, { diff: '', error: (r.stderr || '').trim() || 'git diff 失败（可能不是 git 仓库）' });
+    if (!r.ok) {
+      return json(res, 200, { diff: '', error_code: 'git_diff_failed', error: '无法读取 Git 改动，请稍后重试' });
     }
     let diff = r.stdout;
     const MAX = 200000;
     if (diff.length > MAX) diff = diff.slice(0, MAX) + '\n…[diff 过长，已截断]';
     return json(res, 200, { diff, root });
-  }
-  if (p === '/workspace/impact' && method === 'GET') {
-    if (!q.session_id) return apiError(res, 422, '需要 session_id');
-    const rec = loadSessionRecord(q.session_id);
-    const cwd = rec?.config?.cwd || null;
-    if (!cwd) return apiError(res, 422, '该会话还没有工作目录');
-    const paths = typeof q.paths === 'string' ? q.paths.split(/[\n,]/).map((v) => v.trim()).filter(Boolean) : [];
-    try { return json(res, 200, await analyzeImpact(realpathAllowMissing(cwd), { paths })); }
-    catch (e) { return apiError(res, 500, `影响分析失败: ${e?.message || String(e)}`); }
-  }
-  const deliveryMatch = /^\/sessions\/([\w-]+)\/deliveries$/.exec(p);
-  if (deliveryMatch && method === 'GET') {
-    const sessionId = deliveryMatch[1];
-    if (!loadSessionRecord(sessionId)) return apiError(res, 404, '会话不存在');
-    try { return json(res, 200, { reports: listDeliveries(sessionId) }); }
-    catch (e) { return apiError(res, 400, e?.message || String(e)); }
   }
   // ── Git 深度集成：分支 / 工作树 / 暂存 / 提交 / 日志 ──
   // 所有端点从 session_id（或 body.cwd）取工作目录，与 /workspace/* 同一套路。

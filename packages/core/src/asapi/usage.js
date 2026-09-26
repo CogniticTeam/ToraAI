@@ -2,12 +2,11 @@
 //
 // 数据源与职责：
 //   · ~/.cocode/usage/daily.json —— **权威 token/工具/模型来源**。bridge 在每次
-//     模型调用结束、工具执行完成时实时写入（usage-store.js），不受 trace GC
-//     影响。首次运行时会把历史 traces 里还能找到的用量一次性迁移进来。
+//     模型调用结束、工具执行完成时实时写入（usage-store.js）。旧版留下的
+//     traces 只在首次运行时做一次性用量迁移；新版不再生成运行记录。
 //   · ~/.cocode/sessions/*.json —— 聊天总数、聊天时长（created/updated 独有）。
 //
-// 注意：token **只**从 daily.json 来 —— traces 与 bridge 记录的是同一批
-// 调用，两边都算会双倍。
+// 注意：token **只**从 daily.json 来，历史迁移不能重复累计。
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { COCODE_DIR } from '../config.js';
@@ -36,7 +35,7 @@ function readJsonLines(p) {
 
 /**
  * 一次性迁移：traces 里残存的用量导入 daily.json（打标记，绝不重复导入）。
- * 背景：daily.json 上线前，token 只散落在 traces 里且 7 天 GC——不迁移的话
+ * 背景：daily.json 上线前，token 只散落在旧版 traces 里——不迁移的话
  * 老用户的面板仍是空的。
  */
 function importTracesOnce(daily) {

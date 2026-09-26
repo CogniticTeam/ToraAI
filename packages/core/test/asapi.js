@@ -273,7 +273,7 @@ async function main() {
     const trb = a.content.find((b) => b.type === 'tool_result');
     assert.match(trb.output[0].text, /hello-asapi/);
     assert.equal(trb.state, 'success');
-    assert.equal(a.finished_reason, undefined);
+    assert.equal(a.finished_reason, 'completed', '结束原因应落盘；刷新后复制等操作依赖它');
     // 会话自动命名
     const r2 = await realFetch(base + `/sessions/?agent_id=${agentId}`);
     const sv = (await r2.json()).sessions[0];
@@ -652,6 +652,9 @@ async function main() {
     const tmpDir = join(tmpdir(), `cocode-asapi-ws-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     writeFileSync(join(tmpDir, 'in-workspace.txt'), 'hi');
+    const beforeSession = await (await realFetch(base + `/workspace/status?cwd=${encodeURIComponent(tmpDir)}`)).json();
+    assert.equal(realpathAllowMissing(beforeSession.cwd), realpathAllowMissing(tmpDir), '新任务选定 cwd 后应能在建会话前显示状态');
+    assert.equal(beforeSession.git?.is_repo, false);
     await realFetch(base + `/sessions/${noCwdSid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ cwd: tmpDir })
@@ -2092,6 +2095,11 @@ async function main() {
       body: JSON.stringify({ cwd: dir, permission_mode: 'bypass' })
     });
 
+    const noRepo = await (await realFetch(base + `/workspace/diff?session_id=${sid}`)).json();
+    assert.equal(noRepo.error_code, 'not_git_repository', '非 Git 文件夹应返回明确的空状态');
+    assert.equal(noRepo.diff, '');
+    assert.ok(!/usage: git diff/i.test(noRepo.error || ''), '不能把 Git 帮助输出展示给用户');
+
     const init = await (await realFetch(base + '/admin/git-init', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ session_id: sid })
@@ -2153,10 +2161,10 @@ async function main() {
 
     await realFetch(base + `/terminal/${cr.id}/write`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ data: 'echo hi-terminal-$((40+2))\n' })
+      body: JSON.stringify({ data: 'echo hi-terminal-$((40+2))\r' })
     });
     assert.ok(await waitFor(() => events.some((e) => e.type === 'data' && e.data.includes('hi-terminal-42')), 8000),
-      'SSE 应收到 echo 回显');
+      'xterm 回车 CR 应触发执行，SSE 收到 echo 输出');
 
     // 面板重开回放：新连接应先收到 replay 帧（历史输出）
     const ac2 = new AbortController();
@@ -2223,7 +2231,7 @@ async function main() {
   });
 
 
-  // ---------- 代码索引 / LSP / 钩子 / 运行记录（HTTP 层）----------
+  // ---------- 代码索引 / LSP / 钩子（HTTP 层）----------
   await test('索引端点：能重建索引并回报规模', async () => {
     const dir = join(tmpdir(), `cocode-idx-http-${Date.now()}`);
     mkdirSync(join(dir, 'src'), { recursive: true });
@@ -2309,76 +2317,33 @@ async function main() {
     rmSync(dir, { recursive: true, force: true });
   });
 
-  await test('运行记录：聊天后能列出 trace、拿到详情与 markdown 时间线', async () => {
-    const dir = join(tmpdir(), `cocode-trace-http-${Date.now()}`);
-    mkdirSync(dir, { recursive: true });
-    const { session_id: sid } = await (await realFetch(base + '/sessions/', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ agent_id: agentId })
-    })).json();
-    await realFetch(base + `/sessions/${sid}`, {
-      method: 'PATCH', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cwd: dir, permission_mode: 'bypass' })
-    });
-    // 上游必须打桩，否则这轮会真的去连配置里的 baseURL（本地测试环境没有 key）
-    const prevFetch = globalThis.fetch;
-    globalThis.fetch = async (_u, init) => {
-      if (isTitleCall(init)) return sse([{ content: '' }]); // 取名调用旁路
-      return sse([{ content: '好，我来写' }]);
-    };
-    const sub = await listen(sid);
-    try {
-      await realFetch(base + '/chat/', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ agent_id: agentId, session_id: sid, input: { content: [{ type: 'text', text: '写个文件' }] } })
-      });
-      const ended = await sub.waitFor((ev) => ev.some((e) => e.type === 'REPLY_END'), 6000);
-      assert.ok(ended, '本轮应正常结束（收到 REPLY_END），否则 trace 无从产生');
-    } finally {
-      sub.stop();
-      globalThis.fetch = prevFetch;
-    }
-
-    const list = await (await realFetch(base + `/traces?session_id=${sid}`)).json();
-    assert.ok(list.traces.length >= 1, '应有运行记录: ' + JSON.stringify(list.traces));
-    const t = list.traces[0];
-    assert.equal(t.reason, 'completed');
-
-    const detail = await (await realFetch(base + `/traces/${encodeURIComponent(t.id)}`)).json();
-    assert.equal(detail.id, t.id);
-    assert.ok(detail.turns.length >= 1, '应至少一轮响应');
-    assert.ok(detail.start?.meta?.model, '应记录用了哪个模型');
-
-    const md = await (await realFetch(base + `/traces/${encodeURIComponent(t.id)}/markdown`)).json();
-    assert.match(md.markdown, /# Trace /);
-    assert.match(md.markdown, /时间线/);
-
-    const ev = await (await realFetch(base + `/traces/${encodeURIComponent(t.id)}/events`)).json();
-    assert.ok(Array.isArray(ev.lines) && ev.lines.length > 0, '回放需要原始事件流');
-
-    const missing = await realFetch(base + '/traces/no-such-session/no-such-run');
-    assert.equal(missing.status, 404);
-    rmSync(dir, { recursive: true, force: true });
-  });
-
-  await test('/admin/runtime 覆盖新开关（钩子/追踪/变更感知）', async () => {
+  await test('/admin/runtime 覆盖新开关（钩子/变更感知）', async () => {
     const r = await realFetch(base + '/admin/runtime', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ traceEnabled: false, hooksEnabled: false, changesAware: false, changesLimit: 5 })
+      body: JSON.stringify({ hooksEnabled: false, changesAware: false, changesLimit: 5 })
     });
     assert.equal(r.status, 200);
     const body = await r.json();
-    assert.equal(body.traceEnabled, false);
     assert.equal(body.hooksEnabled, false);
     assert.equal(body.changesAware, false);
     assert.equal(body.changesLimit, 5);
 
     const back = await (await realFetch(base + '/admin/runtime', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ traceEnabled: true, hooksEnabled: true, changesAware: true, changesLimit: 12 })
+      body: JSON.stringify({ hooksEnabled: true, changesAware: true, changesLimit: 12 })
     })).json();
-    assert.equal(back.traceEnabled, true);
+    assert.equal(back.hooksEnabled, true);
     assert.equal(back.changesLimit, 12);
+  });
+
+  await test('已移除功能的 HTTP 入口不再可用', async () => {
+    for (const path of ['/traces', '/workspace/impact?session_id=removed', '/sessions/removed/deliveries']) {
+      const response = await realFetch(base + path);
+      assert.equal(response.status, 404, `${path} 不应继续开放`);
+    }
+    const runtime = await (await realFetch(base + '/admin/runtime')).json();
+    assert.equal('traceEnabled' in runtime, false);
+    assert.equal('traceFullBody' in runtime, false);
   });
 
   await test('HITL 顺序：TOOL_CALL_START 必须先于 REQUIRE_USER_CONFIRM（否则卡片不弹、工具调用空转）', async () => {

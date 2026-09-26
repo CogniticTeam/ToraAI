@@ -596,7 +596,15 @@ if (!gotLock) {
     });
   });
 
-  app.whenReady().then(createWindow);
+  app.whenReady().then(() => {
+    // WebFetch/WebSearch 使用 Chromium 网络栈以继承系统代理；Node fetch 不会。
+    // URL 与逐跳 DNS 安全校验仍由 core/src/tools/web.js 在请求前执行。
+    // 不带内置浏览器的登录 Cookie，避免模型的网页读取继承用户会话。
+    setWebFetcher((url, init) => net.fetch(url, {
+      ...init, credentials: 'omit', bypassCustomProtocolHandlers: true,
+    }));
+    return createWindow();
+  });
   app.on('window-all-closed', () => process.platform !== 'darwin' && app.quit());
   app.on('activate', () => { if (!win) createWindow(); });
 }

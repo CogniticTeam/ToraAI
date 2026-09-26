@@ -188,8 +188,6 @@ export interface CreateSessionRequest {
 	cwd?: string | null;
 	/** Optional initial permission mode (chosen before the session exists). */
 	permission_mode?: string;
-	delivery_mode?: boolean;
-	delivery_criteria?: string;
 }
 
 export interface CreateSessionResponse {
@@ -204,8 +202,6 @@ export interface InterruptSessionResponse {
 
 export interface UpdateSessionRequest {
 	name?: string;
-	delivery_mode?: boolean;
-	delivery_criteria?: string;
 	chat_model_config?: ChatModelConfig;
 	/**
 	 * New fallback model. PATCH semantics:

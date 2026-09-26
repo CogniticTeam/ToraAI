@@ -12,6 +12,7 @@ interface DiffPanelProps {
 	diff: string;
 	/** Set when git itself could not answer (not a repo, no workspace). */
 	error: string | null;
+	errorCode?: 'not_git_repository' | 'git_unavailable' | 'git_diff_failed' | null;
 	loading: boolean;
 	onRefresh: () => void;
 	/** Repository root, shown in the header when known. */
@@ -72,17 +73,26 @@ function DiffLine({ line }: { line: string }) {
  * @param error - Why git could not answer, when it could not.
  * @returns The panel body (no header chrome — `Panel` draws that).
  */
-export function DiffPanel({ diff, error, loading, onRefresh, root }: DiffPanelProps) {
+export function DiffPanel({ diff, error, errorCode, loading, onRefresh, root }: DiffPanelProps) {
 	const { i18n } = useTranslation();
 	const zh = i18n.language.startsWith('zh');
 	const stats = useMemo(() => countChanges(diff), [diff]);
+	// 兼容尚未重启的旧后端：不要把 Git 的用法说明整段塞进侧栏。
+	const notRepo = errorCode === 'not_git_repository' || Boolean(error?.includes('Not a git repository'));
+	const description = notRepo
+		? (zh ? '选择 Git 项目后即可查看变更。' : 'Select a Git project to preview changes.')
+		: errorCode === 'git_unavailable'
+			? (zh ? 'Git 不可用，请检查系统 Git 安装。' : 'Git is unavailable. Check your Git installation.')
+			: errorCode === 'git_diff_failed' || !error || error.length > 200
+				? (zh ? '无法读取 Git 改动，请稍后重试。' : 'Could not read Git changes. Please try again.')
+				: error;
 
-	if (error) {
+	if (error || errorCode) {
 		return (
 			<PanelEmpty
 				icon={GitCompare}
-				title={zh ? '拿不到改动' : 'Unable to read changes'}
-				description={error}
+				title={notRepo ? (zh ? '当前文件夹不是 Git 仓库' : 'This folder is not a Git repository') : (zh ? '拿不到改动' : 'Unable to read changes')}
+				description={description}
 				className="border-0"
 			/>
 		);

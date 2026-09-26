@@ -1,7 +1,6 @@
 import type { PermissionContext } from '@agentscope-ai/agentscope/permission';
 import type { TaskContext } from '@agentscope-ai/agentscope/state';
 import {
-	Activity,
 	BookText,
 	ChevronDown,
 	Database,
@@ -10,8 +9,7 @@ import {
 	History,
 	ListTodo,
 	PanelRight,
-	ClipboardCheck,
-	Radar,
+	Webhook,
 	ShieldCheck,
 	SquareTerminal,
 	UsersRound,
@@ -72,9 +70,7 @@ const SkillPanel = lazy(async () => ({ default: (await import('@/components/pane
 const TaskPanel = lazy(async () => ({ default: (await import('@/components/panel/TaskPanel')).TaskPanel }));
 const TeamPanel = lazy(async () => ({ default: (await import('@/components/panel/TeamPanel')).TeamPanel }));
 const TerminalPanel = lazy(async () => ({ default: (await import('@/components/panel/TerminalPanel')).TerminalPanel }));
-const TracePanel = lazy(async () => ({ default: (await import('@/components/panel/TracePanel')).TracePanel }));
-const DeliveryPanel = lazy(async () => ({ default: (await import('@/components/panel/DeliveryPanel')).DeliveryPanel }));
-const ImpactPanel = lazy(async () => ({ default: (await import('@/components/panel/ImpactPanel')).ImpactPanel }));
+const HooksPanel = lazy(async () => ({ default: (await import('@/components/panel/HooksPanel')).HooksPanel }));
 
 interface ChatViewportProps {
 	/**
@@ -123,9 +119,7 @@ const KNOWN_PANELS: Record<PanelKey, true> = {
 	team: true,
 	checkpoint: true,
 	diff: true,
-	trace: true,
-	delivery: true,
-	impact: true,
+	hooks: true,
 	browser: true,
 	terminal: true,
 };
@@ -216,8 +210,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>('default');
 	const [selectedCwd, setSelectedCwd] = useState<string | null>(null);
-	const [selectedDeliveryMode, setSelectedDeliveryMode] = useState(false);
-	const [selectedDeliveryCriteria, setSelectedDeliveryCriteria] = useState('');
 	const [projectNamesVersion, setProjectNamesVersion] = useState(0);
 	const [credentialRefetchTrigger] = useState(0);
 	const [tasksContext, setTasksContext] = useState<TaskContext | null>(null);
@@ -227,7 +219,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// panels stacked top→bottom. Open order determines placement.
 	// Persisted so leaving and returning to /chat keeps the same panels.
 	const [panelLayout, setPanelLayout] = useState<PanelKey[][]>(loadPanelLayout);
-	const [analysisRevision, setAnalysisRevision] = useState(0);
 	const openPanels = useMemo(() => new Set(panelLayout.flat()), [panelLayout]);
 
 	useEffect(() => {
@@ -349,8 +340,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			...(selectedModel ? { chat_model_config: selectedModel } : {}),
 			...(selectedCwd ? { cwd: selectedCwd } : {}),
 			...(selectedPermissionMode !== 'default' ? { permission_mode: selectedPermissionMode } : {}),
-			...(selectedDeliveryMode ? { delivery_mode: true } : {}),
-			...(selectedDeliveryCriteria ? { delivery_criteria: selectedDeliveryCriteria } : {}),
 		}),
 	});
 	const {
@@ -494,13 +483,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// `phase` rather than the REPLY_END event also covers the interrupt
 	// timeout, which reaches idle without one.
 	const prevPhaseRef = useRef(phase);
-	// Checkpoints / diff / traces / hooks move for the same reason git status
+	// Checkpoints / diff / hooks move for the same reason git status
 	// does: a reply just finished. One trigger drives all of them.
 	const cocode = useCocodeData(agentId, sessionId, activeCwd, {
 		checkpoints: openPanels.has('checkpoint'),
 		diff: openPanels.has('diff'),
-		hooks: openPanels.has('trace'),
-		traces: openPanels.has('trace'),
+		hooks: openPanels.has('hooks'),
 	});
 	const { refresh: refreshCocode } = cocode;
 	useEffect(() => {
@@ -509,31 +497,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		if (wasRunning && phase === 'idle') {
 			void refetchWorkspaceStatus();
 			void refreshCocode();
-			setAnalysisRevision((value) => value + 1);
 		}
 	}, [phase, refetchWorkspaceStatus, refreshCocode]);
-
-	const deliveryMode = typeof view?.session.state?.delivery_mode === 'boolean'
-		? view.session.state.delivery_mode : selectedDeliveryMode;
-	const deliveryCriteria = typeof view?.session.state?.delivery_criteria === 'string'
-		? view.session.state.delivery_criteria : selectedDeliveryCriteria;
-	const handleDeliverySettingsChange = useCallback(async (enabled: boolean, criteria: string): Promise<boolean> => {
-		if (!sessionId) {
-			setSelectedDeliveryMode(enabled);
-			setSelectedDeliveryCriteria(criteria);
-			return true;
-		}
-		if (!agentId) return false;
-		setConfigPending(true);
-		try {
-			await sessionApi.update(sessionId, agentId, { delivery_mode: enabled, delivery_criteria: criteria });
-			setSelectedDeliveryMode(enabled);
-			setSelectedDeliveryCriteria(criteria);
-			void refetchSessions();
-			return true;
-		} catch { return false; }
-		finally { setConfigPending(false); }
-	}, [sessionId, agentId, refetchSessions]);
 
 	// Build the panel descriptors with live data. Rebuilt on every
 	// data change so the dock always renders the latest state — the
@@ -628,7 +593,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				icon: <UsersRound className="size-4" />,
 				content: <TeamPanel team={view?.team ?? null} currentSessionId={sessionId} />,
 			},
-			// ── CoCode 独有：检查点 / 变更预览 / 运行记录 ──
+			// ── CoCode 独有：检查点 / 变更预览 ──
 			checkpoint: {
 				title: (
 					<span className="flex items-center gap-x-2">
@@ -655,6 +620,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 					<DiffPanel
 						diff={cocode.diff}
 						error={cocode.diffError}
+						errorCode={cocode.diffErrorCode}
 						loading={cocode.loading}
 						onRefresh={cocode.refresh}
 						root={workspaceStatus?.cwd ?? view?.session.config.cwd ?? null}
@@ -671,36 +637,24 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				icon: <SquareTerminal className="size-4" />,
 				content: (
 					<TerminalPanel
-						cwd={workspaceStatus?.cwd ?? view?.session.config.cwd ?? null}
+						cwd={activeCwd}
 					/>
 				),
 			},
-			trace: {
-				title: t('panel.workspace.trace'),
-				icon: <Activity className="size-4" />,
+			hooks: {
+				title: t('panel.workspace.hooks'),
+				icon: <Webhook className="size-4" />,
 				content: (
-					<TracePanel
-						traces={cocode.traces}
+					<HooksPanel
 						hooks={cocode.hooks}
 						loading={cocode.loading}
 						onRefresh={cocode.refresh}
-						onOpenTrace={cocode.openTrace}
 						onTrustProjectHooks={(trust) => {
 							const target = workspaceStatus?.cwd ?? view?.session.config.cwd;
 							if (target) void cocode.setProjectHooksTrusted(target, trust);
 						}}
 					/>
 				),
-			},
-			delivery: {
-				title: t('panel.workspace.delivery'),
-				icon: <ClipboardCheck className="size-4" />,
-				content: <DeliveryPanel sessionId={sessionId} revision={analysisRevision} enabled={deliveryMode} criteria={deliveryCriteria} disabled={phase !== 'idle' || configPending} onSettingsChange={handleDeliverySettingsChange} />,
-			},
-			impact: {
-				title: t('panel.workspace.impact'),
-				icon: <Radar className="size-4" />,
-				content: <ImpactPanel sessionId={sessionId} cwd={activeCwd} revision={analysisRevision} />,
 			},
 		}),
 		[
@@ -727,12 +681,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			cocode,
 			workspaceStatus?.cwd,
 			activeCwd,
-			analysisRevision,
-			deliveryMode,
-			deliveryCriteria,
-			phase,
-			configPending,
-			handleDeliverySettingsChange,
 		],
 	);
 
@@ -768,8 +716,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		setSelectedModel(null);
 		setSelectedKnowledgeConfig(null);
 		setSelectedCwd(null);
-		setSelectedDeliveryMode(false);
-		setSelectedDeliveryCriteria('');
 	}, [sessionId]);
 
 	const selectedModelCard = useMemo(() => {
@@ -988,7 +934,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 						className="flex flex-1 min-h-0 min-w-0"
 						minSize="24rem"
 					>
-						<div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-x-hidden bg-background">
+						<div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-x-hidden bg-transparent">
 						<div className="flex h-12 shrink-0 flex-row items-center justify-between border-b border-border px-5">
 							<div className="flex min-w-0 flex-1 flex-row items-center gap-x-1">
 									<SidebarTrigger className="md:hidden" />
@@ -1065,18 +1011,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 											{t('panel.workspace.checkpoint')}
 										</DropdownMenuCheckboxItem>
 										<DropdownMenuCheckboxItem
-											checked={isPanelOpen('trace')}
-											onCheckedChange={() => togglePanel('trace')}
+											checked={isPanelOpen('hooks')}
+											onCheckedChange={() => togglePanel('hooks')}
 											onSelect={(e) => e.preventDefault()}
 										>
-											<Activity />
-											{t('panel.workspace.trace')}
-										</DropdownMenuCheckboxItem>
-										<DropdownMenuCheckboxItem checked={isPanelOpen('delivery')} onCheckedChange={() => togglePanel('delivery')} onSelect={(e) => e.preventDefault()}>
-											<ClipboardCheck />{t('panel.workspace.delivery')}
-										</DropdownMenuCheckboxItem>
-										<DropdownMenuCheckboxItem checked={isPanelOpen('impact')} onCheckedChange={() => togglePanel('impact')} onSelect={(e) => e.preventDefault()}>
-											<Radar />{t('panel.workspace.impact')}
+											<Webhook />
+											{t('panel.workspace.hooks')}
 										</DropdownMenuCheckboxItem>
 									<DropdownMenuCheckboxItem
 										checked={isPanelOpen('browser')}
@@ -1107,36 +1047,32 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									projectName={activeProjectName}
 									onCwdChange={handleCwdChange}
 									git={workspaceStatus?.git ?? null}
-									onRefreshGit={refetchWorkspaceStatus}
 									workspaceSkills={skills}
 									workspaceKnowledgeBases={knowledgeBases}
 									userCommands={cocode.commands}
-									inputControls={
-									<>
-										{/* 深度思考 / 上下文窗口已并入模型选择器详情卡（LlmSelect） */}
+									modelControl={
 										<LlmSelect
 											id="tour-llm-select"
-											variant="ghost"
-											className="font-mono text-muted-foreground hover:text-foreground"
+											composer
 											value={selectedModel}
 											onChange={handleLlmChange}
 											onAddCredential={() => openSettings('model')}
 											refetchTrigger={credentialRefetchTrigger}
 											disabled={configPending}
 										/>
-									<PermissionModeSelect
-										id="tour-permission-mode"
-										variant={'ghost'}
-										className="font-mono text-muted-foreground hover:text-foreground"
-										value={selectedPermissionMode}
-										learnMore
-										// 无会话也允许切换：先记本地，建会话时随第一条消息带上
-										disabled={configPending}
-										onChange={handlePermissionModeChange}
-									/>
-									</>
-								}
-phase={phase}
+									}
+									permissionControl={
+										<PermissionModeSelect
+											id="tour-permission-mode"
+											composer
+											value={selectedPermissionMode}
+											learnMore
+											// 无会话也允许切换：先记本地，建会话时随第一条消息带上
+											disabled={configPending}
+											onChange={handlePermissionModeChange}
+										/>
+									}
+									phase={phase}
 								// 只在还没选 agent 时禁用输入框；sessionId 是否
 								// 存在交给 useMessages.send() 内部自动创建
 								//（R3 行为），避免"没有会话就输不进字"。
