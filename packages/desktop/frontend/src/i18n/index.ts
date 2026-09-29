@@ -2,8 +2,8 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
 import enTranslations from './locales/en.json';
-import zhTranslations from './locales/zh.json';
 import zhHantTranslations from './locales/zh-Hant.json';
+import zhTranslations from './locales/zh.json';
 
 export type AppLanguage = 'zh' | 'zh-Hant' | 'en';
 
