@@ -2469,6 +2469,7 @@ async function main() {
     // 1) 分支列表
     let br = await (await realFetch(base + `/git/branches?session_id=${sid}`)).json();
     assert.ok(br.branches.some((b) => b.name && b.current), '应有当前分支');
+    const initialBranch = br.branches.find(b => b.current).name;
 
     // 2) 建分支 + 切换 + 切回 + 删除
     await realFetch(base + '/git/branches', {
@@ -2483,10 +2484,11 @@ async function main() {
     })).json();
     assert.equal(sw.status, 'ok');
     assert.equal(sw.git.branch, 'feat-x');
-    await realFetch(base + '/git/branches/main/switch', {
+    const switchedBack = await realFetch(base + '/git/branches/' + encodeURIComponent(initialBranch) + '/switch', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ session_id: sid })
     });
+    assert.equal(switchedBack.status, 200, '切回仓库实际默认分支应成功');
     const del = await realFetch(base + '/git/branches/feat-x?session_id=' + sid, { method: 'DELETE' });
     assert.equal(del.status, 200, '删除分支应 200');
 
