@@ -1,18 +1,18 @@
 // Applied before the first paint, so the theme never flashes.
-// Respects an explicit user choice stored at `cocode.theme`
+// Respects an explicit user choice stored at `tora.theme`
 // by useTheme(); falls back to OS preference otherwise.
 // 另承担「加载页」职责：原生窗口背景由主进程按主题着色，这里在
 // 任何 CSS/React 就绪之前 (1) 给 <html> 写死同款底色兜底 CSS 加载窗口期，
-// (2) 通过 cocodeWindow.reportTheme 把实际深浅上报主进程纠正窗口背景
+// (2) 通过 toraWindow.reportTheme 把实际深浅上报主进程纠正窗口背景
 // （preload 先于页面脚本执行，桥此时必然就位）。
 //
 // 注意：本文件必须保持为「外部脚本」经 <script src> 引入——主进程在
 // session 层注入的 CSP 为 script-src 'self'，内联脚本会被静默拦截
 // （pre-paint 不执行 → 深色模式下加载页闪白）。
-const KEY = 'cocode.theme';
-const BACKGROUND_KEY = 'cocode.background';
-const CUSTOM_BACKGROUND_KEY = 'cocode.background.custom';
-const BACKGROUND_CHANGED_EVENT = 'cocode:background-changed';
+const KEY = 'tora.theme';
+const BACKGROUND_KEY = 'tora.background';
+const CUSTOM_BACKGROUND_KEY = 'tora.background.custom';
+const BACKGROUND_CHANGED_EVENT = 'tora:background-changed';
 const BACKGROUND_OPTIONS = new Set(['lavender', 'mist', 'stone', 'midnight', 'none', 'custom']);
 const readStored = (key) => {
 	try { return localStorage.getItem(key); } catch { return null; }
@@ -30,7 +30,7 @@ const applyTheme = () => {
 	// CSS 就位前让原生控件/滚动条也走对应配色。
 	document.documentElement.style.colorScheme = useDark ? 'dark' : 'light';
 	// 纠正主进程建窗时的猜测（跟系统），并让主进程记住本次主题。
-	window.cocodeWindow?.reportTheme?.(useDark);
+	window.toraWindow?.reportTheme?.(useDark);
 };
 const applyBackground = () => {
 	const root = document.documentElement;

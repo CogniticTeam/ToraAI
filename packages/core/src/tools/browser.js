@@ -98,7 +98,7 @@ const DEFAULT_MAX_CHARS = 6000;
 
 function unavailable() {
   return (
-    '当前没有可用的内置浏览器 —— 它由桌面端（CoCode 应用）提供：应用会在创建窗口时把它接进来。\n' +
+    '当前没有可用的内置浏览器 —— 它由桌面端（Tora 应用）提供：应用会在创建窗口时把它接进来。\n' +
     '你现在大概在 CLI 或纯浏览器环境里。替代方案：\n' +
     '  · WebFetch 抓取页面并转成文本（静态页面足够用）\n' +
     '  · WebSearch 搜索；或把页面内容下载到本地后用 Read 看'

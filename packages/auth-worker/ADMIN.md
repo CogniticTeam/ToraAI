@@ -1,6 +1,6 @@
-# CoCode 消息与账户管理
+# Tora 消息与账户管理
 
-后台页面地址：<https://ohfun.online/admin>，由官网 Cloudflare Pages 项目 `cocode` 托管。`website/admin.html` 和 `website/admin.js` 通过跨域请求调用 `https://cocode.ohfun.online/admin/*` 的 Worker 接口；旧 Worker 页面地址自动跳转到官网。管理员输入 Worker 的 `ADMIN_TOKEN` 管理密钥登录。密钥只保留在当前页面内存中，刷新或退出后需重新输入；不要放入客户端、仓库或分享给普通用户。
+后台页面地址：<https://ohfun.online/admin>，由官网 Cloudflare Pages 项目 `tora` 托管。`website/admin.html` 和 `website/admin.js` 通过跨域请求调用 `https://tora.ohfun.online/admin/*` 的 Worker 接口；旧 Worker 页面地址自动跳转到官网。管理员输入 Worker 的 `ADMIN_TOKEN` 管理密钥登录。密钥只保留在当前页面内存中，刷新或退出后需重新输入；不要放入客户端、仓库或分享给普通用户。
 
 后台支持按用户名/邮箱搜索、定向/全体消息、封禁原因、封禁和解封。消息存入 D1，用户从账户菜单的「消息」查看，打开单条消息后标为已读。`admin_audit` 保存管理操作记录。
 
@@ -13,7 +13,7 @@
 发送给「全部账户」时，可勾选「新用户可收到消息」（默认关闭）。启用的通知保存在 `message_campaigns`，通过 D1 注册触发器在新用户创建的同一事务中投递一次；不追溯投递未勾选的历史消息。定向消息禁止启用。撤回同时关闭后续投递并隐藏已投递副本；即使当前没有账户，也可发布和撤回面向新用户的通知。无需更新客户端即可接收新用户消息。
 
 ```sh
-npx wrangler pages deploy website --project-name cocode --branch main
+npx wrangler pages deploy website --project-name tora --branch main
 npx wrangler secret put ADMIN_TOKEN --config packages/auth-worker/wrangler.toml
 npx wrangler deploy --dry-run --config packages/auth-worker/wrangler.toml
 npx wrangler deploy --config packages/auth-worker/wrangler.toml
@@ -26,9 +26,9 @@ npx wrangler deploy --config packages/auth-worker/wrangler.toml
 用隔离数据库启动 Wrangler，调用 `/health` 初始化表，然后导入 `test/admin-fixture.sql`：
 
 ```sh
-npx wrangler dev --config packages/auth-worker/wrangler.toml --port 8791 --persist-to /private/tmp/cocode-admin-worker-test-20260921 --var ADMIN_TOKEN:local-test-admin
+npx wrangler dev --config packages/auth-worker/wrangler.toml --port 8791 --persist-to /private/tmp/tora-admin-worker-test-20260921 --var ADMIN_TOKEN:local-test-admin
 curl http://127.0.0.1:8791/health
-npx wrangler d1 execute cocode-auth --local --config packages/auth-worker/wrangler.toml --persist-to /private/tmp/cocode-admin-worker-test-20260921 --file packages/auth-worker/test/admin-fixture.sql
+npx wrangler d1 execute DB --local --config packages/auth-worker/wrangler.toml --persist-to /private/tmp/tora-admin-worker-test-20260921 --file packages/auth-worker/test/admin-fixture.sql
 node packages/auth-worker/test/admin-integration.mjs
 node scripts/test-account-ui.mjs
 ```
@@ -58,11 +58,11 @@ Worker 的 `/account/messages/translate` 仅接受消息 ID 和 `zh` / `en`，�
 线上部署顺序：先将 D1 导出到仓库外，再执行 `migrations/0001_polls.sql`，设置密钥，最后部署 Worker 和官网 Pages。迁移脚本可重复执行；Worker 冷启动也会检查缺失表。不要将本地测试 fixture 导入线上。
 
 ```sh
-npx wrangler d1 export cocode-auth --remote --config packages/auth-worker/wrangler.toml --output /path/outside/repository/d1-before-polls.sql
-npx wrangler d1 execute cocode-auth --remote --config packages/auth-worker/wrangler.toml --file packages/auth-worker/migrations/0001_polls.sql
+npx wrangler d1 export DB --remote --config packages/auth-worker/wrangler.toml --output /path/outside/repository/d1-before-polls.sql
+npx wrangler d1 execute DB --remote --config packages/auth-worker/wrangler.toml --file packages/auth-worker/migrations/0001_polls.sql
 openssl rand -hex 32 | npx wrangler secret put POLL_FRAUD_SECRET --config packages/auth-worker/wrangler.toml
 npx wrangler deploy --config packages/auth-worker/wrangler.toml
-npx wrangler pages deploy website --project-name cocode --branch main
+npx wrangler pages deploy website --project-name tora --branch main
 ```
 
 本地验收使用隔离的 Wrangler dev 和 `test/admin-fixture.sql`：`node packages/auth-worker/test/polls-integration.mjs` 验证权限、投票限制、结果、导出与防刷；`node scripts/test-polls-admin-ui.mjs` 验证管理页。发布 Worker 和 Pages 不会自动更新已安装的桌面客户端；投票入口需在下一版客户端发布后出现。

@@ -99,7 +99,7 @@ export async function listWorktrees(cwd) {
 
 /**
  * 新建工作树 + 新分支。
- * - path: 工作树的绝对路径（前端一般传 repo 旁边的 .cocode-wt/<branch>）
+ * - path: 工作树的绝对路径（前端一般传 repo 旁边的 .tora-wt/<branch>）
  * - branch: 要创建并检出的新分支名
  * - from: 可选，新分支的起点（commit/分支），省略 = 当前 HEAD
  */
@@ -165,7 +165,7 @@ export async function commit(cwd, message) {
   const identify = await runGit(['config', 'user.name'], cwd);
   const args = [];
   if (!identify.ok || !identify.stdout.trim()) {
-    args.push('-c', 'user.name=cocode', '-c', 'user.email=cocode@local');
+    args.push('-c', 'user.name=tora', '-c', 'user.email=tora@local');
   }
   args.push('commit', '-m', String(message));
   const r = await runGit(args, cwd);

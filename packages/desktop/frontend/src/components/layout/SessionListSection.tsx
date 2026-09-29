@@ -76,7 +76,7 @@ function parseChatPath(pathname: string): {
 }
 
 /**
- * 历史会话列表（CoCode 定制）：挂在全局侧栏「Skill中心」下方。
+ * 历史会话列表（Tora 定制）：挂在全局侧栏「Skill中心」下方。
  * 会话归属的 agent 取自当前 URL；不在 /chat 路由时回退到第一个智能体。
  *
  * 一级：会话本身，按 updated_at desc 排序。

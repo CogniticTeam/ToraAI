@@ -33,7 +33,7 @@ export interface CheckpointView {
 	current?: boolean;
 }
 
-/** One user-authored slash command (`~/.cocode/commands/*.md`). */
+/** One user-authored slash command (`~/.tora/commands/*.md`). */
 export interface UserCommand {
 	name: string;
 	description: string;
@@ -237,14 +237,14 @@ export const workspaceApi = {
 	},
 
 	/**
-	 * CoCode extensions that the agent's own runtime backs: checkpoints,
+	 * Tora extensions that the agent's own runtime backs: checkpoints,
 	 * change preview, hooks and slash commands.
 	 *
 	 * Everything here is `silent` — these are panels and menus, and a
 	 * backend that predates them (or a session with no workspace yet)
 	 * answering 4xx is an ordinary state, not a toast.
 	 */
-	cocode: {
+	tora: {
 		checkpoints: (sessionId: string) =>
 			client.get<{ checkpoints: CheckpointView[] }>(
 				`/sessions/${sessionId}/checkpoints`,
@@ -274,7 +274,7 @@ export const workspaceApi = {
 		hooks: (sessionId: string) =>
 			client.get<HooksView>('/hooks', { session_id: sessionId }, { silent: true }),
 
-		/** Grants or revokes trust for the workspace's own `.cocode/hooks.json`. */
+		/** Grants or revokes trust for the workspace's own `.tora/hooks.json`. */
 		trustProjectHooks: (cwd: string, trust: boolean) =>
 			client.post<{ status: string; trusted: boolean; trustProjectHooksFor: string[] }>(
 				'/hooks/trust',

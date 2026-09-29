@@ -5,10 +5,11 @@
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>CoCode</title>
+		<title>Tora</title>
 		<!-- Pre-paint 主题脚本必须走外部文件：session 层注入的 CSP
 		     script-src 'self' 会静默拦截内联脚本（见 public/theme-boot.js）。
 		     head 中的同步外部脚本与内联脚本执行时机等价（先于首帧）。 -->
+		<script src="/brand-migration.js"></script>
 		<script src="/theme-boot.js"></script>
 	</head>
 	<body>

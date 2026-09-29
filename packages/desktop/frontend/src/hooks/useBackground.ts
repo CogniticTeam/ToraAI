@@ -3,15 +3,15 @@ import { useCallback, useEffect, useState } from 'react';
 export type BackgroundPreference = 'lavender' | 'mist' | 'stone' | 'midnight' | 'none' | 'custom';
 
 export const BACKGROUND_OPTIONS = [
-	{ id: 'lavender', src: '/images/cocode-soft-backdrop.jpg' },
-	{ id: 'mist', src: '/images/cocode-mist.jpg' },
-	{ id: 'stone', src: '/images/cocode-stone.jpg' },
-	{ id: 'midnight', src: '/images/cocode-midnight.jpg' },
+	{ id: 'lavender', src: '/images/tora-soft-backdrop.jpg' },
+	{ id: 'mist', src: '/images/tora-mist.jpg' },
+	{ id: 'stone', src: '/images/tora-stone.jpg' },
+	{ id: 'midnight', src: '/images/tora-midnight.jpg' },
 ] as const;
 
-export const BACKGROUND_STORAGE_KEY = 'cocode.background';
-export const CUSTOM_BACKGROUND_STORAGE_KEY = 'cocode.background.custom';
-export const BACKGROUND_CHANGED_EVENT = 'cocode:background-changed';
+export const BACKGROUND_STORAGE_KEY = 'tora.background';
+export const CUSTOM_BACKGROUND_STORAGE_KEY = 'tora.background.custom';
+export const BACKGROUND_CHANGED_EVENT = 'tora:background-changed';
 
 const VALID_OPTIONS: ReadonlySet<string> = new Set<BackgroundPreference>([
 	'lavender', 'mist', 'stone', 'midnight', 'none', 'custom',

@@ -1,4 +1,4 @@
--- CoCode 投票。先备份线上 D1，再执行本文件；可重复执行。
+-- Tora 投票。先备份线上 D1，再执行本文件；可重复执行。
 CREATE TABLE IF NOT EXISTS poll_settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

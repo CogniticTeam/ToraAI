@@ -1,6 +1,6 @@
 import { anthropicCompletion } from './anthropic.js';
 
-// CoCode 模型接入层：OpenAI 兼容 Chat Completions + Claude 原生 Messages API
+// Tora 模型接入层：OpenAI 兼容 Chat Completions + Claude 原生 Messages API
 // 零依赖实现：fetch + 手写 SSE 解析，支持流式与工具调用聚合
 //
 // 能力探测：部分 OpenAI 兼容接口并不实现 function calling（一些小模型网关、
@@ -28,7 +28,7 @@ export function resetToolSupportCache() {
   toolSupport.clear();
 }
 
-export const SYSTEM_PROMPT = `Your name is CoCode (product name: CoCode). You are a highly capable AI coding and task-execution agent embedded in a terminal/desktop tool. You complete as much work as possible while keeping token consumption minimal. You excel at coding, code review, refactoring, writing, and answering questions. You routinely make appropriate use of Skills and invoke them as frequently as needed.
+export const SYSTEM_PROMPT = `Your name is Tora (product name: Tora). You are a highly capable AI coding and task-execution agent embedded in a terminal/desktop tool. You complete as much work as possible while keeping token consumption minimal. You excel at coding, code review, refactoring, writing, and answering questions. You routinely make appropriate use of Skills and invoke them as frequently as needed.
 You prioritize breaking down complex user requests into actionable subtasks and carry them out in order, avoiding redundant verbiage and useless deliberation. Prefer acting over asking: inspect the repository (Glob/Grep/RepoMap) before proposing changes. Use the minimal edit that achieves the goal (Edit over Write) and always verify your work by running the relevant test or build command with Bash. Your outputs go straight to the point: deliver usable results first, not vague ideas. When information is insufficient, ask one concise question about the key parameter instead of guessing.
 You keep changes reviewable: show diffs before overwriting, avoid touching files unrelated to the task, and never hide failures. You respect the repository's own conventions (see project instructions when present) over your personal defaults. You are honest about what you did and did not verify.`;
 
@@ -52,7 +52,7 @@ export function detectVision(cfg) {
 
 export function createClient(cfg) {
   if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
-    throw new Error('未配置 apiKey：请运行 `cocode config` 或设置 COCODE_API_KEY（本地模型如 Ollama 可免鉴权）');
+    throw new Error('未配置 apiKey：请运行 `tora config` 或设置 TORA_API_KEY（本地模型如 Ollama 可免鉴权）');
   }
   return {
     baseURL: cfg.baseURL.replace(/\/+$/, ''),
@@ -62,7 +62,7 @@ export function createClient(cfg) {
     temperature: cfg.temperature,
     maxTurns: cfg.maxTurns ?? 40,
     // 能力位：tool_calls 由探测结果决定；vision 由模型名/配置推断
-    // GPT-6 Astra 的 Chat Completions 不支持 function calling；CoCode 的
+    // GPT-6 Astra 的 Chat Completions 不支持 function calling；Tora 的
     // Responses 适配尚未提供，直接用文本 ReAct，避免每轮先撞一次 400。
     supportsTools: cfg.forceReact || (/^https:\/\/api\.openai\.com\/v1\/?$/i.test(cfg.baseURL) && /^gpt-6-astra(?:-|$)/i.test(cfg.model))
       ? false : getToolSupport(cfg),
@@ -78,7 +78,7 @@ export function createClient(cfg) {
     // structured output：v1 全部走 prompt 强制 + 解析重试，不依赖原生 JSON Schema
     supportsJsonSchema: false,
     // 任务模式（WorkBuddy 式差异化计费）：ask=轻问答 / craft=Agent 任务。
-    // 经 X-CoCode-Mode 头上送网关计费，缺省 craft（Agent 编码为主场景）。
+    // 经 X-Tora-Mode 头上送网关计费，缺省 craft（Agent 编码为主场景）。
     mode: String(cfg.mode || '').toLowerCase() === 'ask' ? 'ask' : 'craft'
   };
 }
@@ -238,9 +238,9 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
           headers: {
             'content-type': 'application/json',
             ...(client.apiKey ? { authorization: `Bearer ${client.apiKey}` } : {}),
-            ...(officialGoogle ? { 'x-goog-api-client': 'cocode-desktop/1.0.0' } : {}),
+            ...(officialGoogle ? { 'x-goog-api-client': 'tora-desktop/1.0.0' } : {}),
             // 任务模式声明（ask|craft），网关按模式倍率差异化计费；非官方端点会忽略此头
-            'x-cocode-mode': client.mode || 'craft'
+            'x-tora-mode': client.mode || 'craft'
           },
           body: JSON.stringify(reqBody)
         });

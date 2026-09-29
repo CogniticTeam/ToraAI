@@ -28,7 +28,7 @@ MEMORY_GUIDE                        // 系统提示用记忆使用指引常量
 
 校验规则：kind ∈ {preference, fact, pitfall, convention}（默认 fact）、scope ∈ {global, project}、source ∈ {tool, distill, manual}、content 非空字符串（trim 后 ≤ 2000 字符，超长报错）。
 
-**验证**：`node packages/core/test/memory.js`（新建，模式照抄 test/asapi.js：COCODE_HOME 重定向 + test() helper）——读写/损坏隔离/去重合并/500 淘汰/评分排序/renderMemoryContext 预算截断。
+**验证**：`node packages/core/test/memory.js`（新建，模式照抄 test/asapi.js：TORA_HOME 重定向 + test() helper）——读写/损坏隔离/去重合并/500 淘汰/评分排序/renderMemoryContext 预算截断。
 
 ## 批次 2：工具 `packages/core/src/tools/memory.js`（新建）+ 注册
 

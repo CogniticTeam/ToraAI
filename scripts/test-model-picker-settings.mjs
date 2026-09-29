@@ -8,15 +8,15 @@ import { join } from 'node:path';
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
 const chrome = [
-  process.env.COCODE_CHROME_PATH,
+  process.env.TORA_CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/usr/bin/google-chrome',
   '/usr/bin/chromium',
 ].find((path) => path && existsSync(path));
-if (!chrome) throw new Error('找不到 Chrome/Chromium；可通过 COCODE_CHROME_PATH 指定');
+if (!chrome) throw new Error('找不到 Chrome/Chromium；可通过 TORA_CHROME_PATH 指定');
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-model-picker-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-model-picker-'));
+process.env.TORA_HOME = testHome;
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const server = await startASAPIServer({ port: 0 });
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -25,19 +25,19 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true, executablePath: chrome, args: ['--no-sandbox', '--disable-gpu'] });
   const page = await browser.newPage({ locale: 'zh-CN' });
-  await page.route('https://cocode.ohfun.online/auth/me', (route) => route.fulfill({
+  await page.route('https://tora.ohfun.online/auth/me', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'test', username: 'test' }),
   }));
-  await page.route('https://cocode.ohfun.online/models', (route) => route.fulfill({
+  await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }),
   }));
-  await page.route('https://cocode.ohfun.online/account/messages', (route) => route.fulfill({
+  await page.route('https://tora.ohfun.online/account/messages', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0, nextOffset: null }),
   }));
-  await page.route('https://cocode.ohfun.online/account/events-ticket', (route) => route.fulfill({
+  await page.route('https://tora.ohfun.online/account/events-ticket', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'test-ticket' }),
   }));
-  await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', (socket) => {
+  await page.routeWebSocket('wss://tora.ohfun.online/account/events*', (socket) => {
     socket.send(JSON.stringify({ type: 'ready' }));
     socket.onMessage((message) => { if (message === 'ping') socket.send('pong'); });
   });
@@ -45,8 +45,8 @@ try {
   await page.evaluate((serverUrl) => {
     localStorage.setItem('server_url', serverUrl);
     localStorage.setItem('username', 'test');
-    localStorage.setItem('cocode_auth_token', 'test-token');
-    localStorage.setItem('cocode_auth_api', 'https://cocode.ohfun.online');
+    localStorage.setItem('tora_auth_token', 'test-token');
+    localStorage.setItem('tora_auth_api', 'https://tora.ohfun.online');
   }, base);
   await page.reload({ waitUntil: 'networkidle', timeout: 15000 });
 

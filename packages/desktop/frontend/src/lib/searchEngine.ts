@@ -8,7 +8,7 @@ export type SearchEngineId =
 	| 'ecosia'
 	| 'bing';
 
-export const SEARCH_ENGINE_STORAGE_KEY = 'cocode_search_engine';
+export const SEARCH_ENGINE_STORAGE_KEY = 'tora_search_engine';
 
 export const SEARCH_ENGINES: ReadonlyArray<{
 	id: SearchEngineId;

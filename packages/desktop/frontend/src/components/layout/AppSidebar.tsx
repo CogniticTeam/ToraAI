@@ -44,15 +44,15 @@ import { cloudFetch } from '@/utils/modelSync';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
 
 // 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
-const NAV_INDICATOR_LAYOUT_ID = 'cocode-sidebar-nav-indicator';
+const NAV_INDICATOR_LAYOUT_ID = 'tora-sidebar-nav-indicator';
 
-interface CocodeWindowBridge {
+interface ToraWindowBridge {
 	isMaximized(): boolean;
 	onMaximizeChange(cb: (maximized: boolean) => void): void;
 }
 
-function getWindowBridge(): CocodeWindowBridge | undefined {
-	return (window as unknown as { cocodeWindow?: CocodeWindowBridge }).cocodeWindow;
+function getWindowBridge(): ToraWindowBridge | undefined {
+	return (window as unknown as { toraWindow?: ToraWindowBridge }).toraWindow;
 }
 
 // 设置是用户触发的模态层；首屏任务页不预载它，缩短已登录用户的可交互时间。
@@ -88,10 +88,10 @@ export function AppSidebar() {
 		window.addEventListener(FIRST_RUN_CLOSE_SETTINGS_EVENT, close);
 		return () => window.removeEventListener(FIRST_RUN_CLOSE_SETTINGS_EVENT, close);
 	}, [handleSettingsOpenChange]);
-	const [accountName, setAccountName] = useState(() => getUsername() || getEmail()?.split('@')[0] || 'CoCode');
+	const [accountName, setAccountName] = useState(() => getUsername() || getEmail()?.split('@')[0] || 'Tora');
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-	const [pollsEnabled, setPollsEnabled] = useState(() => localStorage.getItem('cocode_polls_enabled') !== '0');
-	const [pollEntryVisible, setPollEntryVisible] = useState(() => localStorage.getItem('cocode_poll_entry_visible') !== '0');
+	const [pollsEnabled, setPollsEnabled] = useState(() => localStorage.getItem('tora_polls_enabled') !== '0');
+	const [pollEntryVisible, setPollEntryVisible] = useState(() => localStorage.getItem('tora_poll_entry_visible') !== '0');
 	useEffect(() => {
 		let alive = true;
 		const refresh = async () => {
@@ -102,19 +102,19 @@ export function AppSidebar() {
 				if (!alive) return;
 				if (typeof body.enabled === 'boolean') {
 					setPollsEnabled(body.enabled);
-					localStorage.setItem('cocode_polls_enabled', body.enabled ? '1' : '0');
+					localStorage.setItem('tora_polls_enabled', body.enabled ? '1' : '0');
 				}
 				if (typeof body.entryVisible === 'boolean') {
 					setPollEntryVisible(body.entryVisible);
-					localStorage.setItem('cocode_poll_entry_visible', body.entryVisible ? '1' : '0');
+					localStorage.setItem('tora_poll_entry_visible', body.entryVisible ? '1' : '0');
 				}
 			} catch { /* 离线沿用最近一次设置 */ }
 		};
 		void refresh();
 		const timer = window.setInterval(() => void refresh(), 30000);
-		window.addEventListener('cocode-auth-changed', refresh);
+		window.addEventListener('tora-auth-changed', refresh);
 		window.addEventListener('focus', refresh);
-		return () => { alive = false; window.clearInterval(timer); window.removeEventListener('cocode-auth-changed', refresh); window.removeEventListener('focus', refresh); };
+		return () => { alive = false; window.clearInterval(timer); window.removeEventListener('tora-auth-changed', refresh); window.removeEventListener('focus', refresh); };
 	}, []);
 
 	// 全局事件桥：任意页面 openSettings('model') → 此处打开设置窗口并定位板块
@@ -130,7 +130,7 @@ export function AppSidebar() {
 	useEffect(() => {
 		let alive = true;
 		const loadAccount = async () => {
-			const fallbackName = getUsername() || getEmail()?.split('@')[0] || 'CoCode';
+			const fallbackName = getUsername() || getEmail()?.split('@')[0] || 'Tora';
 			setAccountName(fallbackName);
 			const token = getToken();
 			if (!token) {
@@ -154,10 +154,10 @@ export function AppSidebar() {
 		};
 		const syncAccount = () => void loadAccount();
 		void loadAccount();
-		window.addEventListener('cocode-auth-changed', syncAccount);
+		window.addEventListener('tora-auth-changed', syncAccount);
 		return () => {
 			alive = false;
-			window.removeEventListener('cocode-auth-changed', syncAccount);
+			window.removeEventListener('tora-auth-changed', syncAccount);
 		};
 	}, []);
 
@@ -192,8 +192,8 @@ export function AppSidebar() {
 		}
 	}, [location.pathname, navigate]);
 
-	// 无边框窗口：最大化/全屏时 macOS 红绿灯自动隐藏，CoCode 靠左；普通窗口让位红绿灯。
-	// Electron 由 preload 桥（window.cocodeWindow）提供状态；浏览器环境无红绿灯，直接靠左。
+	// 无边框窗口：最大化/全屏时 macOS 红绿灯自动隐藏，Tora 靠左；普通窗口让位红绿灯。
+	// Electron 由 preload 桥（window.toraWindow）提供状态；浏览器环境无红绿灯，直接靠左。
 	const [lightedPinned, setLightedPinned] = useState(!!getWindowBridge());
 	useEffect(() => {
 		const bridge = getWindowBridge();
@@ -208,7 +208,7 @@ export function AppSidebar() {
 	};
 
 	useEffect(() => {
-		const bridge = (window as unknown as { cocodeWindow?: { onMenuCommand?: (cb: (action: string) => void) => () => void } }).cocodeWindow;
+		const bridge = (window as unknown as { toraWindow?: { onMenuCommand?: (cb: (action: string) => void) => () => void } }).toraWindow;
 		return bridge?.onMenuCommand?.(action => {
 			if (action === 'new-task') void handleNewTask();
 			if (action === 'messages') setMessagesOpen(true);
@@ -240,7 +240,7 @@ export function AppSidebar() {
 				{/* 无边框窗口：此条为窗口拖拽区。普通窗口 pl-20 让位悬浮红绿灯；最大化（红绿灯隐藏）或浏览器 pl-4 靠左 */}
 				<div className={`app-drag flex h-11 items-center gap-2 transition-[padding] ${lightedPinned ? 'pl-20' : 'pl-4'}`}>
 					<img src="/icon.png" alt="" width={20} height={20} draggable={false} className="size-5 shrink-0 rounded-[5px] grayscale" />
-					<span className="text-base font-semibold tracking-tight text-foreground">CoCode</span>
+					<span className="text-base font-semibold tracking-tight text-foreground">Tora</span>
 				</div>
 			</SidebarHeader>
 			<SidebarContent>
@@ -310,7 +310,7 @@ export function AppSidebar() {
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
-				{/* 历史会话：菜单项之下（CoCode 定制，自聊天页侧栏迁入） */}
+				{/* 历史会话：菜单项之下（Tora 定制，自聊天页侧栏迁入） */}
 				<SessionListSection />
 			</SidebarContent>
 			<SidebarFooter className="p-2">

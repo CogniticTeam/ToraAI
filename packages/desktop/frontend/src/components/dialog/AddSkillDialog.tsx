@@ -104,7 +104,7 @@ export function AddSkillDialog({ children, present, onUpload, onAddFromLibrary, 
 	};
 
 	// Electron 壳层才有原生对话框桥；纯浏览器环境不显示「本地导入」入口
-	const hasNativeDialog = !!(window as unknown as { cocodeWindow?: unknown }).cocodeWindow;
+	const hasNativeDialog = !!(window as unknown as { toraWindow?: unknown }).toraWindow;
 
 	const handleImportLocal = async () => {
 		setBusy(true);

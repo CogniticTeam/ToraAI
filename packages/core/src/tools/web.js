@@ -7,7 +7,7 @@ import { lookup as dnsLookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 
 // 用真实形态的 Chrome UA：大量站点（含搜索引擎的 html 版）会按 UA 拒绝
-// 非浏览器流量 —— 之前带 "CoCode/0.1" 的 UA 是「fetch failed / 403」的高发原因。
+// 非浏览器流量 —— 之前带 "Tora/0.1" 的 UA 是「fetch failed / 403」的高发原因。
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
 const DEFAULT_TIMEOUT = 20000;
 

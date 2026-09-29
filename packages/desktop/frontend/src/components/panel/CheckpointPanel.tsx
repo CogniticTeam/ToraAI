@@ -97,7 +97,7 @@ export function CheckpointPanel({ checkpoints, loading, onRestore, onRefresh }: 
 				<PanelEmpty
 					icon={History}
 					title={zh ? '还没有检查点' : 'No checkpoints yet'}
-					description={zh ? '每一轮出现写入或执行类工具调用之前，CoCode 都会先给工作目录拍一张快照。改动出问题时可以回到任意一轮之前，回滚后继续工作会形成时间线分支。' : 'CoCode snapshots the workspace before write or execution tools. Restore any earlier point and continue on a new timeline branch.'}
+					description={zh ? '每一轮出现写入或执行类工具调用之前，Tora 都会先给工作目录拍一张快照。改动出问题时可以回到任意一轮之前，回滚后继续工作会形成时间线分支。' : 'Tora snapshots the workspace before write or execution tools. Restore any earlier point and continue on a new timeline branch.'}
 				/>
 			) : (
 				<div className="relative pl-5">

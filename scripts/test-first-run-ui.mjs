@@ -7,11 +7,11 @@ import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
-const chrome = [process.env.COCODE_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
-if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 COCODE_CHROME_PATH');
+const chrome = [process.env.TORA_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
+if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 TORA_CHROME_PATH');
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-first-run-test-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-first-run-test-'));
+process.env.TORA_HOME = testHome;
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const server = await startASAPIServer({ port: 0 });
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -24,7 +24,7 @@ try {
 	let actualMessageRequests = 0;
 	page.on('request', request => { if (/\/chat(?:\/|$)/.test(new URL(request.url()).pathname) && request.method() === 'POST') actualMessageRequests++; });
 	await page.addInitScript(() => {
-		window.cocodeWindow = {
+		window.toraWindow = {
 			isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN',
 			reportLanguage: () => {}, reportTheme: () => {}, getRequiredUpdate: () => null,
 			onRequiredUpdate: () => () => {}, refreshAccount: async () => {},
@@ -32,30 +32,30 @@ try {
 		};
 	});
 	await page.goto(base + '/', { waitUntil: 'commit' });
-	await page.route('https://cocode.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'first-run-test', username: 'first-run-test' }) }));
-	await page.route('https://cocode.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://cocode.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-	await page.route('https://cocode.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://cocode.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'first-run-test-ticket' }) }));
-	await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'first-run-test', username: 'first-run-test' }) }));
+	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'first-run-test-ticket' }) }));
+	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
-		localStorage.setItem('cocode_auth_token', 'first-run-test-token');
+		localStorage.setItem('tora_auth_token', 'first-run-test-token');
 		localStorage.setItem('username', 'first-run-test');
-		localStorage.removeItem('cocode:first-run:intro:v1');
-		localStorage.removeItem('cocode:first-run:tour:v1');
-		localStorage.removeItem('cocode:first-run:step:v1');
+		localStorage.removeItem('tora:first-run:intro:v1');
+		localStorage.removeItem('tora:first-run:tour:v1');
+		localStorage.removeItem('tora:first-run:step:v1');
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.locator('.first-launch-root').waitFor({ state: 'visible' });
-	await page.screenshot({ path: '/tmp/cocode-first-run-actual-intro.png' });
+	await page.screenshot({ path: '/tmp/tora-first-run-actual-intro.png' });
 	await page.locator('.first-launch-status').filter({ hasText: /准备完成/ }).waitFor({ state: 'visible', timeout: 5000 });
-	await page.screenshot({ path: '/tmp/cocode-first-run-actual-ready.png' });
+	await page.screenshot({ path: '/tmp/tora-first-run-actual-ready.png' });
 	await page.getByRole('button', { name: /开启体验/ }).click();
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
-	const greeting = page.getByRole('heading', { name: '与CoCode工作和编程' }).first();
+	const greeting = page.getByRole('heading', { name: '与Tora工作和编程' }).first();
 	await greeting.waitFor({ state: 'visible' });
-	assert.equal(await greeting.locator('.chat-greeting-character').count(), Array.from('与CoCode工作和编程').length, '空会话标题应按字拆分播放动画');
+	assert.equal(await greeting.locator('.chat-greeting-character').count(), Array.from('与Tora工作和编程').length, '空会话标题应按字拆分播放动画');
 	const characterDelays = await greeting.locator('.chat-greeting-character').evaluateAll(elements => elements.map(element => Number.parseFloat(getComputedStyle(element).animationDelay)));
 	assert.ok(characterDelays.every((delay, index) => index === 0 || delay > characterDelays[index - 1]), '标题动画应按文字顺序逐字播放');
 	assert.ok(characterDelays.at(-1) > 0.5, '标题应保留之前较从容的逐字节奏');
@@ -76,12 +76,12 @@ try {
 	const shadeStyle = await page.locator('.first-run-shade').first().evaluate(element => ({ transform: getComputedStyle(element).transform, width: getComputedStyle(element).width }));
 	assert.notEqual(shadeStyle.transform, 'none', '遮罩应由合成层缩放定位');
 	assert.equal(shadeStyle.width, '1px', '遮罩应从轻量 1px 实色层缩放，避免全屏阴影绘制');
-	await page.screenshot({ path: '/tmp/cocode-first-run-spotlight-model.png' });
+	await page.screenshot({ path: '/tmp/tora-first-run-spotlight-model.png' });
 	await page.locator('#tour-llm-select').click();
 	await page.getByRole('heading', { name: '添加模型服务' }).waitFor({ state: 'visible' });
 	await page.locator('#tour-add-model').click();
-	await page.getByText('返回 CoCode').waitFor({ state: 'visible' });
-	await page.getByText('返回 CoCode').click();
+	await page.getByText('返回 Tora').waitFor({ state: 'visible' });
+	await page.getByText('返回 Tora').click();
 	await page.locator('#tour-workspace-picker').click();
 	await page.keyboard.press('Escape');
 	await page.locator('#tour-permission-mode').click();
@@ -102,7 +102,7 @@ try {
 			animation: focus ? getComputedStyle(focus).animationName : 'none',
 		};
 	});
-	await page.screenshot({ path: '/tmp/cocode-first-run-spotlight-moving.png' });
+	await page.screenshot({ path: '/tmp/tora-first-run-spotlight-moving.png' });
 	const skillsBox = await page.locator('#tour-skills-nav').boundingBox();
 	assert.ok(beforeMove && motionFrame.focus && skillsBox, '跨区域切换时聚光框应保持可见');
 	assert.ok(Math.abs(motionFrame.focus.x - beforeMove.x) > 8 && Math.abs(motionFrame.focus.x - skillsBox.x) > 8, '聚光框应连续移动，而非瞬间跳到下一个控件');
@@ -119,15 +119,15 @@ try {
 	await page.getByRole('dialog', { name: /准备好了/ }).waitFor({ state: 'visible' });
 	assert.equal(actualMessageRequests, 0, '教学演示不得向真实聊天端点发送消息');
 	assert.equal((await (await fetch(`${base}/sessions/`)).json()).sessions.length, sessionsBefore, '教学演示不得创建真实会话');
-	await page.getByRole('button', { name: /进入 CoCode/ }).click();
+	await page.getByRole('button', { name: /进入 Tora/ }).click();
 	await greeting.waitFor({ state: 'visible' });
 	await page.waitForFunction(() => {
-		const endings = [...document.querySelectorAll('h1[aria-label="与CoCode工作和编程"] .chat-greeting-character:last-child')];
+		const endings = [...document.querySelectorAll('h1[aria-label="与Tora工作和编程"] .chat-greeting-character:last-child')];
 		return endings.length > 0 && endings.every(element => getComputedStyle(element).opacity === '1');
 	});
-	assert.ok(await page.locator('h1[aria-label="与CoCode工作和编程"] .chat-greeting-character').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1')), '逐字动画结束后不得缺字');
-	await page.screenshot({ path: '/tmp/cocode-greeting-typewriter-complete.png' });
-	assert.equal(await page.evaluate(() => localStorage.getItem('cocode:first-run:tour:v1')), '1');
+	assert.ok(await page.locator('h1[aria-label="与Tora工作和编程"] .chat-greeting-character').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1')), '逐字动画结束后不得缺字');
+	await page.screenshot({ path: '/tmp/tora-greeting-typewriter-complete.png' });
+	assert.equal(await page.evaluate(() => localStorage.getItem('tora:first-run:tour:v1')), '1');
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
 	assert.equal(await page.locator('.first-launch-root').count(), 0, '再次启动不应重复播放开场');
@@ -141,7 +141,7 @@ try {
 	assert.equal(await page.locator('.first-launch-mark').evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时不应播放入场动画');
 	await page.getByRole('button', { name: /Skip animation/ }).click();
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
-	const englishGreeting = page.getByRole('heading', { name: 'Work and Code with CoCode' }).first();
+	const englishGreeting = page.getByRole('heading', { name: 'Work and Code with Tora' }).first();
 	await englishGreeting.waitFor({ state: 'visible' });
 	assert.equal(await englishGreeting.locator('.chat-greeting-character').first().evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时标题应直接完整显示');
 	await page.getByRole('heading', { name: 'Choose your own model' }).waitFor({ state: 'visible' });
@@ -155,11 +155,11 @@ try {
 	if (await page.getByRole('button', { name: 'Set up later' }).count()) await page.getByRole('button', { name: 'Set up later' }).click();
 	await page.getByRole('heading', { name: 'Describe a clear goal' }).waitFor({ state: 'visible', timeout: 5000 });
 	await page.getByRole('button', { name: /Skip guide/ }).click();
-	await page.getByRole('button', { name: /Enter CoCode/ }).click();
+	await page.getByRole('button', { name: /Enter Tora/ }).click();
 
 	// 未登录的新安装用户先看开场，再进入登录页；教学不得压在认证表单之上。
 	const unsigned = await browser.newPage({ viewport: { width: 1024, height: 760 }, locale: 'zh-CN' });
-	await unsigned.addInitScript(() => { window.cocodeWindow = { isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN', getRequiredUpdate: () => null, onRequiredUpdate: () => () => {} }; });
+	await unsigned.addInitScript(() => { window.toraWindow = { isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN', getRequiredUpdate: () => null, onRequiredUpdate: () => () => {} }; });
 	await unsigned.goto(base + '/', { waitUntil: 'domcontentloaded' });
 	await unsigned.locator('.first-launch-root').waitFor({ state: 'visible' });
 	await unsigned.getByRole('button', { name: /开启体验/ }).click();

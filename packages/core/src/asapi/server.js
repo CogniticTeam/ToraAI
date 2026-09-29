@@ -2,7 +2,7 @@
 // - 完整实现：/health /agent /sessions(/messages /stream /interrupt) /chat /credential /model /workspace
 // - 空态 stub：/channels /hub /skill /mcp /knowledge_bases（对应页面显示空列表）
 // - 定时任务：/schedule CRUD + /schedule/:id/sessions（见 asapi/schedules.js）
-// - CoCode 扩展：/admin/reset /admin/config /admin/workspace-recents /admin/models /admin/models-config
+// - Tora 扩展：/admin/reset /admin/config /admin/workspace-recents /admin/models /admin/models-config
 // - 静态托管 desktop/frontend/dist（SPA fallback 收紧到页面导航）
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
@@ -39,7 +39,7 @@ import { normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
 import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates } from '../tools/mcp-workshop.js';
 import { createTerminal, writeTerminal, interruptTerminal, killTerminal, getTerminal, subscribeTerminal, replayTerminal } from './terminal.js';
 import { listCheckpoints, restore as restoreCheckpoint, clearCheckpoints } from '../tools/checkpoint.js';
-import { listBranches, createBranch, switchBranch, deleteBranch, listWorktrees, createWorktree, removeWorktree, stageFiles, unstageFiles, statusFiles, commit, log as gitLog } from '../tools/cocode-git.js';
+import { listBranches, createBranch, switchBranch, deleteBranch, listWorktrees, createWorktree, removeWorktree, stageFiles, unstageFiles, statusFiles, commit, log as gitLog } from '../tools/tora-git.js';
 import { listAutomations, createAutomation, updateAutomation, deleteAutomation, drainNotifications } from '../tools/automations.js';
 import {
   listTeams as listTeamsStore, getTeam as getTeamStore, createTeam as createTeamStore,
@@ -66,9 +66,9 @@ const EXTRA_BIN_DIRS = () => [
   join(homedir(), '.bun', 'bin'),
   '/opt/homebrew/bin',
   '/usr/local/bin',
-  // 托管运行时的工作区（COCODE_NODE_WORKSPACE 可覆盖）
-  process.env.COCODE_NODE_WORKSPACE
-    ? join(process.env.COCODE_NODE_WORKSPACE, 'node_modules', '.bin')
+  // 托管运行时的工作区（TORA_NODE_WORKSPACE 可覆盖）
+  process.env.TORA_NODE_WORKSPACE
+    ? join(process.env.TORA_NODE_WORKSPACE, 'node_modules', '.bin')
     : join(homedir(), '.workbuddy', 'binaries', 'node', 'workspace', 'node_modules', '.bin')
 ];
 
@@ -141,7 +141,7 @@ const AGENT_SCHEMA = {
       name: { type: 'string', title: 'Name', description: '显示在会话侧栏与选择器中' },
       system_prompt: {
         type: 'string', format: 'textarea', title: 'System Prompt',
-        description: '留空则使用 CoCode 内置紧凑提示词（低 token）'
+        description: '留空则使用 Tora 内置紧凑提示词（低 token）'
       },
       context_config: {
         type: 'object', title: 'Context Config',
@@ -221,7 +221,7 @@ async function readBody(req) {
 // ---------- 多模型列表辅助 ----------
 // 把 ~/.vega/config.json 的 modelList 合成为 "cocode-models" 凭证，
 // 让添加的模型出现在前端 LlmSelect 里。bridge.js 选中 "cocode-models" 时按 model 名查 cfg.modelList。
-const COCODE_CRED_ID = 'cocode-models';
+const TORA_CRED_ID = 'cocode-models';
 
 function isCustomModel(m) {
   return !m?.isOfficial && !String(m?.baseURL || '').includes('/official/v1');
@@ -235,14 +235,14 @@ function enabledModels(cfg) {
   return (Array.isArray(cfg.modelList) ? cfg.modelList : []).filter((m) => isCustomModel(m) && m.enabled && m.model);
 }
 
-function cocodeCredential(cfg) {
+function toraCredential(cfg) {
   const now = Math.floor(Date.now() / 1000);
   const models = enabledModels(cfg);
   return {
-    id: COCODE_CRED_ID, user_id: 'local', editable: false,
+    id: TORA_CRED_ID, user_id: 'local', editable: false,
     created_at: now, updated_at: now,
     data: {
-      type: 'openai_compatible', name: 'CoCode 模型', source: 'models-config',
+      type: 'openai_compatible', name: 'Tora 模型', source: 'models-config',
       base_url: models[0]?.baseURL || '', api_key: '', model: '',
       // 前端 LlmSelect 要按模型显示服务商品牌图标。这个合成凭证把一批不同
       // 服务商的模型混在一起，单靠 data.provider 分辨不出来，所以单独给一份
@@ -283,7 +283,7 @@ export function startASAPIServer({ port = 0, host = '127.0.0.1' } = {}) {
       agent_id: sched.agent_id,
       chat_model_config: sched.data?.chat_model_config || null,
       fallback_chat_model_config: null,
-      cocodeCfg: loadConfig(),
+      toraCfg: loadConfig(),
       cwd: null,
     });
     record.state.permission_mode = sched.data?.permission_mode || 'dont_ask';
@@ -361,7 +361,7 @@ async function route(req, res) {
     return json(res, 200, { status: 'ok', version: '0.1.0', components: {} });
   }
 
-  // ---------- 管理端点（CoCode 扩展，非 agentscope 协议） ----------
+  // ---------- 管理端点（Tora 扩展，非 agentscope 协议） ----------
   // 设置窗口的"清空所有数据"
   if (p === '/admin/reset' && method === 'POST') {
     const counts = resetAll();
@@ -792,7 +792,7 @@ async function route(req, res) {
       else headers.authorization = `Bearer ${input.apiKey}`;
     }
     if (provider === 'anthropic') headers['anthropic-version'] = '2023-06-01';
-    if (provider === 'google') headers['x-goog-api-client'] = 'cocode-desktop/1.0.0';
+    if (provider === 'google') headers['x-goog-api-client'] = 'tora-desktop/1.0.0';
     try {
       // Claude 模型列表默认仅返回 20 项；请求上限页即可覆盖当前可用模型。
       const listURL = target + (provider === 'anthropic' ? '/models?limit=1000' : '/models');
@@ -805,7 +805,7 @@ async function route(req, res) {
       let ids = list.map((m) => (typeof m === 'string' ? m : m?.id ?? m?.name))
         .filter((s) => typeof s === 'string');
       // OpenAI 的 /models 同时返回 embedding、音视频等模型；这里只展示适合
-      // CoCode Chat Completions 接入的候选项。仍可在表单中手动输入其他模型 ID。
+      // Tora Chat Completions 接入的候选项。仍可在表单中手动输入其他模型 ID。
       if (input.provider === 'openai') {
         ids = ids.filter((id) => /^(?:gpt-(?:[3-9]|oss)|o[1-9](?:[.-]|$)|chatgpt-|ft:gpt-[3-9])/i.test(id)
           && !/(?:^|[-_.])(?:audio|image|realtime|transcribe|tts|search|embedding|moderation|pro|codex)(?:[-_.]|$)/i.test(id));
@@ -993,7 +993,7 @@ async function route(req, res) {
       agent_id: body.agent_id,
       chat_model_config: body.chat_model_config || null,
       fallback_chat_model_config: body.fallback_chat_model_config || null,
-      cocodeCfg: loadConfig(),
+      toraCfg: loadConfig(),
       cwd: body.cwd || null,
     });
     // 无会话时前端把权限模式记在本地，随第一条消息带过来 —— 与 cwd 同一策略。
@@ -1212,7 +1212,7 @@ async function route(req, res) {
   // 合并手动凭证 + 设置窗口模型列表合成的 cocode-models（仅在有启用模型时出现）
   if (p === '/credential/' && method === 'GET') {
     const cfg = loadConfig();
-    const credentials = [...listCredentials(), ...(enabledModels(cfg).length ? [cocodeCredential(cfg)] : [])];
+    const credentials = [...listCredentials(), ...(enabledModels(cfg).length ? [toraCredential(cfg)] : [])];
     return json(res, 200, { credentials, total: credentials.length });
   }
   if (p === '/credential/schemas' && method === 'GET') {
@@ -1264,7 +1264,7 @@ async function route(req, res) {
   // ---------- Workspace ----------
   if (p === '/workspace/directories' && method === 'GET') {
     // 工作目录必须以当前会话选中的为准；不接收 process.cwd() 兜底，
-    // 避免 Electron 进程的 cwd（CoCode 包根）泄漏成默认工作区。
+    // 避免 Electron 进程的 cwd（Tora 包根）泄漏成默认工作区。
     let root = null;
     if (q.session_id) {
       const rec = loadSessionRecord(q.session_id);
@@ -1926,6 +1926,6 @@ async function serveStatic(path, res) {
 if (process.argv[1] && process.argv[1].endsWith('asapi/server.js')) {
   const port = Number(process.argv[2] || 3210);
   startASAPIServer({ port }).then((srv) => {
-    console.log(`CoCode ASAPI 服务已启动: http://127.0.0.1:${srv.address().port}`);
+    console.log(`Tora ASAPI 服务已启动: http://127.0.0.1:${srv.address().port}`);
   });
 }

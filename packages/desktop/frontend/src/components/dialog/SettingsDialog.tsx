@@ -1,4 +1,4 @@
-// CoCode 设置窗口（参考 WorkBuddy 布局：左侧分类导航 + 右侧内容面板）。
+// Tora 设置窗口（参考 WorkBuddy 布局：左侧分类导航 + 右侧内容面板）。
 // 不暴露后端连接配置——连接由 Electron 壳层/启动参数管理。
 // 模型板块为三层结构（参考 WorkBuddy）：
 //   列表（表格：模型/服务商/操作） → 添加模型弹窗（服务商网格） → 通过服务商添加表单
@@ -72,7 +72,7 @@ type UpdateResult = {
 type UpdateBridge = { checkForUpdates: () => Promise<UpdateResult>; getAppVersion?: () => string };
 
 function getUpdateBridge(): UpdateBridge | null {
-	return (window as unknown as { cocodeWindow?: UpdateBridge }).cocodeWindow ?? null;
+	return (window as unknown as { toraWindow?: UpdateBridge }).toraWindow ?? null;
 }
 
 /**
@@ -912,7 +912,7 @@ function SoundSection() {
 }
 
 // ==================== 智能体板块 ====================
-// 原聊天页侧栏的智能体选择器 + 设置入口迁入此处（CoCode 定制）。
+// 原聊天页侧栏的智能体选择器 + 设置入口迁入此处（Tora 定制）。
 
 function AgentSection() {
 	const { t } = useTranslation();
@@ -1556,7 +1556,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 	const [wiping, setWiping] = useState(false);
 	const [wipeError, setWipeError] = useState<string | null>(null);
 	// Agent 运行行为（上下文压缩预算 + 工具输出限制 + 最大迭代轮数）。
-	// 保存时 PATCH /admin/runtime，磁盘持久化到 ~/.cocode/config.json。
+	// 保存时 PATCH /admin/runtime，磁盘持久化到 ~/.tora/config.json。
 	const [runtime, setRuntime] = useState<RuntimeBehavior | null>(null);
 	const [runtimeBusy, setRuntimeBusy] = useState(false);
 	const [runtimeErr, setRuntimeErr] = useState<string | null>(null);
@@ -1684,7 +1684,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 		setWiping(true);
 		setWipeError(null);
 		try {
-			// CoCode 扩展端点：服务端清空 sessions + credentials + agents
+			// Tora 扩展端点：服务端清空 sessions + credentials + agents
 			const res = await fetch(apiUrl('/admin/reset'), { method: 'POST' });
 			if (!res.ok) throw new Error(t('settings.errors.backend', { status: res.status }));
 			setTimeout(() => window.location.reload(), 400);
@@ -1865,7 +1865,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 							<>
 								<h3 className="text-lg font-semibold">{t('settings.about.title')}</h3>
 								<div className="mt-3 space-y-3">
-									<Row title="CoCode" description={t('settings.about.cocode', { version: getUpdateBridge()?.getAppVersion?.() ?? '1.0.0' })} />
+									<Row title="Tora" description={t('settings.about.tora', { version: getUpdateBridge()?.getAppVersion?.() ?? '1.0.0' })} />
 									<Row title={t('settings.about.runtimeTitle')} description={t('settings.about.runtime')} />
 									<Row title={t('settings.about.update.title')} description={t('settings.about.update.desc')}>
 										<Button variant="outline" size="sm" onClick={handleCheckForUpdates} disabled={checkingUpdate}>

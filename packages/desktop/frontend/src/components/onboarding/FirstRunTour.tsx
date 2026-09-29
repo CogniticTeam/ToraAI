@@ -86,7 +86,7 @@ function SpotlightMask({ rect, viewport, reducedMotion }: { rect: Rect; viewport
 }
 
 function isDesktop(): boolean {
-	return typeof window !== 'undefined' && Boolean((window as { cocodeWindow?: unknown }).cocodeWindow);
+	return typeof window !== 'undefined' && Boolean((window as { toraWindow?: unknown }).toraWindow);
 }
 
 function initialStep(): number {

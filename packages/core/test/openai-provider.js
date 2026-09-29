@@ -4,8 +4,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-openai-test-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-openai-test-'));
+process.env.TORA_HOME = testHome;
 const realFetch = globalThis.fetch;
 
 try {

@@ -1,13 +1,13 @@
-// CoCode core 全链路测试（无需真实模型：mock fetch 模拟 SSE）
+// Tora core 全链路测试（无需真实模型：mock fetch 模拟 SSE）
 // 运行：node packages/core/test/run.js
 import { strict as assert } from 'node:assert';
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync, statSync, readdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.cocode（配置/会话/检查点）。
+// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.tora（配置/会话/检查点）。
 // 必须在 import 任何 core 模块之前设置。
-process.env.COCODE_HOME = mkdtempSync(join(tmpdir(), 'cocode-home-'));
+process.env.TORA_HOME = mkdtempSync(join(tmpdir(), 'tora-home-'));
 
 const CORE = '../src/';
 const {
@@ -29,11 +29,11 @@ async function test(name, fn) {
 }
 
 console.log('--- 工具系统 ---');
-const tmp = mkdtempSync(join(tmpdir(), 'cocode-test-'));
+const tmp = mkdtempSync(join(tmpdir(), 'tora-test-'));
 const ctx = { cwd: tmp, toolOutputLimit: 6000 };
 
 await test('Write 创建文件 / 覆盖时给出 diff 预览', async () => {
-  const r = await writeTool.execute({ path: 'a/hello.txt', content: 'hello cocode\nline2' }, ctx);
+  const r = await writeTool.execute({ path: 'a/hello.txt', content: 'hello tora\nline2' }, ctx);
   assert.match(r.text, /已创建 a\/hello\.txt/);
   // 新建与覆盖是两条不同文案，覆盖时必须带 +/- 预览（"先看改动"的最低要求）
   await writeTool.execute({ path: 'a/other.txt', content: 'x\ny\nz' }, ctx);
@@ -48,15 +48,15 @@ await test('Write 创建文件 / 覆盖时给出 diff 预览', async () => {
 
 await test('Read 带行号读取', async () => {
   const r = await readTool.execute({ path: 'a/hello.txt' }, ctx);
-  assert.match(r, /1\thello cocode/);
+  assert.match(r, /1\thello tora/);
   assert.match(r, /共 2 行/);
 });
 
 await test('Edit 精确替换（唯一匹配）', async () => {
-  const r = await editTool.execute({ path: 'a/hello.txt', old_string: 'hello cocode', new_string: 'hello world cocode' }, ctx);
+  const r = await editTool.execute({ path: 'a/hello.txt', old_string: 'hello tora', new_string: 'hello world tora' }, ctx);
   assert.match(r.text, /已修改/);
   const r2 = await readTool.execute({ path: 'a/hello.txt' }, ctx);
-  assert.match(r2, /hello world cocode/);
+  assert.match(r2, /hello world tora/);
 });
 
 await test('Edit 非唯一报错', async () => {
@@ -99,15 +99,15 @@ await test('Glob 匹配', async () => {
 });
 
 await test('Grep 内容搜索', async () => {
-  writeFileSync(join(tmp, 'needle.txt'), 'here is cocode-needle-42\nsecond line');
-  const r = await grepTool.execute({ pattern: 'cocode-needle' }, ctx);
+  writeFileSync(join(tmp, 'needle.txt'), 'here is tora-needle-42\nsecond line');
+  const r = await grepTool.execute({ pattern: 'tora-needle' }, ctx);
   assert.match(r, /needle\.txt:1:/);
 });
 
 await test('Bash 执行与 exit_code', async () => {
-  const r = await bashTool.execute({ command: 'echo cocode-ok && echo err >&2; exit 0' }, ctx);
+  const r = await bashTool.execute({ command: 'echo tora-ok && echo err >&2; exit 0' }, ctx);
   assert.match(r, /exit_code: 0/);
-  assert.match(r, /cocode-ok/);
+  assert.match(r, /tora-ok/);
 });
 
 console.log('--- 路径沙箱 ---');
@@ -405,7 +405,7 @@ await test('CLI 模型连接失败返回非零退出码', async () => {
   const cli = fileURLToPath(new URL('../../cli/src/index.js', import.meta.url));
   const result = spawnSync(process.execPath, [cli, '执行测试任务'], {
     cwd: tmp,
-    env: { ...process.env, COCODE_BASE_URL: 'http://127.0.0.1:1/v1', COCODE_API_KEY: 'test', COCODE_MODEL: 'mock' },
+    env: { ...process.env, TORA_BASE_URL: 'http://127.0.0.1:1/v1', TORA_API_KEY: 'test', TORA_MODEL: 'mock' },
     encoding: 'utf8', timeout: 15_000,
   });
   assert.equal(result.status, 1, `CLI 不应把模型错误报告为成功：${result.stdout}\n${result.stderr}`);
@@ -777,14 +777,14 @@ await test('子进程环境净化：密钥类变量被剥离，PATH/HOME 等保�
   const { LEGACY_ENV_PREFIX } = await import(CORE + 'legacy-migration.js');
   const env = buildChildEnv({
     PATH: '/usr/bin', HOME: '/tmp', LANG: 'zh_CN.UTF-8',
-    [`${LEGACY_ENV_PREFIX}_API_KEY`]: 'sk-x', COCODE_API_KEY: 'sk-y', MY_TOKEN: 't',
+    [`${LEGACY_ENV_PREFIX}_API_KEY`]: 'sk-x', TORA_API_KEY: 'sk-y', MY_TOKEN: 't',
     AWS_SECRET_ACCESS_KEY: 's', DB_PASSWORD: 'p',
     NODE_OPTIONS: '--require=./evil.js'
   });
   assert.equal(env.PATH, '/usr/bin');
   assert.equal(env.HOME, '/tmp');
   assert.equal(env.LANG, 'zh_CN.UTF-8');
-  for (const k of [`${LEGACY_ENV_PREFIX}_API_KEY`, 'COCODE_API_KEY', 'MY_TOKEN', 'AWS_SECRET_ACCESS_KEY', 'DB_PASSWORD', 'NODE_OPTIONS']) {
+  for (const k of [`${LEGACY_ENV_PREFIX}_API_KEY`, 'TORA_API_KEY', 'MY_TOKEN', 'AWS_SECRET_ACCESS_KEY', 'DB_PASSWORD', 'NODE_OPTIONS']) {
     assert.ok(!(k in env), `${k} 不该出现在子进程环境里`);
   }
 });
@@ -800,9 +800,9 @@ await test('脱敏：登记密钥 + 常见形态在出站文本里被替换', as
 });
 
 console.log('--- 项目指令 / ReAct 降级 / 持久 shell / 新工具 ---');
-await test('项目指令：COCODE.md 注入 system prompt，自称与产品名统一为 CoCode', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-prompt-'));
-  writeFileSync(join(dir, 'COCODE.md'), '本项目规则：禁止使用 any 类型。');
+await test('项目指令：TORA.md 注入 system prompt，自称与产品名统一为 Tora', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'tora-prompt-'));
+  writeFileSync(join(dir, 'TORA.md'), '本项目规则：禁止使用 any 类型。');
   const origFetch = globalThis.fetch;
   let captured = null;
   globalThis.fetch = async (_u, init) => { captured = JSON.parse(init.body); return sse([{ content: 'ok' }]); };
@@ -813,8 +813,8 @@ await test('项目指令：COCODE.md 注入 system prompt，自称与产品名�
   assert.ok(captured, 'fetch 未被调用');
   assert.equal(captured.messages[0].role, 'system');
   const sys = captured.messages[0].content;
-  assert.match(sys, /禁止使用 any 类型/, 'COCODE.md 的内容应被注入 system prompt');
-  assert.match(sys, /CoCode/, '提示词应统一为 CoCode');
+  assert.match(sys, /禁止使用 any 类型/, 'TORA.md 的内容应被注入 system prompt');
+  assert.match(sys, /Tora/, '提示词应统一为 Tora');
   assert.ok(!/Corey/.test(sys), '不应再自称 Corey');
   rmSync(dir, { recursive: true, force: true });
 });
@@ -858,8 +858,8 @@ await test('模型不支持 tool_calls → 自动降级为文本 ReAct 并继续
 await test('持久 shell：cd 与 export 跨调用保留（否则多步构建没法连写）', async () => {
   const sh = await bashTool.execute({ command: 'mkdir -p sub && cd sub', reset: true }, ctx);
   assert.match(sh, /exit_code: 0/);
-  await bashTool.execute({ command: 'export COCODE_TEST_FOO=bar' }, ctx);
-  const r = await bashTool.execute({ command: 'pwd; echo "FOO=$COCODE_TEST_FOO"' }, ctx);
+  await bashTool.execute({ command: 'export TORA_TEST_FOO=bar' }, ctx);
+  const r = await bashTool.execute({ command: 'pwd; echo "FOO=$TORA_TEST_FOO"' }, ctx);
   assert.match(r, /sub/, 'cd 应跨调用保留: ' + r);
   assert.match(r, /FOO=bar/, 'export 应跨调用保留: ' + r);
   // 输出里不该混进交互式提示符（oh-my-zsh / p10k 的噪声）
@@ -867,7 +867,7 @@ await test('持久 shell：cd 与 export 跨调用保留（否则多步构建没
 });
 
 await test('RepoMap：几百 token 给出符号骨架，不必反复 glob', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-map-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-map-'));
   mkdirSync(join(dir, 'src'), { recursive: true });
   // 数据常量刻意不进骨架（否则骨架全是噪声、违背低 token 初衷），
   // 所以这里用箭头函数形式的常量来验证"模块级符号能被提取"
@@ -1036,7 +1036,7 @@ await test('服务 API：config/sessions/chat(SSE)', async () => {
   const origFetch = globalThis.fetch;
   globalThis.fetch = async () => sse([{ content: '好的' }]);
   const realFetch = origFetch;
-  process.env.COCODE_API_KEY = 'test-key-for-server'; // 服务端 loadConfig 需要 key 才能进到模型调用
+  process.env.TORA_API_KEY = 'test-key-for-server'; // 服务端 loadConfig 需要 key 才能进到模型调用
   try {
     const srv = await startServer({ port: 0 });
     const { port } = srv.address();
@@ -1082,7 +1082,7 @@ await test('服务 API：config/sessions/chat(SSE)', async () => {
 
     await realFetch(base + `/api/sessions/${session.id}`, { method: 'DELETE' });
     srv.close();
-  } finally { process.env.COCODE_API_KEY = ''; globalThis.fetch = origFetch; }
+  } finally { process.env.TORA_API_KEY = ''; globalThis.fetch = origFetch; }
 });
 
 
@@ -1094,10 +1094,10 @@ const lsp = await import(CORE + 'tools/lsp.js');
 const semantic = await import(CORE + 'tools/semantic.js');
 const { loadHooks, runHooks, describeHooks, matcherMatches } = await import(CORE + 'hooks.js');
 const { recentChanges } = await import(CORE + 'prompt.js');
-const { COCODE_DIR } = await import(CORE + 'config.js');
+const { TORA_DIR } = await import(CORE + 'config.js');
 
 await test('符号索引：函数/类/箭头常量都被提取，局部变量不算符号', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-idx-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-idx-'));
   mkdirSync(join(dir, 'src'), { recursive: true });
   writeFileSync(join(dir, 'src', 'a.js'), [
     'export function alpha(x) {',
@@ -1119,7 +1119,7 @@ await test('符号索引：函数/类/箭头常量都被提取，局部变量不
 });
 
 await test('跳定义 / 找引用：行号与文件都对得上', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-idx2-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-idx2-'));
   writeFileSync(join(dir, 'lib.js'), 'export function target() {\n  return 1;\n}\n');
   writeFileSync(join(dir, 'use.js'), 'import { target } from \'./lib.js\';\n\nconst x = target();\n');
   const defs = lsp.findDefinition(dir, 'target');
@@ -1135,7 +1135,7 @@ await test('跳定义 / 找引用：行号与文件都对得上', () => {
 });
 
 await test('诊断：真问题报，噪声不报（跨行模板字符串不产生括号误报）', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-diag-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-diag-'));
   writeFileSync(join(dir, 'bad.js'), [
     'export function f() {',
     '  try { risky(); } catch (e) {}',      // 空 catch
@@ -1166,7 +1166,7 @@ await test('分词：camelCase / snake_case 拆开，中文按二字切', () => 
 });
 
 await test('检索：整词优先，命中定义行（搜 findUserById 时不该被 user 淹没）', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-sem-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-sem-'));
   writeFileSync(join(dir, 'a.js'), 'export function findUserById(id) {\n  return id;\n}\n');
   writeFileSync(join(dir, 'b.js'), 'const user = 1;\nconst users = [user];\nconst name = \'user\';\n');
   const r = semantic.searchIndex(dir, 'findUserById', { limit: 5 });
@@ -1178,7 +1178,7 @@ await test('检索：整词优先，命中定义行（搜 findUserById 时不该
 });
 
 await test('检索：中文能搜到中文注释', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-sem2-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-sem2-'));
   writeFileSync(join(dir, 'a.js'), '// 这里做失败重试，最多三次\nexport const n = 3;\n');
   const r = semantic.searchIndex(dir, '重试');
   assert.ok(r.hits.some((h) => h.file === 'a.js' && h.line === 1), '应命中中文注释行');
@@ -1186,7 +1186,7 @@ await test('检索：中文能搜到中文注释', () => {
 });
 
 await test('查询没命中时给出可操作的下一步（而不是一句"没有结果"）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-sem3-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-sem3-'));
   writeFileSync(join(dir, 'a.js'), 'export const x = 1;\n');
   const out = await semantic.searchTool.execute({ query: 'zzzz-not-there' }, { cwd: dir, sandboxRoots: [dir] });
   assert.match(out, /没有命中/);
@@ -1207,7 +1207,7 @@ await test('matcher：* / 联合 / 前缀通配都对', () => {
 });
 
 await test('runHooks：钩子可以用 JSON 决策 deny，并能注入上下文', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-hook-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-hook-'));
   // 用 node 起一个小脚本当钩子：读 stdin 的 JSON，按 tool_name 决定
   writeFileSync(join(dir, 'guard.js'), `
 let raw = '';
@@ -1221,8 +1221,8 @@ process.stdin.on('end', () => {
   }
 });
 `);
-  mkdirSync(join(COCODE_DIR), { recursive: true });
-  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
+  mkdirSync(join(TORA_DIR), { recursive: true });
+  writeFileSync(join(TORA_DIR, 'hooks.json'), JSON.stringify({
     hooks: { PreToolUse: [{ matcher: '*', hooks: [{ type: 'command', command: `"${process.execPath}" guard.js`, timeout: 10 }] }] }
   }));
   const cfg = { ...loadConfig(), trustProjectHooks: false };
@@ -1236,27 +1236,27 @@ process.stdin.on('end', () => {
   assert.equal(allowed.decision, null, '没决策就是不影响');
   assert.match(allowed.additionalContext, /当前是 Read/);
   rmSync(dir, { recursive: true, force: true });
-  rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
+  rmSync(join(TORA_DIR, 'hooks.json'), { force: true });
 });
 
 await test('runHooks：钩子以退出码 2 阻断，stderr 作为原因', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-hook2-'));
-  mkdirSync(join(COCODE_DIR), { recursive: true });
-  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
+  const dir = mkdtempSync(join(tmpdir(), 'tora-hook2-'));
+  mkdirSync(join(TORA_DIR), { recursive: true });
+  writeFileSync(join(TORA_DIR, 'hooks.json'), JSON.stringify({
     UserPromptSubmit: [{ command: 'echo "别问了" >&2; exit 2' }]
   }));
   const r = await runHooks('UserPromptSubmit', { prompt: '你好' }, { cwd: dir, cfg: loadConfig() });
   assert.equal(r.decision, 'deny');
   assert.match(r.reason, /别问了/);
-  rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
+  rmSync(join(TORA_DIR, 'hooks.json'), { force: true });
   rmSync(dir, { recursive: true, force: true });
 });
 
 await test('项目级钩子默认不执行（clone 一个仓库不该等于任意代码执行）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-hook3-'));
-  mkdirSync(join(dir, '.cocode'), { recursive: true });
+  const dir = mkdtempSync(join(tmpdir(), 'tora-hook3-'));
+  mkdirSync(join(dir, '.tora'), { recursive: true });
   // 这个钩子会创建文件；若不信任却执行了，文件就会存在 —— 是最直接的证据
-  writeFileSync(join(dir, '.cocode', 'hooks.json'), JSON.stringify({
+  writeFileSync(join(dir, '.tora', 'hooks.json'), JSON.stringify({
     PreToolUse: [{ command: 'touch ' + join(dir, 'PWNED') }]
   }));
   const cfg = loadConfig();
@@ -1271,19 +1271,19 @@ await test('项目级钩子默认不执行（clone 一个仓库不该等于任�
 });
 
 await test('describeHooks：列出生效钩子与来源，坏 JSON 作为错误上报', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-hook4-'));
-  mkdirSync(join(COCODE_DIR), { recursive: true });
-  writeFileSync(join(COCODE_DIR, 'hooks.json'), '{ 这不是 JSON');
+  const dir = mkdtempSync(join(tmpdir(), 'tora-hook4-'));
+  mkdirSync(join(TORA_DIR), { recursive: true });
+  writeFileSync(join(TORA_DIR, 'hooks.json'), '{ 这不是 JSON');
   const d = describeHooks(dir, loadConfig());
   assert.ok(d.errors.some((e) => /JSON/.test(e)), '坏配置要能被看见: ' + JSON.stringify(d.errors));
-  rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
+  rmSync(join(TORA_DIR, 'hooks.json'), { force: true });
   rmSync(dir, { recursive: true, force: true });
 });
 
 await test('Agent 循环：UserPromptSubmit 钩子 deny → 整轮被拦下且不进模型', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-hook5-'));
-  mkdirSync(join(COCODE_DIR), { recursive: true });
-  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
+  const dir = mkdtempSync(join(tmpdir(), 'tora-hook5-'));
+  mkdirSync(join(TORA_DIR), { recursive: true });
+  writeFileSync(join(TORA_DIR, 'hooks.json'), JSON.stringify({
     UserPromptSubmit: [{ command: 'echo "{\\"decision\\":\\"deny\\",\\"reason\\":\\"今天不干活\\"}"' }]
   }));
   const origFetch = globalThis.fetch;
@@ -1301,15 +1301,15 @@ await test('Agent 循环：UserPromptSubmit 钩子 deny → 整轮被拦下且�
     assert.equal(calls, 0, '被拦下的轮次不该请求模型');
   } finally {
     globalThis.fetch = origFetch;
-    rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
+    rmSync(join(TORA_DIR, 'hooks.json'), { force: true });
     rmSync(dir, { recursive: true, force: true });
   }
 });
 
 await test('Agent 循环：PreToolUse 钩子 deny → 工具不执行，模型收到的是「钩子拒绝」而不是「工具坏了」', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-hook6-'));
-  mkdirSync(join(COCODE_DIR), { recursive: true });
-  writeFileSync(join(COCODE_DIR, 'hooks.json'), JSON.stringify({
+  const dir = mkdtempSync(join(tmpdir(), 'tora-hook6-'));
+  mkdirSync(join(TORA_DIR), { recursive: true });
+  writeFileSync(join(TORA_DIR, 'hooks.json'), JSON.stringify({
     PreToolUse: [{ matcher: 'Bash', command: 'echo "{\\"decision\\":\\"deny\\",\\"reason\\":\\"生产环境不能动\\"}"' }]
   }));
   const origFetch = globalThis.fetch;
@@ -1335,7 +1335,7 @@ await test('Agent 循环：PreToolUse 钩子 deny → 工具不执行，模型�
     assert.ok(!existsSync(join(dir, 'PWNED')), '被钩子拒绝的命令绝不能真的执行');
   } finally {
     globalThis.fetch = origFetch;
-    rmSync(join(COCODE_DIR, 'hooks.json'), { force: true });
+    rmSync(join(TORA_DIR, 'hooks.json'), { force: true });
     rmSync(dir, { recursive: true, force: true });
   }
 });
@@ -1345,7 +1345,7 @@ await test('Agent 循环：PreToolUse 钩子 deny → 工具不执行，模型�
 console.log('--- 变更感知上下文 ---');
 
 await test('recentChanges：列出最近动过的文件，脏文件优先', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-chg-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-chg-'));
   writeFileSync(join(dir, 'tracked.js'), 'export const a = 1;\n');
   writeFileSync(join(dir, 'dirty.js'), 'export const b = 2;\n');
   const rows = recentChanges(dir, { dirty_files: ['dirty.js'] }, { limit: 5 });
@@ -1357,10 +1357,10 @@ await test('recentChanges：列出最近动过的文件，脏文件优先', () =
 });
 
 await test('系统提示词里出现「最近改动」段（模型才知道文件可能已经变了）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-chg2-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-chg2-'));
   writeFileSync(join(dir, 'recent.js'), 'export const x = 1;\n');
   const ctx = await loadProjectContext(dir, loadConfig());
-  const p = buildSystemPrompt({ basePrompt: '你是 CoCode', projectContext: ctx });
+  const p = buildSystemPrompt({ basePrompt: '你是 Tora', projectContext: ctx });
   assert.match(p, /最近改动/);
   assert.match(p, /recent\.js/);
   rmSync(dir, { recursive: true, force: true });
@@ -1377,7 +1377,7 @@ await test('readGitInfo 返回前端的 GitStatus 全部字段（少一个字段
   // 环境守卫：git 不可用（如 Xcode 许可证未同意）时跳过，不把环境问题误报成代码回归
   try { execFileSync('git', ['--version'], { stdio: 'ignore' }); }
   catch { console.log('  ⏭ 跳过：系统 git 不可用（git --version 失败，检查 Xcode 许可证）'); return; }
-  const d = mkdtempSync(join(tmpdir(), 'cocode-gitfields-'));
+  const d = mkdtempSync(join(tmpdir(), 'tora-gitfields-'));
   const git = (...a) => execFileSync('git', a, { cwd: d, stdio: 'ignore' });
 
   git('init', '-q');
@@ -1448,11 +1448,11 @@ function findTsserver() {
   return null;
 }
 
-const TS_LS = process.env.COCODE_TS_LS || findBin('typescript-language-server');
-const TS_SERVER = process.env.COCODE_TSSERVER || findTsserver();
+const TS_LS = process.env.TORA_TS_LS || findBin('typescript-language-server');
+const TS_SERVER = process.env.TORA_TSSERVER || findTsserver();
 
 await test('LSP 不可用时：回退到本地索引，并把失败原因说清楚（不静默）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-lsp-fail-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-lsp-fail-'));
   writeFileSync(join(dir, 'a.js'), 'export function broken() {}\n');
   const out = await lsp.lspTool.execute(
     { action: 'definition', name: 'broken', file: 'a.js' },
@@ -1465,7 +1465,7 @@ await test('LSP 不可用时：回退到本地索引，并把失败原因说清�
 
 if (TS_LS && TS_SERVER) {
   await test('LSP：definition / references / hover 真的走 stdio JSON-RPC', async () => {
-    const dir = mkdtempSync(join(tmpdir(), 'cocode-lsp-live-'));
+    const dir = mkdtempSync(join(tmpdir(), 'tora-lsp-live-'));
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(join(dir, 'tsconfig.json'), JSON.stringify({
       compilerOptions: { target: 'ES2020', module: 'ESNext', moduleResolution: 'node', strict: true },
@@ -1514,7 +1514,7 @@ if (TS_LS && TS_SERVER) {
   });
 } else {
   console.log('  ⊘ 跳过真 LSP 用例：未找到 typescript-language-server 或 tsserver.js');
-  console.log(`    （COCODE_TS_LS / COCODE_TSSERVER 可显式指定；当前 TS_LS=${TS_LS || 'null'}）`);
+  console.log(`    （TORA_TS_LS / TORA_TSSERVER 可显式指定；当前 TS_LS=${TS_LS || 'null'}）`);
 }
 
 
@@ -1821,7 +1821,7 @@ process.stdin.on('data', (c) => {
 }
 
 await test('MCP：握手→列工具→调用 全链路（真实子进程）', async () => {
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-mcp-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-mcp-'));
   const serverPath = writeFakeMcpServer(dir);
   const cfg = { mcpServers: { fake: { command: process.execPath, args: [serverPath] } } };
   try {
@@ -2168,7 +2168,7 @@ await test('asapi API：用不存在的 agent_id 建会话 → 404，不产出�
 });
 
 // ---------- Memory（存储 / 注入 / 路由 / 提炼） ----------
-// memory.js 是独立入口（自带 COCODE_HOME 重定向 + fetch mock + process.exit），
+// memory.js 是独立入口（自带 TORA_HOME 重定向 + fetch mock + process.exit），
 // 用子进程聚合：隔离它对全局状态的改动，exit code 直接判定全绿与否。
 {
   console.log('--- Memory（子进程聚合：存储/注入/路由/提炼）---');
@@ -2251,8 +2251,8 @@ await test('终端未选工作区时从主目录启动，Ctrl+C 中断命令后�
 
 console.log('\n--- Git 深度集成（分支/工作树/暂存/提交/日志）---');
 
-await test('cocode-git：分支增删切 + 工作树增删 + 暂存/提交/日志 全链路', async () => {
-  const G = await import(CORE + 'tools/cocode-git.js');
+await test('tora-git：分支增删切 + 工作树增删 + 暂存/提交/日志 全链路', async () => {
+  const G = await import(CORE + 'tools/tora-git.js');
   const { execFileSync } = await import('node:child_process');
   const { mkdtempSync, writeFileSync, rmSync, readdirSync } = await import('node:fs');
   const { join } = await import('node:path');
@@ -2261,7 +2261,7 @@ await test('cocode-git：分支增删切 + 工作树增删 + 暂存/提交/日�
   try { execFileSync('git', ['--version'], { stdio: 'ignore' }); }
   catch { console.log('  ⏭ 跳过：系统 git 不可用'); return; }
 
-  const repo = mkdtempSync(join(tmpdir(), 'cocode-git-'));
+  const repo = mkdtempSync(join(tmpdir(), 'tora-git-'));
   const git = (...a) => execFileSync('git', a, { cwd: repo, stdio: 'ignore' });
   git('init', '-q', '-b', 'main');
   git('config', 'user.email', 't@t');
@@ -2288,7 +2288,7 @@ await test('cocode-git：分支增删切 + 工作树增删 + 暂存/提交/日�
   assert.ok(br.branches.find((b) => b.name === 'feat')?.current, 'feat 应是当前');
 
   // 4) 工作树：在 repo 旁边建一个 wt，检出新分支 dev
-  const wtPath = join(repo, '..', 'cocode-git-wt-dev');
+  const wtPath = join(repo, '..', 'tora-git-wt-dev');
   rmSync(wtPath, { recursive: true, force: true });
   const wt = await G.createWorktree(repo, wtPath, 'dev');
   assert.ok(wt.ok, 'createWorktree 应成功: ' + (wt.error || ''));
@@ -2336,7 +2336,7 @@ await test('检查点时间线：snapshot 链 parent 正确；restore 后再快�
   const { join } = await import('node:path');
   const { tmpdir } = await import('node:os');
   const sid = 'test-timeline-' + Date.now();
-  const d = mkdtempSync(join(tmpdir(), 'cocode-cp-'));
+  const d = mkdtempSync(join(tmpdir(), 'tora-cp-'));
 
   // 1) 连续两次快照：节点 2 的 parent 应是节点 1
   writeFileSync(join(d, 'a.txt'), '1');
@@ -2374,8 +2374,8 @@ await test('automations：create/list/update/delete + notify 队列消费式读�
   // 清场（用空数组覆盖，不删文件以免影响其它测试环境）
   const fs = await import('node:fs');
   const { join } = await import('node:path');
-  const { COCODE_DIR } = await import(CORE + 'config.js');
-  const path = join(COCODE_DIR, 'automations.json');
+  const { TORA_DIR } = await import(CORE + 'config.js');
+  const path = join(TORA_DIR, 'automations.json');
   const backup = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : null;
   try {
     if (fs.existsSync(path)) fs.unlinkSync(path);
@@ -2404,10 +2404,10 @@ await test('automations：create/list/update/delete + notify 队列消费式读�
     assert.equal(A.drainNotifications('sess-1').length, 0, 'drain 后队列清空');
 
     // 4) 命令自动化使用脱敏环境，非零退出码必须如实失败并通知，而非静默吞掉。
-    process.env.COCODE_AUTOMATION_SECRET = 'do-not-leak';
+    process.env.TORA_AUTOMATION_SECRET = 'do-not-leak';
     const commandRule = A.createAutomation({
       name: 'safe-command', event: 'Stop',
-      actions: [{ type: 'command', command: 'test -z "$COCODE_AUTOMATION_SECRET"' }]
+      actions: [{ type: 'command', command: 'test -z "$TORA_AUTOMATION_SECRET"' }]
     });
     const safeRuns = await A.runAutomations('Stop', {}, { cwd: tmp, sessionId: 'sess-safe' });
     assert.ok(safeRuns.some((x) => x.rule_id === commandRule.id && x.ok), '密钥环境变量必须不传给自动化子进程');
@@ -2415,7 +2415,7 @@ await test('automations：create/list/update/delete + notify 队列消费式读�
     const failedRuns = await A.runAutomations('Stop', {}, { cwd: tmp, sessionId: 'sess-fail' });
     assert.ok(failedRuns.some((x) => x.rule_id === failRule.id && x.ok === false && x.code === 7), '非零退出码不能伪装成功');
     assert.match(A.drainNotifications('sess-fail')[0]?.message || '', /failed-command.*命令失败/);
-    delete process.env.COCODE_AUTOMATION_SECRET;
+    delete process.env.TORA_AUTOMATION_SECRET;
 
     // 5) delete
     A.deleteAutomation(r.id);
@@ -2434,9 +2434,9 @@ await test('schedules：cron 语义、时区换算与同一分钟恰好触发一
   const S = await import(CORE + 'asapi/schedules.js');
   const fs = await import('node:fs');
   const { join } = await import('node:path');
-  const { COCODE_DIR } = await import(CORE + 'config.js');
-  const schedulesPath = join(COCODE_DIR, 'schedules.json');
-  const runsPath = join(COCODE_DIR, 'schedule-runs.json');
+  const { TORA_DIR } = await import(CORE + 'config.js');
+  const schedulesPath = join(TORA_DIR, 'schedules.json');
+  const runsPath = join(TORA_DIR, 'schedule-runs.json');
   const backups = new Map([
     [schedulesPath, fs.existsSync(schedulesPath) ? fs.readFileSync(schedulesPath, 'utf8') : null],
     [runsPath, fs.existsSync(runsPath) ? fs.readFileSync(runsPath, 'utf8') : null],
@@ -2489,8 +2489,8 @@ await test('mcp-workshop：add/list/update/remove + 模板列表', async () => {
   const W = await import(CORE + 'tools/mcp-workshop.js');
   const fs = await import('node:fs');
   const { join } = await import('node:path');
-  const { COCODE_DIR } = await import(CORE + 'config.js');
-  const path = join(COCODE_DIR, 'config.json');
+  const { TORA_DIR } = await import(CORE + 'config.js');
+  const path = join(TORA_DIR, 'config.json');
   const backup = fs.existsSync(path) ? fs.readFileSync(path, 'utf8') : null;
   try {
     // 备份后清空 mcpServers
@@ -2525,8 +2525,8 @@ await test('mcp-workshop：add/list/update/remove + 模板列表', async () => {
 });
 
 await test('Agent 不再生成运行记录或交付报告目录', () => {
-  assert.equal(existsSync(join(COCODE_DIR, 'traces')), false);
-  assert.equal(existsSync(join(COCODE_DIR, 'deliveries')), false);
+  assert.equal(existsSync(join(TORA_DIR, 'traces')), false);
+  assert.equal(existsSync(join(TORA_DIR, 'deliveries')), false);
 });
 
 rmSync(tmp, { recursive: true, force: true });

@@ -4,7 +4,7 @@
 
 export type SettingsSection = 'general' | 'theme' | 'agent' | 'model' | 'memory' | 'data' | 'about' | 'developer';
 
-export const OPEN_SETTINGS_EVENT = 'cocode:open-settings';
+export const OPEN_SETTINGS_EVENT = 'tora:open-settings';
 
 export function openSettings(section: SettingsSection = 'general') {
 	window.dispatchEvent(new CustomEvent<SettingsSection>(OPEN_SETTINGS_EVENT, { detail: section }));

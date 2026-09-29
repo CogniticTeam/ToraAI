@@ -1,14 +1,14 @@
-// CoCode 配置管理：~/.cocode/config.json + 环境变量覆盖
+// Tora 配置管理：~/.tora/config.json + 环境变量覆盖
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveDataDirectory } from './legacy-migration.js';
 
-// 数据根目录。COCODE_HOME 可整体重定向（测试、多 profile、
+// 数据根目录。TORA_HOME 可整体重定向（测试、多 profile、
 // 便携模式都靠它）——**测试必须用它**，否则 rmSync 会把用户真实的
-// ~/.cocode 配置/会话/技能库删掉。
-export const COCODE_DIR = resolveDataDirectory();
-export const CONFIG_PATH = join(COCODE_DIR, 'config.json');
-export const SESSIONS_DIR = join(COCODE_DIR, 'sessions');
+// ~/.tora 配置/会话/技能库删掉。
+export const TORA_DIR = resolveDataDirectory();
+export const CONFIG_PATH = join(TORA_DIR, 'config.json');
+export const SESSIONS_DIR = join(TORA_DIR, 'sessions');
 
 export const DEFAULT_CONFIG = {
   // 自接入模型：任何 OpenAI 兼容接口均可（OpenAI/DeepSeek/智谱/Moonshot/Ollama/vLLM…）
@@ -31,7 +31,7 @@ export const DEFAULT_CONFIG = {
   // bash 是否使用长驻 shell（cd/export/source 会保留）。默认开；个别环境下可关。
   persistentShell: true,
   // ---- 项目上下文注入 ----
-  injectProjectContext: true,  // 自动注入 COCODE.md / AGENTS.md + git 状态
+  injectProjectContext: true,  // 自动注入 TORA.md / AGENTS.md + git 状态
   instructionMaxChars: 6000,   // 单个约定文件注入上限
   repoMapInject: true,         // 是否把仓库骨架注入系统提示词
   repoMapMaxChars: 2500,       // 注入的骨架文本上限
@@ -46,7 +46,7 @@ export const DEFAULT_CONFIG = {
   // ---- 检查点与回滚 ----
   checkpointEnabled: true,     // 每轮写/执行前对工作目录做快照
   checkpointKeepTurns: 10,     // 每个会话保留的检查点数
-  // ---- 钩子（~/.cocode/hooks.json 与 <cwd>/.cocode/hooks.json）----
+  // ---- 钩子（~/.tora/hooks.json 与 <cwd>/.tora/hooks.json）----
   hooksEnabled: true,          // 关掉就完全不跑钩子
   // 项目级钩子来自仓库内容，clone 一个仓库就执行其中的命令 = 任意代码执行，
   // 所以默认**不信任**。用户确认过某个仓库之后可以把它加到 trustProjectHooksFor。
@@ -90,10 +90,10 @@ export function loadConfig() {
     try { file = JSON.parse(readFileSync(CONFIG_PATH, 'utf8')); } catch { /* 损坏则忽略 */ }
   }
   const cfg = { ...DEFAULT_CONFIG, ...file };
-  // COCODE_* 环境变量优先于配置文件。
-  const envBase = process.env.COCODE_BASE_URL;
-  const envKey = process.env.COCODE_API_KEY;
-  const envModel = process.env.COCODE_MODEL;
+  // TORA_* 环境变量优先于配置文件。
+  const envBase = process.env.TORA_BASE_URL;
+  const envKey = process.env.TORA_API_KEY;
+  const envModel = process.env.TORA_MODEL;
   if (envBase) cfg.baseURL = envBase;
   if (envKey) cfg.apiKey = envKey;
   if (envModel) cfg.model = envModel;
@@ -109,7 +109,7 @@ export function saveConfig(patch) {
     if (v !== undefined) clean[k] = v; // 允许显式传 undefined 表示"不修改"
   }
   const next = { ...cur, ...clean };
-  mkdirSync(COCODE_DIR, { recursive: true });
+  mkdirSync(TORA_DIR, { recursive: true });
   writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2));
   return next;
 }

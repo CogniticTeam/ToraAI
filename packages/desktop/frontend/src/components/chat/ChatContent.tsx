@@ -136,8 +136,8 @@ interface ChatContentProps {
 	/** Knowledge bases visible to the user; used by the "tools" context source. */
 	workspaceKnowledgeBases?: KnowledgeBaseView[];
 	/**
-	 * The user's own slash commands (`~/.cocode/commands/*.md` and
-	 * `<cwd>/.cocode/commands/*.md`). They appear above the skills in the
+	 * The user's own slash commands (`~/.tora/commands/*.md` and
+	 * `<cwd>/.tora/commands/*.md`). They appear above the skills in the
 	 * `/` menu; picking one fills the composer with its body.
 	 */
 	userCommands?: UserCommand[];

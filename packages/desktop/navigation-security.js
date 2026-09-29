@@ -1,5 +1,5 @@
 /**
- * 主窗口只能停留在 CoCode 本地服务；外链仅交给系统浏览器处理。
+ * 主窗口只能停留在 Tora 本地服务；外链仅交给系统浏览器处理。
  * 保持为纯 Node 模块，方便不启动 Electron GUI 也能做回归测试。
  */
 export function isAppUrl(raw, appOrigin) {

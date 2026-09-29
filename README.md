@@ -2,9 +2,9 @@
 
 <div align="center">
 
-<img src="logo.PNG" width="120" alt="CoCode logo" />
+<img src="logo.PNG" width="120" alt="Tora logo" />
 
-# CoCode — 全面 Agent 工具
+# Tora — 全面 Agent 工具
 
 **自接入模型 · 低 token 高效率 · Electron + CLI 双版本**
 
@@ -42,13 +42,13 @@
 packages/
 ├── core/              # 引擎 + ASAPI 协议适配（零依赖）
 │   ├── src/
-│   │   ├── config.js           模型接入与低 token 配置（COCODE_HOME 可重定向数据根）
+│   │   ├── config.js           模型接入与低 token 配置（TORA_HOME 可重定向数据根）
 │   │   ├── model.js            OpenAI 兼容流式 Chat Completions + SSE 解析 + 能力探测
 │   │   ├── security.js         路径沙箱 / 子进程环境净化 / 密钥脱敏
-│   │   ├── prompt.js           项目指令注入（COCODE.md / AGENTS.md）+ system prompt 组装
+│   │   ├── prompt.js           项目指令注入（TORA.md / AGENTS.md）+ system prompt 组装
 │   │   ├── react.js            文本 ReAct 动作解析（模型不支持 function calling 时用）
 │   │   ├── discover.js         本地模型自动发现（Ollama / LM Studio / vLLM …）
-│   │   ├── commands.js         自定义斜杠命令（~/.cocode/commands/*.md）
+│   │   ├── commands.js         自定义斜杠命令（~/.tora/commands/*.md）
 │   │   ├── tools/
 │   │   │   ├── builtin.js      Bash / Read / Write / Edit / Glob / Grep（+ 图片读取）
 │   │   │   ├── shell.js        持久 shell 会话（cd / export 跨调用保留）
@@ -84,12 +84,12 @@ packages/
 ### 0. 准备模型
 
 ```bash
-# 配置位置：~/.cocode/config.json（COCODE_HOME 可整体搬走数据根）
-# 环境变量统一使用 COCODE_*，优先级高于配置文件
-# 首次启动自动复制旧版本数据到 ~/.cocode，保留原目录；已有新目录时不覆盖
-export COCODE_BASE_URL="https://api.deepseek.com/v1"
-export COCODE_API_KEY="sk-xxx"
-export COCODE_MODEL="deepseek-flash"
+# 配置位置：~/.tora/config.json（TORA_HOME 可整体搬走数据根）
+# 环境变量统一使用 TORA_*，优先级高于配置文件
+# 首次启动自动复制旧版本数据到 ~/.tora，保留原目录；已有新目录时不覆盖
+export TORA_BASE_URL="https://api.deepseek.com/v1"
+export TORA_API_KEY="sk-xxx"
+export TORA_MODEL="deepseek-flash"
 ```
 
 或运行交互向导（也能一键探测本机已启动的模型服务）：
@@ -173,7 +173,7 @@ node packages/core/test/run.js        # 含真 LSP（未装 server 时自动跳�
 node packages/core/test/asapi.js
 ```
 
-测试会把数据根重定向到临时目录（`COCODE_HOME`），**不会碰你真实的 `~/.cocode`**。
+测试会把数据根重定向到临时目录（`TORA_HOME`），**不会碰你真实的 `~/.tora`**。
 
 ## 🔌 模型接入
 
@@ -213,16 +213,16 @@ node packages/core/test/asapi.js
 
 ### 检查点与回滚
 
-每轮只要涉及写入/执行类工具，就对该轮开始前的工作目录做一次内容寻址快照（`~/.cocode/checkpoints/<session>/`，自动保留最近 10 轮）。`/checkpoints` 查看、`/restore <轮号>` 回滚（覆盖已改文件、删除快照后新增的文件）。这是敢开 `bypass` 的前提。
+每轮只要涉及写入/执行类工具，就对该轮开始前的工作目录做一次内容寻址快照（`~/.tora/checkpoints/<session>/`，自动保留最近 10 轮）。`/checkpoints` 查看、`/restore <轮号>` 回滚（覆盖已改文件、删除快照后新增的文件）。这是敢开 `bypass` 的前提。
 
 ## 🪶 低 token 策略
 
 | 策略 | 说明 |
 |---|---|
 | Repo map（主动） | 符号骨架代替"反复 glob + grep"；几百 token 换掉几十轮工具调用，超阈值才注入 |
-| 本地代码索引 | 符号索引（带行号）与语义倒排索引落盘 `~/.cocode/index/`，按 mtime 增量重建；`Search` 按词匹配（`findUserById` 拆成 `find/user/by/id`），中文注释按二字切分，定义行加权 |
+| 本地代码索引 | 符号索引（带行号）与语义倒排索引落盘 `~/.tora/index/`，按 mtime 增量重建；`Search` 按词匹配（`findUserById` 拆成 `find/user/by/id`），中文注释按二字切分，定义行加权 |
 | 变更感知上下文 | 把"最近改动的文件 + git 脏文件"注入系统提示词，模型才知道磁盘上的文件可能已经不是它记得的样子 |
-| 项目指令按需注入 | `COCODE.md` / `AGENTS.md` 等约定文件只在存在时注入，且有字符上限 |
+| 项目指令按需注入 | `TORA.md` / `AGENTS.md` 等约定文件只在存在时注入，且有字符上限 |
 | 工具输出截断 | `cfg.toolOutputLimit`（默认 6000 字符）；大输出按 head+tail 保留 |
 | 上下文驱逐 | token 估算超预算 → 旧工具结果替换为占位（保留最近 4 条完整） |
 | 历史摘要压缩 | 仍超限 → 用模型对中间历史做一次摘要；多模态内容只取文本摘要，不把 base64 灌进去 |
@@ -265,11 +265,11 @@ node packages/core/test/asapi.js
 
 ### 项目指令文件
 
-在项目根放 `COCODE.md` / `AGENTS.md`（也认 `CLAUDE.md` / `.cursorrules` / `.github/copilot-instructions.md` / `.cocode/AGENTS.md`），内容会自动注入 system prompt。
+在项目根放 `TORA.md` / `AGENTS.md`（也认 `CLAUDE.md` / `.cursorrules` / `.github/copilot-instructions.md` / `.tora/AGENTS.md`），内容会自动注入 system prompt。
 
 ### 自定义斜杠命令
 
-`~/.cocode/commands/*.md` 或 `<项目>/.cocode/commands/*.md`（项目级覆盖同名）：
+`~/.tora/commands/*.md` 或 `<项目>/.tora/commands/*.md`（项目级覆盖同名）：
 
 ```markdown
 ---
@@ -285,7 +285,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 `Lsp` 工具在没配置时用本地符号索引（跳定义 / 找引用 / 诊断，零依赖、够用，但没有类型信息）。装了 language server 后写进配置即可切换成真 LSP：
 
 ```jsonc
-// ~/.cocode/config.json
+// ~/.tora/config.json
 {
   "lspServers": {
     ".ts": {
@@ -300,7 +300,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 }
 ```
 
-**桌面端设置 → 通用 → 高级**里可以一键配置：探测本机已装的服务端（含 `~/.workbuddy` 托管 workspace、`~/.local/bin`、Homebrew 等非 PATH 位置），自动带上 `tsserver.path`，点「启用」即写入。CLI 用 `cocode lsp` 或 REPL `/lsp` 查看同样的探测结果。
+**桌面端设置 → 通用 → 高级**里可以一键配置：探测本机已装的服务端（含 `~/.workbuddy` 托管 workspace、`~/.local/bin`、Homebrew 等非 PATH 位置），自动带上 `tsserver.path`，点「启用」即写入。CLI 用 `tora lsp` 或 REPL `/lsp` 查看同样的探测结果。
 
 任何失败（没装、握手超时、进程崩）都会回退到本地索引，**并在结果里写明失败原因** —— 否则"配了但没生效"和"根本没配"看起来一模一样。
 
@@ -308,13 +308,13 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 
 ### 生命周期钩子
 
-`~/.cocode/hooks.json`（总是生效）与 `<项目>/.cocode/hooks.json`（**默认不执行**，见下）：
+`~/.tora/hooks.json`（总是生效）与 `<项目>/.tora/hooks.json`（**默认不执行**，见下）：
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Bash|Write", "hooks": [{ "type": "command", "command": "node .cocode/hooks/guard.js", "timeout": 10 }] }
+      { "matcher": "Bash|Write", "hooks": [{ "type": "command", "command": "node .tora/hooks/guard.js", "timeout": 10 }] }
     ]
   }
 }
@@ -331,7 +331,7 @@ REPL 里直接 `/review 最近的提交`；前端 `/` 菜单里也会出现。
 
 ### 自定义工具
 
-`<项目>/.cocode/tools/*.js` 或 `~/.cocode/tools/*.js`，`export default` 一个工具对象或工具数组：
+`<项目>/.tora/tools/*.js` 或 `~/.tora/tools/*.js`，`export default` 一个工具对象或工具数组：
 
 ```js
 export default {
@@ -344,7 +344,7 @@ export default {
 
 ## 📋 协议说明
 
-agentscope 前端依赖 `@agentscope-ai/agentscope` npm SDK 的 `appendEvent` 进行事件归并（无需前端手动处理）。CoCode 的 ASAPI 服务产出的 AgentEvent 与该 SDK 完全兼容——参考 `core/test/asapi.js` 中的 SSE 流验证。工具名统一使用 **PascalCase**（与 SDK 内建工具族、前端 `tool-renderers` 映射表一致）；旧会话里的 snake_case 名字通过归一化表继续可用。
+agentscope 前端依赖 `@agentscope-ai/agentscope` npm SDK 的 `appendEvent` 进行事件归并（无需前端手动处理）。Tora 的 ASAPI 服务产出的 AgentEvent 与该 SDK 完全兼容——参考 `core/test/asapi.js` 中的 SSE 流验证。工具名统一使用 **PascalCase**（与 SDK 内建工具族、前端 `tool-renderers` 映射表一致）；旧会话里的 snake_case 名字通过归一化表继续可用。
 
 ## 📝 许可
 

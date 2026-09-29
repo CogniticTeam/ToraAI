@@ -4,21 +4,21 @@
     "translateToChinese": "翻译为中文", "translateToEnglish": "翻译为英文", "translating": "翻译中…",
     "showOriginal": "查看原文", "showTranslation": "查看译文", "noTranslationNeeded": "无需翻译",
     "translationError": "翻译失败，请点击翻译按钮重试。", "translationRateLimit": "翻译请求过于频繁，请稍后重试。",
-    "title": "消息", "newMessage": "收到一条 CoCode 消息", "empty": "暂无消息", "loading": "加载中…",
+    "title": "消息", "newMessage": "收到一条 Tora 消息", "empty": "暂无消息", "loading": "加载中…",
     "unread": "未读", "more": "加载更多", "back": "返回消息列表", "retry": "重试",
     "loadError": "消息加载失败", "readError": "标记已读失败，请重试",
-    "blocked": "账户已被封禁", "blockedReason": "此账户暂时无法使用 CoCode。",
+    "blocked": "账户已被封禁", "blockedReason": "此账户暂时无法使用 Tora。",
     "unbanHint": "管理员解封后将自动恢复，无需重新登录。", "signOut": "退出登录"
   },
   "requiredUpdate": {
-    "title": "请更新 CoCode", "description": "新版本 {{version}} 已发布，更新后即可继续使用。",
+    "title": "请更新 Tora", "description": "新版本 {{version}} 已发布，更新后即可继续使用。",
     "download": "打开官网下载页", "macHint": "自动更新暂不可用时，可从官网下载新版 DMG 手动替换。",
     "downloading": "正在下载更新… {{percent}}%", "install": "重启并安装", "retry": "重试下载",
-    "error": "自动更新失败，请重试或前往官网下载。", "quit": "退出 CoCode"
+    "error": "自动更新失败，请重试或前往官网下载。", "quit": "退出 Tora"
   },
   "firstRun": {
     "intro": {
-      "aria": "CoCode 首次启动欢迎动画", "tagline": "让想法，开始执行。",
+      "aria": "Tora 首次启动欢迎动画", "tagline": "让想法，开始执行。",
       "initializing": "正在准备你的工作区", "ready": "准备完成，可以开始",
       "enter": "开启体验", "skip": "跳过动画"
     },
@@ -27,12 +27,12 @@
       "pauseSettings": "模型管理已打开。配置完成后关闭设置，引导会自动继续。", "pauseFolder": "请选择项目文件夹；选完或关闭菜单后继续。", "pausePermission": "查看或选择审批模式；关闭菜单后继续。",
       "demoSend": "演示发送，不会真正提交", "clickHint": "点击高亮控件继续", "loading": "正在定位界面…",
       "demoTag": "教学演示 · 不会执行真实命令", "demoMessage": "请检查这个项目的构建脚本，先给出计划。",
-      "demoResponse": "CoCode 会先理解任务，再请求必要的工具权限。你可以查看每一步并决定是否继续。",
+      "demoResponse": "Tora 会先理解任务，再请求必要的工具权限。你可以查看每一步并决定是否继续。",
       "demoApprove": "允许本次（演示）", "demoCheckpoint": "查看检查点（演示）",
       "completeTitle": "准备好了，开始创造吧。", "completeBody": "模型、文件夹与权限都能随时调整。遇到不确定的操作，先看过程，再决定是否继续。",
-      "startWorking": "进入 CoCode", "startAgain": "再看一次引导",
+      "startWorking": "进入 Tora", "startAgain": "再看一次引导",
       "steps": [
-        { "chapter": "准备工作", "title": "先选你自己的模型", "body": "CoCode 只使用你添加的模型。点击模型选择器，看看从哪里接入自己的服务。" },
+        { "chapter": "准备工作", "title": "先选你自己的模型", "body": "Tora 只使用你添加的模型。点击模型选择器，看看从哪里接入自己的服务。" },
         { "chapter": "准备工作", "title": "添加模型服务", "body": "点击「添加模型」进入模型管理，选择服务商并填写模型信息。配置完成或暂时跳过后，引导会继续。" },
         { "chapter": "准备工作", "title": "划定项目范围", "body": "点击文件夹按钮选择项目。Agent 会围绕你授权的工作区读取文件、修改代码和运行工具；也可以稍后再选。" },
         { "chapter": "准备工作", "title": "保持任务可控", "body": "点击权限模式查看选项。第一次使用建议保留手动审批，高风险操作会停下来等你确认。" },
@@ -287,7 +287,7 @@
     "subagentConfirmTitle": "{{name}} 请求确认",
     "newSession": "新会话",
     "newConversation": "新对话",
-    "greeting": "与CoCode工作和编程",
+    "greeting": "与Tora工作和编程",
     "greetingProject": "我们应该在{{project}}中做些什么？",
     "thinking": "思考中",
     "project": {
@@ -688,7 +688,7 @@
     "skillDescription": "确定要将该技能从工作区中移除吗？"
   },
   "schedule": {
-    "subtitle": "配置和管理自动化任务，让 CoCode 按计划执行工作流",
+    "subtitle": "配置和管理自动化任务，让 Tora 按计划执行工作流",
     "calendar": "日历",
     "createSchedule": {
       "description": "设置定时或一次性的自动化任务，让智能体按计划执行工作流。",
@@ -715,7 +715,7 @@
     "nextMonth": "下个月",
     "nextYear": "下一年",
     "noSchedules": "暂无自动化任务",
-    "noSchedulesDescription": "新建一个自动化任务，让 CoCode 按计划执行工作流。",
+    "noSchedulesDescription": "新建一个自动化任务，让 Tora 按计划执行工作流。",
     "pickDate": "选择日期",
     "permissionMode": "权限模式",
     "timezone": "时区",
@@ -1088,7 +1088,7 @@
   },
     "settings": {
       "title": "设置",
-      "backToApp": "返回 CoCode",
+      "backToApp": "返回 Tora",
       "close": "关闭",
       "loadFailed": "读取设置失败（可能是后端没起或端口不对）：{{error}}",
     "loadingRuntime": "正在加载运行时配置…",
@@ -1267,21 +1267,21 @@
     },
     "about": {
       "title": "关于",
-      "cocode": "本地 Agent 工作台 · 版本 {{version}}",
+      "tora": "本地 Agent 工作台 · 版本 {{version}}",
       "runtime": "Electron 桌面端 · 本地 ASAPI 服务 · 自接入模型",
       "runtimeTitle": "运行方式",
       "update": {
         "title": "软件更新",
-        "desc": "检查 CoCode 新版本。macOS 和 Windows 均会在后台下载，并在下载完成后提示重启安装。",
+        "desc": "检查 Tora 新版本。macOS 和 Windows 均会在后台下载，并在下载完成后提示重启安装。",
         "check": "检查更新",
         "checking": "检查中…",
         "upToDate": "当前已是最新版本。",
-        "available": "发现 CoCode {{version}}，请按更新提示继续。",
-        "downloading": "发现 CoCode {{version}}，正在后台下载。",
-        "ready": "CoCode {{version}} 已下载，等待重启安装。",
+        "available": "发现 Tora {{version}}，请按更新提示继续。",
+        "downloading": "发现 Tora {{version}}，正在后台下载。",
+        "ready": "Tora {{version}} 已下载，等待重启安装。",
         "development": "开发环境无法检测正式发布版本。",
         "unavailable": "此平台暂不支持自动更新。",
-        "desktopOnly": "请在 CoCode 桌面应用中检查更新。",
+        "desktopOnly": "请在 Tora 桌面应用中检查更新。",
         "failed": "检查更新失败：{{error}}"
       }
     },
@@ -1336,7 +1336,7 @@
       },
       "trust": {
         "title": "信任项目钩子",
-        "desc": "工作目录里的 .cocode/hooks.json 来自仓库内容。信任它等于允许该仓库执行命令，请先看过里面的内容再决定。",
+        "desc": "工作目录里的 .tora/hooks.json 来自仓库内容。信任它等于允许该仓库执行命令，请先看过里面的内容再决定。",
         "trusted": "已信任此目录的项目钩子",
         "trust": "信任当前工作目录",
         "revoke": "撤销信任",
@@ -1383,7 +1383,7 @@
     },
     "account": {
       "title": "账号",
-      "homeTitle": "登录 CoCode",
+      "homeTitle": "登录 Tora",
       "homeDesc": "输入用户名或邮箱，我们来看看你是要登录还是注册",
       "continue": "登录/注册",
       "nextStep": "继续",
@@ -1401,7 +1401,7 @@
       "login": "登录",
       "createAccount": "创建账号",
       "or": "或",
-      "terms": "继续即表示你同意 CoCode 的使用条款和隐私政策。",
+      "terms": "继续即表示你同意 Tora 的使用条款和隐私政策。",
       "back": "返回",
       "logout": "退出登录",
       "since": "注册于 {{date}}",
@@ -1533,7 +1533,7 @@
   },
   "regionNotice": {
     "title": "中国大陆用户特别提醒及境外传输许可",
-    "body": "CoCode检测到你的位置位于中国大陆，请放心，我们并不会封禁来自中国大陆的用户的账号，依据中国大陆相关法律，我们需要您同意：您的数据将会被传输到Cloudflare境外服务器上，若您不同意我们向境外传输数据，可以立即停止使用并退出本软件。\n由于服务器位于中国大陆境外，您访问CoCode的速度可能会慢，建议您开启VPN使用。",
+    "body": "Tora检测到你的位置位于中国大陆，请放心，我们并不会封禁来自中国大陆的用户的账号，依据中国大陆相关法律，我们需要您同意：您的数据将会被传输到Cloudflare境外服务器上，若您不同意我们向境外传输数据，可以立即停止使用并退出本软件。\n由于服务器位于中国大陆境外，您访问Tora的速度可能会慢，建议您开启VPN使用。",
     "agree": "同意并继续使用"
   }
 }

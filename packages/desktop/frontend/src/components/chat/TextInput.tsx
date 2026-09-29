@@ -58,7 +58,7 @@ import { cn } from '@/lib/utils';
 // 优化按钮随之隐藏 —— 与 VoiceRecorder 的可用性策略一致。
 type PromptOptimizerBridge = { optimize: (text: string) => Promise<string> };
 const promptOptimizer =
-	(window as unknown as { cocodePromptOptimizer?: PromptOptimizerBridge }).cocodePromptOptimizer ?? null;
+	(window as unknown as { toraPromptOptimizer?: PromptOptimizerBridge }).toraPromptOptimizer ?? null;
 
 /**
  * Represents a file that has been selected and processed (or is being processed).

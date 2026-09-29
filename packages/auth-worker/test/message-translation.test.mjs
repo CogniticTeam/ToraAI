@@ -8,14 +8,14 @@ function fixture() {
   sqlite.exec(`CREATE TABLE account_messages (id TEXT PRIMARY KEY, user_id INTEGER, title TEXT, body TEXT, recalled_at TEXT);
     CREATE TABLE message_translations (message_id TEXT, target_language TEXT, title TEXT, body TEXT, PRIMARY KEY(message_id,target_language));
     CREATE TABLE message_translation_limits (user_id INTEGER PRIMARY KEY, window INTEGER, total INTEGER);
-    INSERT INTO account_messages VALUES ('zh',1,'更新通知','请重新打开 CoCode。',NULL), ('en',1,'Update available','Please restart CoCode.',NULL);`);
+    INSERT INTO account_messages VALUES ('zh',1,'更新通知','请重新打开 Tora。',NULL), ('en',1,'Update available','Please restart Tora.',NULL);`);
   const DB = { prepare(sql) { return { bind(...args) { return { first: async () => sqlite.prepare(sql).get(...args) || null, run: async () => ({ meta: sqlite.prepare(sql).run(...args) }) }; } }; } };
   return { sqlite, env: { DB, MESSAGE_TRANSLATION_API_KEY: 'test-secret' } };
 }
 const provider = data => new Response(JSON.stringify({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(data) } }] }));
 
 test('识别中文、英文和无文字内容，忽略网址、品牌和代码', () => {
-  for (const [body, language] of [['请更新 CoCode 和 API。', 'zh'], ['Please update CoCode.', 'en'], ['123 🎉 https://example.com', null], ['点击 `npm install` 开始', 'zh'], ['Please translate the word 你好 for me.', 'en']]) assert.equal(detectMessageLanguage({ title: '', body }), language);
+  for (const [body, language] of [['请更新 Tora 和 API。', 'zh'], ['Please update Tora.', 'en'], ['123 🎉 https://example.com', null], ['点击 `npm install` 开始', 'zh'], ['Please translate the word 你好 for me.', 'en']]) assert.equal(detectMessageLanguage({ title: '', body }), language);
 });
 test('中→中、英→英不调用模型；中→英、英→中翻译并缓存', async () => {
   const { sqlite, env } = fixture();

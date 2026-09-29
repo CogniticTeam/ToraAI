@@ -9,7 +9,7 @@
 
 ## 1. 背景与目标
 
-CoCode 前端已预埋 Team 协议（TeamPanel、SessionView.team、origin.type='team'、team_id 字段、team_updated SSE 事件），但后端完全是空壳 —— `/teams/*` 路由不存在、TeamRecord 无读写、工具族未实现。
+Tora 前端已预埋 Team 协议（TeamPanel、SessionView.team、origin.type='team'、team_id 字段、team_updated SSE 事件），但后端完全是空壳 —— `/teams/*` 路由不存在、TeamRecord 无读写、工具族未实现。
 
 本功能补齐这套协议，让一个 Agent（队长）能在一次 runAgent 循环内：
 1. 用 TeamCreate 发起团队
@@ -60,7 +60,7 @@ CoCode 前端已预埋 Team 协议（TeamPanel、SessionView.team、origin.type=
 ### 4.1 目录结构
 
 ```
-~/.cocode/
+~/.tora/
 ├── teams.json                     # 索引：{ teams: [TeamRecord, ...] }
 ├── team-docs/                     # 团队共享 markdown 笔记目录
 │   └── {team_id}.md

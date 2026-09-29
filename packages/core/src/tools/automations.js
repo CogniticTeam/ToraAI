@@ -4,7 +4,7 @@
 //   hooks  = 低层、面向权限决策（allow/deny/ask），命令从 stdin 读 JSON、stdout 出决策
 //   automations = 高层、面向副作用（通知、建检查点、跑命令），不需要写脚本解析 JSON
 //
-// 规则存储：~/.cocode/automations.json（用户级，总是生效）
+// 规则存储：~/.tora/automations.json（用户级，总是生效）
 //   [{ id, name, enabled, event, matcher, actions: [{type, ...params}] }]
 //
 // 支持的事件：UserPromptSubmit / PreToolUse / PostToolUse / Stop
@@ -17,11 +17,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { spawn } from 'node:child_process';
-import { COCODE_DIR } from '../config.js';
+import { TORA_DIR } from '../config.js';
 import { matcherMatches } from '../hooks.js';
 import { buildChildEnv } from '../security.js';
 
-const AUTOMATIONS_PATH = join(COCODE_DIR, 'automations.json');
+const AUTOMATIONS_PATH = join(TORA_DIR, 'automations.json');
 const DEFAULT_TIMEOUT = 10;
 const MAX_TIMEOUT = 60;
 const AUTOMATION_EVENTS = new Set(['UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop']);
@@ -146,7 +146,7 @@ function runCommand(command, cwd, timeout = DEFAULT_TIMEOUT) {
     try {
       proc = spawn('/bin/sh', ['-c', command], {
         cwd: cwd || process.cwd(),
-        env: buildChildEnv(process.env, { COCODE_AUTOMATION: '1' }),
+        env: buildChildEnv(process.env, { TORA_AUTOMATION: '1' }),
         stdio: ['ignore', 'pipe', 'pipe']
       });
     } catch (e) {

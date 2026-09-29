@@ -1,8 +1,8 @@
 {
-  "name": "@cocode/cli",
+  "name": "@tora/cli",
   "version": "0.1.0",
   "type": "module",
-  "description": "CoCode CLI：终端版 Agent（零依赖）",
-  "bin": { "cocode": "src/index.js" },
+  "description": "Tora CLI：终端版 Agent（零依赖）",
+  "bin": { "tora": "src/index.js" },
   "dependencies": {}
 }

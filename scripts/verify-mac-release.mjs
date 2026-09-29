@@ -9,7 +9,7 @@ import desktop from '../packages/desktop/package.json' with { type: 'json' };
 
 if (process.platform !== 'darwin') throw new Error('macOS 安装包验证必须在 macOS 上运行');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dmg = join(root, 'packages', 'desktop', 'release', `CoCode-${desktop.version}-mac.dmg`);
+const dmg = join(root, 'packages', 'desktop', 'release', `Tora-${desktop.version}-mac.dmg`);
 if (!existsSync(dmg)) throw new Error(`未找到安装包：${dmg}`);
 
 function run(command, args) {
@@ -18,19 +18,19 @@ function run(command, args) {
 
 run('hdiutil', ['verify', dmg]);
 console.log('✓ DMG 校验和有效');
-const mountPoint = mkdtempSync(join(tmpdir(), 'cocode-release-verify-'));
+const mountPoint = mkdtempSync(join(tmpdir(), 'tora-release-verify-'));
 let attached = false;
 try {
   run('hdiutil', ['attach', '-readonly', '-nobrowse', '-noverify', '-mountpoint', mountPoint, dmg]);
   attached = true;
-  const app = join(mountPoint, 'CoCode.app');
-  if (!existsSync(app)) throw new Error('DMG 内缺少 CoCode.app');
+  const app = join(mountPoint, 'Tora.app');
+  if (!existsSync(app)) throw new Error('DMG 内缺少 Tora.app');
   run('codesign', ['--verify', '--deep', '--strict', app]);
   console.log('✓ 内层 App 签名有效');
   const assessment = run('spctl', ['--assess', '--type', 'execute', '--verbose=2', app]);
   if (assessment && !/accepted/.test(assessment)) throw new Error(`Gatekeeper 未通过：${assessment}`);
   console.log('✓ Gatekeeper 接受安装包内的 App');
-  const architectures = run('lipo', ['-archs', join(app, 'Contents', 'MacOS', 'CoCode')]).split(/\s+/);
+  const architectures = run('lipo', ['-archs', join(app, 'Contents', 'MacOS', 'Tora')]).split(/\s+/);
   if (!['arm64', 'x86_64'].every((arch) => architectures.includes(arch))) throw new Error(`缺少通用架构：${architectures.join(', ')}`);
   console.log('✓ 同时包含 arm64 和 x86_64');
   const plist = join(app, 'Contents', 'Info.plist');

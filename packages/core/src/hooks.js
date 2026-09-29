@@ -3,15 +3,15 @@
 // 事件：UserPromptSubmit / PreToolUse / PostToolUse / Stop
 //
 // 配置（两种位置，项目级追加在用户级之后）：
-//   ~/.cocode/hooks.json          用户级（总是生效）
-//   <cwd>/.cocode/hooks.json    项目级（**默认不执行**，见下面的安全说明）
+//   ~/.tora/hooks.json          用户级（总是生效）
+//   <cwd>/.tora/hooks.json    项目级（**默认不执行**，见下面的安全说明）
 //
 // 格式（兼容 Claude Code 风格，也支持扁平写法）：
 //   {
 //     "hooks": {
 //       "PreToolUse": [
 //         { "matcher": "Bash|Write",
-//           "hooks": [{ "type": "command", "command": "node .cocode/hooks/guard.js", "timeout": 5 }] }
+//           "hooks": [{ "type": "command", "command": "node .tora/hooks/guard.js", "timeout": 5 }] }
 //       ]
 //     }
 //   }
@@ -33,13 +33,14 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
 import { buildChildEnv } from './security.js';
-import { COCODE_DIR } from './config.js';
+import { TORA_DIR } from './config.js';
+import { resolveProjectDataPath } from './legacy-migration.js';
 import { runAutomations } from './tools/automations.js';
 
 export const HOOK_EVENTS = ['UserPromptSubmit', 'PreToolUse', 'PostToolUse', 'Stop'];
 
-export const USER_HOOKS_PATH = join(COCODE_DIR, 'hooks.json');
-export const PROJECT_HOOKS_PATH = (cwd) => join(cwd, '.cocode', 'hooks.json');
+export const USER_HOOKS_PATH = join(TORA_DIR, 'hooks.json');
+export const PROJECT_HOOKS_PATH = (cwd) => resolveProjectDataPath(cwd, 'hooks.json');
 
 const DEFAULT_TIMEOUT = 10; // 秒
 
@@ -128,7 +129,7 @@ function runCommand(command, payload, { cwd, timeout }) {
     try {
       proc = spawn(shell, ['-c', command], {
         cwd: cwd || process.cwd(),
-        env: buildChildEnv(process.env, { COCODE_HOOK: '1' }),
+        env: buildChildEnv(process.env, { TORA_HOOK: '1' }),
         stdio: ['pipe', 'pipe', 'pipe']
       });
     } catch (e) {
@@ -209,7 +210,7 @@ export async function runHooks(event, payload, ctx = {}) {
   const { events, errors, projectHooksPresent, projectHooksTrusted } = loadHooks(cwd, cfg);
   out.errors.push(...errors);
   if (projectHooksPresent && !projectHooksTrusted) {
-    out.notices.push('检测到工作目录里的 .cocode/hooks.json，但未信任项目钩子，已跳过执行（可在设置里开启「信任项目钩子」）。');
+    out.notices.push('检测到工作目录里的 .tora/hooks.json，但未信任项目钩子，已跳过执行（可在设置里开启「信任项目钩子」）。');
   }
   const list = events[event];
   if (!list?.length) return out;

@@ -8,7 +8,7 @@ import { useAgents } from '@/hooks/useAgents';
 import { useSessions } from '@/hooks/useSessions';
 
 /**
- * The chat page's outer shell (CoCode 定制版):
+ * The chat page's outer shell (Tora 定制版):
  *
  * 历史会话列表已迁入全局侧栏（AppSidebar 的 SessionListSection），
  * 智能体选择器与其设置已迁入设置窗口——本页不再渲染自己的侧栏，

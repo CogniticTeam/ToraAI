@@ -114,7 +114,7 @@ function cleanOsaErr(stderr, meta = {}) {
   const s = String(stderr ?? '').trim();
   if (/assistive access|-25211|-1719/i.test(s)) {
     return '缺少 macOS「辅助功能」权限（合成鼠标键盘事件、读取窗口都需要它）。' +
-      '请到 系统设置 → 隐私与安全性 → 辅助功能，打开 CoCode（已打开就先关再开），然后重试。';
+      '请到 系统设置 → 隐私与安全性 → 辅助功能，打开 Tora（已打开就先关再开），然后重试。';
   }
   if (!s && meta.timedOut) {
     const secs = Math.max(1, Math.round((meta.timeoutMs ?? 20000) / 1000));
@@ -369,7 +369,7 @@ async function takeScreenshot(screenIdx) {
     const list = screens.map((s, i) => `  屏幕 ${i}：${s.w}×${s.h} @ (${s.x},${s.y})${s.scale > 1 ? ` Retina ${s.scale}x` : ''}`).join('\n');
     throw new Error(`没有屏幕 ${screenIdx}。当前有 ${screens.length} 块屏：\n${list}`);
   }
-  const dir = mkdtempSync(join(tmpdir(), 'cocode-shot-'));
+  const dir = mkdtempSync(join(tmpdir(), 'tora-shot-'));
   const file = join(dir, 'shot.png');
   try {
     const cap = await spawnCmd('screencapture', ['-x', '-C', '-D', String(screenIdx + 1), file], { timeout: 12000 });

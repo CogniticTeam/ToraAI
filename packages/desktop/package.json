@@ -1,8 +1,8 @@
 {
-  "name": "@cocode/desktop",
+  "name": "@tora/desktop",
   "version": "1.0.1",
   "type": "module",
-  "description": "CoCode 桌面版（Electron 壳：启动本地 ASAPI 服务并托管 agentscope 风格前端）",
+  "description": "Tora 桌面版（Electron 壳：启动本地 ASAPI 服务并托管 agentscope 风格前端）",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.cocode.desktop",
-    "productName": "CoCode",
+    "productName": "Tora",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "directories": {
       "output": "release"
@@ -68,8 +68,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "CoCodeAgent",
-      "repo": "CoCode",
+      "owner": "ToraAgent",
+      "repo": "Tora",
       "releaseType": "release"
     }
   }

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # 从 logo.PNG 生成：
 #   1) 带圆角+透明外角的方形图标（macOS Dock / 网页 favicon 通用风格）
-#   2) CoCode.iconset/ 各尺寸 PNG（供 iconutil 打成 .icns）
+#   2) Tora.iconset/ 各尺寸 PNG（供 iconutil 打成 .icns）
 #   3) favicon PNG（32/16）
 # 用法: python gen_icon.py <src.png> <out_dir>
 import os
@@ -49,7 +49,7 @@ def with_padding(im: Image.Image, ratio: float = 0.80) -> Image.Image:
 full = rounded(img.resize((1024, 1024), Image.LANCZOS))
 base = with_padding(full)
 
-iconset = os.path.join(out_dir, "CoCode.iconset")
+iconset = os.path.join(out_dir, "Tora.iconset")
 os.makedirs(iconset, exist_ok=True)
 # macOS 需要的尺寸（文件名 -> 像素边长）
 specs = {

@@ -4,8 +4,8 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-provider-test-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-provider-test-'));
+process.env.TORA_HOME = testHome;
 const realFetch = globalThis.fetch;
 
 try {
@@ -19,7 +19,7 @@ try {
         provider: 'google', baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai',
         returned: ['gemini-3.8-flash', 'gemini-3.8-live', 'gemini-embedding-001', 'gemma-4-31b-it'],
         expected: ['gemini-3.8-flash'],
-        header: ['x-goog-api-client', 'cocode-desktop/1.0.0'],
+        header: ['x-goog-api-client', 'tora-desktop/1.0.0'],
       },
       {
         provider: 'anthropic', baseURL: 'https://api.anthropic.com/v1',
@@ -68,7 +68,7 @@ try {
 
     await chatCompletion(createClient({ baseURL: cases[0].baseURL, apiKey: 'test-key', model: 'gemini-3.8-flash' }), { messages, tools });
     assert.equal(requests.at(-1).url, cases[0].baseURL + '/chat/completions');
-    assert.equal(requests.at(-1).headers['x-goog-api-client'], 'cocode-desktop/1.0.0');
+    assert.equal(requests.at(-1).headers['x-goog-api-client'], 'tora-desktop/1.0.0');
     assert.equal(requests.at(-1).body.reasoning_effort, 'high');
     assert.equal(requests.at(-1).body.enable_thinking, undefined);
 

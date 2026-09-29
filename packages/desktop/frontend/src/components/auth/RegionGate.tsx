@@ -10,11 +10,11 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useI18n';
 
-const AGREED_KEY = 'cocode_cn_notice_agreed_v1';
+const AGREED_KEY = 'tora_cn_notice_agreed_v1';
 const GEO_TIMEOUT_MS = 6000;
 
 // 与 AccountSection 同一认证服务（那里是私有常量，这里轻量重复一份）
-const geoApi = () => (localStorage.getItem('cocode_auth_api') || 'https://cocode.ohfun.online').replace(/\/+$/, '');
+const geoApi = () => (localStorage.getItem('tora_auth_api') || 'https://tora.ohfun.online').replace(/\/+$/, '');
 
 export function RegionGate({ children }: { children: React.ReactNode }) {
 	const { t } = useTranslation();

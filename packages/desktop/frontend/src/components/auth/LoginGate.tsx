@@ -17,8 +17,8 @@ import { useTranslation } from '@/i18n/useI18n';
 import { getToken, delToken, delEmail } from '@/utils/authStore';
 import { syncModelsFromCloud } from '@/utils/modelSync';
 
-const API_KEY = 'cocode_auth_api';
-const DEFAULT_AUTH_API = 'https://cocode.ohfun.online';
+const API_KEY = 'tora_auth_api';
+const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 
 // 已登录用户不应为了几乎不会打开的账户表单下载验证、头像、套餐等依赖。
 // 未登录时仍以同一个启动动画作为短暂 fallback，避免出现空白认证页。
@@ -50,8 +50,8 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
     const onAuthChanged = () => {
       setPhase((cur) => (cur === 'ok' && !getToken() ? 'login' : cur));
     };
-    window.addEventListener('cocode-auth-changed', onAuthChanged);
-    return () => window.removeEventListener('cocode-auth-changed', onAuthChanged);
+    window.addEventListener('tora-auth-changed', onAuthChanged);
+    return () => window.removeEventListener('tora-auth-changed', onAuthChanged);
   }, []);
 
   useEffect(() => {

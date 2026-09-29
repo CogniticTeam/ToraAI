@@ -47,7 +47,7 @@ import {
 } from '@/components/ui/resizable.tsx';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
-import { useCocodeData } from '@/hooks/useCocodeData';
+import { useToraData } from '@/hooks/useToraData';
 import { useKnowledgeBaseMiddlewareSchema } from '@/hooks/useKnowledgeBaseMiddlewareSchema';
 import { useKnowledgeBases } from '@/hooks/useKnowledgeBases';
 import { useMessages } from '@/hooks/useMessages';
@@ -391,8 +391,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// 有会话时顺手装进当前工作区。纯浏览器环境（无壳层桥）由对话框侧隐藏入口。
 	const handleImportLocal = useCallback(async () => {
 		const bridge = (window as unknown as {
-			cocodeWindow?: { openFolderDialog: () => Promise<string | null> };
-		}).cocodeWindow;
+			toraWindow?: { openFolderDialog: () => Promise<string | null> };
+		}).toraWindow;
 		if (!bridge?.openFolderDialog) {
 			throw new Error('本地导入需要桌面端 App（原生文件夹对话框）');
 		}
@@ -485,20 +485,20 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const prevPhaseRef = useRef(phase);
 	// Checkpoints / diff / hooks move for the same reason git status
 	// does: a reply just finished. One trigger drives all of them.
-	const cocode = useCocodeData(agentId, sessionId, activeCwd, {
+	const tora = useToraData(agentId, sessionId, activeCwd, {
 		checkpoints: openPanels.has('checkpoint'),
 		diff: openPanels.has('diff'),
 		hooks: openPanels.has('hooks'),
 	});
-	const { refresh: refreshCocode } = cocode;
+	const { refresh: refreshTora } = tora;
 	useEffect(() => {
 		const wasRunning = prevPhaseRef.current !== 'idle';
 		prevPhaseRef.current = phase;
 		if (wasRunning && phase === 'idle') {
 			void refetchWorkspaceStatus();
-			void refreshCocode();
+			void refreshTora();
 		}
-	}, [phase, refetchWorkspaceStatus, refreshCocode]);
+	}, [phase, refetchWorkspaceStatus, refreshTora]);
 
 	// Build the panel descriptors with live data. Rebuilt on every
 	// data change so the dock always renders the latest state — the
@@ -593,23 +593,23 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				icon: <UsersRound className="size-4" />,
 				content: <TeamPanel team={view?.team ?? null} currentSessionId={sessionId} />,
 			},
-			// ── CoCode 独有：检查点 / 变更预览 ──
+			// ── Tora 独有：检查点 / 变更预览 ──
 			checkpoint: {
 				title: (
 					<span className="flex items-center gap-x-2">
 						{t('panel.workspace.checkpoint')}
-						{cocode.checkpoints.length ? (
-							<Badge variant="outline">{cocode.checkpoints.length}</Badge>
+						{tora.checkpoints.length ? (
+							<Badge variant="outline">{tora.checkpoints.length}</Badge>
 						) : null}
 					</span>
 				),
 				icon: <History className="size-4" />,
 				content: (
 					<CheckpointPanel
-						checkpoints={cocode.checkpoints}
-						loading={cocode.loading}
-						onRestore={cocode.restoreCheckpoint}
-						onRefresh={cocode.refresh}
+						checkpoints={tora.checkpoints}
+						loading={tora.loading}
+						onRestore={tora.restoreCheckpoint}
+						onRefresh={tora.refresh}
 					/>
 				),
 			},
@@ -618,11 +618,11 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				icon: <GitCompare className="size-4" />,
 				content: (
 					<DiffPanel
-						diff={cocode.diff}
-						error={cocode.diffError}
-						errorCode={cocode.diffErrorCode}
-						loading={cocode.loading}
-						onRefresh={cocode.refresh}
+						diff={tora.diff}
+						error={tora.diffError}
+						errorCode={tora.diffErrorCode}
+						loading={tora.loading}
+						onRefresh={tora.refresh}
 						root={workspaceStatus?.cwd ?? view?.session.config.cwd ?? null}
 					/>
 				),
@@ -646,12 +646,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				icon: <Webhook className="size-4" />,
 				content: (
 					<HooksPanel
-						hooks={cocode.hooks}
-						loading={cocode.loading}
-						onRefresh={cocode.refresh}
+						hooks={tora.hooks}
+						loading={tora.loading}
+						onRefresh={tora.refresh}
 						onTrustProjectHooks={(trust) => {
 							const target = workspaceStatus?.cwd ?? view?.session.config.cwd;
-							if (target) void cocode.setProjectHooksTrusted(target, trust);
+							if (target) void tora.setProjectHooksTrusted(target, trust);
 						}}
 					/>
 				),
@@ -678,7 +678,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			handleKnowledgeConfigChange,
 			sessionId,
 			view,
-			cocode,
+			tora,
 			workspaceStatus?.cwd,
 			activeCwd,
 		],
@@ -965,7 +965,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								</div>
 								{/* Never squeezed by a long session name: the
 								    name truncates instead. */}
-								{/* CoCode 定制：右栏仅保留 计划/技能 面板开关；MCP/权限/知识库/团队已隐藏 */}
+								{/* Tora 定制：右栏仅保留 计划/技能 面板开关；MCP/权限/知识库/团队已隐藏 */}
 									<DropdownMenu>
 										<DropdownMenuTrigger asChild>
 											<Button
@@ -1049,7 +1049,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									git={workspaceStatus?.git ?? null}
 									workspaceSkills={skills}
 									workspaceKnowledgeBases={knowledgeBases}
-									userCommands={cocode.commands}
+									userCommands={tora.commands}
 									modelControl={
 										<LlmSelect
 											id="tour-llm-select"

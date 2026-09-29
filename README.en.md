@@ -2,9 +2,9 @@
 
 <div align="center">
 
-<img src="logo.PNG" width="120" alt="CoCode logo" />
+<img src="logo.PNG" width="120" alt="Tora logo" />
 
-# CoCode — A Comprehensive Coding Agent
+# Tora — A Comprehensive Coding Agent
 
 **Bring Your Own Model · Low-Token, High-Efficiency · Electron + CLI**
 
@@ -42,13 +42,13 @@ A self-hosting-friendly coding agent. The frontend adopts an [agentscope](https:
 packages/
 ├── core/              # Engine + ASAPI protocol adapter (zero-dependency)
 │   ├── src/
-│   │   ├── config.js           Model wiring & low-token config (COCODE_HOME redirects the data root)
+│   │   ├── config.js           Model wiring & low-token config (TORA_HOME redirects the data root)
 │   │   ├── model.js            OpenAI-compatible streaming Chat Completions + SSE parsing + capability probing
 │   │   ├── security.js         Path sandbox / subprocess env sanitization / secret redaction
-│   │   ├── prompt.js           Project instruction injection (COCODE.md / AGENTS.md) + system prompt assembly
+│   │   ├── prompt.js           Project instruction injection (TORA.md / AGENTS.md) + system prompt assembly
 │   │   ├── react.js            Text ReAct action parsing (used when the model lacks function calling)
 │   │   ├── discover.js         Local model auto-discovery (Ollama / LM Studio / vLLM …)
-│   │   ├── commands.js         Custom slash commands (~/.cocode/commands/*.md)
+│   │   ├── commands.js         Custom slash commands (~/.tora/commands/*.md)
 │   │   ├── tools/
 │   │   │   ├── builtin.js      Bash / Read / Write / Edit / Glob / Grep (+ image reading)
 │   │   │   ├── shell.js        Persistent shell sessions (cd / export survive across calls)
@@ -84,12 +84,12 @@ packages/
 ### 0. Prepare a model
 
 ```bash
-# Config location: ~/.cocode/config.json (COCODE_HOME relocates the entire data root)
-# Use COCODE_* environment variables; they take priority over the config file
-# First launch copies legacy data to ~/.cocode, preserving the original; existing new data is not overwritten
-export COCODE_BASE_URL="https://api.deepseek.com/v1"
-export COCODE_API_KEY="sk-xxx"
-export COCODE_MODEL="deepseek-flash"
+# Config location: ~/.tora/config.json (TORA_HOME relocates the entire data root)
+# Use TORA_* environment variables; they take priority over the config file
+# First launch copies legacy data to ~/.tora, preserving the original; existing new data is not overwritten
+export TORA_BASE_URL="https://api.deepseek.com/v1"
+export TORA_API_KEY="sk-xxx"
+export TORA_MODEL="deepseek-flash"
 ```
 
 Or run the interactive wizard (it can also probe model services already running on your machine):
@@ -174,7 +174,7 @@ node packages/core/test/run.js        # Real LSP is auto-skipped if unavailable;
 node packages/core/test/asapi.js
 ```
 
-Tests redirect the data root to a temp directory (`COCODE_HOME`) and **never touch your real `~/.cocode`**.
+Tests redirect the data root to a temp directory (`TORA_HOME`) and **never touch your real `~/.tora`**.
 
 ## 🔌 Model providers
 
@@ -214,16 +214,16 @@ When asked, the card presents `suggested_rules` (Bash: first words; paths: direc
 
 ### Checkpoints & rollback
 
-Whenever a round involves write/execution tools, a content-addressed snapshot of the working directory is taken before that round starts (`~/.cocode/checkpoints/<session>/`, last 10 rounds kept automatically). `/checkpoints` to view, `/restore <round>` to roll back (overwrites changed files, removes files created after the snapshot). This is the prerequisite for daring to enable `bypass`.
+Whenever a round involves write/execution tools, a content-addressed snapshot of the working directory is taken before that round starts (`~/.tora/checkpoints/<session>/`, last 10 rounds kept automatically). `/checkpoints` to view, `/restore <round>` to roll back (overwrites changed files, removes files created after the snapshot). This is the prerequisite for daring to enable `bypass`.
 
 ## 🪶 Low-token strategy
 
 | Strategy | Description |
 |---|---|
 | Repo map (proactive) | A symbol skeleton replaces "repeated glob + grep"; a few hundred tokens replace dozens of tool calls, injected only above a threshold |
-| Local code index | Symbol index (with line numbers) and semantic inverted index persisted to `~/.cocode/index/`, rebuilt incrementally by mtime; `Search` matches by words (`findUserById` splits into `find/user/by/id`), Chinese comments split by bigrams, definition lines weighted |
+| Local code index | Symbol index (with line numbers) and semantic inverted index persisted to `~/.tora/index/`, rebuilt incrementally by mtime; `Search` matches by words (`findUserById` splits into `find/user/by/id`), Chinese comments split by bigrams, definition lines weighted |
 | Change-aware context | Injects "recently changed files + dirty git files" into the system prompt, so the model knows files on disk may no longer look like what it remembers |
-| On-demand project instructions | Convention files like `COCODE.md` / `AGENTS.md` are injected only when present, with a character cap |
+| On-demand project instructions | Convention files like `TORA.md` / `AGENTS.md` are injected only when present, with a character cap |
 | Tool output truncation | `cfg.toolOutputLimit` (default 6000 chars); large outputs keep head+tail |
 | Context eviction | Token estimate over budget → older tool results replaced with placeholders (last 4 kept intact) |
 | History summarization | Still over limit → the model summarizes intermediate history once; multimodal content contributes text summaries only, no base64 flooding |
@@ -266,11 +266,11 @@ Navigation actions (`open` / `back` / `forward` / `reload`) are treated as **rea
 
 ### Project instruction files
 
-Drop `COCODE.md` / `AGENTS.md` at the project root (also recognized: `CLAUDE.md` / `.cursorrules` / `.github/copilot-instructions.md` / `.cocode/AGENTS.md`); the content is injected into the system prompt automatically.
+Drop `TORA.md` / `AGENTS.md` at the project root (also recognized: `CLAUDE.md` / `.cursorrules` / `.github/copilot-instructions.md` / `.tora/AGENTS.md`); the content is injected into the system prompt automatically.
 
 ### Custom slash commands
 
-`~/.cocode/commands/*.md` or `<project>/.cocode/commands/*.md` (project level overrides same names):
+`~/.tora/commands/*.md` or `<project>/.tora/commands/*.md` (project level overrides same names):
 
 ```markdown
 ---
@@ -286,7 +286,7 @@ Use `/review the latest commit` directly in the REPL; it also appears in the fro
 Without configuration, the `Lsp` tool falls back to the local symbol index (go-to-definition / find-references / diagnostics — zero-dependency and good enough, but no type info). Install a language server, add it to the config, and it switches to real LSP:
 
 ```jsonc
-// ~/.cocode/config.json
+// ~/.tora/config.json
 {
   "lspServers": {
     ".ts": {
@@ -301,7 +301,7 @@ Without configuration, the `Lsp` tool falls back to the local symbol index (go-t
 }
 ```
 
-**Desktop Settings → General → Advanced** can configure this in one click: it probes locally installed servers (including `~/.workbuddy`-managed workspaces, `~/.local/bin`, Homebrew and other non-PATH locations), auto-adds `tsserver.path`, and writes the config on "Enable". The CLI exposes the same probe results via `cocode lsp` or REPL `/lsp`.
+**Desktop Settings → General → Advanced** can configure this in one click: it probes locally installed servers (including `~/.workbuddy`-managed workspaces, `~/.local/bin`, Homebrew and other non-PATH locations), auto-adds `tsserver.path`, and writes the config on "Enable". The CLI exposes the same probe results via `tora lsp` or REPL `/lsp`.
 
 Any failure (not installed, handshake timeout, process crash) falls back to the local index, **and the failure reason is stated in the result** — otherwise "configured but not working" and "never configured" look identical.
 
@@ -309,13 +309,13 @@ Any failure (not installed, handshake timeout, process crash) falls back to the 
 
 ### Lifecycle hooks
 
-`~/.cocode/hooks.json` (always active) and `<project>/.cocode/hooks.json` (**not executed by default**, see below):
+`~/.tora/hooks.json` (always active) and `<project>/.tora/hooks.json` (**not executed by default**, see below):
 
 ```json
 {
   "hooks": {
     "PreToolUse": [
-      { "matcher": "Bash|Write", "hooks": [{ "type": "command", "command": "node .cocode/hooks/guard.js", "timeout": 10 }] }
+      { "matcher": "Bash|Write", "hooks": [{ "type": "command", "command": "node .tora/hooks/guard.js", "timeout": 10 }] }
     ]
   }
 }
@@ -332,7 +332,7 @@ Hooks receive the event JSON on stdin (`hook_event_name` / `tool_name` / `tool_i
 
 ### Custom tools
 
-`<project>/.cocode/tools/*.js` or `~/.cocode/tools/*.js`, `export default` a tool object or an array of tools:
+`<project>/.tora/tools/*.js` or `~/.tora/tools/*.js`, `export default` a tool object or an array of tools:
 
 ```js
 export default {
@@ -345,7 +345,7 @@ export default {
 
 ## 📋 Protocol notes
 
-The agentscope frontend relies on the `@agentscope-ai/agentscope` npm SDK's `appendEvent` for event merging (no manual handling on the frontend). The AgentEvents produced by CoCode's ASAPI server are fully compatible with that SDK — see the SSE stream validation in `core/test/asapi.js`. Tool names uniformly use **PascalCase** (consistent with the SDK's built-in tool family and the frontend `tool-renderers` mapping); legacy snake_case names in old sessions remain usable through the normalization table.
+The agentscope frontend relies on the `@agentscope-ai/agentscope` npm SDK's `appendEvent` for event merging (no manual handling on the frontend). The AgentEvents produced by Tora's ASAPI server are fully compatible with that SDK — see the SSE stream validation in `core/test/asapi.js`. Tool names uniformly use **PascalCase** (consistent with the SDK's built-in tool family and the frontend `tool-renderers` mapping); legacy snake_case names in old sessions remain usable through the normalization table.
 
 ## 📝 License
 

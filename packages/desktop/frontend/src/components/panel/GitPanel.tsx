@@ -168,9 +168,9 @@ export function GitPanel({ agentId, sessionId, cwd }: GitPanelProps) {
 						size="sm"
 						onClick={() => {
 							if (!wtBranch.trim()) return;
-							// 工作树放在仓库同级的 .cocode-wt/<branch>，不污染仓库内
+							// 工作树放在仓库同级的 .tora-wt/<branch>，不污染仓库内
 							const base = cwd.replace(/\/$/, '');
-							const path = `${base.substring(0, base.lastIndexOf('/'))}/.cocode-wt/${wtBranch.trim()}`;
+							const path = `${base.substring(0, base.lastIndexOf('/'))}/.tora-wt/${wtBranch.trim()}`;
 							void run(zh ? '工作树已创建' : 'Worktree created', () => gitApi.createWorktree(sessionId, path, wtBranch.trim()));
 							setWtBranch('');
 						}}

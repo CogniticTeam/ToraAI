@@ -8,7 +8,7 @@
 
 ## 1. 背景与目标
 
-CoCode 的 runAgent 跑完一轮工具调用循环后，直接 `finish('completed')` 返回。这意味着如果模型在第一轮里"自以为正确地做完了"（工具都调完了、产出了文本），哪怕它的产出有逻辑漏洞、漏了步骤、工具用得不对，也不会再回头看一眼。
+Tora 的 runAgent 跑完一轮工具调用循环后，直接 `finish('completed')` 返回。这意味着如果模型在第一轮里"自以为正确地做完了"（工具都调完了、产出了文本），哪怕它的产出有逻辑漏洞、漏了步骤、工具用得不对，也不会再回头看一眼。
 
 ChatDev 的 review 循环、AutoGPT 的自我审查、Reflexion 的 memory-reflect-revise 都在解决这个问题：**让模型对自己的产出再调用一次，用一段更严格的 prompt 审查，不达标就把反馈送回去让主 Agent 重做**。
 
@@ -27,7 +27,7 @@ ChatDev 的 review 循环、AutoGPT 的自我审查、Reflexion 的 memory-refle
 
 ## 3. 配置
 
-### 3.1 全局 config（`~/.cocode/config.json`）
+### 3.1 全局 config（`~/.tora/config.json`）
 
 ```json
 {

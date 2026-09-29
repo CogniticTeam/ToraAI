@@ -8,8 +8,8 @@ import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
-const chrome = [process.env.COCODE_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
-if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 COCODE_CHROME_PATH');
+const chrome = [process.env.TORA_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
+if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 TORA_CHROME_PATH');
 
 function contrastRatio(foreground, background) {
 	const rgb = value => value.startsWith('#')
@@ -23,11 +23,11 @@ function contrastRatio(foreground, background) {
 	return (values[0] + 0.05) / (values[1] + 0.05);
 }
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-composer-ui-'));
-const project = join(testHome, 'CoCode');
+const testHome = mkdtempSync(join(tmpdir(), 'tora-composer-ui-'));
+const project = join(testHome, 'Tora');
 mkdirSync(project);
 execFileSync('git', ['init', '-b', 'main', project], { stdio: 'ignore' });
-process.env.COCODE_HOME = testHome;
+process.env.TORA_HOME = testHome;
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const { loadSessionRecord, saveSessionRecord } = await import('../packages/core/src/asapi/store.js');
 const { userMsg } = await import('../packages/core/src/asapi/protocol.js');
@@ -40,34 +40,34 @@ try {
 	const errors = [];
 	page.on('pageerror', error => errors.push(error.message));
 	await page.addInitScript(folder => {
-		window.cocodeWindow = {
+		window.toraWindow = {
 			isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN',
 			reportLanguage: () => {}, reportTheme: () => {}, getRequiredUpdate: () => null,
 			onRequiredUpdate: () => () => {}, refreshAccount: async () => {},
 			openFolderDialog: async () => folder, onMenuCommand: () => () => {}, getAppVersion: () => '1.0.0',
 		};
-		window.cocodeVoice = { status: async () => ({ installed: true }), transcribe: async () => '' };
+		window.toraVoice = { status: async () => ({ installed: true }), transcribe: async () => '' };
 	}, project);
 	await page.goto(base + '/', { waitUntil: 'commit' });
-	await page.route('https://cocode.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'composer-test', username: 'composer-test' }) }));
-	await page.route('https://cocode.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://cocode.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-	await page.route('https://cocode.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://cocode.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'composer-test-ticket' }) }));
-	await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'composer-test', username: 'composer-test' }) }));
+	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'composer-test-ticket' }) }));
+	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
-		localStorage.setItem('cocode_auth_token', 'composer-test-token');
+		localStorage.setItem('tora_auth_token', 'composer-test-token');
 		localStorage.setItem('username', 'composer-test');
-		localStorage.setItem('cocode:first-run:intro:v1', '1');
-		localStorage.setItem('cocode:first-run:tour:v1', '1');
+		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	const card = page.locator('#tour-chat-input').first();
 	await card.waitFor({ state: 'visible' });
 	await page.locator('#tour-workspace-picker').first().click();
 	await page.locator('[data-slot="popover-content"]').getByRole('button', { name: '选择文件夹', exact: true }).click();
-	await page.locator('#tour-workspace-picker').first().getByText('CoCode').waitFor({ state: 'visible' });
+	await page.locator('#tour-workspace-picker').first().getByText('Tora').waitFor({ state: 'visible' });
 	await page.locator('#tour-permission-mode').first().click();
 	await page.getByRole('menuitemradio', { name: /完全访问/ }).click();
 	await page.keyboard.press('Escape');
@@ -113,11 +113,11 @@ try {
 	assert.ok((await textarea.boundingBox()).height <= 170, '多行输入应增高，但不能无限挤占聊天内容');
 	await textarea.fill('');
 	await page.waitForFunction(before => document.querySelector('#tour-chat-textarea')?.getBoundingClientRect().height <= before, initialTextHeight);
-	await page.screenshot({ path: '/tmp/cocode-composer-light.png' });
+	await page.screenshot({ path: '/tmp/tora-composer-light.png' });
 	await page.evaluate(() => document.documentElement.classList.add('dark'));
 	await page.waitForTimeout(250);
-	if (process.env.COCODE_DEBUG_COMPOSER) console.log('composer colors', await page.evaluate(() => ['#tour-workspace-picker', '#tour-llm-select', '#tour-permission-mode', '.composer-context', '#tour-chat-input'].map(selector => { const element = document.querySelector(selector); const style = element ? getComputedStyle(element) : null; return { selector, color: style?.color, background: style?.backgroundColor }; })));
-	await page.screenshot({ path: '/tmp/cocode-composer-dark.png' });
+	if (process.env.TORA_DEBUG_COMPOSER) console.log('composer colors', await page.evaluate(() => ['#tour-workspace-picker', '#tour-llm-select', '#tour-permission-mode', '.composer-context', '#tour-chat-input'].map(selector => { const element = document.querySelector(selector); const style = element ? getComputedStyle(element) : null; return { selector, color: style?.color, background: style?.backgroundColor }; })));
+	await page.screenshot({ path: '/tmp/tora-composer-dark.png' });
 	await page.setViewportSize({ width: 960, height: 700 });
 	await page.waitForFunction(() => {
 		const card = document.querySelector('#tour-chat-input');
@@ -126,20 +126,20 @@ try {
 		const a = card.getBoundingClientRect(); const b = send.getBoundingClientRect();
 		return b.left >= a.left && b.right <= a.right && b.bottom <= a.bottom;
 	});
-	await page.screenshot({ path: '/tmp/cocode-composer-narrow.png' });
+	await page.screenshot({ path: '/tmp/tora-composer-narrow.png' });
 	await page.evaluate(folder => {
-		localStorage.setItem('cocode-project-names-v1', JSON.stringify({ [folder]: '超长项目名称用于验证标题可以自动换行而不会超出窗口' }));
-		window.dispatchEvent(new Event('cocode-project-names-changed'));
+		localStorage.setItem('tora-project-names-v1', JSON.stringify({ [folder]: '超长项目名称用于验证标题可以自动换行而不会超出窗口' }));
+		window.dispatchEvent(new Event('tora-project-names-changed'));
 	}, project);
 	await page.getByRole('heading', { level: 1, name: /超长项目名称/ }).waitFor({ state: 'visible' });
 	await page.waitForFunction(() => [...document.querySelectorAll('.chat-greeting-character')].every(element => getComputedStyle(element).opacity === '1'));
 	const longGreetingBox = await page.getByRole('heading', { level: 1 }).first().boundingBox();
 	assert.ok(longGreetingBox && longGreetingBox.x >= 0 && longGreetingBox.x + longGreetingBox.width <= 960 && longGreetingBox.height >= 70,
 		'长项目名在窄窗口应换行且不超出视口');
-	await page.screenshot({ path: '/tmp/cocode-composer-long-project.png' });
+	await page.screenshot({ path: '/tmp/tora-composer-long-project.png' });
 	await page.evaluate(() => {
-		localStorage.removeItem('cocode-project-names-v1');
-		window.dispatchEvent(new Event('cocode-project-names-changed'));
+		localStorage.removeItem('tora-project-names-v1');
+		window.dispatchEvent(new Event('tora-project-names-changed'));
 	});
 	const agentId = (await (await fetch(`${base}/agent/`)).json()).agents[0].id;
 	const { session_id: sessionId } = await (await fetch(`${base}/sessions/`, {
@@ -151,7 +151,7 @@ try {
 	await page.locator('#tour-chat-input').first().waitFor({ state: 'visible' });
 	await page.locator('.composer-context').waitFor({ state: 'visible' });
 	assert.equal(await page.locator('#tour-workspace-picker').count(), 1, '已有 ID 但尚无消息的欢迎页仍应显示项目状态栏');
-	await page.screenshot({ path: '/tmp/cocode-composer-empty-session.png' });
+	await page.screenshot({ path: '/tmp/tora-composer-empty-session.png' });
 	const record = loadSessionRecord(sessionId);
 	record.display = [userMsg('已有消息测试')];
 	saveSessionRecord(record);
@@ -163,7 +163,7 @@ try {
 	assert.ok(existingCard && existingCard.height >= 90 && existingCard.height <= 112, '隐藏状态栏后输入卡片不能出现负边距或异常高度');
 	assert.equal(await page.locator('#tour-llm-select').first().count(), 1);
 	assert.equal(await page.locator('#tour-permission-mode').first().count(), 1);
-	await page.screenshot({ path: '/tmp/cocode-composer-existing.png' });
+	await page.screenshot({ path: '/tmp/tora-composer-existing.png' });
 	assert.deepEqual(errors, [], `浏览器脚本错误：${errors.join(' | ')}`);
 	console.log('空对话欢迎页（含已有 ID）显示项目条、有消息后隐藏、紧凑卡片与控件布局：通过');
 } finally {

@@ -6,10 +6,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // 独立测试环境：把数据根整体重定向到临时目录。
-// 早期版本直接 rmSync(~/.cocode/asapi) —— 那会删掉用户真实的
+// 早期版本直接 rmSync(~/.tora/asapi) —— 那会删掉用户真实的
 // agents/会话/凭证/技能库，跑一次测试毁一次数据。
-const TEST_HOME = join(tmpdir(), `cocode-asapi-test-${Date.now()}`);
-process.env.COCODE_HOME = TEST_HOME;
+const TEST_HOME = join(tmpdir(), `tora-asapi-test-${Date.now()}`);
+process.env.TORA_HOME = TEST_HOME;
 const ASAPI_DIR = join(TEST_HOME, 'asapi');
 
 const { startASAPIServer } = await import('../src/asapi/server.js');
@@ -67,7 +67,7 @@ const realFetch = globalThis.fetch;
 let fetchCalls = [];
 
 async function main() {
-  process.env.COCODE_API_KEY = 'test-key';
+  process.env.TORA_API_KEY = 'test-key';
   const srv = await startASAPIServer({ port: 0 });
   const base = `http://127.0.0.1:${srv.address().port}`;
 
@@ -151,8 +151,8 @@ async function main() {
     // internal/display 不外泄
     assert.equal(sv.session.internal, undefined);
     assert.equal(sv.session.display, undefined);
-    // 准备一个临时 cwd；agent.js 现在拒绝 cwd 为空的会话（避免回退到 CoCode 根）
-    const chatTmpDir = join(tmpdir(), `cocode-asapi-chat-${sessionId}`);
+    // 准备一个临时 cwd；agent.js 现在拒绝 cwd 为空的会话（避免回退到 Tora 根）
+    const chatTmpDir = join(tmpdir(), `tora-asapi-chat-${sessionId}`);
     mkdirSync(chatTmpDir, { recursive: true });
     await realFetch(base + `/sessions/${sessionId}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -287,7 +287,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const tmpCwd = join(tmpdir(), `cocode-asapi-autocontext-${sid}`);
+    const tmpCwd = join(tmpdir(), `tora-asapi-autocontext-${sid}`);
     mkdirSync(tmpCwd, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -451,7 +451,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const cwdDir = join(tmpdir(), `cocode-asapi-compact-${sid}`);
+    const cwdDir = join(tmpdir(), `tora-asapi-compact-${sid}`);
     mkdirSync(cwdDir, { recursive: true });
     // 该用例测上下文压缩，不测权限：命令里带管道（复合命令），default 会弹确认
     await realFetch(base + `/sessions/${sid}`, {
@@ -553,7 +553,7 @@ async function main() {
   });
 
   await test('Agent 运行行为（/admin/runtime）：压缩预算 + 工具输出 + 迭代轮数', async () => {
-    // config.json 是用户真实配置（~/.cocode/config.json），测试只做往返断言，
+    // config.json 是用户真实配置（~/.tora/config.json），测试只做往返断言，
     // 结束后还原原值 —— 不能假设初始值，否则会被上一次运行或用户改动影响。
     const r0 = await realFetch(base + '/admin/runtime');
     const original = await r0.json();
@@ -623,9 +623,9 @@ async function main() {
     }
   });
 
-  await test('workspace 目录列表（未选工作目录时不回退 CoCode 根）', async () => {
+  await test('workspace 目录列表（未选工作目录时不回退 Tora 根）', async () => {
     // 新建一个 session 但不 PATCH cwd —— 老逻辑会回退 process.cwd()，
-    // 暴露 CoCode 包根的文件树。新逻辑在 cwd 为空时直接返回 null+空列表。
+    // 暴露 Tora 包根的文件树。新逻辑在 cwd 为空时直接返回 null+空列表。
     const mk = await realFetch(base + '/sessions/', {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ agent_id: agentId })
@@ -633,10 +633,10 @@ async function main() {
     const { session_id: noCwdSid } = await mk.json();
 
     // 1) 工作目录为空时：status 与 directories 都必须诚实返回 null，
-    //    而不是回退 process.cwd()（那会把 CoCode 包根的文件树暴露成默认工作区）
+    //    而不是回退 process.cwd()（那会把 Tora 包根的文件树暴露成默认工作区）
     const r3a = await realFetch(base + `/workspace/status?agent_id=x&session_id=${noCwdSid}`);
     const stA = await r3a.json();
-    assert.equal(stA.workdir, null, '未选工作目录时不应回退 CoCode 包根');
+    assert.equal(stA.workdir, null, '未选工作目录时不应回退 Tora 包根');
     assert.equal(stA.cwd, null);
     assert.equal(stA.git, null);
 
@@ -647,9 +647,9 @@ async function main() {
     assert.deepEqual(d.entries, []);
     assert.equal(d.needsCwd, true);
 
-    // 2) PATCH 一个临时 cwd 后，列表不再"空"也不暴露 CoCode 根，而是落回
+    // 2) PATCH 一个临时 cwd 后，列表不再"空"也不暴露 Tora 根，而是落回
     //    用户选的目录（这里用 tmp 内置子目录的绝对路径）。
-    const tmpDir = join(tmpdir(), `cocode-asapi-ws-${Date.now()}`);
+    const tmpDir = join(tmpdir(), `tora-asapi-ws-${Date.now()}`);
     mkdirSync(tmpDir, { recursive: true });
     writeFileSync(join(tmpDir, 'in-workspace.txt'), 'hi');
     const beforeSession = await (await realFetch(base + `/workspace/status?cwd=${encodeURIComponent(tmpDir)}`)).json();
@@ -663,7 +663,7 @@ async function main() {
     const d2 = await r2.json();
     assert.equal(d2.path, tmpDir);
     assert.ok(d2.entries.some((e) => e.name === 'in-workspace.txt'),
-      '应能看到刚写入的文件，证明工作目录就是 session.cwd，不是 CoCode 根');
+      '应能看到刚写入的文件，证明工作目录就是 session.cwd，不是 Tora 根');
 
     // status 里的路径是 realpath 归一化过的（macOS 上 /var → /private/var），
     // 所以比对前也要归一化，否则会被符号链接差异误伤
@@ -1568,7 +1568,7 @@ async function main() {
   upstreamCalls.length = 0;
 
   // ─────────────────────────────────────────────────────────────
-  // CoCode 新增：权限 HITL / 允许清单 / 检查点 / 会话检索 / git 状态
+  // Tora 新增：权限 HITL / 允许清单 / 检查点 / 会话检索 / git 状态
   // ─────────────────────────────────────────────────────────────
   console.log('--- 权限 HITL（真 ASK 流程）---');
 
@@ -1616,7 +1616,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const hitlDir = join(tmpdir(), `cocode-asapi-hitl-${sid}`);
+    const hitlDir = join(tmpdir(), `tora-asapi-hitl-${sid}`);
     mkdirSync(hitlDir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -1703,7 +1703,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-hitl-deny-${sid}`);
+    const dir = join(tmpdir(), `tora-asapi-hitl-deny-${sid}`);
     mkdirSync(dir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -1820,7 +1820,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-${tag}-${sid}`);
+    const dir = join(tmpdir(), `tora-asapi-${tag}-${sid}`);
     mkdirSync(dir, { recursive: true });
     // 队长 bypass：team 工具全部直通；worker 权限由 AgentCreate 请求决定
     await realFetch(base + `/sessions/${sid}`, {
@@ -1993,7 +1993,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-ckpt-${sid}`);
+    const dir = join(tmpdir(), `tora-asapi-ckpt-${sid}`);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'keep.txt'), 'v1');
     await realFetch(base + `/sessions/${sid}`, {
@@ -2037,7 +2037,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-search-${sid}`);
+    const dir = join(tmpdir(), `tora-asapi-search-${sid}`);
     mkdirSync(dir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -2087,7 +2087,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-git-${sid}`);
+    const dir = join(tmpdir(), `tora-asapi-git-${sid}`);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'a.txt'), 'hello\n');
     await realFetch(base + `/sessions/${sid}`, {
@@ -2121,7 +2121,7 @@ async function main() {
   });
 
   await test('终端：create → write 回显 → SSE 流 + 重连回放 → kill → 已退出 404', async () => {
-    const dir = join(tmpdir(), `cocode-asapi-term-${Date.now()}`);
+    const dir = join(tmpdir(), `tora-asapi-term-${Date.now()}`);
     mkdirSync(dir, { recursive: true });
     const cr = await (await realFetch(base + '/terminal/create', {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -2207,11 +2207,11 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-cmd-${sid}`);
-    mkdirSync(join(dir, '.cocode', 'commands'), { recursive: true });
-    mkdirSync(join(dir, '.cocode', 'tools'), { recursive: true });
-    writeFileSync(join(dir, '.cocode', 'commands', 'review.md'), '---\ndescription: 审查改动\n---\n请审查这些改动：$ARGUMENTS');
-    writeFileSync(join(dir, '.cocode', 'tools', 'hello.js'), 'export default { name: "HelloTool", description: "示例", parameters: { type: "object", properties: {} }, async execute() { return "hi"; } };');
+    const dir = join(tmpdir(), `tora-asapi-cmd-${sid}`);
+    mkdirSync(join(dir, '.tora', 'commands'), { recursive: true });
+    mkdirSync(join(dir, '.tora', 'tools'), { recursive: true });
+    writeFileSync(join(dir, '.tora', 'commands', 'review.md'), '---\ndescription: 审查改动\n---\n请审查这些改动：$ARGUMENTS');
+    writeFileSync(join(dir, '.tora', 'tools', 'hello.js'), 'export default { name: "HelloTool", description: "示例", parameters: { type: "object", properties: {} }, async execute() { return "hi"; } };');
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ cwd: dir })
@@ -2233,7 +2233,7 @@ async function main() {
 
   // ---------- 代码索引 / LSP / 钩子（HTTP 层）----------
   await test('索引端点：能重建索引并回报规模', async () => {
-    const dir = join(tmpdir(), `cocode-idx-http-${Date.now()}`);
+    const dir = join(tmpdir(), `tora-idx-http-${Date.now()}`);
     mkdirSync(join(dir, 'src'), { recursive: true });
     writeFileSync(join(dir, 'src', 'a.js'), 'export function indexedThing() {}\nexport const other = 1;\n');
     const { session_id } = await (await realFetch(base + '/sessions/', {
@@ -2275,9 +2275,9 @@ async function main() {
   });
 
   await test('钩子：/hooks 报告生效清单，/hooks/trust 写入信任列表', async () => {
-    const dir = join(tmpdir(), `cocode-hooks-http-${Date.now()}`);
-    mkdirSync(join(dir, '.cocode'), { recursive: true });
-    writeFileSync(join(dir, '.cocode', 'hooks.json'), JSON.stringify({
+    const dir = join(tmpdir(), `tora-hooks-http-${Date.now()}`);
+    mkdirSync(join(dir, '.tora'), { recursive: true });
+    writeFileSync(join(dir, '.tora', 'hooks.json'), JSON.stringify({
       PreToolUse: [{ matcher: 'Bash', command: 'echo hi' }]
     }));
     const { session_id } = await (await realFetch(base + '/sessions/', {
@@ -2352,7 +2352,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-order-${Date.now()}`);
+    const dir = join(tmpdir(), `tora-asapi-order-${Date.now()}`);
     mkdirSync(dir, { recursive: true });
     await realFetch(base + `/sessions/${sid}`, {
       method: 'PATCH', headers: { 'content-type': 'application/json' },
@@ -2449,7 +2449,7 @@ async function main() {
       body: JSON.stringify({ agent_id: agentId })
     });
     const { session_id: sid } = await mk.json();
-    const dir = join(tmpdir(), `cocode-asapi-git2-${sid}`);
+    const dir = join(tmpdir(), `tora-asapi-git2-${sid}`);
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, 'f.txt'), '1\n');
     await realFetch(base + `/sessions/${sid}`, {
@@ -2491,7 +2491,7 @@ async function main() {
     assert.equal(del.status, 200, '删除分支应 200');
 
     // 3) 工作树：建 + 列 + 删
-    const wtPath = join(dir, '..', `cocode-wt-${sid}`);
+    const wtPath = join(dir, '..', `tora-wt-${sid}`);
     rmSync(wtPath, { recursive: true, force: true });
     const cwt = await realFetch(base + '/git/worktrees', {
       method: 'POST', headers: { 'content-type': 'application/json' },

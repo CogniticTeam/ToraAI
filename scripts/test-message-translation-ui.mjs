@@ -4,7 +4,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
-process.env.COCODE_HOME = mkdtempSync(join(tmpdir(), 'cocode-translation-ui-'));
+process.env.TORA_HOME = mkdtempSync(join(tmpdir(), 'tora-translation-ui-'));
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const server = await startASAPIServer({ port: 0 });
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -16,9 +16,9 @@ try {
     let calls = 0;
     page.on('pageerror', error => errors.push(error.message));
     await page.addInitScript(({ base, language }) => {
-      for (const [key, value] of Object.entries({ server_url: base, username: 'cocode', cocode_auth_token: 'mock-session', cocode_auth_username: 'TranslationTest', cocode_cn_notice_agreed_v1: '1', cocode_language_preference: language })) localStorage.setItem(key, value);
+      for (const [key, value] of Object.entries({ server_url: base, username: 'tora', tora_auth_token: 'mock-session', tora_auth_username: 'TranslationTest', tora_cn_notice_agreed_v1: '1', tora_language_preference: language })) localStorage.setItem(key, value);
     }, { base, language });
-    await page.route('https://cocode.ohfun.online/**', async route => {
+    await page.route('https://tora.ohfun.online/**', async route => {
       const path = new URL(route.request().url()).pathname;
       const reply = (data, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
       if (path === '/auth/me') return reply({ id: 1, email: 'test@example.invalid', username: 'TranslationTest', banned: false });
@@ -63,7 +63,7 @@ try {
     await page.getByRole('heading', { name: translatedTitle }).waitFor();
     assert.equal(calls, 2); // 一次失败、一次成功；原文/译文切换无请求。
     assert.deepEqual(errors, []);
-    await page.screenshot({ path: `/private/tmp/cocode-translation-${language}.png` });
+    await page.screenshot({ path: `/private/tmp/tora-translation-${language}.png` });
     console.log(`通过 ${language}：详情内同语言禁用、异语言翻译、失败重试、加载占位、原文切换、纯文本安全渲染。`);
     await page.close();
   }

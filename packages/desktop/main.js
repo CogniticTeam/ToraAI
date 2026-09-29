@@ -1,4 +1,4 @@
-// CoCode 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
+// Tora 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
 // 渲染层无任何 Node 集成（contextIsolation 默认开启）；前端通过 127.0.0.1 HTTP/SSE 通信，
 // 与浏览器打开完全同构。preload 在页面脚本执行前预置本地服务连接，首屏只加载一次。
 import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, safeStorage, session, shell, systemPreferences } from 'electron';
@@ -10,8 +10,9 @@ import { voiceStatus, setAsrApiKey, transcribeSamples } from './voice.js';
 import { optimizePrompt } from './prompt-optimizer.js';
 import { isAppUrl, normalizeExternalHttpUrl } from './navigation-security.js';
 import { applicationMenuTemplate } from './application-menu.js';
+import { desktopStorageName } from './brand-compat.js';
 
-app.setName('CoCode');
+app.setName(desktopStorageName(app.getPath('appData')));
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -51,7 +52,7 @@ ipcMain.on('app:get-version', (event) => {
 
 // macOS 和 Windows 均由 electron-updater 下载、校验并安装 GitHub Release。
 // macOS 更新元数据不可用时，再通过公开 Release 检测新版并提供官网下载兜底。
-const RELEASES_API_URL = 'https://api.github.com/repos/CoCodeAgent/CoCode/releases/latest';
+const RELEASES_API_URL = 'https://api.github.com/repos/ToraAgent/Tora/releases/latest';
 const OFFICIAL_DOWNLOAD_URL = 'https://ohfun.online/#download';
 const UPDATE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 let updaterReady = false;
@@ -69,7 +70,7 @@ function observeUpdateDownload(result) {
 
 function publishRequiredUpdate(patch) {
   requiredUpdate = { ...requiredUpdate, ...patch };
-  setDesktopAccessBlocked('update', '请更新 CoCode 后继续使用');
+  setDesktopAccessBlocked('update', '请更新 Tora 后继续使用');
   if (win && !win.isDestroyed()) win.webContents.send('updates:required', requiredUpdate);
 }
 function clearRequiredUpdate() {
@@ -134,7 +135,7 @@ async function checkMacForUpdateFallback() {
   let response;
   try {
     response = await fetch(RELEASES_API_URL, {
-      headers: { Accept: 'application/vnd.github+json', 'User-Agent': `CoCode/${app.getVersion()}` },
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': `Tora/${app.getVersion()}` },
       signal: controller.signal,
     });
   } finally {
@@ -253,8 +254,8 @@ function installApplicationMenu(language = app.getLocale()) {
       const result = await checkForUpdates();
       if (['available', 'downloading', 'ready'].includes(result.status)) return;
       const zh = language.startsWith('zh');
-      await dialog.showMessageBox(win, { type: result.status === 'error' ? 'warning' : 'info', title: 'CoCode',
-        message: result.status === 'up-to-date' ? (zh ? '当前已是最新版本' : 'CoCode is up to date')
+      await dialog.showMessageBox(win, { type: result.status === 'error' ? 'warning' : 'info', title: 'Tora',
+        message: result.status === 'up-to-date' ? (zh ? '当前已是最新版本' : 'Tora is up to date')
           : result.status === 'development' ? (zh ? '开发版本不检查更新' : 'Updates are disabled in development')
           : (zh ? '暂时无法检查更新' : 'Unable to check for updates'),
       });
@@ -269,15 +270,15 @@ function installApplicationMenu(language = app.getLocale()) {
 ipcMain.on('app:language', (_event, language) => {
   if (language === 'zh' || language === 'en') installApplicationMenu(language);
 });
-app.setAboutPanelOptions({ applicationName: 'CoCode', applicationVersion: app.getVersion() });
+app.setAboutPanelOptions({ applicationName: 'Tora', applicationVersion: app.getVersion() });
 
 async function createWindow() {
   installApplicationMenu();
   scheduleUpdateChecks();
-  setDesktopAccessBlocked('account', '正在验证 CoCode 账户');
+  setDesktopAccessBlocked('account', '正在验证 Tora 账户');
 
   // Windows：设置 AppUserModelID，否则任务栏/通知归属到 electron.exe，
-  // 图标和「固定到任务栏」都不会按 CoCode 处理。
+  // 图标和「固定到任务栏」都不会按 Tora 处理。
   if (process.platform === 'win32') {
     app.setAppUserModelId('com.cocode.desktop');
   }
@@ -310,7 +311,7 @@ async function createWindow() {
     height: 900,
     minWidth: 960,
     minHeight: 600,
-    title: 'CoCode',
+    title: 'Tora',
     // Windows/Linux 任务栏与窗口图标（macOS 走下面的 app.dock.setIcon）。
     // Windows 正式格式是 .ico（多尺寸内嵌），Linux 用 PNG。
     icon: process.platform === 'win32'
@@ -340,7 +341,7 @@ async function createWindow() {
     }
   });
 
-  // 窗口状态桥：渲染层据此决定 CoCode 标题是否给红绿灯让位
+  // 窗口状态桥：渲染层据此决定 Tora 标题是否给红绿灯让位
   ipcMain.on('win:is-maximized', (e) => { e.returnValue = win.isMaximized(); });
 
   // 深浅色桥：渲染层主题就绪/变化时上报实际深浅，同步窗口原生背景（加载页底色）。
@@ -370,14 +371,14 @@ async function createWindow() {
 
   // ---------------------------------------------------------------- 语音识别
   // GLM-ASR-2512 云端转写（智谱）：无需本地模型。
-  // 双通道：用户自配 Key 时直连；无 Key 时用登录 token 走免费 CoCode ASR。
+  // 双通道：用户自配 Key 时直连；无 Key 时用登录 token 走免费 Tora ASR。
   // getSecure 在下方凭证存储块定义（函数提升）。
   ipcMain.handle('voice:status', () => voiceStatus({ token: getSecure('token') }));
   ipcMain.handle('voice:transcribe', (_e, samples) => transcribeSamples(samples, { token: getSecure('token') }));
 
   // ---------------------------------------------------------------- 提示词优化
   // DeepSeek deepseek-flash 改写输入框草稿（Key 从环境变量 DEEPSEEK_API_KEY
-  // 或 ~/.cocode/.env 读取，不入库不进包；渲染层直连会被 CORS 拦截，故走主进程代理）。
+  // 或 ~/.tora/.env 读取，不入库不进包；渲染层直连会被 CORS 拦截，故走主进程代理）。
   ipcMain.handle('prompt-optimizer:run', (_e, text) => optimizePrompt(text));
 
   // ---------------------------------------------------------------- 凭证安全存储
@@ -405,9 +406,9 @@ async function createWindow() {
   }
   async function refreshAccountAccess() {
     const token = getSecure('token');
-    if (!token) { setDesktopAccessBlocked('account', '请先登录 CoCode'); return; }
+    if (!token) { setDesktopAccessBlocked('account', '请先登录 Tora'); return; }
     try {
-      const response = await fetch('https://cocode.ohfun.online/auth/me', {
+      const response = await fetch('https://tora.ohfun.online/auth/me', {
         headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000),
       });
       if (token !== getSecure('token')) return;
@@ -475,7 +476,7 @@ async function createWindow() {
           "script-src 'self' https://challenges.cloudflare.com; " +
           "style-src 'self' 'unsafe-inline'; " +
           "img-src 'self' data: blob: https:; " +
-          "connect-src 'self' https://cocode.ohfun.online wss://cocode.ohfun.online https://challenges.cloudflare.com; " +
+          "connect-src 'self' https://tora.ohfun.online wss://tora.ohfun.online https://challenges.cloudflare.com; " +
           "media-src 'self' blob:; " +
           "font-src 'self' data:; " +
           "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; " +
@@ -528,7 +529,7 @@ async function createWindow() {
 /**
  * 把 Browser 工具接到渲染层的内置浏览器上。
  *
- * 链路是两跳：主进程 → `executeJavaScript` 调渲染层的 `window.__cocodeBrowser` →
+ * 链路是两跳：主进程 → `executeJavaScript` 调渲染层的 `window.__toraBrowser` →
  * 面板里的 `<webview>`。之所以不把浏览器做成主进程的 WebContentsView：面板是
  * HTML 布局的一部分（可拖拽、可上下堆叠），让浏览器跟着 React 树走最省事，代价
  * 是中间多一跳转发。
@@ -539,8 +540,8 @@ async function createWindow() {
 function attachBrowserDriver(win) {
   const call = (action, params) =>
     win.webContents.executeJavaScript(
-      `(window.__cocodeBrowser
-         ? window.__cocodeBrowser.call(${JSON.stringify(action)}, ${JSON.stringify(params || {})})
+      `(window.__toraBrowser
+         ? window.__toraBrowser.call(${JSON.stringify(action)}, ${JSON.stringify(params || {})})
          : Promise.reject(new Error('__NO_BRIDGE__')))`,
       true
     );
@@ -554,7 +555,7 @@ function attachBrowserDriver(win) {
 
     // 面板还没开：请前端把它打开
     await win.webContents.executeJavaScript(
-      `window.dispatchEvent(new CustomEvent('cocode:open-panel', { detail: 'browser' }));true`,
+      `window.dispatchEvent(new CustomEvent('tora:open-panel', { detail: 'browser' }));true`,
       true
     );
 

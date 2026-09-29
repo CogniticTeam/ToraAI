@@ -1,4 +1,4 @@
-// headless 浏览器冒烟测试：加载 CoCode 前端，预置 localStorage，验证聊天页渲染
+// headless 浏览器冒烟测试：加载 Tora 前端，预置 localStorage，验证聊天页渲染
 // 运行：node scripts/test-ui-headless.mjs
 import { createRequire } from 'node:module';
 import { strict as assert } from 'node:assert';
@@ -7,13 +7,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // Playwright 是项目开发依赖；保留环境变量只为诊断其它安装位置时覆盖。
-const require = process.env.COCODE_PLAYWRIGHT_REQUIRE
-  ? createRequire(process.env.COCODE_PLAYWRIGHT_REQUIRE)
+const require = process.env.TORA_PLAYWRIGHT_REQUIRE
+  ? createRequire(process.env.TORA_PLAYWRIGHT_REQUIRE)
   : createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
 
 const chromeCandidates = [
-  process.env.COCODE_CHROME_PATH,
+  process.env.TORA_CHROME_PATH,
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
   '/usr/bin/google-chrome',
   '/usr/bin/google-chrome-stable',
@@ -21,26 +21,26 @@ const chromeCandidates = [
   '/usr/bin/chromium-browser',
 ].filter(Boolean);
 const CHROME = chromeCandidates.find((p) => existsSync(p));
-const mockModelBase = 'http://cocode-ui-smoke-model.invalid/v1';
+const mockModelBase = 'http://tora-ui-smoke-model.invalid/v1';
 const shots = [];
 const out = [];
 
 async function main() {
-  if (!CHROME) throw new Error(`找不到可执行的 Chrome/Chromium；可用 COCODE_CHROME_PATH 指定。已检查：${chromeCandidates.join('、')}`);
+  if (!CHROME) throw new Error(`找不到可执行的 Chrome/Chromium；可用 TORA_CHROME_PATH 指定。已检查：${chromeCandidates.join('、')}`);
   // 默认自起一套 ASAPI + 临时数据目录：UI 冒烟不能污染用户的 agents、会话、凭证。
-  // COCODE_UI_BASE 仅用于明确指定已有环境时的调试，不会尝试停止那个服务。
+  // TORA_UI_BASE 仅用于明确指定已有环境时的调试，不会尝试停止那个服务。
   let srv = null;
   let testHome = null;
-  let base = String(process.env.COCODE_UI_BASE || '').replace(/\/$/, '');
+  let base = String(process.env.TORA_UI_BASE || '').replace(/\/$/, '');
   if (!base) {
-    testHome = mkdtempSync(join(tmpdir(), 'cocode-ui-smoke-'));
-    process.env.COCODE_HOME = testHome;
+    testHome = mkdtempSync(join(tmpdir(), 'tora-ui-smoke-'));
+    process.env.TORA_HOME = testHome;
     // 给本脚本自建的 ASAPI 一条可预测的流式模型通道。浏览器仍通过真实
     // HTTP/SSE 调用本地 server；只有 server → 模型的外部网络边被 mock，
     // 所以能验证发送、SSE、消息气泡及 Markdown 懒加载而不消耗用户额度。
     const originalFetch = globalThis.fetch;
-    process.env.COCODE_BASE_URL = mockModelBase;
-    process.env.COCODE_API_KEY = 'ui-smoke-key';
+    process.env.TORA_BASE_URL = mockModelBase;
+    process.env.TORA_API_KEY = 'ui-smoke-key';
     globalThis.fetch = async (url, init) => {
       if (String(url).startsWith(mockModelBase)) {
         const body = JSON.stringify({ choices: [{ delta: { content: '**渲染成功**' } }] });
@@ -81,35 +81,35 @@ async function main() {
     await page.goto(base + '/', { waitUntil: 'commit', timeout: 10000 });
     // 登录墙属于云端身份服务，不能让本地 UI smoke 依赖真实账号、Turnstile 或网络。
     // 只在这一个浏览器页面把 /auth/me 替换为固定成功响应；生产代码没有任何绕过。
-    await page.route('https://cocode.ohfun.online/auth/me', (route) => route.fulfill({
+    await page.route('https://tora.ohfun.online/auth/me', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ id: 'ui-smoke', username: 'ui-smoke' })
     }));
-    await page.route('https://cocode.ohfun.online/models', (route) => route.fulfill({
+    await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       // 官方模型下架后，测试环境必须显式提供一条自定义模型；仅对自建临时服务注入。
       body: JSON.stringify({ models: srv ? [{ id: 'ui-smoke-model', provider: 'custom', label: 'UI Smoke', model: 'ui-smoke-model', baseURL: mockModelBase, apiKey: 'ui-smoke-key', enabled: true }] : [] })
     }));
-    await page.route('https://cocode.ohfun.online/polls/config', route => route.fulfill({
+    await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }),
     }));
-    await page.route('https://cocode.ohfun.online/account/messages', route => route.fulfill({
+    await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0, nextOffset: null }),
     }));
-    await page.route('https://cocode.ohfun.online/account/events-ticket', route => route.fulfill({
+    await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'ui-smoke-ticket' }),
     }));
-    await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', socket => {
+    await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => {
       socket.send(JSON.stringify({ type: 'ready' }));
       socket.onMessage(message => { if (message === 'ping') socket.send('pong'); });
     });
     await page.evaluate((serverUrl) => {
       localStorage.setItem('server_url', serverUrl);
       localStorage.setItem('username', 'ui-smoke');
-      localStorage.setItem('cocode_auth_token', 'ui-smoke-token');
-      localStorage.removeItem('cocode_language_preference');
+      localStorage.setItem('tora_auth_token', 'ui-smoke-token');
+      localStorage.removeItem('tora_language_preference');
       localStorage.removeItem('i18nextLng');
     }, base);
     collectStartupRequests = true;
@@ -118,7 +118,7 @@ async function main() {
     try {
       await page.waitForSelector('textarea', { timeout: 15000 });
     } catch (e) {
-      await page.screenshot({ path: '/tmp/cocode-shot-ui-failure.png' }).catch(() => {});
+      await page.screenshot({ path: '/tmp/tora-shot-ui-failure.png' }).catch(() => {});
       const body = await page.locator('body').innerText().catch(() => '(无法读取页面正文)');
       throw new Error(`${e.message}\n页面正文：${body.slice(0, 1200)}\n浏览器错误：${logs.slice(0, 5).join(' | ') || '(无)'}`);
     }
@@ -143,21 +143,21 @@ async function main() {
     // 用户主动切换后写入独立偏好键；刷新后不得再被系统语言覆盖。
     await page.getByRole('button', { name: /ui-smoke/i }).first().click({ timeout: 5000 });
     await page.getByText(/^Switch to English$/).first().click({ timeout: 5000 });
-    assert.equal(await page.evaluate(() => localStorage.getItem('cocode_language_preference')), 'en',
+    assert.equal(await page.evaluate(() => localStorage.getItem('tora_language_preference')), 'en',
       '手动切换应持久化明确语言偏好');
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForSelector('textarea', { timeout: 15000 });
     assert.equal(await page.evaluate(() => document.documentElement.lang), 'en',
       '手动语言偏好应在刷新后覆盖系统语言');
     out.push('手动语言偏好持久化: true（zh-CN 系统保持 en）');
-    await page.screenshot({ path: '/tmp/cocode-shot-1-home.png' });
+    await page.screenshot({ path: '/tmp/tora-shot-1-home.png' });
     shots.push('主应用');
-    await page.screenshot({ path: '/tmp/cocode-shot-2-chat.png' });
+    await page.screenshot({ path: '/tmp/tora-shot-2-chat.png' });
     shots.push('聊天主页');
 
     // 3. 当前主任务页的关键可交互入口（不再假设旧版侧栏有 Agent/设置按钮）。
     const pageText = await page.locator('body').innerText();
-    const hasTaskShell = /与CoCode工作和编程|Work and Code with CoCode/i.test(pageText);
+    const hasTaskShell = /与Tora工作和编程|Work and Code with Tora/i.test(pageText);
     const hasWorkspacePicker = /选择文件夹|Select a folder/i.test(pageText);
     assert.ok(hasTaskShell, '主任务页标题未渲染');
     assert.ok(hasWorkspacePicker, '工作目录选择入口未渲染');
@@ -169,7 +169,7 @@ async function main() {
     await newTask.click({ timeout: 5000 });
     const clicked = true;
     await page.waitForTimeout(500);
-    await page.screenshot({ path: '/tmp/cocode-shot-3-newsession.png' });
+    await page.screenshot({ path: '/tmp/tora-shot-3-newsession.png' });
     shots.push('新任务导航后');
     out.push(`点击新任务导航: ${clicked}`);
 
@@ -180,7 +180,7 @@ async function main() {
     assert.ok(hasInput, '消息输入框未渲染');
 
     // 6. 真正走一次浏览器 → 本地 ASAPI → mock SSE 模型 → 浏览器的闭环。
-    // 仅在脚本自建临时服务时发送：COCODE_UI_BASE 是人工调试已有环境的逃生口，
+    // 仅在脚本自建临时服务时发送：TORA_UI_BASE 是人工调试已有环境的逃生口，
     // 不能往那里写入测试会话或消耗模型额度。
     if (srv) {
       const input = page.locator('textarea').first();
@@ -218,11 +218,11 @@ async function main() {
     await page.getByText(/^(设置|Settings)$/).first().click({ timeout: 5000 });
     await page.locator('h3').filter({ hasText: /^(通用|General)$/ }).waitFor({ timeout: 10000 });
     out.push('设置按需加载并打开: true');
-    await page.getByText(/^(返回 CoCode|Back to CoCode)$/).click({ timeout: 5000 });
+    await page.getByText(/^(返回 Tora|Back to Tora)$/).click({ timeout: 5000 });
     await page.waitForTimeout(300);
 
     console.log(out.join('\n'));
-    console.log('截图: ' + shots.map((s, i) => `${s}=/tmp/cocode-shot-${i + 1}-*.png`).join(', '));
+    console.log('截图: ' + shots.map((s, i) => `${s}=/tmp/tora-shot-${i + 1}-*.png`).join(', '));
     const unexpectedLogs = logs.filter((line) => !line.includes('status of 401'));
     if (unexpectedLogs.length) {
       console.log('\n页面错误（前10条）:');

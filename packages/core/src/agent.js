@@ -1,4 +1,4 @@
-// CoCode Agent 循环：流式输出 + 工具调用 + 权限 HITL + 低 token 上下文治理
+// Tora Agent 循环：流式输出 + 工具调用 + 权限 HITL + 低 token 上下文治理
 // 事件流（消费者可完整还原会话）：
 //   text-delta        {text}            流式文本增量
 //   tool-start        {id,name,args}    工具开始
@@ -14,7 +14,7 @@
 //   hook              {event,ran,decision,notices}    钩子执行结果（含未信任项目钩子的提示）
 //   done              {reason,totalUsage}  结束（completed/aborted/max-turns/blocked/error）
 //
-// 钩子（~/.cocode/hooks.json 与 <cwd>/.cocode/hooks.json）在四个点介入：
+// 钩子（~/.tora/hooks.json 与 <cwd>/.tora/hooks.json）在四个点介入：
 //   UserPromptSubmit 组装系统提示词之前（可注入上下文，或直接拦下整轮）
 //   PreToolUse       权限决策之前（deny 优先于任何权限放行，可改写参数、强制询问）
 //   PostToolUse      工具执行之后（可补充上下文，或标记这次结果不可接受）
@@ -519,7 +519,7 @@ async function _runAgentImpl(opts, ch) {
   const budget = cfg.maxTokensBudget ?? 24000;
 
   // 项目钩子的信任解析：全局信任，或这个工作目录在信任列表里。
-  // （.cocode/hooks.json 来自仓库内容，不能默认执行 —— 否则 clone 即中招。）
+  // （.tora/hooks.json 来自仓库内容，不能默认执行 —— 否则 clone 即中招。）
   const hookCfg = {
     ...cfg,
     trustProjectHooks: cfg.trustProjectHooks === true

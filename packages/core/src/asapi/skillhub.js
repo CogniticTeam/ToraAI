@@ -119,7 +119,7 @@ function firstStr(...vals) {
 function clamp(n, lo, hi) { return Math.min(Math.max(n, lo), hi); }
 
 /**
- * SkillHub 上游字段 → CoCode SkillCard 字段 normalize。
+ * SkillHub 上游字段 → Tora SkillCard 字段 normalize。
  *
  * - slug 缺失 → 整个丢弃（必有 id，否则前端去重策略炸）
  * - tags[] 缺失从 subCategories[].name 提取 + category 也当 tag 用

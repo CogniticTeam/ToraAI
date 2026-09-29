@@ -4,7 +4,7 @@ import { useTranslation } from '@/i18n/useI18n';
 
 type State = { version: string; platform: string; status: 'available' | 'downloading' | 'ready' | 'error'; percent?: number };
 type Bridge = { getRequiredUpdate: () => State | null; onRequiredUpdate: (cb: (value: State | null) => void) => () => void; updateAction: (action: string) => Promise<unknown> };
-const bridge = () => (window as unknown as { cocodeWindow?: Bridge }).cocodeWindow;
+const bridge = () => (window as unknown as { toraWindow?: Bridge }).toraWindow;
 
 export function RequiredUpdate({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();

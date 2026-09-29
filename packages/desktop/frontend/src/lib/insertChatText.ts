@@ -5,7 +5,7 @@
 // 聚焦 —— 用户接着补一句想做什么就能直接发送。与 lib/openPanel.ts 同一套路：
 // 跨组件派发自定义事件，不靠 prop 层层传递。
 
-export const INSERT_CHAT_TEXT_EVENT = 'cocode:insert-chat-text';
+export const INSERT_CHAT_TEXT_EVENT = 'tora:insert-chat-text';
 
 /** 向聊天输入框追加一段文本（保留原文，非空时另起一行）。 */
 export function insertChatText(text: string) {
@@ -22,7 +22,7 @@ export interface ElementRef {
 	text: string;
 }
 
-export const INSERT_ELEMENT_REF_EVENT = 'cocode:insert-element-ref';
+export const INSERT_ELEMENT_REF_EVENT = 'tora:insert-element-ref';
 
 /** 向聊天输入框附加一个页面元素 chip（TextInput 渲染成小方框，发送时拼回文本）。 */
 export function insertElementRef(ref: ElementRef) {

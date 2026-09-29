@@ -4,7 +4,7 @@
 //   动态压缩与平滑包络组成完整音色，保持零音频资源和零版权顾虑。
 // - 自定义音效存 IndexedDB（Blob）。音频文件对 localStorage 的 5MB 配额
 //   太大，IndexedDB 配额宽裕，且不需要动主进程。
-// - 开关/音量/音效种类等配置存 localStorage 的 ``cocode_sound``（应用内
+// - 开关/音量/音效种类等配置存 localStorage 的 ``tora_sound``（应用内
 //   轻量配置的同款惯例），读取失败一律回默认值。
 // - ``playNotificationSound`` 是触发点用的入口，内置同事件 1.5s 防抖 ——
 //   SSE 重连回放可能重投同一事件，别响成连击。
@@ -23,7 +23,7 @@ export interface SoundSettings {
 	volume: number;
 }
 
-const STORAGE_KEY = 'cocode_sound';
+const STORAGE_KEY = 'tora_sound';
 
 const DEFAULTS: SoundSettings = {
 	enabled: true,
@@ -66,7 +66,7 @@ export interface CustomSoundRecord {
 	blob: Blob;
 }
 
-const DB_NAME = 'cocode-sounds';
+const DB_NAME = 'tora-sounds';
 const DB_STORE = 'files';
 const DB_KEY = 'custom';
 

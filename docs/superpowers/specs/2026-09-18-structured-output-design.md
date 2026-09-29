@@ -9,11 +9,11 @@
 
 ## 1. 背景与目标
 
-CoCode 的 Agent 最终回复是自由文本，工具返回值也是自由文本。这意味着：
+Tora 的 Agent 最终回复是自由文本，工具返回值也是自由文本。这意味着：
 - 想让 Agent 输出一个可被下游程序消费的 JSON（比如"列出项目依赖版本" → 返回 `{pkg: version}` 列表），用户必须在 prompt 里自己写 "请用 JSON 格式返回"，还经常不遵守
 - Critic / 自动化规则如果想解析 Agent 的产出，必须自己做脆弱的文本解析
 
-PydanticAI 的核心能力就是："给我一个 Pydantic 模型，我保证返回符合它的 JSON（不合法自动重试）"。CoCode 要的是同等级的结构化保证，但用 JSON Schema 做底层（零依赖，JSON Schema 已经是事实标准）。
+PydanticAI 的核心能力就是："给我一个 Pydantic 模型，我保证返回符合它的 JSON（不合法自动重试）"。Tora 要的是同等级的结构化保证，但用 JSON Schema 做底层（零依赖，JSON Schema 已经是事实标准）。
 
 ## 2. 三种实现路径
 
@@ -54,7 +54,7 @@ PydanticAI 的核心能力就是："给我一个 Pydantic 模型，我保证返�
 
 **优点**：原生 JSON mode 稳定性最高（模型直接被 API 层约束）
 **缺点**：
-- 不是所有 provider 都支持 `response_format`（CoCode 卖点就是"任何 OpenAI 兼容"，不能假设有）
+- 不是所有 provider 都支持 `response_format`（Tora 卖点就是"任何 OpenAI 兼容"，不能假设有）
 - 要做 provider capability 检测矩阵
 
 ---

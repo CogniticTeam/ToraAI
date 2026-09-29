@@ -1,19 +1,19 @@
 // 使用统计（设置窗口「使用统计」板块的数据源）。
 //
 // 数据源与职责：
-//   · ~/.cocode/usage/daily.json —— **权威 token/工具/模型来源**。bridge 在每次
+//   · ~/.tora/usage/daily.json —— **权威 token/工具/模型来源**。bridge 在每次
 //     模型调用结束、工具执行完成时实时写入（usage-store.js）。旧版留下的
 //     traces 只在首次运行时做一次性用量迁移；新版不再生成运行记录。
-//   · ~/.cocode/sessions/*.json —— 聊天总数、聊天时长（created/updated 独有）。
+//   · ~/.tora/sessions/*.json —— 聊天总数、聊天时长（created/updated 独有）。
 //
 // 注意：token **只**从 daily.json 来，历史迁移不能重复累计。
 import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { COCODE_DIR } from '../config.js';
+import { TORA_DIR } from '../config.js';
 import { usageStoreDaily, usageStoreMerge, usageStoreMarkMeta } from './usage-store.js';
 
-const TRACES_DIR = join(COCODE_DIR, 'traces');
-const SESSIONS_DIR = join(COCODE_DIR, 'sessions');
+const TRACES_DIR = join(TORA_DIR, 'traces');
+const SESSIONS_DIR = join(TORA_DIR, 'sessions');
 
 const DAY_MS = 86400_000;
 

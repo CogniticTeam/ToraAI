@@ -9,8 +9,8 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const { _electron } = require('playwright-core');
 const electronBinary = require('electron');
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-browser-electron-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-browser-electron-'));
+process.env.TORA_HOME = testHome;
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const server = await startASAPIServer({ port: 0 });
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -20,32 +20,32 @@ try {
 	electronApp = await _electron.launch({
 		executablePath: electronBinary,
 		args: [fileURLToPath(new URL('./browser-electron-harness.cjs', import.meta.url))],
-		env: { ...process.env, COCODE_BROWSER_TEST_USER_DATA: testHome },
+		env: { ...process.env, TORA_BROWSER_TEST_USER_DATA: testHome },
 	});
 	const page = await electronApp.firstWindow();
 	const errors = [];
 	page.on('pageerror', error => errors.push(error.message));
 	await page.addInitScript(() => {
-		window.cocodeWindow = {
+		window.toraWindow = {
 			isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN',
 			reportLanguage: () => {}, reportTheme: () => {}, getRequiredUpdate: () => null,
 			onRequiredUpdate: () => () => {}, refreshAccount: async () => {},
 			openFolderDialog: async () => null, onMenuCommand: () => () => {}, getAppVersion: () => '1.0.0',
 		};
 	});
-	await page.route('https://cocode.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'browser-electron-test', username: 'browser-electron-test' }) }));
-	await page.route('https://cocode.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://cocode.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-	await page.route('https://cocode.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://cocode.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'browser-electron-ticket' }) }));
-	await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'browser-electron-test', username: 'browser-electron-test' }) }));
+	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'browser-electron-ticket' }) }));
+	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
-		localStorage.setItem('cocode_auth_token', 'browser-electron-token');
+		localStorage.setItem('tora_auth_token', 'browser-electron-token');
 		localStorage.setItem('username', 'browser-electron-test');
-		localStorage.setItem('cocode:first-run:intro:v1', '1');
-		localStorage.setItem('cocode:first-run:tour:v1', '1');
+		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
@@ -53,8 +53,8 @@ try {
 	await page.getByRole('menuitemcheckbox', { name: /浏览器|Browser/ }).click();
 	await page.keyboard.press('Escape');
 	await page.locator('[data-browser-placeholder="true"]').waitFor({ state: 'visible' });
-	await page.waitForFunction(() => Boolean(window.__cocodeBrowser));
-	const opened = await page.evaluate(async url => window.__cocodeBrowser.call('open', { url }), `${base}/health`);
+	await page.waitForFunction(() => Boolean(window.__toraBrowser));
+	const opened = await page.evaluate(async url => window.__toraBrowser.call('open', { url }), `${base}/health`);
 	assert.equal(opened.url, `${base}/health`);
 	const webviewUrl = await page.locator('[data-browser-host="true"] webview').evaluate(element => element.getURL());
 	assert.equal(webviewUrl, `${base}/health`);
@@ -83,7 +83,7 @@ try {
 	try {
 		await page.waitForFunction(() => document.querySelector('[data-browser-host="true"]')?.style.visibility === 'visible', undefined, { timeout: 5000 });
 	} catch {
-		throw new Error(`WebView 宿主未恢复：${JSON.stringify(await page.evaluate(() => ({ host: document.querySelector('[data-browser-host="true"]')?.getAttribute('style'), placeholders: document.querySelectorAll('[data-browser-placeholder="true"]').length, bridge: Boolean(window.__cocodeBrowser), text: document.body.innerText.slice(-500) })))}`);
+		throw new Error(`WebView 宿主未恢复：${JSON.stringify(await page.evaluate(() => ({ host: document.querySelector('[data-browser-host="true"]')?.getAttribute('style'), placeholders: document.querySelectorAll('[data-browser-placeholder="true"]').length, bridge: Boolean(window.__toraBrowser), text: document.body.innerText.slice(-500) })))}`);
 	}
 	assert.equal(await page.locator('[data-browser-host="true"] webview').evaluate(element => element.getURL()), `${base}/health`);
 	assert.deepEqual(errors, [], `渲染进程脚本错误：${errors.join(' | ')}`);

@@ -7,7 +7,7 @@ import zhTranslations from './locales/zh.json';
 export type AppLanguage = 'zh' | 'en';
 
 /** 只有用户主动切换后才写入；系统自动检测结果不会持久化。 */
-export const LANGUAGE_PREFERENCE_KEY = 'cocode_language_preference';
+export const LANGUAGE_PREFERENCE_KEY = 'tora_language_preference';
 
 function normalizeLanguage(value: string | null | undefined): AppLanguage | null {
 	if (!value) return null;
@@ -21,8 +21,8 @@ export function getSystemLanguage(): AppLanguage {
 	const desktopLocale = typeof window === 'undefined'
 		? null
 		: (window as unknown as {
-			cocodeWindow?: { getSystemLocale?: () => string };
-		}).cocodeWindow?.getSystemLocale?.();
+			toraWindow?: { getSystemLocale?: () => string };
+		}).toraWindow?.getSystemLocale?.();
 	if (desktopLocale) return normalizeLanguage(desktopLocale) ?? 'en';
 	if (typeof navigator === 'undefined') return 'en';
 	const primary = navigator.languages?.[0] ?? navigator.language;
@@ -55,8 +55,8 @@ i18n.use(initReactI18next)
 function syncDocumentLanguage(language: string) {
 	if (typeof document === 'undefined') return;
 	document.documentElement.lang = normalizeLanguage(language) ?? 'en';
-	(window as unknown as { cocodeWindow?: { reportLanguage?: (language: string) => void } })
-		.cocodeWindow?.reportLanguage?.(normalizeLanguage(language) ?? 'en');
+	(window as unknown as { toraWindow?: { reportLanguage?: (language: string) => void } })
+		.toraWindow?.reportLanguage?.(normalizeLanguage(language) ?? 'en');
 }
 
 syncDocumentLanguage(i18n.language);

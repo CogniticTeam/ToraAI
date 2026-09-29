@@ -7,7 +7,7 @@
 
 import type { PanelKey } from '@/components/panel/PanelDock';
 
-export const OPEN_PANEL_EVENT = 'cocode:open-panel';
+export const OPEN_PANEL_EVENT = 'tora:open-panel';
 
 /** 请求把某个右侧面板打开（已经打开时是 no-op）。 */
 export function requestPanel(key: PanelKey) {

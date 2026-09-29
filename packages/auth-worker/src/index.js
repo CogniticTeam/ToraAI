@@ -1,4 +1,4 @@
-// CoCode 登录/注册服务（Cloudflare Worker + D1 + Resend 邮件）。
+// Tora 登录/注册服务（Cloudflare Worker + D1 + Resend 邮件）。
 //
 // 端点：
 //   POST /auth/check     {account: 用户名或邮箱}          -> {registered, email?, username?}
@@ -35,10 +35,10 @@
 //     （桌面客户端，过期重新登录即可）。
 //   · 表结构在首个请求时自动建立（CREATE TABLE IF NOT EXISTS），免迁移命令。
 
-// 注册欢迎邮件模板：仓库根目录 cocode-hello-email.html（wrangler.toml 的 Text
+// 注册欢迎邮件模板：仓库根目录 tora-hello-email.html（wrangler.toml 的 Text
 // 规则支持直接 import 为字符串）。注意：改动本文件时勿删此 import 与下方
 // sendWelcomeEmail——之前一次整体重写曾把它们弄丢，导致线上欢迎邮件静默失效。
-import helloEmailHtml from '../../../cocode-hello-email.html';
+import helloEmailHtml from '../../../tora-hello-email.html';
 import pollSchemaSql from '../migrations/0001_polls.sql';
 import { publishAccountEvent } from './account-events.js';
 import { detectMessageLanguage, translateAccountMessage } from './message-translation.js';
@@ -135,12 +135,12 @@ async function sendVerificationCode(env, email) {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'CoCode <noreply@cocode.ohfun.online>',
+      from: 'Tora <noreply@ohfun.online>',
       to: [email],
-      subject: `CoCode 验证码：${code}`,
+      subject: `Tora 验证码：${code}`,
       html: [
         '<div style="font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:480px;margin:0 auto;padding:32px 24px;">',
-        '<h2 style="margin:0 0 12px;font-size:18px;">CoCode 注册验证码</h2>',
+        '<h2 style="margin:0 0 12px;font-size:18px;">Tora 注册验证码</h2>',
         `<p style="margin:0 0 20px;color:#555;">你的验证码如下，<strong>${CODE_TTL_MS / 60_000} 分钟</strong>内有效：</p>`,
         `<p style="margin:0 0 20px;font-size:32px;font-weight:700;letter-spacing:8px;color:#111;">${code}</p>`,
         '<p style="margin:0;color:#999;font-size:13px;">如果不是你本人操作，请忽略这封邮件。</p>',
@@ -172,9 +172,9 @@ async function sendWelcomeEmail(env, email) {
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      from: 'CoCode <noreply@cocode.ohfun.online>',
+      from: 'Tora <noreply@ohfun.online>',
       to: [email],
-      subject: '欢迎加入 CoCode 🎉',
+      subject: '欢迎加入 Tora 🎉',
       html: helloEmailHtml,
     }),
   });
@@ -399,7 +399,7 @@ async function userFromRequest(db, req, allowBanned = false) {
   return row;
 }
 
-/** 免费 CoCode 语音识别网关：仅接受登录用户的 GLM-ASR 转写请求。 */
+/** 免费 Tora 语音识别网关：仅接受登录用户的 GLM-ASR 转写请求。 */
 async function handleAsrGateway(env, request, pathSuffix) {
   const user = await userFromRequest(env.DB, request);
   if (!user) return json({ detail: { message: '未登录或会话已过期' } }, 401);
@@ -428,10 +428,10 @@ async function handleAsrGateway(env, request, pathSuffix) {
 export default {
   async fetch(request, env, ctx) {
     try {
-      // 官网已迁移到 Cloudflare Pages（ohfun.online，项目 cocode）。
+      // 官网已迁移到 Cloudflare Pages（ohfun.online，项目 tora）。
       // 旧官网域名仍解析到本 Worker，这里统一 301 到 Pages 站点。
       const url = new URL(request.url);
-      if (url.hostname === 'cocode-ai.ohfun.online') {
+      if (['tora-ai.ohfun.online', 'cocode-ai.ohfun.online'].includes(url.hostname)) {
         const target = 'https://ohfun.online' + url.pathname + url.search;
         return Response.redirect(target, 301);
       }
@@ -579,8 +579,8 @@ async function handle(request, env, ctx) {
       try { name = decodeURIComponent(p.slice(4)); } catch { return bad('文件不存在', 404); }
       if (!/^[\w.-]+\.(dmg|exe|zip|yml|blockmap)$/i.test(name)) return bad('文件不存在', 404);
       const gh = await fetch(
-        `https://github.com/CoCodeAgent/CoCode/releases/latest/download/${name}`,
-        { method, redirect: 'follow', headers: { 'user-agent': 'cocode-dl' } },
+        `https://github.com/ToraAgent/Tora/releases/latest/download/${name}`,
+        { method, redirect: 'follow', headers: { 'user-agent': 'tora-dl' } },
       );
       if (!gh.ok) return bad('文件不存在', 404);
       const headers = {
@@ -868,7 +868,7 @@ async function handle(request, env, ctx) {
       return json({ country: request.cf?.country ?? null });
     }
 
-    if (p === '/health' && method === 'GET') return json({ status: 'ok', service: 'cocode-auth' });
+    if (p === '/health' && method === 'GET') return json({ status: 'ok', service: 'tora-auth' });
 
     return bad('Not Found', 404);
 }

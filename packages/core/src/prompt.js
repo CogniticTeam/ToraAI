@@ -3,7 +3,7 @@
 // 问题：原来 SYSTEM_PROMPT 是 model.js 里写死的英文常量，所有项目共用一份 ——
 // 模型进任何仓库都不知道该仓库的约定、构建命令、目录结构。
 //
-// 现在：每次运行都会去工作目录找约定文件（COCODE.md / AGENTS.md / CLAUDE.md …），
+// 现在：每次运行都会去工作目录找约定文件（TORA.md / AGENTS.md / CLAUDE.md …），
 // 连同 Git 状态与仓库骨架一起拼进系统提示词。系统提示词是稳定前缀，
 // 对支持上下文缓存的厂商（DeepSeek / 智谱等）是缓存友好的位置。
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -14,8 +14,10 @@ import { relative, sep } from 'node:path';
 
 /** 约定文件的查找顺序（先找到先用，不合并，避免提示词膨胀） */
 export const INSTRUCTION_FILES = [
-  'COCODE.md',
+  'TORA.md',
+  'COCODE.md', // 已有项目约定保持可读。
   'AGENTS.md',
+  '.tora/AGENTS.md',
   '.cocode/AGENTS.md',
   'CLAUDE.md',
   '.cursorrules',

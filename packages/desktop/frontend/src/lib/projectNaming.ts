@@ -2,8 +2,8 @@
  * 项目名称是客户端导航偏好，而非 agent 的运行配置：同一目录下的所有
  * 会话共用一个名称，并保存在当前设备，避免为了改显示名改写每条会话。
  */
-const STORAGE_KEY = 'cocode-project-names-v1';
-export const PROJECT_NAMES_CHANGED_EVENT = 'cocode-project-names-changed';
+const STORAGE_KEY = 'tora-project-names-v1';
+export const PROJECT_NAMES_CHANGED_EVENT = 'tora-project-names-changed';
 
 type ProjectNames = Record<string, string>;
 

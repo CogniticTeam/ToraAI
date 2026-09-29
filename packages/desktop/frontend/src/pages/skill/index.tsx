@@ -862,12 +862,12 @@ export function SkillHubPage() {
 		skills.filter((s) => s.hub_id && s.card_id).map((s) => `${s.hub_id}:${s.card_id}`),
 	);
 	const canImportLocal = !!(window as unknown as {
-		cocodeWindow?: { openFolderDialog?: () => Promise<string | null> };
-	}).cocodeWindow?.openFolderDialog;
+		toraWindow?: { openFolderDialog?: () => Promise<string | null> };
+	}).toraWindow?.openFolderDialog;
 	const handleImportLocal = useCallback(async () => {
 		const path = await (window as unknown as {
-			cocodeWindow?: { openFolderDialog: () => Promise<string | null> };
-		}).cocodeWindow?.openFolderDialog();
+			toraWindow?: { openFolderDialog: () => Promise<string | null> };
+		}).toraWindow?.openFolderDialog();
 		if (!path) return;
 		await skillApi.importLocal(path);
 		await refetchSkills();

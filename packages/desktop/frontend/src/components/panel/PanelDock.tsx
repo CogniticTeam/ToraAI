@@ -21,7 +21,7 @@ export type PanelKey =
 	| 'permission'
 	| 'knowledge'
 	| 'team'
-	// CoCode 独有：改动前快照 / 未提交改动 / 项目钩子
+	// Tora 独有：改动前快照 / 未提交改动 / 项目钩子
 	| 'checkpoint'
 	| 'diff'
 	| 'hooks'

@@ -3,14 +3,14 @@
 // 为什么存在：聊天的 token 用量之前只经 SSE 事件（modelCallEnd）推给前端就
 // 丢弃，旧版运行记录也不是可靠的用量来源 —— 使用统计面板因此
 // 几乎总是空的。现在 bridge 在每次模型调用/工具执行时写入这里，
-// ~/.cocode/usage/daily.json 永不清理（一年也就几十 KB）。
+// ~/.tora/usage/daily.json 永不清理（一年也就几十 KB）。
 //
 // 形状：{ 'YYYY-MM-DD': { tokens, runs, tools: {name: count}, models: {name: count} } }
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { COCODE_DIR } from '../config.js';
+import { TORA_DIR } from '../config.js';
 
-const DIR = join(COCODE_DIR, 'usage');
+const DIR = join(TORA_DIR, 'usage');
 const FILE = join(DIR, 'daily.json');
 
 let cache = null;

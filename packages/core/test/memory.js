@@ -1,14 +1,14 @@
-// Memory 存储层测试：COCODE_HOME 重定向 / 读写 / 损坏隔离 / 去重合并 / 500 淘汰 / 评分排序 / 注入预算
+// Memory 存储层测试：TORA_HOME 重定向 / 读写 / 损坏隔离 / 去重合并 / 500 淘汰 / 评分排序 / 注入预算
 // 运行：node packages/core/test/memory.js
 import { strict as assert } from 'node:assert';
 import { mkdtempSync, writeFileSync, readFileSync, existsSync, readdirSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.cocode。
+// 数据根重定向到临时目录：测试绝不读写用户真实的 ~/.tora。
 // 必须在 import 任何 core 模块之前设置（动态 import 保证求值顺序，
-// COCODE_DIR 在 config.js 模块顶层固化）。
-process.env.COCODE_HOME = mkdtempSync(join(tmpdir(), 'cocode-memory-'));
+// TORA_DIR 在 config.js 模块顶层固化）。
+process.env.TORA_HOME = mkdtempSync(join(tmpdir(), 'tora-memory-'));
 
 const CORE = '../src/';
 const {
@@ -16,9 +16,9 @@ const {
   loadMemoryConfig, saveMemoryConfig, renderMemoryContext, MEMORY_GUIDE,
   MemoryValidationError, MEMORY_LIMIT, CONTENT_MAX, CONTEXT_BUDGET,
 } = await import(CORE + 'asapi/memory.js');
-const { COCODE_DIR } = await import(CORE + 'config.js');
+const { TORA_DIR } = await import(CORE + 'config.js');
 
-const MEMORY_FILE = join(COCODE_DIR, 'asapi', 'memories.json');
+const MEMORY_FILE = join(TORA_DIR, 'asapi', 'memories.json');
 
 let passed = 0, failed = 0;
 async function test(name, fn) {
@@ -34,13 +34,13 @@ await test('初始状态：默认 config / 空库注入空串 / MEMORY_GUIDE 可
   assert.ok(MEMORY_GUIDE.includes('MemorySave') && MEMORY_GUIDE.includes('MemorySearch'));
 });
 
-await test('COCODE_HOME 重定向：文件落在临时目录，字段完整', async () => {
+await test('TORA_HOME 重定向：文件落在临时目录，字段完整', async () => {
   const { memory, deduped } = saveMemory({ content: '回复用中文', kind: 'preference', source: 'manual' });
   assert.equal(deduped, false);
   assert.ok(memory.id && memory.created_at && memory.updated_at);
   assert.equal(memory.scope, 'global', '无 project_key 时 scope 缺省为 global');
   assert.equal(memory.project_key, '');
-  assert.ok(existsSync(MEMORY_FILE) && MEMORY_FILE.includes('cocode-memory-'), 'memories.json 应写入 COCODE_HOME 下');
+  assert.ok(existsSync(MEMORY_FILE) && MEMORY_FILE.includes('tora-memory-'), 'memories.json 应写入 TORA_HOME 下');
   const raw = JSON.parse(readFileSync(MEMORY_FILE, 'utf8'));
   assert.equal(raw.memories.length, 1);
 });
@@ -154,7 +154,7 @@ await test('renderMemoryContext：分组顺序 置顶 > 项目 > 全局，预算
 await test('损坏隔离：坏 JSON 隔离为 .corrupt-* 并自动重建', async () => {
   writeFileSync(MEMORY_FILE, '{ broken json !!');
   assert.deepEqual(listMemories(), [], '坏文件应走空 fallback');
-  const corrupted = readdirSync(join(COCODE_DIR, 'asapi')).filter((f) => f.startsWith('memories.json.corrupt-'));
+  const corrupted = readdirSync(join(TORA_DIR, 'asapi')).filter((f) => f.startsWith('memories.json.corrupt-'));
   assert.ok(corrupted.length >= 1, '应产生 .corrupt-* 隔离文件');
   saveMemory({ content: '损坏后重建的第一条' });
   assert.equal(listMemories().length, 1, '重建后可正常写入');
@@ -164,7 +164,7 @@ await test('memory-config 读写与损坏 fallback', async () => {
   saveMemoryConfig({ distill_enabled: true });
   assert.equal(loadMemoryConfig().distill_enabled, true);
   assert.equal(loadMemoryConfig().inject_enabled, true, '未指定字段保持原值');
-  writeFileSync(join(COCODE_DIR, 'asapi', 'memory-config.json'), 'not json');
+  writeFileSync(join(TORA_DIR, 'asapi', 'memory-config.json'), 'not json');
   assert.deepEqual(loadMemoryConfig(), { distill_enabled: false, inject_enabled: true }, '坏 config 走默认值');
 });
 
@@ -184,7 +184,7 @@ await test('工具冒烟：save 推导 scope / 去重 / 校验转提示，search
   const byName = (n) => memoryTools.find((t) => t.name === n);
   const save = byName('MemorySave'), search = byName('MemorySearch'),
     list = byName('MemoryList'), forget = byName('MemoryForget');
-  const cwd = mkdtempSync(join(tmpdir(), 'cocode-memory-cwd-'));
+  const cwd = mkdtempSync(join(tmpdir(), 'tora-memory-cwd-'));
 
   // 无 cwd → project_key 空 → 落 global
   const r1 = await save.execute({ content: '回复保持简洁风格', kind: 'preference' }, {});
@@ -250,7 +250,7 @@ async function captureSystem(cwd) {
 }
 
 await test('runAgent 注入：system 提示含全局+项目记忆与使用指引', async () => {
-  const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'cocode-inject-')));
+  const cwd = realpathSync(mkdtempSync(join(tmpdir(), 'tora-inject-')));
   saveMemory({ content: '注入测试全局记忆条目' });
   saveMemory({ content: '注入测试项目记忆条目', project_key: cwd });
   const sys = await captureSystem(cwd);
@@ -262,13 +262,13 @@ await test('runAgent 注入：system 提示含全局+项目记忆与使用指引
 await test('runAgent 注入：空库不加空区块；inject_enabled=false 整体关闭', async () => {
   // 空库：renderMemoryContext 返回空串 → composeSystem 走 base 分支，不加占位标题
   for (const m of listMemories()) deleteMemory(m.id);
-  const sysEmpty = await captureSystem(realpathSync(mkdtempSync(join(tmpdir(), 'cocode-inject-empty-'))));
+  const sysEmpty = await captureSystem(realpathSync(mkdtempSync(join(tmpdir(), 'tora-inject-empty-'))));
   assert.ok(!sysEmpty.includes('## 长期记忆'), '空库不应加记忆区块');
 
   // 开关关闭：即使库里有记忆也不注入（agent.js 动态读取 inject_enabled）
   saveMemoryConfig({ inject_enabled: false });
   saveMemory({ content: '关闭注入后仍存在的一条记忆' });
-  const sysOff = await captureSystem(realpathSync(mkdtempSync(join(tmpdir(), 'cocode-inject-off-'))));
+  const sysOff = await captureSystem(realpathSync(mkdtempSync(join(tmpdir(), 'tora-inject-off-'))));
   assert.ok(!sysOff.includes('## 长期记忆') && !sysOff.includes('关闭注入后仍存在的一条记忆'), '关闭后不应出现记忆内容');
   saveMemoryConfig({ inject_enabled: true });
 });
@@ -293,7 +293,7 @@ console.log('--- Memory HTTP API ---');
     method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body)
   });
 
-  const projCwd = realpathSync(mkdtempSync(join(tmpdir(), 'cocode-api-proj-')));
+  const projCwd = realpathSync(mkdtempSync(join(tmpdir(), 'tora-api-proj-')));
   for (const m of listMemories()) deleteMemory(m.id);
 
   await test('API：GET /memories 返回 JSON 而非 HTML（API_PREFIXES 生效）', async () => {
@@ -379,7 +379,7 @@ console.log('--- Memory 批次5：可选提炼 ---');
     return new Response(payload, { status: 200, headers: { 'content-type': 'text/event-stream' } });
   };
   const cfg = { baseURL: 'http://127.0.0.1:9', apiKey: 'k', model: 'distill-test' };
-  const proj = realpathSync(mkdtempSync(join(tmpdir(), 'cocode-distill-proj-')));
+  const proj = realpathSync(mkdtempSync(join(tmpdir(), 'tora-distill-proj-')));
 
   await test('提炼：开关默认关闭，distillAfterRun 不发任何请求', async () => {
     assert.equal(isDistillEnabled(), false);

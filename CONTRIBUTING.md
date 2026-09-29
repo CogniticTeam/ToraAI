@@ -1,15 +1,15 @@
-# 贡献指南 / Contributing to CoCode
+# 贡献指南 / Contributing to Tora
 
 [简体中文](#简体中文) · [English](#english)
 
 ## 简体中文
 
-感谢你愿意帮助改进 CoCode！无论是报告问题、改进文档，还是提交代码，我们都欢迎。
+感谢你愿意帮助改进 Tora！无论是报告问题、改进文档，还是提交代码，我们都欢迎。
 
 ### 开始之前
 
 - 请先搜索现有 Issue 和 Pull Request，避免重复工作。对于较大的功能或架构调整，建议先开 Issue 讨论方案。
-- 报告问题时，请提供 CoCode 版本、操作系统、复现步骤、预期与实际结果。可以附截图或日志，但请先删除其中的密钥、令牌、邮箱等个人信息。
+- 报告问题时，请提供 Tora 版本、操作系统、复现步骤、预期与实际结果。可以附截图或日志，但请先删除其中的密钥、令牌、邮箱等个人信息。
 - 安全问题或泄露的凭据不要放在公开 Issue 中；请通过私下渠道联系维护者。
 
 ### 开发与验证
@@ -22,7 +22,7 @@ npm ci --prefix packages/desktop/frontend
 npm test
 npm run test:desktop-security
 npm run test:bundle
-npm run build:ui -w @cocode/desktop
+npm run build:ui -w @tora/desktop
 ```
 
 改动前端交互时，请按需运行 `npm run test:ui` 并手动检查相关页面。普通代码贡献不需要 Apple 签名或公证凭据；正式安装包由维护者构建。
@@ -42,12 +42,12 @@ npm run build:ui -w @cocode/desktop
 
 ## English
 
-Thank you for helping improve CoCode! Bug reports, documentation updates, and code contributions are all welcome.
+Thank you for helping improve Tora! Bug reports, documentation updates, and code contributions are all welcome.
 
 ### Before you start
 
 - Search existing issues and pull requests first. For substantial features or architectural changes, open an issue to discuss the approach before implementation.
-- For bug reports, include the CoCode version, operating system, reproduction steps, expected behavior, and actual behavior. Redact keys, tokens, email addresses, and other personal information from screenshots and logs.
+- For bug reports, include the Tora version, operating system, reproduction steps, expected behavior, and actual behavior. Redact keys, tokens, email addresses, and other personal information from screenshots and logs.
 - Do not disclose security issues or exposed credentials in a public issue; contact the maintainers privately.
 
 ### Development and checks
@@ -60,7 +60,7 @@ npm ci --prefix packages/desktop/frontend
 npm test
 npm run test:desktop-security
 npm run test:bundle
-npm run build:ui -w @cocode/desktop
+npm run build:ui -w @tora/desktop
 ```
 
 For frontend interaction changes, run `npm run test:ui` when applicable and manually check the affected screens. Apple signing and notarization credentials are not needed for ordinary contributions; maintainers produce release installers.

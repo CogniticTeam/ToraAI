@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
-import { loadConfig, saveConfig, COCODE_DIR } from '../config.js';
+import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
 import { getCredential, loadSessionRecord, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import { recordUsage } from './usage-store.js';
@@ -113,12 +113,12 @@ export function cancelSubagentConfirms(leaderSessionId, workerSessionId, reason)
   }
 }
 
-/** 解析会话模型配置 → cocode cfg（自接入：凭证 base_url/api_key + 会话级 model） */
+/** 解析会话模型配置 → tora cfg（自接入：凭证 base_url/api_key + 会话级 model） */
 export function resolveRunCfg(session, agent) {
-  const cocodeCfg = loadConfig();
+  const toraCfg = loadConfig();
   const mc = session.config?.chat_model_config || {};
-  let baseURL = cocodeCfg.baseURL;
-  let apiKey = cocodeCfg.apiKey;
+  let baseURL = toraCfg.baseURL;
+  let apiKey = toraCfg.apiKey;
   let visionOverride;
   let modelProvider;
   if (mc.credential_id) {
@@ -128,7 +128,7 @@ export function resolveRunCfg(session, agent) {
       if (cred?.data?.api_key) apiKey = cred.data.api_key;
     } else {
       // 合成凭证（cocode-models，来自设置窗口模型列表）：按选中模型名解析
-      const hit = (cocodeCfg.modelList || []).find(
+      const hit = (toraCfg.modelList || []).find(
         (x) => x.enabled && !x.isOfficial && !String(x.baseURL || '').includes('/official/v1') && x.model === mc.model,
       );
       if (hit) {
@@ -140,12 +140,12 @@ export function resolveRunCfg(session, agent) {
     }
   }
   const cfg = {
-    ...cocodeCfg,
+    ...toraCfg,
     baseURL,
     apiKey,
     ...(modelProvider ? { provider: modelProvider } : {}),
-    model: mc.model || cocodeCfg.model,
-    temperature: mc.parameters?.temperature ?? cocodeCfg.temperature,
+    model: mc.model || toraCfg.model,
+    temperature: mc.parameters?.temperature ?? toraCfg.temperature,
     // 深度思考：默认开启（显式 false 才关）；thinkingEffort 为强度档（low/medium/high）
     thinking: mc.parameters?.thinking !== false,
     thinkingEffort: typeof mc.parameters?.thinkingEffort === 'string' ? mc.parameters.thinkingEffort : undefined
@@ -159,7 +159,7 @@ export function resolveRunCfg(session, agent) {
   if (agent?.data?.review_config && typeof agent.data.review_config === 'object') {
     const review = agent.data.review_config;
     cfg.review = {
-      ...(cocodeCfg.review || {}),
+      ...(toraCfg.review || {}),
       ...(typeof review.enabled === 'boolean' ? { enabled: review.enabled } : {}),
       ...(Number.isInteger(review.max_rounds) ? { max_rounds: review.max_rounds } : {}),
       ...(Number.isInteger(review.min_tool_calls) ? { min_turns: review.min_tool_calls } : {}),
@@ -171,14 +171,14 @@ export function resolveRunCfg(session, agent) {
 
 /**
  * 加载额外工具：让 skill / 项目可以真的"带工具进来"。
- * 约定：`<工作目录>/.cocode/tools/*.js` 与 `~/.cocode/tools/*.js`，
+ * 约定：`<工作目录>/.tora/tools/*.js` 与 `~/.tora/tools/*.js`，
  * 每个模块 default export 一个工具或工具数组：
  *   { name, description, parameters, execute(args, ctx) }
  * 这是 agent.js 里 extraTools 参数的落地入口（原先 bridge 从不传，形同虚设）。
  */
 export async function loadExtraTools(cwd) {
-  const dirs = [join(COCODE_DIR, 'tools')];
-  if (cwd) dirs.unshift(join(cwd, '.cocode', 'tools'));
+  const dirs = [join(TORA_DIR, 'tools')];
+  if (cwd) dirs.unshift(join(cwd, '.tora', 'tools'));
   const tools = [];
   for (const dir of dirs) {
     let files;
@@ -436,7 +436,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   try {
     // 工作目录从 session.config.cwd 取；为 null 也启动 runAgent（让对话正常进行），
     // 工具执行处会自行检查 cwd==null 并返回提示——避免 process.cwd() 兜底成
-    // CoCode 包根目录。Electron 进程的 cwd 永远不是合法会话工作目录。
+    // Tora 包根目录。Electron 进程的 cwd 永远不是合法会话工作目录。
     const sessionCwd = session.config?.cwd || null;
     const extraTools = await loadExtraTools(sessionCwd);
     for await (const e of runAgent({

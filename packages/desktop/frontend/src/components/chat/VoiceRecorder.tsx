@@ -4,7 +4,7 @@
  *   · 录音中输入框显示实时波纹 — AnalyserNode 取 RMS 电平驱动柱条起伏；
  *   · 转写走 GLM-ASR-2512 云端 API（主进程编码 WAV 后 POST，无本地模型）。
  *
- * 纯浏览器环境（无 window.cocodeVoice 桥）整个组件不渲染——语音依赖
+ * 纯浏览器环境（无 window.toraVoice 桥）整个组件不渲染——语音依赖
  * 主进程转发，浏览器里没有这条链路。
  */
 import { Loader2, Mic, Square } from 'lucide-react';
@@ -22,7 +22,7 @@ interface VoiceBridge {
 }
 
 function getVoiceBridge(): VoiceBridge | null {
-	return (window as unknown as { cocodeVoice?: VoiceBridge }).cocodeVoice ?? null;
+	return (window as unknown as { toraVoice?: VoiceBridge }).toraVoice ?? null;
 }
 
 /** 录音会话：持有媒体流 / 音频上下文 / 采样块，stop() 时统一回收。 */

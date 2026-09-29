@@ -1,6 +1,6 @@
 // MCP（Model Context Protocol）stdio 客户端：把外部工具服务器接进会话。
 //
-// 配置在 `~/.cocode/config.json` 的 `mcpServers`（与 Claude Desktop 同形）：
+// 配置在 `~/.tora/config.json` 的 `mcpServers`（与 Claude Desktop 同形）：
 //   { "fetch": { "command": "npx", "args": ["-y", "mcp-server-fetch"], "env": {} } }
 //
 // 设计取舍：
@@ -18,7 +18,7 @@ import { spawn } from 'node:child_process';
 import { buildChildEnv } from '../security.js';
 
 const PROTOCOL_VERSION = '2024-11-05';
-const CLIENT_INFO = { name: 'cocode', version: '1.0.0' };
+const CLIENT_INFO = { name: 'tora', version: '1.0.0' };
 const DEFAULT_TIMEOUT_MS = 30000; // 单次请求
 const START_TIMEOUT_MS = 15000; // 握手
 const IDLE_SHUTDOWN_MS = 5 * 60 * 1000; // 空闲回收

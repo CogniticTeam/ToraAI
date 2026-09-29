@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { createInterface } from 'node:readline';
 import { translateAccountMessage } from '../packages/auth-worker/src/message-translation.js';
-if (process.env.COCODE_TRANSLATION_LIVE_TEST !== '1') throw Error('请显式启用 COCODE_TRANSLATION_LIVE_TEST=1');
+if (process.env.TORA_TRANSLATION_LIVE_TEST !== '1') throw Error('请显式启用 TORA_TRANSLATION_LIVE_TEST=1');
 const input = createInterface({ input: process.stdin, terminal: false });
 process.stdout.write('API Key (stdin): ');
 const key = await new Promise(resolve => input.once('line', line => { input.close(); resolve(line.trim()); }));

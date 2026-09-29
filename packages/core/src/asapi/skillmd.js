@@ -111,7 +111,7 @@ function firstStr(...vals) {
 }
 
 /**
- * 上游列表项 → CoCode SkillCard。
+ * 上游列表项 → Tora SkillCard。
  *
  * `namespace`（形如 `@owner/repo/skill-name`）是这里唯一的全局唯一标识，所以
  * 它同时当 `id`（详情路径）和 `name`（装库后的 handle）—— 只用 `skill-name`

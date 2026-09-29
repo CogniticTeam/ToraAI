@@ -1,4 +1,4 @@
-// CoCode 交互式 REPL：流式输出、工具调用展示、权限确认、会话管理、中止
+// Tora 交互式 REPL：流式输出、工具调用展示、权限确认、会话管理、中止
 import readline from 'node:readline';
 import { join } from 'node:path';
 import { runAgent } from '../../core/src/agent.js';
@@ -42,7 +42,7 @@ export async function runRepl(cfg) {
       awaitingConfirm = true;
       console.log(`\n${C.yellow}⚠ 权限确认${C.reset}  ${C.bold}${name}${C.reset}  ${C.dim}${preview.length > 200 ? preview.slice(0, 200) + '…' : preview}${C.reset}`);
       const hint = rule
-        ? `  ${C.dim}[a] 以后都允许「${rule.rule_content}」（写入 ~/.cocode/config.json）${C.reset}`
+        ? `  ${C.dim}[a] 以后都允许「${rule.rule_content}」（写入 ~/.tora/config.json）${C.reset}`
         : '';
       rl.question(`${C.cyan}允许执行？ [y] 允许 / [n] 拒绝${rule ? ' / [a] 以后都允许' : ''}: ${C.reset}`, (ans) => {
         awaitingConfirm = false;
@@ -128,18 +128,18 @@ export async function runRepl(cfg) {
   async function handleInput(input) {
     if (!input) return;
     if (input.startsWith('/')) return handleCommand(input.slice(1));
-    // 自定义斜杠命令（~/.cocode/commands/*.md 或 <cwd>/.cocode/commands/*.md）
+    // 自定义斜杠命令（~/.tora/commands/*.md 或 <cwd>/.tora/commands/*.md）
     const hit = matchCommand(input, cwd);
     await doRun(hit ? hit.prompt : input);
   }
 
   async function doRun(content) {
     if (String(cfg.baseURL || '').includes('/official/v1')) {
-      console.log(C.yellow + '当前配置为桌面会话的官方模型网关；CLI 请先运行 `cocode config` 配置自接入模型。' + C.reset);
+      console.log(C.yellow + '当前配置为桌面会话的官方模型网关；CLI 请先运行 `tora config` 配置自接入模型。' + C.reset);
       return;
     }
     if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
-      console.log(C.yellow + '未配置 apiKey：运行 `cocode config` 或设置环境变量 COCODE_API_KEY' + C.reset);
+      console.log(C.yellow + '未配置 apiKey：运行 `tora config` 或设置环境变量 TORA_API_KEY' + C.reset);
       return;
     }
     const renderer = createAgentRenderer();
@@ -203,7 +203,7 @@ export async function runRepl(cfg) {
   /stats                 当前会话统计（token 估算）
   /exit                  退出
 
-${C.dim}另外：~/.cocode/commands/*.md 或 <工作目录>/.cocode/commands/*.md 里的
+${C.dim}另外：~/.tora/commands/*.md 或 <工作目录>/.tora/commands/*.md 里的
 markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg。${C.reset}`);
         break;
       case 'mode':
@@ -315,12 +315,12 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
         const { describeHooks } = await import('../../core/src/hooks.js');
         const info = describeHooks(cwd, cfg);
         if (!info.rows.length) {
-          console.log(C.dim + '（没配置钩子。在 ~/.cocode/hooks.json 或 <工作目录>/.cocode/hooks.json 里写即可）' + C.reset);
+          console.log(C.dim + '（没配置钩子。在 ~/.tora/hooks.json 或 <工作目录>/.tora/hooks.json 里写即可）' + C.reset);
         } else {
           console.log(info.rows.map((r) => `${C.cyan}${r.event}${C.reset} ${C.dim}[${r.matcher}]${C.reset} ${r.command} ${C.dim}(${r.source}, ${r.timeout}s)${C.reset}`).join('\n'));
         }
         if (info.projectHooksPresent && !info.projectHooksTrusted) {
-          console.log(C.yellow + '⚠ 工作目录里有 .cocode/hooks.json，但未信任项目钩子，已跳过执行。' + C.reset);
+          console.log(C.yellow + '⚠ 工作目录里有 .tora/hooks.json，但未信任项目钩子，已跳过执行。' + C.reset);
         }
         for (const e of info.errors) console.log(C.red + `✗ ${e}` + C.reset);
         break;
@@ -354,7 +354,7 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
         const list = loadCommands(cwd);
         console.log(list.length
           ? list.map((c) => `/${c.name}  ${C.dim}${c.description} [${c.source}]${C.reset}`).join('\n')
-          : '（还没有自定义命令；在 ~/.cocode/commands/ 或 .cocode/commands/ 放 .md 文件即可）');
+          : '（还没有自定义命令；在 ~/.tora/commands/ 或 .tora/commands/ 放 .md 文件即可）');
         break;
       }
       case 'export': {
@@ -362,7 +362,7 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
         const fmt = arg === 'json' ? 'json' : 'md';
         const r = exportSession(session.id, fmt);
         if (!r) { console.log(C.red + '导出失败' + C.reset); break; }
-        const out = `cocode-session-${session.id}.${fmt}`;
+        const out = `tora-session-${session.id}.${fmt}`;
         const { writeFileSync } = await import('node:fs');
         writeFileSync(out, r.body);
         console.log(C.green + `✓ 已导出到 ${out}` + C.reset);
@@ -440,13 +440,13 @@ markdown 会变成 /<文件名> 提示词模板，例如 /review、/commit-msg�
   }
 }
 
-/** 一次性任务模式：cocode "做某事" */
+/** 一次性任务模式：tora "做某事" */
 export async function runOneShot(cfg, content) {
   if (String(cfg.baseURL || '').includes('/official/v1')) {
-    throw new Error('当前配置为桌面会话的官方模型网关；CLI 请先运行 `cocode config` 配置自接入模型');
+    throw new Error('当前配置为桌面会话的官方模型网关；CLI 请先运行 `tora config` 配置自接入模型');
   }
   if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
-    throw new Error('未配置 apiKey：运行 `cocode config` 或设置环境变量 COCODE_API_KEY');
+    throw new Error('未配置 apiKey：运行 `tora config` 或设置环境变量 TORA_API_KEY');
   }
   const session = createSession('oneshot');
   const renderer = createAgentRenderer();

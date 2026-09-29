@@ -73,7 +73,7 @@ svg.lucide {
 @custom-variant dark (&:is(.dark *));
 
 :root {
-	/* —— CoCode × MiniMax 品牌色板 ——
+	/* —— Tora × MiniMax 品牌色板 ——
 	   ink/sub/faint/panel/line 与官网 website/index.html 完全一致；
 	   primary 采用品牌紫 #7A27FF（官网渐变起点），让默认按钮/激活态一眼可辨。 */
 	--text: #5f5f5a;
@@ -331,13 +331,13 @@ svg.lucide {
 /* 背景统一由 html[data-app-background] 选择，工作区/设置/登录共用。
    无背景时完全去掉图片；卡片保持实色，叠层只保护背景上的文字对比。 */
 :root {
-	--app-wallpaper-image: url('/images/cocode-soft-backdrop.jpg');
+	--app-wallpaper-image: url('/images/tora-soft-backdrop.jpg');
 	--app-wallpaper-scrim: rgba(255, 255, 255, 0.2);
 }
-html[data-app-background='mist'] { --app-wallpaper-image: url('/images/cocode-mist.jpg'); }
-html[data-app-background='stone'] { --app-wallpaper-image: url('/images/cocode-stone.jpg'); }
+html[data-app-background='mist'] { --app-wallpaper-image: url('/images/tora-mist.jpg'); }
+html[data-app-background='stone'] { --app-wallpaper-image: url('/images/tora-stone.jpg'); }
 html[data-app-background='midnight'] {
-	--app-wallpaper-image: url('/images/cocode-midnight.jpg');
+	--app-wallpaper-image: url('/images/tora-midnight.jpg');
 	--app-wallpaper-scrim: rgba(255, 255, 255, 0.85);
 }
 html[data-app-background='custom'] {
@@ -609,7 +609,7 @@ body {
 	animation: heat-cell-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-/* ---- 登录动效（LoginAnimation.tsx，CoCode 自有品牌风） ---- */
+/* ---- 登录动效（LoginAnimation.tsx，Tora 自有品牌风） ---- */
 @keyframes brand-breathe {
 	0%, 100% { transform: scale(1); opacity: 1; }
 	50% { transform: scale(1.06); opacity: 0.9; }
@@ -964,7 +964,7 @@ body {
 @media (prefers-reduced-motion: reduce) { .chat-greeting-character { animation: none !important; opacity: 1; } }
 
 /* xterm 默认把滚动视口涂黑；跟随应用主题，防止浅色主题出现黑底深字。 */
-.cocode-terminal .xterm-viewport { background-color: var(--background) !important; }
+.tora-terminal .xterm-viewport { background-color: var(--background) !important; }
 
 /* 首次使用引导：1px 的实色遮罩由合成层缩放，避免巨大阴影反复绘制整屏。 */
 .first-run-mask-layer { position: fixed; z-index: 220; inset: 0; pointer-events: none; opacity: .68; }

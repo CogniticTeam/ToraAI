@@ -1,7 +1,7 @@
 // 仅供 test-browser-electron.mjs 使用的隔离 Electron 壳，不启动真实用户实例。
 const { app, BrowserWindow } = require('electron');
 
-app.setPath('userData', process.env.COCODE_BROWSER_TEST_USER_DATA);
+app.setPath('userData', process.env.TORA_BROWSER_TEST_USER_DATA);
 app.whenReady().then(() => {
 	const win = new BrowserWindow({
 		width: 1360, height: 850, show: false,

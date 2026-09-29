@@ -236,7 +236,7 @@ export function TerminalPanel({ cwd }: TerminalPanelProps) {
 			<div
 				ref={hostRef}
 				className={cn(
-					'cocode-terminal min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background text-foreground p-1',
+					'tora-terminal min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background text-foreground p-1',
 					phase === 'connecting' && 'opacity-60',
 				)}
 			/>

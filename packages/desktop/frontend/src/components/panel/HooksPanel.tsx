@@ -27,7 +27,7 @@ export function HooksPanel({ hooks, loading, onRefresh, onTrustProjectHooks }: H
 			</div>
 			{hooks?.projectHooksPresent && !hooks.projectHooksTrusted ? (
 				<div className="rounded-md border border-amber-500 bg-amber-50 dark:bg-amber-950 px-2 py-1.5">
-					<p>{zh ? '工作目录里有 .cocode/hooks.json，但未信任项目钩子。请先检查仓库中的命令。' : 'Project hooks are present but not trusted. Review their commands before trusting this workspace.'}</p>
+					<p>{zh ? '工作目录里有 .tora/hooks.json，但未信任项目钩子。请先检查仓库中的命令。' : 'Project hooks are present but not trusted. Review their commands before trusting this workspace.'}</p>
 					{onTrustProjectHooks ? <Button variant="outline" size="sm" className="mt-1.5" onClick={() => onTrustProjectHooks(true)}>{zh ? '信任此目录' : 'Trust this workspace'}</Button> : null}
 				</div>
 			) : null}

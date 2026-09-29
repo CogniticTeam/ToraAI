@@ -2,14 +2,14 @@
  * 设置窗口「账号」板块 & 启动登录门槛共用的登录/注册界面。
  * 登录/注册一体流：首页输入「用户名或邮箱」→ 服务端 /auth/check 分流——
  *   已注册 → 密码页登录；未注册 → 注册页（用户名 + 邮箱 + 密码 + 邮箱验证码）。
- * 一号一邮箱由服务端 UNIQUE 约束保证。CoCode 自有视觉：
+ * 一号一邮箱由服务端 UNIQUE 约束保证。Tora 自有视觉：
  *   · 极光光斑缓漂背景 + 网格衬底（AuthBackdrop）
  *   · 居中玻璃卡片（spring 入场）
  *   · 步骤切换：AnimatePresence 滑动过渡（首页 → 密码 / 注册）
  *   · 提交 busy：DotPulse 三点；成功后 LoginGate 播放 SuccessCheck 描边
  *
  * 后端：Cloudflare Worker（packages/auth-worker，D1 存储 + Resend 发验证码）。
- * 服务地址存 localStorage('cocode_auth_api')，默认线上部署地址。
+ * 服务地址存 localStorage('tora_auth_api')，默认线上部署地址。
  */
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, AtSign, Camera, ChevronDown, Eye, EyeOff, KeyRound, Languages, Loader2 } from 'lucide-react';
@@ -26,8 +26,8 @@ import {
 	delToken, delEmail, delUsername,
 } from '@/utils/authStore';
 
-const DEFAULT_AUTH_API = 'https://cocode.ohfun.online';
-const API_KEY = 'cocode_auth_api';
+const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
+const API_KEY = 'tora_auth_api';
 
 const authApi = () => (localStorage.getItem(API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
@@ -76,7 +76,7 @@ export async function fileToAvatar(file: File): Promise<string> {
 /** 输入框：focus 主色描边 + 25% 柔光环，过渡只动 border/shadow */
 const FIELD_CLS =
 	'h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/25';
-/** 主按钮：品牌紫渐变 + 外发光（CoCode × MiniMax 主色统一），禁用整体指针语义 */
+/** 主按钮：品牌紫渐变 + 外发光（Tora × MiniMax 主色统一），禁用整体指针语义 */
 const SUBMIT_CLS =
 	'btn-brand flex h-11 w-full items-center justify-center rounded-sm text-sm font-medium text-primary-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:filter-none';
 /** 返回按钮 */

@@ -130,7 +130,7 @@ function synthesizeMarkdown(raw) {
 	return parts.join('\n\n');
 }
 
-/** 上游目录项 → CoCode SkillCard（与 skillhub.js 同一形状）。 */
+/** 上游目录项 → Tora SkillCard（与 skillhub.js 同一形状）。 */
 function normalize(raw) {
 	if (!raw || typeof raw !== 'object') return null;
 	const id = String(raw.slug ?? raw.id ?? '');

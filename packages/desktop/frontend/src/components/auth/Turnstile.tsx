@@ -24,7 +24,7 @@ declare global {
 }
 
 let apiPromise: Promise<TurnstileApi> | null = null;
-const ONLOAD_FN = '__cocodeTurnstileOnload';
+const ONLOAD_FN = '__toraTurnstileOnload';
 function loadTurnstileApi(): Promise<TurnstileApi> {
 	// 已就绪：必须是带 render 的真 API（不能用 truthy 判断——历史版本曾把
 	// window.turnstile 覆盖成 {onload} 占位对象，导致 api.js 不再安装真 API，

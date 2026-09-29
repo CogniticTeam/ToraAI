@@ -6,9 +6,9 @@
 //     X-Frame-Options / CSP 拒绝嵌入，或者读不到内容。这种情况会**明确报错**，
 //     而不是返回一份空内容假装成功。
 //
-// 面板同时把 Agent 的入口暴露成一个全局桥 `window.__cocodeBrowser`：桌面端主进程
+// 面板同时把 Agent 的入口暴露成一个全局桥 `window.__toraBrowser`：桌面端主进程
 // 通过 executeJavaScript 调进来，把 Browser 工具的动作落到这个页面上。桥只在面板
-// 挂载期间存在 —— 主进程找不到它时会先派发 cocode:open-panel 把面板打开再重试。
+// 挂载期间存在 —— 主进程找不到它时会先派发 tora:open-panel 把面板打开再重试。
 //
 // 多标签页：每个标签页一个常驻 webview/iframe，由模块级标签管理器统一持有；
 // 页面动作默认作用于活动标签（params.tab 可指定），另有 tabs / new_tab /
@@ -41,9 +41,9 @@ function script(fnBody: string) {
 }
 
 const PICKER_START_SCRIPT = script(
-	`if (window.__cocodePickStop) window.__cocodePickStop();
-	 window.__cocodePick = null;
-	 window.__cocodePickActive = true;
+	`if (window.__toraPickStop) window.__toraPickStop();
+	 window.__toraPick = null;
+	 window.__toraPickActive = true;
 	 const ov = document.createElement('div');
 	 ov.style.cssText = 'position:fixed;z-index:2147483647;pointer-events:none;display:none;border:2px solid #8b5cf6;border-radius:4px;background:rgba(139,92,246,.14);box-shadow:0 0 0 1px rgba(139,92,246,.25),0 4px 14px rgba(139,92,246,.35);';
 	 const label = document.createElement('div');
@@ -80,28 +80,28 @@ const PICKER_START_SCRIPT = script(
 	 const cleanup = () => {
 	   ov.remove(); label.remove(); NAMES.forEach((name) => document.removeEventListener(name, onPointer, true));
 	   document.removeEventListener('mousemove', onMove, true); document.removeEventListener('keydown', onKey, true);
-	   window.__cocodePickStop = null; window.__cocodePickActive = false;
+	   window.__toraPickStop = null; window.__toraPickActive = false;
 	 };
 	 const onPointer = (e) => {
 	   e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
-	   if (e.type === 'click' && e.target instanceof Element) { window.__cocodePick = describe(e.target); cleanup(); }
+	   if (e.type === 'click' && e.target instanceof Element) { window.__toraPick = describe(e.target); cleanup(); }
 	 };
 	 const onKey = (e) => {
 	   if (e.key !== 'Escape') return;
-	   e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__cocodePick = { cancelled: true }; cleanup();
+	   e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__toraPick = { cancelled: true }; cleanup();
 	 };
 	 const NAMES = ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click', 'contextmenu'];
 	 NAMES.forEach((name) => document.addEventListener(name, onPointer, true)); document.addEventListener('mousemove', onMove, true); document.addEventListener('keydown', onKey, true);
-	 window.__cocodePickStop = cleanup;
+	 window.__toraPickStop = cleanup;
 	 return { ok: true };`,
 );
 
 const PICKER_READ_SCRIPT = script(
-	`return { active: !!window.__cocodePickActive, pick: window.__cocodePick || null };`,
+	`return { active: !!window.__toraPickActive, pick: window.__toraPick || null };`,
 );
 
 const PICKER_STOP_SCRIPT = script(
-	`if (window.__cocodePickStop) window.__cocodePickStop(); window.__cocodePick = null; return { ok: true };`,
+	`if (window.__toraPickStop) window.__toraPickStop(); window.__toraPick = null; return { ok: true };`,
 );
 
 const CLICK_SCRIPT = (selector: string) =>
@@ -570,7 +570,7 @@ function createTab(kind: SurfaceKind, activate = true): BrowserTab {
 		// 必须开 allowpopups：否则 target="_blank" / window.open() 这类跳转会在
 		// guest 渲染层被 Chromium 直接拦掉，主进程的 setWindowOpenHandler 根本
 		// 收不到请求。开了之后请求到达主进程，统一 deny 并转成 browser:popup 事件
-		// 回传渲染层，由下方订阅开成新的内置浏览器标签页（见 cocodeBrowserHost）。
+		// 回传渲染层，由下方订阅开成新的内置浏览器标签页（见 toraBrowserHost）。
 		el.setAttribute('allowpopups', '');
 		el.className = 'h-full w-full';
 		tab.el = el;
@@ -649,7 +649,7 @@ function listTabs(): TabInfo[] {
 // 拦截（allowpopups 保证请求能到达）后，以 browser:popup 事件转回渲染层。
 // 放在模块级而非组件里：本模块只会被 import 执行一次，不会重复订阅。
 type BrowserHostBridge = { onPopup: (cb: (url: string) => void) => void };
-const browserHost = (window as unknown as { cocodeBrowserHost?: BrowserHostBridge }).cocodeBrowserHost;
+const browserHost = (window as unknown as { toraBrowserHost?: BrowserHostBridge }).toraBrowserHost;
 browserHost?.onPopup((url) => {
 	const tab = createTab('webview');
 	void tab.surface.navigate(url).catch(() => {
@@ -1001,9 +1001,9 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 				}
 			}
 		};
-		(window as unknown as { __cocodeBrowser?: typeof bridge }).__cocodeBrowser = bridge;
+		(window as unknown as { __toraBrowser?: typeof bridge }).__toraBrowser = bridge;
 		return () => {
-			delete (window as unknown as { __cocodeBrowser?: typeof bridge }).__cocodeBrowser;
+			delete (window as unknown as { __toraBrowser?: typeof bridge }).__toraBrowser;
 		};
 	}, [kind]);
 

@@ -409,8 +409,8 @@ function SlashMenuFooter({
  * Ids are prefixed so a command and a skill can share a name without
  * colliding in the selection set (the menu keys rows by id).
  *
- * @param commands - Commands discovered in `~/.cocode/commands` and
- *   `<cwd>/.cocode/commands`, project-level overriding user-level.
+ * @param commands - Commands discovered in `~/.tora/commands` and
+ *   `<cwd>/.tora/commands`, project-level overriding user-level.
  * @returns Rows, in the order given (the composer sorts them first).
  */
 export function commandsToSlashItems(commands: UserCommand[]): SlashItem[] {

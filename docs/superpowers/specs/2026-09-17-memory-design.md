@@ -6,7 +6,7 @@
 
 ## 1. 背景与目标
 
-CoCode 的 agent 每个会话都从零开始：用户的偏好（"回复用中文"）、项目事实（"这个仓库跑测试是 node packages/core/test/asapi.js"）、踩过的坑（"keystroke 发不了中文，要用 CGEventKeyboardSetUnicodeString"）每次都要重新告诉它。
+Tora 的 agent 每个会话都从零开始：用户的偏好（"回复用中文"）、项目事实（"这个仓库跑测试是 node packages/core/test/asapi.js"）、踩过的坑（"keystroke 发不了中文，要用 CGEventKeyboardSetUnicodeString"）每次都要重新告诉它。
 
 本功能给 agent 一个**跨会话记忆**：平时靠模型主动调用工具存取，可选在会话结束时自动提炼；下一轮会话开始时，相关记忆自动注入系统提示。
 
@@ -21,7 +21,7 @@ CoCode 的 agent 每个会话都从零开始：用户的偏好（"回复用中�
 
 ## 3. 数据模型与存储
 
-新文件 `packages/core/src/asapi/memory.js`，存储于 `ASAPI_DIR`（`COCODE_DIR/asapi/`，`COCODE_DIR = COCODE_HOME || ~/.cocode`，测试重定向天然生效）：
+新文件 `packages/core/src/asapi/memory.js`，存储于 `ASAPI_DIR`（`TORA_DIR/asapi/`，`TORA_DIR = TORA_HOME || ~/.tora`，测试重定向天然生效）：
 
 - `memories.json`：`{ memories: [...] }`——在 memory.js 内**自行实现同一存储模式**（原子写 tmp+rename、损坏隔离 .corrupt-*），不触碰 store.js（其 readJson/writeJson 为模块私有，未导出）
 - `memory-config.json`：`{ distill_enabled: false, inject_enabled: true }`（inject_enabled 预留记忆注入独立开关，v1 默认开、UI 不暴露）
@@ -68,7 +68,7 @@ CoCode 的 agent 每个会话都从零开始：用户的偏好（"回复用中�
 
 **注入指引**：工具 description 里写清"什么时候该存"（用户明确表达偏好/纠正/项目事实时），避免模型滥用。
 
-**权限归类（关键）**：4 个工具必须经 `toolCategory` 归为 **`'read'`**（tools/builtin.js）。否则未映射工具名默认归 `'execute'`，在 default 权限模式下每次调用都弹确认卡——模型会因反复被拦而回避这套工具，功能形同虚设。归 read 的理由：工具只写 CoCode 自己的数据目录（~/.cocode 下记忆库），不触碰用户工作目录与系统，风险等级同 TaskCreate（会话状态写），且内容在设置面板完全可见可删，用户控制权不受损。
+**权限归类（关键）**：4 个工具必须经 `toolCategory` 归为 **`'read'`**（tools/builtin.js）。否则未映射工具名默认归 `'execute'`，在 default 权限模式下每次调用都弹确认卡——模型会因反复被拦而回避这套工具，功能形同虚设。归 read 的理由：工具只写 Tora 自己的数据目录（~/.tora 下记忆库），不触碰用户工作目录与系统，风险等级同 TaskCreate（会话状态写），且内容在设置面板完全可见可删，用户控制权不受损。
 
 ## 5. 上下文注入
 
@@ -119,9 +119,9 @@ CoCode 的 agent 每个会话都从零开始：用户的偏好（"回复用中�
 
 ## 10. 测试计划
 
-沿用 `packages/core/test/asapi.js` 模式（`COCODE_HOME` 重定向 + node:assert + 自写 test() helper）。新增 `packages/core/test/memory.js`，`npm test` 若有聚合入口则挂入（实施时确认 run.js 的组织方式）：
+沿用 `packages/core/test/asapi.js` 模式（`TORA_HOME` 重定向 + node:assert + 自写 test() helper）。新增 `packages/core/test/memory.js`，`npm test` 若有聚合入口则挂入（实施时确认 run.js 的组织方式）：
 
-1. store 读写 / 损坏隔离 / COCODE_HOME 重定向
+1. store 读写 / 损坏隔离 / TORA_HOME 重定向
 2. MemorySave 去重合并（相似句合并为一条、不同句新增）
 3. 500 条上限淘汰（最旧非置顶先走、置顶豁免）
 4. MemorySearch 评分排序（pinned 靠前、时间衰减、无关词零命中不返回）

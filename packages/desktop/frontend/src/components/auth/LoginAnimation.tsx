@@ -1,6 +1,6 @@
 /**
- * 登录/注册动效套件（CoCode 自有品牌风，纯 CSS + SVG，零外部资源）：
- *   · BrandLogo    —— CoCode 品牌标（logo.PNG 圆角图标，login/gate/账号页共用）
+ * 登录/注册动效套件（Tora 自有品牌风，纯 CSS + SVG，零外部资源）：
+ *   · BrandLogo    —— Tora 品牌标（logo.PNG 圆角图标，login/gate/账号页共用）
  *   · AuthBackdrop —— 极光背景：两团缓漂的渐变光斑 + 细网格（铺在表单底下）
  *   · LogoLoader   —— 启动校验：logo 呼吸 + 细环形旋转
  *   · SuccessCheck —— 登录成功：圆圈 + 对勾 stroke 描边
@@ -14,7 +14,7 @@ export function BrandLogo({ size = 48 }: { size?: number }) {
 	return (
 		<img
 			src="/icon.png"
-			alt="CoCode"
+			alt="Tora"
 			width={size}
 			height={size}
 			className="brand-breathe shadow-lg"

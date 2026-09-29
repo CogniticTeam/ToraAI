@@ -7,11 +7,11 @@ import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
-const chrome = [process.env.COCODE_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
-if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 COCODE_CHROME_PATH');
+const chrome = [process.env.TORA_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
+if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 TORA_CHROME_PATH');
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-message-copy-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-message-copy-'));
+process.env.TORA_HOME = testHome;
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const { loadSessionRecord, saveSessionRecord } = await import('../packages/core/src/asapi/store.js');
 const { userMsg, assistantMsgShell } = await import('../packages/core/src/asapi/protocol.js');
@@ -41,7 +41,7 @@ try {
 	const errors = [];
 	page.on('pageerror', error => errors.push(error.message));
 	await page.addInitScript(() => {
-		window.cocodeWindow = {
+		window.toraWindow = {
 			isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN',
 			reportLanguage: () => {}, reportTheme: () => {}, getRequiredUpdate: () => null,
 			onRequiredUpdate: () => () => {}, refreshAccount: async () => {},
@@ -50,18 +50,18 @@ try {
 		Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { window.__copiedText = text; } } });
 	});
 	await page.goto(base + '/', { waitUntil: 'commit' });
-	await page.route('https://cocode.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'copy-test', username: 'copy-test' }) }));
-	await page.route('https://cocode.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://cocode.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-	await page.route('https://cocode.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://cocode.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'copy-test-ticket' }) }));
-	await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'copy-test', username: 'copy-test' }) }));
+	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'copy-test-ticket' }) }));
+	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
-		localStorage.setItem('cocode_auth_token', 'copy-test-token');
+		localStorage.setItem('tora_auth_token', 'copy-test-token');
 		localStorage.setItem('username', 'copy-test');
-		localStorage.setItem('cocode:first-run:intro:v1', '1');
-		localStorage.setItem('cocode:first-run:tour:v1', '1');
+		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.goto(`${base}/chat/${agentId}/${sessionId}`, { waitUntil: 'domcontentloaded' });
 	const user = page.locator('[data-role="user"]').filter({ hasText: userText }).first();

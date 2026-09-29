@@ -2,25 +2,25 @@ export function applicationMenuTemplate({ language = 'zh', isMac, send, checkUpd
   const label = (zh, en) => language.startsWith('zh') ? zh : en;
   const command = (zh, en, action, accelerator) => ({ label: label(zh, en), accelerator, click: () => send(action) });
   const appItems = [
-    { label: label('关于 CoCode', 'About CoCode'), click: about },
+    { label: label('关于 Tora', 'About Tora'), click: about },
     { label: label('检查更新…', 'Check for Updates…'), click: checkUpdates },
     { type: 'separator' },
     command('设置…', 'Settings…', 'settings', 'CmdOrCtrl+,'),
     command('消息', 'Messages', 'messages', 'CmdOrCtrl+Shift+M'),
   ];
   return [
-    ...(isMac ? [{ label: 'CoCode', submenu: [...appItems,
+    ...(isMac ? [{ label: 'Tora', submenu: [...appItems,
       { type: 'separator' }, { label: label('服务', 'Services'), role: 'services' },
-      { type: 'separator' }, { label: label('隐藏 CoCode', 'Hide CoCode'), role: 'hide' },
+      { type: 'separator' }, { label: label('隐藏 Tora', 'Hide Tora'), role: 'hide' },
       { label: label('隐藏其他应用', 'Hide Others'), role: 'hideOthers' },
       { label: label('显示全部', 'Show All'), role: 'unhide' },
-      { type: 'separator' }, { label: label('退出 CoCode', 'Quit CoCode'), role: 'quit' },
+      { type: 'separator' }, { label: label('退出 Tora', 'Quit Tora'), role: 'quit' },
     ] }] : []),
     { label: label('文件', 'File'), submenu: [
       command('新任务', 'New Task', 'new-task', 'CmdOrCtrl+N'),
       command('打开浏览器', 'Open Browser', 'browser', 'CmdOrCtrl+Shift+B'),
       { type: 'separator' }, { label: label('关闭窗口', 'Close Window'), role: 'close' },
-      ...(!isMac ? [...appItems, { label: label('退出 CoCode', 'Quit CoCode'), role: 'quit' }] : []),
+      ...(!isMac ? [...appItems, { label: label('退出 Tora', 'Quit Tora'), role: 'quit' }] : []),
     ] },
     { label: label('编辑', 'Edit'), submenu: [
       { label: label('撤销', 'Undo'), role: 'undo' }, { label: label('重做', 'Redo'), role: 'redo' },
@@ -44,7 +44,7 @@ export function applicationMenuTemplate({ language = 'zh', isMac, send, checkUpd
       ...(isMac ? [{ type: 'separator' }, { label: label('全部置于前面', 'Bring All to Front'), role: 'front' }] : []),
     ] },
     { label: label('帮助', 'Help'), submenu: [
-      { label: label('CoCode 官网', 'CoCode Website'), click: openWebsite },
+      { label: label('Tora 官网', 'Tora Website'), click: openWebsite },
       { label: label('下载最新版', 'Download Latest Version'), click: openDownloads },
       { label: label('检查更新…', 'Check for Updates…'), click: checkUpdates },
     ] },

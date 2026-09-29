@@ -7,11 +7,11 @@ import { join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
-const chrome = [process.env.COCODE_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
-if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 COCODE_CHROME_PATH');
+const chrome = [process.env.TORA_CHROME_PATH, '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', '/usr/bin/google-chrome', '/usr/bin/chromium'].find(path => path && existsSync(path));
+if (!chrome) throw new Error('找不到 Chrome/Chromium，请设置 TORA_CHROME_PATH');
 
-const testHome = mkdtempSync(join(tmpdir(), 'cocode-theme-ui-'));
-process.env.COCODE_HOME = testHome;
+const testHome = mkdtempSync(join(tmpdir(), 'tora-theme-ui-'));
+process.env.TORA_HOME = testHome;
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const server = await startASAPIServer({ port: 0 });
 const base = `http://127.0.0.1:${server.address().port}`;
@@ -22,13 +22,13 @@ try {
 	const errors = [];
 	page.on('pageerror', error => errors.push(error.message));
 	await page.addInitScript(() => {
-		window.cocodeWindow = {
+		window.toraWindow = {
 			isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN',
 			reportLanguage: () => {}, reportTheme: () => {}, getRequiredUpdate: () => null,
 			onRequiredUpdate: () => () => {}, refreshAccount: async () => {},
 			openFolderDialog: async () => null, onMenuCommand: () => () => {}, getAppVersion: () => '1.0.0',
 		};
-		window.cocodeVoice = { status: async () => ({ installed: true }), transcribe: async () => '' };
+		window.toraVoice = { status: async () => ({ installed: true }), transcribe: async () => '' };
 	});
 	await page.goto(base + '/', { waitUntil: 'commit' });
 	for (const [route, payload] of Object.entries({
@@ -37,18 +37,18 @@ try {
 		'polls/config': { enabled: true, entryVisible: false },
 		'account/messages': { messages: [], unread: 0 },
 		'account/events-ticket': { ticket: 'theme-test-ticket' },
-	})) await page.route(`https://cocode.ohfun.online/${route}`, response => response.fulfill({
+	})) await page.route(`https://tora.ohfun.online/${route}`, response => response.fulfill({
 		status: 200, contentType: 'application/json', body: JSON.stringify(payload),
 	}));
-	await page.routeWebSocket('wss://cocode.ohfun.online/account/events*', socket => {
+	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => {
 		socket.onMessage(message => { if (message === 'ping') socket.send('pong'); });
 	});
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
-		localStorage.setItem('cocode_auth_token', 'theme-test-token');
+		localStorage.setItem('tora_auth_token', 'theme-test-token');
 		localStorage.setItem('username', 'theme-test');
-		localStorage.setItem('cocode:first-run:intro:v1', '1');
-		localStorage.setItem('cocode:first-run:tour:v1', '1');
+		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.locator('#tour-chat-input').first().waitFor({ state: 'visible' });
@@ -61,10 +61,10 @@ try {
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('heading', { name: '主题' }).waitFor({ state: 'visible' });
 	await page.waitForTimeout(350);
-	await page.screenshot({ path: '/tmp/cocode-theme-settings-light.png' });
+	await page.screenshot({ path: '/tmp/tora-theme-settings-light.png' });
 
 	await page.getByRole('button', { name: '雾蓝' }).click();
-	assert.equal(await page.evaluate(() => localStorage.getItem('cocode.background')), 'mist');
+	assert.equal(await page.evaluate(() => localStorage.getItem('tora.background')), 'mist');
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'mist');
 	await page.getByRole('button', { name: '无背景' }).click();
 	assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.app-wallpaper')).backgroundImage), 'none');
@@ -73,16 +73,16 @@ try {
 	await page.getByRole('button', { name: '深色', exact: true }).click();
 	assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true);
 	await page.waitForTimeout(200);
-	await page.screenshot({ path: '/tmp/cocode-theme-settings-dark.png' });
+	await page.screenshot({ path: '/tmp/tora-theme-settings-dark.png' });
 
 	const uploadInput = page.locator('input[type="file"][accept="image/png,image/jpeg,image/webp"]');
 	await uploadInput.setInputFiles({ name: 'invalid.txt', mimeType: 'text/plain', buffer: Buffer.from('not an image') });
 	await page.getByRole('alert').getByText('请选择 PNG、JPEG 或 WebP 图片').waitFor({ state: 'visible' });
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'midnight', '无效文件不得改变背景');
-	const customFile = join(process.cwd(), 'packages/desktop/frontend/public/images/cocode-soft-backdrop.jpg');
+	const customFile = join(process.cwd(), 'packages/desktop/frontend/public/images/tora-soft-backdrop.jpg');
 	await uploadInput.setInputFiles(customFile);
 	await page.waitForFunction(() => document.documentElement.dataset.appBackground === 'custom');
-	const storedCustom = await page.evaluate(() => localStorage.getItem('cocode.background.custom'));
+	const storedCustom = await page.evaluate(() => localStorage.getItem('tora.background.custom'));
 	assert.match(storedCustom, /^data:image\/jpeg;base64,/);
 	assert.ok(storedCustom.length < 2_500_000);
 	await page.reload({ waitUntil: 'domcontentloaded' });
@@ -93,9 +93,9 @@ try {
 	await page.getByText('设置', { exact: true }).first().click();
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('button', { name: '移除自定义背景' }).click();
-	assert.equal(await page.evaluate(() => localStorage.getItem('cocode.background.custom')), null);
+	assert.equal(await page.evaluate(() => localStorage.getItem('tora.background.custom')), null);
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'none');
-	await page.getByRole('button', { name: '返回 CoCode' }).click();
+	await page.getByRole('button', { name: '返回 Tora' }).click();
 	assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.app-wallpaper')).backgroundImage), 'none', '返回工作区后仍应无背景');
 	assert.deepEqual(errors, [], `页面脚本错误：${errors.join(' | ')}`);
 	console.log('主题页、预设背景、无背景、自定义导入与移除、深浅色及重载持久化：通过');

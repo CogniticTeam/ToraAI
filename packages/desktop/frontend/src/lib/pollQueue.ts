@@ -7,9 +7,9 @@ export type PendingVote = {
   createdAt: string; failedReason?: string;
 };
 
-const QUEUE_KEY = 'cocode_poll_queue_v1';
-const DEVICE_KEY = 'cocode_poll_device_v1';
-export const QUEUE_EVENT = 'cocode-polls-queue-changed';
+const QUEUE_KEY = 'tora_poll_queue_v1';
+const DEVICE_KEY = 'tora_poll_device_v1';
+export const QUEUE_EVENT = 'tora-polls-queue-changed';
 export const currentAccount = () => getEmail() || getUsername() || '';
 
 export function readQueue(): PendingVote[] {
@@ -61,12 +61,12 @@ export function syncPendingVotes(): Promise<void> {
 export function installPollQueueSync(): () => void {
   const sync = () => { void syncPendingVotes(); };
   window.addEventListener('online', sync);
-  window.addEventListener('cocode-auth-changed', sync);
+  window.addEventListener('tora-auth-changed', sync);
   const timer = window.setInterval(sync, 30_000);
   sync();
   return () => {
     window.removeEventListener('online', sync);
-    window.removeEventListener('cocode-auth-changed', sync);
+    window.removeEventListener('tora-auth-changed', sync);
     window.clearInterval(timer);
   };
 }

@@ -12,7 +12,7 @@
 
 CrewAI Flows、LangGraph、Dify 的核心价值是"把多步骤复杂任务变成一张图" —— 用户不需要写 prompt chain，只要在画布上拖节点、连线、填配置，就能编排一个可保存、可重放、可共享的 Agent 流程。
 
-CoCode 已有：
+Tora 已有：
 - Event-triggered automations（单层"当 X 发生时做 Y"规则）
 - MCP Workshop（单节点工具试调）
 - Team Agent（多 Agent 集中调度）
@@ -242,7 +242,7 @@ Tool 节点执行时复用 `resolveTool` → 直接调 tool.execute。**不带**
 ## 5. 存储
 
 ```
-~/.cocode/
+~/.tora/
 ├── workflows/
 │   └── {id}.json          # 工作流定义
 └── workflow-runs/

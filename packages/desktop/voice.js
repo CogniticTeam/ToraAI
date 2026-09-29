@@ -1,9 +1,9 @@
 // 语音识别：GLM-ASR-2512 云端转写（智谱 open.bigmodel.cn）。
 //
 // 架构（v4：双通道、均免费）：
-//   1) BYOK：用户配置了自己的 GLM Key（~/.cocode/voice-config.json）→ 直连
+//   1) BYOK：用户配置了自己的 GLM Key（~/.tora/voice-config.json）→ 直连
 //      智谱。
-//   2) 云端：未配置 Key但已登录 → 走 CoCode 免费 ASR 网关
+//   2) 云端：未配置 Key但已登录 → 走 Tora 免费 ASR 网关
 //      /asr/v1/audio/transcriptions，用登录 token 鉴权，不计费。
 //
 //   · 渲染层录音（16kHz 单声道 Float32 PCM）→ IPC voice:transcribe →
@@ -19,12 +19,12 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 
 // 主进程加载 core 时完成旧数据迁移，语音模块使用同一数据根。
-export const COCODE_DIR = process.env.COCODE_HOME || join(homedir(), '.cocode');
-export const VOICE_DIR = join(COCODE_DIR, 'voice');
+export const TORA_DIR = process.env.TORA_HOME || join(homedir(), '.tora');
+export const VOICE_DIR = join(TORA_DIR, 'voice');
 const CONFIG_FILE = join(VOICE_DIR, 'voice-config.json');
 
 const ASR_ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions';
-const COCODE_ASR_GATEWAY = 'https://cocode.ohfun.online/asr/v1';
+const TORA_ASR_GATEWAY = 'https://tora.ohfun.online/asr/v1';
 const ASR_MODEL = 'glm-asr-2512';
 // 云端上限 30s，留 2s 余量
 const MAX_SECONDS = 28;
@@ -53,7 +53,7 @@ export function setAsrApiKey(key) {
 
 /**
  * 资源状态（麦克风按钮用它决定能不能录音）。
- * 云端方案 = 有自用 Key（BYOK）或已登录可走免费 CoCode ASR，二者居一即可用。
+ * 云端方案 = 有自用 Key（BYOK）或已登录可走免费 Tora ASR，二者居一即可用。
  * @param {{token?: string|null}} [opts]
  */
 export function voiceStatus(opts = {}) {
@@ -101,7 +101,7 @@ export function encodeWav(samples) {
 
 /**
  * 转写 16kHz 单声道 PCM（渲染层经 IPC 送来的原始采样）。
- * 优先 BYOK（自用 Key 直连）；无 Key 时用登录 token 走免费 CoCode ASR。
+ * 优先 BYOK（自用 Key 直连）；无 Key 时用登录 token 走免费 Tora ASR。
  * @param {Float32Array} samples
  * @param {{token?: string|null, gatewayBase?: string}} [opts]
  * @returns {Promise<string>} 识别文本（静音/空音频返回空串）
@@ -110,7 +110,7 @@ export async function transcribeSamples(samples, opts = {}) {
   const key = readConfig().glmAsrKey ?? '';
   const token = opts.token ?? '';
   if (!key && !token) {
-    throw new Error('未配置 GLM-ASR API Key，且未登录 CoCode 账号（语音识别不可用）');
+    throw new Error('未配置 GLM-ASR API Key，且未登录 Tora 账号（语音识别不可用）');
   }
   if (!samples || samples.length < SAMPLE_RATE * 0.2) return ''; // <0.2s 视为误触
 
@@ -120,10 +120,10 @@ export async function transcribeSamples(samples, opts = {}) {
   form.append('stream', 'false');
   form.append('file', new Blob([wav], { type: 'audio/wav' }), 'voice-input.wav');
 
-  // BYOK 直连智谱；云端通道由 CoCode 网关注入上游 Key，用户无需配置。
+  // BYOK 直连智谱；云端通道由 Tora 网关注入上游 Key，用户无需配置。
   const endpoint = key
     ? ASR_ENDPOINT
-    : `${(opts.gatewayBase || COCODE_ASR_GATEWAY).replace(/\/+$/, '')}/audio/transcriptions`;
+    : `${(opts.gatewayBase || TORA_ASR_GATEWAY).replace(/\/+$/, '')}/audio/transcriptions`;
   const res = await fetch(endpoint, {
     method: 'POST',
     headers: { authorization: `Bearer ${key || token}` },

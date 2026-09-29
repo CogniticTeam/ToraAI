@@ -9,12 +9,12 @@
  * auth-storage.json 是 OS 加密的 blob。
  */
 
-const LS_TOKEN = 'cocode_auth_token';
-const LS_EMAIL = 'cocode_auth_email';
-const LS_USERNAME = 'cocode_auth_username';
+const LS_TOKEN = 'tora_auth_token';
+const LS_EMAIL = 'tora_auth_email';
+const LS_USERNAME = 'tora_auth_username';
 
 /** preload.cjs 通过 contextBridge 注入的凭证桥：get 同步、set/del 异步。 */
-interface CocodeAuthBridge {
+interface ToraAuthBridge {
 	getToken(): string | null;
 	getEmail(): string | null;
 	getUsername(): string | null;
@@ -26,14 +26,14 @@ interface CocodeAuthBridge {
 	delUsername(): Promise<void>;
 }
 
-const bridge: CocodeAuthBridge | null =
+const bridge: ToraAuthBridge | null =
 	(typeof window !== 'undefined'
-		? (window as unknown as { cocodeAuth?: CocodeAuthBridge }).cocodeAuth ?? null
+		? (window as unknown as { toraAuth?: ToraAuthBridge }).toraAuth ?? null
 		: null);
 
 /** 凭证变化全局广播：LoginGate 监听，登出（delToken）立即切回全屏登录页 */
 function emitAuthChanged() {
-	if (typeof window !== 'undefined') window.dispatchEvent(new Event('cocode-auth-changed'));
+	if (typeof window !== 'undefined') window.dispatchEvent(new Event('tora-auth-changed'));
 }
 
 /** 同步读 token（Electron 走 sendSync，浏览器走 localStorage） */

@@ -3,21 +3,21 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { chromium } from 'playwright-core';
-process.env.COCODE_HOME = mkdtempSync(join(tmpdir(), 'cocode-message-summary-'));
+process.env.TORA_HOME = mkdtempSync(join(tmpdir(), 'tora-message-summary-'));
 const { startASAPIServer } = await import('../packages/core/src/asapi/server.js');
 const server = await startASAPIServer({ port: 0 });
 const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
 const title = '关于关闭官方模型的通知';
-const body = '由于不可抗力因素，CoCode暂不接受任何充值与订阅，官方模型已全部下架。感谢你的支持与理解，我们未来可能会在2027年上半年重新开放。'.repeat(12) + '\n\n' + 'https://example.invalid/' + 'a'.repeat(900);
+const body = '由于不可抗力因素，Tora暂不接受任何充值与订阅，官方模型已全部下架。感谢你的支持与理解，我们未来可能会在2027年上半年重新开放。'.repeat(12) + '\n\n' + 'https://example.invalid/' + 'a'.repeat(900);
 try {
   for (const width of [1230,390]) {
     const page=await browser.newPage({viewport:{width:1230,height:850},locale:'zh-CN',colorScheme:'dark'});
     let read = false; const errors=[];page.on('pageerror',e=>errors.push(e.message));
     await page.addInitScript(({base})=>{
-      for(const [k,v] of Object.entries({server_url:base,username:'cocode',cocode_auth_token:'mock-token',cocode_auth_username:'SummaryTest',cocode_cn_notice_agreed_v1:'1',cocode_language_preference:'zh',theme:'dark'}))localStorage.setItem(k,v);
+      for(const [k,v] of Object.entries({server_url:base,username:'tora',tora_auth_token:'mock-token',tora_auth_username:'SummaryTest',tora_cn_notice_agreed_v1:'1',tora_language_preference:'zh',theme:'dark'}))localStorage.setItem(k,v);
     },{base});
-    await page.route('https://cocode.ohfun.online/**',route=>{
+    await page.route('https://tora.ohfun.online/**',route=>{
       const path=new URL(route.request().url()).pathname;
       const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
       if(path==='/auth/me')return json({username:'SummaryTest',email:'test@example.invalid',banned:false});
@@ -43,7 +43,7 @@ try {
       assert.ok(geometry.left>=0&&geometry.right<=width,JSON.stringify(geometry));
     }
     await assertNoOverflow();
-    await page.screenshot({path:`/private/tmp/cocode-message-summary-${width}.png`});
+    await page.screenshot({path:`/private/tmp/tora-message-summary-${width}.png`});
     await row.focus();await page.keyboard.press('Enter');
     await dialog.getByRole('heading',{name:'消息详情',exact:true}).waitFor();
     assert.equal(await dialog.locator('article > p').textContent(),body);

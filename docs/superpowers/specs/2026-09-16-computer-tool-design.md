@@ -77,7 +77,7 @@
 - **应用层**：`toolCategory('Computer', {action})` → 看=read、操作=write（经 builtin.js 注册，
   写动作走既有确认卡流程）；别名 computer/desktop/screen/mouse/keyboard 归一到 Computer。
 - **系统层**：需用户在系统设置授权——「辅助功能」（合成事件/读窗口）+「屏幕录制」（截屏）。
-  授权对象是 CoCode 应用（osascript 子进程经 TCC 归因到父应用）。
+  授权对象是 Tora 应用（osascript 子进程经 TCC 归因到父应用）。
 - 不经过 shell 执行（spawn 参数数组）；AppleScript 字符串统一 asq() 转义；JXA 文本用 JSON.stringify 嵌入。
 
 ## 6. 验证记录（2026-09-16）

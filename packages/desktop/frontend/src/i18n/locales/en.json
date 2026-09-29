@@ -4,21 +4,21 @@
     "translateToChinese": "Translate to Chinese", "translateToEnglish": "Translate to English", "translating": "Translating…",
     "showOriginal": "Show original", "showTranslation": "Show translation", "noTranslationNeeded": "No translation needed",
     "translationError": "Translation failed. Click the translate button to retry.", "translationRateLimit": "Too many translation requests. Please try again later.",
-    "title": "Messages", "newMessage": "New message from CoCode", "empty": "No messages yet", "loading": "Loading…",
+    "title": "Messages", "newMessage": "New message from Tora", "empty": "No messages yet", "loading": "Loading…",
     "unread": "Unread", "more": "Load more", "back": "Back to messages", "retry": "Retry",
     "loadError": "Unable to load messages", "readError": "Could not mark the message as read. Try again.",
-    "blocked": "Account suspended", "blockedReason": "This account cannot currently use CoCode.",
+    "blocked": "Account suspended", "blockedReason": "This account cannot currently use Tora.",
     "unbanHint": "Access will resume automatically when an administrator lifts the suspension.", "signOut": "Sign out"
   },
   "requiredUpdate": {
-    "title": "Update CoCode", "description": "Version {{version}} is available. Update to continue.",
+    "title": "Update Tora", "description": "Version {{version}} is available. Update to continue.",
     "download": "Open official download page", "macHint": "If automatic updating is unavailable, download the latest DMG from the official site and replace the app manually.",
     "downloading": "Downloading update… {{percent}}%", "install": "Restart and install", "retry": "Retry download",
-    "error": "Automatic update failed. Retry or download from the official website.", "quit": "Quit CoCode"
+    "error": "Automatic update failed. Retry or download from the official website.", "quit": "Quit Tora"
   },
   "firstRun": {
     "intro": {
-      "aria": "CoCode first-launch welcome animation", "tagline": "Turn ideas into action.",
+      "aria": "Tora first-launch welcome animation", "tagline": "Turn ideas into action.",
       "initializing": "Preparing your workspace", "ready": "Ready when you are",
       "enter": "Get started", "skip": "Skip animation"
     },
@@ -27,12 +27,12 @@
       "pauseSettings": "Model management is open. Close Settings when you're done and the guide will continue.", "pauseFolder": "Choose a project folder, or close the menu to continue.", "pausePermission": "Review or select an approval mode, then close the menu to continue.",
       "demoSend": "Simulate sending; nothing will be submitted", "clickHint": "Click the highlighted control to continue", "loading": "Finding the control…",
       "demoTag": "Guided demo · no real command will run", "demoMessage": "Check this project's build scripts and give me a plan first.",
-      "demoResponse": "CoCode first understands the task, then asks for any tool permissions it needs. You can review each step and decide whether to continue.",
+      "demoResponse": "Tora first understands the task, then asks for any tool permissions it needs. You can review each step and decide whether to continue.",
       "demoApprove": "Allow this time (demo)", "demoCheckpoint": "View checkpoint (demo)",
       "completeTitle": "You're ready to create.", "completeBody": "You can change your model, folder, and permissions at any time. Review uncertain actions before proceeding.",
-      "startWorking": "Enter CoCode", "startAgain": "Watch the guide again",
+      "startWorking": "Enter Tora", "startAgain": "Watch the guide again",
       "steps": [
-        { "chapter": "Get ready", "title": "Choose your own model", "body": "CoCode uses models you add. Click the model picker to see where you connect your provider." },
+        { "chapter": "Get ready", "title": "Choose your own model", "body": "Tora uses models you add. Click the model picker to see where you connect your provider." },
         { "chapter": "Get ready", "title": "Add a model provider", "body": "Click Add model to open model management. Choose a provider and enter your model details. The guide resumes when you finish or skip setup." },
         { "chapter": "Get ready", "title": "Set your project scope", "body": "Click the folder control to choose a project. The Agent reads, edits, and runs tools within the workspace you authorize. You can do this later." },
         { "chapter": "Get ready", "title": "Stay in control", "body": "Click the permission mode to see your options. Manual approval is a good starting point; higher-risk actions wait for your decision." },
@@ -40,9 +40,9 @@
         { "chapter": "Start a task", "title": "Start your first task", "body": "This is the send button. The next steps only simulate execution: no model credits are used and no real message is sent." },
         { "chapter": "Review and recover", "title": "You approve each important step", "body": "This is a permission-request demo. Read what a tool intends to do before allowing or denying it." },
         { "chapter": "Review and recover", "title": "Recover from a wrong turn", "body": "Checkpoints record the state before changes. Review which files would be affected before a real restore." },
-        { "chapter": "Extend CoCode", "title": "Reuse workflows with skills", "body": "Click Skills. Import or install trusted skills to make useful workflows repeatable." },
-        { "chapter": "Extend CoCode", "title": "Verify results in the browser", "body": "Click the built-in browser. You and the Agent can inspect, debug, and verify a web app on the same page." },
-        { "chapter": "Extend CoCode", "title": "Schedule repetitive work", "body": "Click Automations to schedule recurring checks or organization tasks and review each run." }
+        { "chapter": "Extend Tora", "title": "Reuse workflows with skills", "body": "Click Skills. Import or install trusted skills to make useful workflows repeatable." },
+        { "chapter": "Extend Tora", "title": "Verify results in the browser", "body": "Click the built-in browser. You and the Agent can inspect, debug, and verify a web app on the same page." },
+        { "chapter": "Extend Tora", "title": "Schedule repetitive work", "body": "Click Automations to schedule recurring checks or organization tasks and review each run." }
       ]
     }
   },
@@ -287,7 +287,7 @@
 		"subagentConfirmTitle": "{{name}} requests confirmation",
 		"newSession": "New Session",
 		"newConversation": "New Conversation",
-		"greeting": "Work and Code with CoCode",
+		"greeting": "Work and Code with Tora",
 		"greetingProject": "What should we do in {{project}}?",
 		"thinking": "Thinking",
 		"project": {
@@ -688,7 +688,7 @@
 		"skillDescription": "Are you sure you want to remove this skill from the workspace?"
 	},
 	"schedule": {
-		"subtitle": "Configure and manage automated tasks - CoCode runs workflows on schedule",
+		"subtitle": "Configure and manage automated tasks - Tora runs workflows on schedule",
 		"calendar": "Calendar",
 		"createSchedule": {
 			"description": "Set up a recurring or one-time automation task for an agent.",
@@ -1088,7 +1088,7 @@
 	},
 	"settings": {
 		"title": "Settings",
-		"backToApp": "Back to CoCode",
+		"backToApp": "Back to Tora",
 		"close": "Close",
 		"loadFailed": "Failed to load settings (the backend may be offline or using the wrong port): {{error}}",
 		"loadingRuntime": "Loading runtime config…",
@@ -1267,21 +1267,21 @@
 		},
 		"about": {
 			"title": "About",
-			"cocode": "Local Agent workspace · v{{version}}",
+			"tora": "Local Agent workspace · v{{version}}",
 			"runtime": "Electron desktop · Local ASAPI service · Bring your own model",
 			"runtimeTitle": "Runtime",
 			"update": {
 				"title": "Software update",
-				"desc": "Check for a new CoCode release. macOS and Windows download in the background, then prompt you to restart and install.",
+				"desc": "Check for a new Tora release. macOS and Windows download in the background, then prompt you to restart and install.",
 				"check": "Check for updates",
 				"checking": "Checking…",
 				"upToDate": "You're up to date.",
-				"available": "CoCode {{version}} is available. Follow the update prompt to continue.",
-				"downloading": "CoCode {{version}} is available and downloading in the background.",
-				"ready": "CoCode {{version}} has downloaded and is ready to install.",
+				"available": "Tora {{version}} is available. Follow the update prompt to continue.",
+				"downloading": "Tora {{version}} is available and downloading in the background.",
+				"ready": "Tora {{version}} has downloaded and is ready to install.",
 				"development": "Updates are unavailable in development builds.",
 				"unavailable": "Automatic updates are not available on this platform.",
-				"desktopOnly": "Check for updates from the CoCode desktop app.",
+				"desktopOnly": "Check for updates from the Tora desktop app.",
 				"failed": "Could not check for updates: {{error}}"
 			}
 		},
@@ -1336,7 +1336,7 @@
 			},
 			"trust": {
 				"title": "Trust project hooks",
-				"desc": "A workspace's .cocode/hooks.json comes from repository content. Trusting it lets that repository run commands — read it first.",
+				"desc": "A workspace's .tora/hooks.json comes from repository content. Trusting it lets that repository run commands — read it first.",
 				"trusted": "Project hooks trusted for this directory",
 				"trust": "Trust the current directory",
 				"revoke": "Revoke trust",
@@ -1383,7 +1383,7 @@
 		},
 		"account": {
 			"title": "Account",
-			"homeTitle": "Sign in to CoCode",
+			"homeTitle": "Sign in to Tora",
 			"homeDesc": "Enter your username or email — we'll route you to sign-in or sign-up",
 			"continue": "Sign in / Sign up",
 			"nextStep": "Continue",
@@ -1401,7 +1401,7 @@
 			"login": "Sign in",
 			"createAccount": "Create account",
 			"or": "or",
-			"terms": "By continuing you agree to the CoCode Terms of Use and Privacy Policy.",
+			"terms": "By continuing you agree to the Tora Terms of Use and Privacy Policy.",
 			"back": "Back",
 			"logout": "Sign out",
 			"since": "Member since {{date}}",
@@ -1533,7 +1533,7 @@
 	},
 	"regionNotice": {
 		"title": "Notice for Mainland China Users & Cross-Border Data Transfer Consent",
-		"body": "CoCode has detected that your location is in Mainland China. Rest assured, we do not ban accounts of users from Mainland China. However, in accordance with relevant laws of Mainland China, we need your consent: your data will be transferred to Cloudflare servers located outside Mainland China. If you do not agree to this cross-border transfer, please stop using and exit this application immediately.\nAs the servers are located outside Mainland China, your access to CoCode may be slow. A VPN is recommended.",
+		"body": "Tora has detected that your location is in Mainland China. Rest assured, we do not ban accounts of users from Mainland China. However, in accordance with relevant laws of Mainland China, we need your consent: your data will be transferred to Cloudflare servers located outside Mainland China. If you do not agree to this cross-border transfer, please stop using and exit this application immediately.\nAs the servers are located outside Mainland China, your access to Tora may be slow. A VPN is recommended.",
 		"agree": "Agree and continue"
 	}
 }

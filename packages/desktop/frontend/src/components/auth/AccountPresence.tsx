@@ -17,8 +17,8 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     const changed = () => setToken(getToken());
-    window.addEventListener('cocode-auth-changed', changed);
-    return () => window.removeEventListener('cocode-auth-changed', changed);
+    window.addEventListener('tora-auth-changed', changed);
+    return () => window.removeEventListener('tora-auth-changed', changed);
   }, []);
   useEffect(() => {
     let alive = true;
@@ -31,7 +31,7 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
     setBlocked(false); setReason(''); setUnread(0);
     if (!token) return;
-    const desktop = (window as unknown as { cocodeWindow?: { refreshAccount?: () => Promise<unknown> } }).cocodeWindow;
+    const desktop = (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<unknown> } }).toraWindow;
     async function refresh() {
       if (checking) { checkAgain = true; return; }
       checking = true;

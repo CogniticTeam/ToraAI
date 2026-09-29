@@ -1,4 +1,4 @@
-// 会话持久化：~/.cocode/sessions/<id>.json
+// 会话持久化：~/.tora/sessions/<id>.json
 import { readFileSync, writeFileSync, readdirSync, unlinkSync, mkdirSync, existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { SESSIONS_DIR } from './config.js';

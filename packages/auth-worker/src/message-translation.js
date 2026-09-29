@@ -1,10 +1,10 @@
 export const TRANSLATION_MODEL = 'glm-5.3-flash';
 
-// 消息目前支持中英互译。忽略链接、代码和品牌名，避免把中文通知中的 CoCode 判成英文。
+// 消息目前支持中英互译。忽略链接、代码和品牌名，避免把中文通知中的 Tora 判成英文。
 export function detectMessageLanguage(message) {
   const classify = text => {
     const prose = text.replace(/```[\s\S]*?```|`[^`]*`|https?:\/\/\S+|\b[\w.+-]+@[\w.-]+\b/gu, ' ')
-      .replace(/\b(?:CoCode|GLM[\w.-]*|API|Windows|macOS|GitHub)\b/giu, ' ');
+      .replace(/\b(?:Tora|GLM[\w.-]*|API|Windows|macOS|GitHub)\b/giu, ' ');
     const han = (prose.match(/\p{Script=Han}/gu) || []).length;
     const words = (prose.match(/[a-zA-Z]+/g) || []).length;
     return han && han >= words ? 'zh' : words ? 'en' : null;

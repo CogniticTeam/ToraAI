@@ -1,4 +1,4 @@
-// CoCode HTTP+SSE 服务：桌面端 / 浏览器端共用同一 API
+// Tora HTTP+SSE 服务：桌面端 / 浏览器端共用同一 API
 // 仅绑定 127.0.0.1。POST /api/chat 以 SSE 流式返回 Agent 事件。
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -195,7 +195,7 @@ if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   const port = Number(process.argv[2] || 3210);
   startServer({ port }).then((srv) => {
     const addr = srv.address();
-    console.log(`CoCode 服务已启动: http://127.0.0.1:${addr.port}`);
+    console.log(`Tora 服务已启动: http://127.0.0.1:${addr.port}`);
     console.log('（桌面端 UI 路径 packages/desktop/ui，可浏览器直接打开）');
   });
 }

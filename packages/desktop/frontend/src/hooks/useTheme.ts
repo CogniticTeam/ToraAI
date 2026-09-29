@@ -12,13 +12,13 @@ import { useCallback, useEffect, useState } from 'react';
  * inline pre-paint script (so a hard reload never flashes white).
  */
 export type ThemePreference = 'light' | 'dark' | 'system';
-const STORAGE_KEY = 'cocode.theme';
+const STORAGE_KEY = 'tora.theme';
 
 // 窗口原生背景同步桥（Electron 主进程 setBackgroundColor）——「加载页」那块
 // 底色跟主题走。浏览器 dev 模式无此桥，跳过即可，那里的首帧由浏览器自己管。
 type WindowBridge = { reportTheme: (isDark: boolean) => void };
 const windowBridge =
-	(window as unknown as { cocodeWindow?: WindowBridge }).cocodeWindow ?? null;
+	(window as unknown as { toraWindow?: WindowBridge }).toraWindow ?? null;
 
 const isValidPreference = (v: unknown): v is ThemePreference =>
 	v === 'light' || v === 'dark' || v === 'system';

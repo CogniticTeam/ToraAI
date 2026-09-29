@@ -135,7 +135,7 @@ export function WorkspacePicker({ value, onChange, disabled, className, composer
 							className="flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left hover:bg-muted"
 							onClick={async () => {
 								// Electron shell: system folder picker (NSOpenPanel / IFileOpenDialog)
-								const bridge = (window as unknown as { cocodeWindow?: { openFolderDialog: () => Promise<string | null> } }).cocodeWindow;
+								const bridge = (window as unknown as { toraWindow?: { openFolderDialog: () => Promise<string | null> } }).toraWindow;
 								if (bridge?.openFolderDialog) {
 									const dir = await bridge.openFolderDialog();
 									if (dir) {

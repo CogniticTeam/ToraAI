@@ -1,18 +1,18 @@
 // 显式线上验收：只操作随机创建的测试账户，finally 删除本次测试数据。
-// COCODE_LIVE_TEST=1 COCODE_ADMIN_ACCESS_FILE=/path/to/private-access.txt node scripts/test-account-live.mjs
+// TORA_LIVE_TEST=1 TORA_ADMIN_ACCESS_FILE=/path/to/private-access.txt node scripts/test-account-live.mjs
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-if (process.env.COCODE_LIVE_TEST !== '1' || !process.env.COCODE_ADMIN_ACCESS_FILE) throw new Error('请显式启用线上验收并指定管理凭证文件');
-const key = readFileSync(process.env.COCODE_ADMIN_ACCESS_FILE, 'utf8').match(/管理密钥：([^\n]+)/)?.[1];
+if (process.env.TORA_LIVE_TEST !== '1' || !process.env.TORA_ADMIN_ACCESS_FILE) throw new Error('请显式启用线上验收并指定管理凭证文件');
+const key = readFileSync(process.env.TORA_ADMIN_ACCESS_FILE, 'utf8').match(/管理密钥：([^\n]+)/)?.[1];
 if (!key) throw new Error('管理凭证文件无效');
-const base = 'https://cocode.ohfun.online';
+const base = 'https://tora.ohfun.online';
 const id = randomUUID().replaceAll('-', '');
-const email = `cocode-acceptance-${id}@example.invalid`;
+const email = `tora-acceptance-${id}@example.invalid`;
 const token = randomBytes(48).toString('hex');
 let socket;
-const sql = statement => JSON.parse(execFileSync('npx', ['--yes', 'wrangler@4', 'd1', 'execute', 'cocode-auth', '--remote', '--config', 'packages/auth-worker/wrangler.toml', '--json', '--command', statement], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+const sql = statement => JSON.parse(execFileSync('npx', ['--yes', 'wrangler@4', 'd1', 'execute', 'tora-auth', '--remote', '--config', 'packages/auth-worker/wrangler.toml', '--json', '--command', statement], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
 async function request(path, auth, body) {
   const r = await fetch(base + path, { method: body ? 'POST' : 'GET', headers: { authorization: 'Bearer ' + auth, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(15000) });
   return { status: r.status, data: await r.json() };
@@ -23,7 +23,7 @@ try {
   assert.equal(legacy.status, 302);
   assert.equal(legacy.headers.get('location'), 'https://ohfun.online/admin');
   const panel = await fetch('https://ohfun.online/admin');
-  assert.equal(panel.status, 200); assert.ok((await panel.text()).includes('CoCode 管理后台'));
+  assert.equal(panel.status, 200); assert.ok((await panel.text()).includes('Tora 管理后台'));
   assert.equal((await request('/admin/users', 'invalid')).status, 401);
   sql(`INSERT INTO users (email,username,salt,hash,created_at) VALUES ('${email}','qa-${id.slice(0,20)}','${randomBytes(16).toString('hex')}','${randomBytes(32).toString('hex')}','${new Date().toISOString()}'); INSERT INTO sessions(token,user_id,expires_at) SELECT '${token}',id,${Date.now()+600000} FROM users WHERE email='${email}';`);
   const users = await request('/admin/users?q=' + encodeURIComponent(email), key);
@@ -44,7 +44,7 @@ try {
     assert.ok(events.some(event=>event.type===type), '未收到实时事件');
     return Date.now()-start;
   }
-  await mutation('/admin/messages',{userId,title:'CoCode 部署验收',body:'仅测试账户可见，测试完成后删除。'},'message-received');
+  await mutation('/admin/messages',{userId,title:'Tora 部署验收',body:'仅测试账户可见，测试完成后删除。'},'message-received');
   const inbox=await request('/account/messages',token);assert.equal(inbox.data.unread,1);
   await request('/account/messages/read',token,{ids:[inbox.data.messages[0].id]});
   assert.equal((await request('/account/messages',token)).data.unread,0);

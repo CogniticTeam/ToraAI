@@ -530,7 +530,7 @@ export async function handleAdminPoll(request, env, url) {
     const bytes = pollWorkbook(kind === 'summary' ? '投票汇总' : '用户明细', rows);
     return new Response(bytes, { headers: {
       'content-type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'content-disposition': `attachment; filename="cocode-poll-${kind}-${poll.id}.xlsx"`,
+      'content-disposition': `attachment; filename="tora-poll-${kind}-${poll.id}.xlsx"`,
       'cache-control': 'no-store', 'access-control-allow-origin': '*',
     } });
   }

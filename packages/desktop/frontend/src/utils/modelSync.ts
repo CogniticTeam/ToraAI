@@ -8,8 +8,8 @@
 
 import { getToken } from './authStore';
 
-const AUTH_API_KEY = 'cocode_auth_api';
-const DEFAULT_AUTH_API = 'https://cocode.ohfun.online';
+const AUTH_API_KEY = 'tora_auth_api';
+const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 const SERVER_URL_KEY = 'server_url';
 const DEFAULT_SERVER_URL = 'http://127.0.0.1:3210';
 

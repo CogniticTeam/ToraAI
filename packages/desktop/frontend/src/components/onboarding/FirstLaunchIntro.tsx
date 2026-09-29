@@ -4,7 +4,7 @@ import { FIRST_RUN_INTRO_KEY, FIRST_RUN_REPLAY_EVENT, FIRST_RUN_STEP_KEY, FIRST_
 import { useTranslation } from '@/i18n/useI18n';
 
 function isDesktop(): boolean {
-	return typeof window !== 'undefined' && Boolean((window as { cocodeWindow?: unknown }).cocodeWindow);
+	return typeof window !== 'undefined' && Boolean((window as { toraWindow?: unknown }).toraWindow);
 }
 
 function shouldShowIntro(): boolean {
@@ -59,7 +59,7 @@ export function FirstLaunchIntro({ children }: { children: React.ReactNode }) {
 			<div className="first-launch-orbit first-launch-orbit-c" aria-hidden="true" />
 			<div className="first-launch-center">
 				<div className="first-launch-mark" aria-hidden="true">‹_</div>
-				<h1>CoCode</h1>
+				<h1>Tora</h1>
 				<p>{t('firstRun.intro.tagline')}</p>
 				<div className="first-launch-progress" aria-hidden="true"><span /></div>
 				<div className="first-launch-status" role="status">{ready ? t('firstRun.intro.ready') : t('firstRun.intro.initializing')}</div>

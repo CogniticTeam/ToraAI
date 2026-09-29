@@ -15,8 +15,8 @@ import { mkdirSync, existsSync, readFileSync, writeFileSync, appendFileSync, unl
 import { join } from 'node:path';
 
 import { runAgent } from '../agent.js';
-import { loadConfig, saveConfig, COCODE_DIR } from '../config.js';
-import { createWorktree, removeWorktree } from './cocode-git.js';
+import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
+import { createWorktree, removeWorktree } from './tora-git.js';
 import {
   isRunning, pushCustomToLeaderBus, registerSubagentConfirm, cancelSubagentConfirms
 } from '../asapi/bridge.js';
@@ -96,8 +96,8 @@ function workerWorktreeSpec(team, role) {
   const stamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
   const teamPart = safeSegment(team.id, 'team');
   const rolePart = safeSegment(role, 'worker');
-  const branch = `cocode/team-${teamPart}/${rolePart}-${stamp}`;
-  const path = join(COCODE_DIR, 'team-worktrees', team.id, `${rolePart}-${stamp}`);
+  const branch = `tora/team-${teamPart}/${rolePart}-${stamp}`;
+  const path = join(TORA_DIR, 'team-worktrees', team.id, `${rolePart}-${stamp}`);
   return { branch, path };
 }
 
@@ -125,7 +125,7 @@ async function provisionWorkerWorkspace({ team, cwd, role, mode, isolation }) {
   }
 
   const spec = workerWorktreeSpec(team, role);
-  mkdirSync(join(COCODE_DIR, 'team-worktrees', team.id), { recursive: true });
+  mkdirSync(join(TORA_DIR, 'team-worktrees', team.id), { recursive: true });
   const created = await createWorktree(cwd, spec.path, spec.branch);
   if (!created.ok) {
     return {
@@ -663,7 +663,7 @@ export const agentListTool = {
 // --- 7. TeamDocWrite ---
 export const teamDocWriteTool = {
   name: 'TeamDocWrite',
-  description: '写入/追加团队文档（~/.cocode/team-docs/{team_id}.md）。默认覆盖整个文件，append=true 时追加到末尾。',
+  description: '写入/追加团队文档（~/.tora/team-docs/{team_id}.md）。默认覆盖整个文件，append=true 时追加到末尾。',
   parameters: {
     type: 'object',
     properties: {
