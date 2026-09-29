@@ -36,12 +36,12 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import i18n, { getNextLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
+const LanguageDialog = lazy(async () => ({ default: (await import('@/components/dialog/LanguageDialog')).LanguageDialog }));
 
 // 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
 const NAV_INDICATOR_LAYOUT_ID = 'tora-sidebar-nav-indicator';
@@ -77,6 +77,7 @@ export function AppSidebar() {
 	const { t } = useTranslation();
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [messagesOpen, setMessagesOpen] = useState(false);
+	const [languageOpen, setLanguageOpen] = useState(false);
 	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
 	const handleSettingsOpenChange = useCallback((open: boolean) => {
@@ -201,10 +202,6 @@ export function AppSidebar() {
 		setLightedPinned(!bridge.isMaximized());
 		bridge.onMaximizeChange((maxed: boolean) => setLightedPinned(!maxed));
 	}, []);
-
-	const handleToggleLanguage = () => {
-		void setAppLanguage(getNextLanguage(i18n.language));
-	};
 
 	useEffect(() => {
 		const bridge = (window as unknown as { toraWindow?: { onMenuCommand?: (cb: (action: string) => void) => () => void } }).toraWindow;
@@ -341,13 +338,9 @@ export function AppSidebar() {
 							<Settings />
 							<span>{t('common.settings')}</span>
 						</DropdownMenuItem>
-						<DropdownMenuItem className="py-1 text-[13px]" onClick={handleToggleLanguage}>
+						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setLanguageOpen(true)}>
 							<Languages />
-							<span>
-								{t(getNextLanguage(i18n.language) === 'zh-Hant'
-									? 'common.switchToZhHant'
-									: getNextLanguage(i18n.language) === 'en' ? 'common.switchToEn' : 'common.switchToZh')}
-							</span>
+							<span>Language</span>
 						</DropdownMenuItem>
 						{getWindowBridge() && <DropdownMenuItem className="py-1 text-[13px]" onClick={() => window.dispatchEvent(new Event(FIRST_RUN_REPLAY_EVENT))}>
 							<RotateCcw />
@@ -358,6 +351,7 @@ export function AppSidebar() {
 			</SidebarFooter>
 			{/* key=settingsTab：同一 tab 重开时靠 open effect 复位；不同 tab 重挂载强制切换 */}
 			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
+			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
 			{settingsOpen && (
 				<Suspense fallback={null}>
 					<SettingsDialog

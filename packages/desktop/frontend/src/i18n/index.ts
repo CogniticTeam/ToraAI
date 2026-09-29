@@ -10,7 +10,7 @@ export type AppLanguage = 'zh' | 'zh-Hant' | 'en';
 /** 只有用户主动切换后才写入；系统自动检测结果不会持久化。 */
 export const LANGUAGE_PREFERENCE_KEY = 'tora_language_preference';
 
-function normalizeLanguage(value: string | null | undefined): AppLanguage | null {
+export function normalizeLanguage(value: string | null | undefined): AppLanguage | null {
 	if (!value) return null;
 	const normalized = value.trim().replaceAll('_', '-').toLowerCase();
 	if (/^zh(?:-hant|-tw|-hk|-mo)(?:-|$)/.test(normalized)) return 'zh-Hant';
@@ -19,21 +19,19 @@ function normalizeLanguage(value: string | null | undefined): AppLanguage | null
 	return null;
 }
 
-export function getNextLanguage(language: string): AppLanguage {
-	const current = normalizeLanguage(language);
-	return current === 'zh' ? 'zh-Hant' : current === 'zh-Hant' ? 'en' : 'zh';
-}
-
-export function getSystemLanguage(): AppLanguage {
+export function getSystemLocale(): string | null {
 	const desktopLocale = typeof window === 'undefined'
 		? null
 		: (window as unknown as {
 			toraWindow?: { getSystemLocale?: () => string };
 		}).toraWindow?.getSystemLocale?.();
-	if (desktopLocale) return normalizeLanguage(desktopLocale) ?? 'en';
-	if (typeof navigator === 'undefined') return 'en';
-	const primary = navigator.languages?.[0] ?? navigator.language;
-	return normalizeLanguage(primary) ?? 'en';
+	if (desktopLocale) return desktopLocale;
+	if (typeof navigator === 'undefined') return null;
+	return navigator.languages?.[0] ?? navigator.language ?? null;
+}
+
+export function getSystemLanguage(): AppLanguage {
+	return normalizeLanguage(getSystemLocale()) ?? 'en';
 }
 
 export function getInitialLanguage(): AppLanguage {

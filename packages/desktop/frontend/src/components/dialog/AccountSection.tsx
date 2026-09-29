@@ -13,12 +13,11 @@
  */
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, AtSign, Camera, ChevronDown, Eye, EyeOff, KeyRound, Languages, Loader2 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
-import i18n, { getNextLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import {
 	getToken, getEmail, getUsername,
@@ -28,6 +27,7 @@ import {
 
 const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 const API_KEY = 'tora_auth_api';
+const LanguageDialog = lazy(async () => ({ default: (await import('@/components/dialog/LanguageDialog')).LanguageDialog }));
 
 const authApi = () => (localStorage.getItem(API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
@@ -174,8 +174,7 @@ export function AccountSection({ onAuthenticated }: {
 	onAuthenticated?: (user: { email: string; createdAt?: string }) => void;
 }) {
 	const { t } = useTranslation();
-	const nextLanguage = getNextLanguage(i18n.language);
-	const switchLabel = t(nextLanguage === 'zh-Hant' ? 'common.switchToZhHant' : nextLanguage === 'en' ? 'common.switchToEn' : 'common.switchToZh');
+	const [languageOpen, setLanguageOpen] = useState(false);
 	const [step, setStep] = useState<Step>('home');
 	const [account, setAccount] = useState(() =>
 		getUsername() ?? getEmail() ?? '');
@@ -405,14 +404,15 @@ export function AccountSection({ onAuthenticated }: {
 			{onAuthenticated ? (
 				<button
 					type="button"
-					onClick={() => void setAppLanguage(nextLanguage)}
-					aria-label={switchLabel}
+					onClick={() => setLanguageOpen(true)}
+					aria-label="Language"
 					className="app-no-drag absolute right-5 top-5 z-30 flex h-9 items-center gap-2 rounded-rect border border-border bg-background/90 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
 				>
 					<Languages className="size-4 text-muted-foreground" />
-					<span>{switchLabel}</span>
+					<span>Language</span>
 				</button>
 			) : null}
+			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
 
 			<motion.div
 				initial={{ opacity: 0, y: 24, scale: 0.97 }}
