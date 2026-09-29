@@ -169,15 +169,14 @@ class PersistentShell {
       if (this.buf.length > 8192) this.buf = this.buf.slice(-4096);
       return;
     }
-    const idx = this.buf.indexOf(this.pending.marker);
-    if (idx < 0) return;
-    const after = this.buf.slice(idx + this.pending.marker.length);
-    const nl = after.indexOf('\n');
-    if (nl < 0) return; // 哨兵行还没收全
-
-    const meta = after.slice(0, nl);          // "<exit>|<pwd>"
+    // 交互式 Bash 可能在 stderr 回显 printf 命令本身。只有实际输出的
+    // 数字退出码 + 分隔符 + 完整行才是结束标记，不能解析 "%s|%s"。
+    const completion = new RegExp(this.pending.marker + '(-?\\d+)\\|([^\\n]*)\\n').exec(this.buf);
+    if (!completion) return;
+    const idx = completion.index;
+    const meta = completion[1] + '|' + completion[2];
     const output = cleanShellOutput(this.buf.slice(0, idx));
-    this.buf = after.slice(nl + 1);
+    this.buf = this.buf.slice(idx + completion[0].length);
 
     const { resolve, timer, marker, truncated } = this.pending;
     this.pending = null;

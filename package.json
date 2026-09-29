@@ -12,7 +12,7 @@
     "serve": "node packages/core/src/asapi/server.js",
     "serve:simple": "node packages/core/src/server.js",
     "start": "npm run start -w packages/desktop",
-    "test": "node --test packages/core/test/legacy-migration.js && node packages/core/test/run.js && node packages/core/test/asapi.js",
+    "test": "node --test packages/core/test/legacy-migration.js packages/core/test/shell-protocol.js scripts/test-brand-migration.mjs && node packages/core/test/run.js && node packages/core/test/asapi.js",
     "lint": "npm run lint --prefix packages/desktop/frontend",
     "test:ui": "node scripts/test-ui-headless.mjs",
     "test:bundle": "node scripts/check-frontend-bundle.mjs",
