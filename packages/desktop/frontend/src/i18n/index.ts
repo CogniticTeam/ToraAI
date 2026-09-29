@@ -3,18 +3,25 @@ import { initReactI18next } from 'react-i18next';
 
 import enTranslations from './locales/en.json';
 import zhTranslations from './locales/zh.json';
+import zhHantTranslations from './locales/zh-Hant.json';
 
-export type AppLanguage = 'zh' | 'en';
+export type AppLanguage = 'zh' | 'zh-Hant' | 'en';
 
 /** 只有用户主动切换后才写入；系统自动检测结果不会持久化。 */
 export const LANGUAGE_PREFERENCE_KEY = 'tora_language_preference';
 
 function normalizeLanguage(value: string | null | undefined): AppLanguage | null {
 	if (!value) return null;
-	const normalized = value.trim().toLowerCase();
+	const normalized = value.trim().replaceAll('_', '-').toLowerCase();
+	if (/^zh(?:-hant|-tw|-hk|-mo)(?:-|$)/.test(normalized)) return 'zh-Hant';
 	if (normalized.startsWith('zh')) return 'zh';
 	if (normalized.startsWith('en')) return 'en';
 	return null;
+}
+
+export function getNextLanguage(language: string): AppLanguage {
+	const current = normalizeLanguage(language);
+	return current === 'zh' ? 'zh-Hant' : current === 'zh-Hant' ? 'en' : 'zh';
 }
 
 export function getSystemLanguage(): AppLanguage {
@@ -42,11 +49,12 @@ i18n.use(initReactI18next)
 		resources: {
 			en: { translation: enTranslations },
 			zh: { translation: zhTranslations },
+			'zh-Hant': { translation: zhHantTranslations },
 		},
 		lng: getInitialLanguage(),
-		fallbackLng: 'en',
-		supportedLngs: ['zh', 'en'],
-		load: 'languageOnly',
+		fallbackLng: { 'zh-Hant': ['zh', 'en'], default: ['en'] },
+		supportedLngs: ['zh', 'zh-Hant', 'en'],
+		load: 'currentOnly',
 		interpolation: {
 			escapeValue: false,
 		},

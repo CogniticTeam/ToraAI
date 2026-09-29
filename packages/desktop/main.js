@@ -9,7 +9,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { voiceStatus, setAsrApiKey, transcribeSamples } from './voice.js';
 import { optimizePrompt } from './prompt-optimizer.js';
 import { isAppUrl, normalizeExternalHttpUrl } from './navigation-security.js';
-import { applicationMenuTemplate } from './application-menu.js';
+import { applicationMenuTemplate, isTraditionalChineseLocale } from './application-menu.js';
 import { desktopStorageName } from './brand-compat.js';
 
 app.setName(desktopStorageName(app.getPath('appData')));
@@ -254,10 +254,11 @@ function installApplicationMenu(language = app.getLocale()) {
       const result = await checkForUpdates();
       if (['available', 'downloading', 'ready'].includes(result.status)) return;
       const zh = language.startsWith('zh');
+      const hant = isTraditionalChineseLocale(language);
       await dialog.showMessageBox(win, { type: result.status === 'error' ? 'warning' : 'info', title: 'Tora',
-        message: result.status === 'up-to-date' ? (zh ? '当前已是最新版本' : 'Tora is up to date')
-          : result.status === 'development' ? (zh ? '开发版本不检查更新' : 'Updates are disabled in development')
-          : (zh ? '暂时无法检查更新' : 'Unable to check for updates'),
+        message: result.status === 'up-to-date' ? (hant ? '目前已是最新版本' : zh ? '当前已是最新版本' : 'Tora is up to date')
+          : result.status === 'development' ? (hant ? '開發版本不檢查更新' : zh ? '开发版本不检查更新' : 'Updates are disabled in development')
+          : (hant ? '暫時無法檢查更新' : zh ? '暂时无法检查更新' : 'Unable to check for updates'),
       });
     },
     openWebsite: () => openSafeExternal('https://ohfun.online'),
@@ -268,7 +269,7 @@ function installApplicationMenu(language = app.getLocale()) {
 }
 
 ipcMain.on('app:language', (_event, language) => {
-  if (language === 'zh' || language === 'en') installApplicationMenu(language);
+  if (language === 'zh' || language === 'zh-Hant' || language === 'en') installApplicationMenu(language);
 });
 app.setAboutPanelOptions({ applicationName: 'Tora', applicationVersion: app.getVersion() });
 

@@ -106,6 +106,7 @@
 		"selectAgent": "Select an agent",
 		"settings": "Settings",
 		"switchToZh": "Switch to Chinese",
+		"switchToZhHant": "Switch to Traditional Chinese",
 		"switchToEn": "Switch to English",
 		"team": "Team",
 		"uploading": "Uploading",
@@ -1173,6 +1174,7 @@
 				"title": "Language",
 				"desc": "Interface language",
 				"zh": "Simplified Chinese",
+				"zhHant": "Traditional Chinese",
 				"en": "English"
 			},
 			"searchEngine": {

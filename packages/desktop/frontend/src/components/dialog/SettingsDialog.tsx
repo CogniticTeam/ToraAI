@@ -21,7 +21,7 @@ import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { AVAILABLE_MODELS_KEY } from '@/hooks/useAvailableModels';
-import i18n from '@/i18n';
+import i18n, { setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { PROVIDER_ICONS } from '@/lib/providerIcons';
 import { queryClient } from '@/lib/query-client';
@@ -1671,7 +1671,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 
 	function handleLang(next: string) {
 		setLang(next);
-		i18n.changeLanguage(next);
+		void setAppLanguage(next);
 	}
 
 	function handleSearchEngine(next: string) {
@@ -1764,10 +1764,11 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 							<Row title={t('settings.general.language.title')} description={t('settings.general.language.desc')}>
 										<DropdownSelect
 											className="w-36"
-											value={lang.startsWith('zh') ? 'zh' : 'en'}
+											value={lang === 'zh-Hant' ? 'zh-Hant' : lang.startsWith('zh') ? 'zh' : 'en'}
 											onChange={handleLang}
 											options={[
 												{ value: 'zh', label: t('settings.general.language.zh') },
+												{ value: 'zh-Hant', label: t('settings.general.language.zhHant') },
 												{ value: 'en', label: t('settings.general.language.en') },
 											]}
 										/>

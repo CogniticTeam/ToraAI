@@ -36,7 +36,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import i18n, { setAppLanguage } from '@/i18n';
+import i18n, { getNextLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
@@ -203,8 +203,7 @@ export function AppSidebar() {
 	}, []);
 
 	const handleToggleLanguage = () => {
-		const next = i18n.language.startsWith('zh') ? 'en' : 'zh';
-		void setAppLanguage(next);
+		void setAppLanguage(getNextLanguage(i18n.language));
 	};
 
 	useEffect(() => {
@@ -345,9 +344,9 @@ export function AppSidebar() {
 						<DropdownMenuItem className="py-1 text-[13px]" onClick={handleToggleLanguage}>
 							<Languages />
 							<span>
-								{i18n.language.startsWith('zh')
-									? t('common.switchToEn')
-									: t('common.switchToZh')}
+								{t(getNextLanguage(i18n.language) === 'zh-Hant'
+									? 'common.switchToZhHant'
+									: getNextLanguage(i18n.language) === 'en' ? 'common.switchToEn' : 'common.switchToZh')}
 							</span>
 						</DropdownMenuItem>
 						{getWindowBridge() && <DropdownMenuItem className="py-1 text-[13px]" onClick={() => window.dispatchEvent(new Event(FIRST_RUN_REPLAY_EVENT))}>

@@ -18,7 +18,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
-import i18n, { setAppLanguage } from '@/i18n';
+import i18n, { getNextLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import {
 	getToken, getEmail, getUsername,
@@ -174,7 +174,8 @@ export function AccountSection({ onAuthenticated }: {
 	onAuthenticated?: (user: { email: string; createdAt?: string }) => void;
 }) {
 	const { t } = useTranslation();
-	const isZh = i18n.language.startsWith('zh');
+	const nextLanguage = getNextLanguage(i18n.language);
+	const switchLabel = t(nextLanguage === 'zh-Hant' ? 'common.switchToZhHant' : nextLanguage === 'en' ? 'common.switchToEn' : 'common.switchToZh');
 	const [step, setStep] = useState<Step>('home');
 	const [account, setAccount] = useState(() =>
 		getUsername() ?? getEmail() ?? '');
@@ -404,12 +405,12 @@ export function AccountSection({ onAuthenticated }: {
 			{onAuthenticated ? (
 				<button
 					type="button"
-					onClick={() => void setAppLanguage(isZh ? 'en' : 'zh')}
-					aria-label={isZh ? t('common.switchToEn') : t('common.switchToZh')}
+					onClick={() => void setAppLanguage(nextLanguage)}
+					aria-label={switchLabel}
 					className="app-no-drag absolute right-5 top-5 z-30 flex h-9 items-center gap-2 rounded-rect border border-border bg-background/90 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
 				>
 					<Languages className="size-4 text-muted-foreground" />
-					<span>{isZh ? t('common.switchToEn') : t('common.switchToZh')}</span>
+					<span>{switchLabel}</span>
 				</button>
 			) : null}
 

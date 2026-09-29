@@ -105,6 +105,7 @@
     "selectAgent": "选择智能体",
     "settings": "设置",
     "switchToZh": "切换为中文",
+    "switchToZhHant": "切換為繁體中文",
     "switchToEn": "Switch to English",
     "team": "团队",
     "uploading": "上传中",
@@ -1173,6 +1174,7 @@
         "title": "语言",
         "desc": "界面显示语言",
         "zh": "简体中文",
+        "zhHant": "繁體中文",
         "en": "English"
       },
       "searchEngine": {

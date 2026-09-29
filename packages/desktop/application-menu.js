@@ -1,5 +1,24 @@
+export function isTraditionalChineseLocale(language = '') {
+  return /^zh(?:[-_](?:hant|tw|hk|mo))(?:[-_]|$)/i.test(language);
+}
+
+const traditionalLabels = {
+  '关于 Tora': '關於 Tora', '检查更新…': '檢查更新…', '设置…': '設定…',
+  '服务': '服務', '隐藏 Tora': '隱藏 Tora', '隐藏其他应用': '隱藏其他應用',
+  '显示全部': '顯示全部', '退出 Tora': '退出 Tora', '文件': '檔案',
+  '新任务': '新任務', '打开浏览器': '開啟瀏覽器', '关闭窗口': '關閉視窗',
+  '编辑': '編輯', '撤销': '撤銷', '剪切': '剪下', '复制': '複製',
+  '粘贴': '貼上', '粘贴并匹配样式': '貼上並符合樣式', '全选': '全選',
+  '视图': '檢視', '实际大小': '實際大小', '切换全屏': '切換全螢幕',
+  '模型设置…': '模型設定…', '自动化': '自動化',
+  '打开日志文件夹': '開啟日誌資料夾', '窗口': '視窗',
+  '缩放窗口': '縮放視窗', '全部置于前面': '全部移至最前方',
+  '帮助': '說明', 'Tora 官网': 'Tora 官網', '下载最新版': '下載最新版本',
+};
+
 export function applicationMenuTemplate({ language = 'zh', isMac, send, checkUpdates, openWebsite, openDownloads, openLogs, about }) {
-  const label = (zh, en) => language.startsWith('zh') ? zh : en;
+  const label = (zh, en) => isTraditionalChineseLocale(language)
+    ? (traditionalLabels[zh] ?? zh) : language.startsWith('zh') ? zh : en;
   const command = (zh, en, action, accelerator) => ({ label: label(zh, en), accelerator, click: () => send(action) });
   const appItems = [
     { label: label('关于 Tora', 'About Tora'), click: about },
