@@ -81,6 +81,12 @@ function LazyMarkdown({ children, ...props }: React.ComponentProps<typeof Markdo
 	);
 }
 
+function sendMotionEnabled(): boolean {
+	if (typeof window === 'undefined' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+	try { return window.localStorage.getItem('tora.motion.mode') !== 'off'; }
+	catch { return true; }
+}
+
 /**
  * A run of *consecutive* tool calls (of any name) collapsed into a single
  * container, each call paired to its result. The one aggregated summary/fold
@@ -480,6 +486,9 @@ function ASMessageBubbleComponent({
 }: MessageBubbleProps) {
 	const isUser = message.role === 'user';
 	const { t } = useTranslation();
+	const animateSend = isUser &&
+		(message as Msg & { __sendEntrance?: boolean }).__sendEntrance === true &&
+		sendMotionEnabled();
 
 	// 系统提示条（role=system，如「模型已从 X 更改为 Y」）：居中分隔线样式，
 	// 不渲染成气泡。放在 hooks 之后、其余渲染之前，保证不破坏条件一致性。
@@ -570,7 +579,9 @@ function ASMessageBubbleComponent({
 
 	return (
 		<motion.div
-			initial={{ opacity: 0, y: 8 }}
+			data-send-entrance={animateSend ? 'true' : undefined}
+			className={animateSend ? 'message-send-entrance' : undefined}
+			initial={isUser ? false : { opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
 		>

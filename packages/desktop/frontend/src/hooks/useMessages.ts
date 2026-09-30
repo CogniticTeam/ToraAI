@@ -589,6 +589,9 @@ export function useMessages(
 					? { selected_skill_ids: selectedSkillIds }
 					: {},
 			});
+			// 仅用于本地入场动效；发给服务端的仍是原始 userMsg，
+			// 因此刷新历史不会重播，也不会把 UI 标记写进会话数据。
+			const displayUserMsg = { ...userMsg, __sendEntrance: true };
 			// 触发请求与首个 SSE 事件之间可能有明显空窗。先进入 streaming，
 			// 让消息区能立即呈现“思考中”，而不是等到模型已经开始输出。
 			setPhase('streaming');
@@ -596,7 +599,7 @@ export function useMessages(
 			if (!realSessionId) {
 				// 点下发送的那一帧就显示：早先要等 create 一个 RTT 返回才
 				// 追加，期间界面"毫无反应"，用户会重复点击或以为没发出去。
-				msgsRef.current = [...msgsRef.current, userMsg];
+				msgsRef.current = [...msgsRef.current, displayUserMsg];
 				scheduleUpdate();
 				try {
 					// 切换落地前的多次首发共享同一个 create——连发两条不应
@@ -625,7 +628,7 @@ export function useMessages(
 				// 这条乐观消息抹掉。顺序反了消息就会凭空消失。
 				optionsRef.current?.onSessionCreated?.(realSessionId);
 			} else {
-				msgsRef.current = [...msgsRef.current, userMsg];
+				msgsRef.current = [...msgsRef.current, displayUserMsg];
 				scheduleUpdate();
 			}
 
