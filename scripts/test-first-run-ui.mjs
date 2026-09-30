@@ -133,7 +133,8 @@ try {
 	assert.equal(await page.locator('.first-launch-root').count(), 0, '再次启动不应重复播放开场');
 	assert.equal(await page.locator('.first-run-coach').count(), 0, '再次启动不应重复引导');
 	await page.getByRole('button', { name: /first-run-test/i }).first().click();
-	await page.getByText('Switch to English').click();
+	await page.getByRole('menuitem', { name: 'Language' }).click();
+	await page.getByRole('dialog', { name: 'Language' }).getByRole('button', { name: 'English / 英语' }).click();
 	await page.emulateMedia({ reducedMotion: 'reduce' });
 	await page.getByRole('button', { name: /first-run-test/i }).first().click();
 	await page.getByText('Replay the getting-started guide').click();
