@@ -1,0 +1,64 @@
+:root {
+	--startup-image: url('/images/tora-soft-backdrop.jpg');
+	--startup-base: #cbd4ec;
+	--startup-wash: rgba(229, 237, 249, .28);
+	--startup-mark-filter: none;
+}
+html[data-app-background='mist'] { --startup-image: url('/images/tora-mist.jpg'); }
+html[data-app-background='stone'] { --startup-image: url('/images/tora-stone.jpg'); }
+html[data-app-background='midnight'] { --startup-image: url('/images/tora-midnight.jpg'); }
+html[data-app-background='custom'] { --startup-image: var(--app-custom-wallpaper, none); }
+html[data-app-background='none'] { --startup-image: none; --startup-base: #f4f5f6; }
+html.dark {
+	--startup-base: #18202c;
+	--startup-wash: rgba(13, 18, 28, .42);
+	--startup-mark-filter: invert(1);
+}
+html.dark[data-app-background='none'] { --startup-base: #0c0d10; }
+
+html, body { margin: 0; }
+.startup-loading-surface {
+	position: fixed;
+	inset: 0;
+	z-index: 300;
+	display: grid;
+	place-items: center;
+	isolation: isolate;
+	overflow: hidden;
+	background: var(--startup-base);
+}
+.startup-loading-surface::before {
+	position: absolute;
+	inset: -48px;
+	content: '';
+	background-image: var(--startup-image);
+	background-position: center;
+	background-size: cover;
+	filter: blur(38px) saturate(.82);
+	transform: scale(1.04);
+}
+.startup-loading-surface::after {
+	position: absolute;
+	inset: 0;
+	content: '';
+	background: var(--startup-wash);
+	-webkit-backdrop-filter: blur(18px);
+	backdrop-filter: blur(18px);
+}
+.startup-loading-mark {
+	position: relative;
+	z-index: 1;
+	display: block;
+	width: 88px;
+	height: 88px;
+	object-fit: contain;
+	filter: var(--startup-mark-filter);
+}
+#boot-splash.is-leaving {
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 220ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+	#boot-splash.is-leaving { transition: none; }
+}

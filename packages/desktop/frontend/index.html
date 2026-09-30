@@ -4,6 +4,7 @@
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
 		<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+		<link rel="stylesheet" href="/boot-splash.css" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Tora</title>
 		<!-- Pre-paint 主题脚本必须走外部文件：session 层注入的 CSP
@@ -13,6 +14,9 @@
 		<script src="/theme-boot.js"></script>
 	</head>
 	<body>
+		<div id="boot-splash" class="startup-loading-surface" role="status" aria-label="Loading Tora">
+			<img class="startup-loading-mark" src="/tora-mark-transparent.png" alt="" width="88" height="88" />
+		</div>
 		<div id="root"></div>
 		<script type="module" src="/src/main.tsx"></script>
 	</body>

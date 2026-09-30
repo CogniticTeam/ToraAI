@@ -2,7 +2,7 @@
  * 登录/注册动效套件（Tora 自有品牌风，纯 CSS + SVG，零外部资源）：
  *   · BrandLogo    —— Tora 品牌标（logo.PNG 圆角图标，login/gate/账号页共用）
  *   · AuthBackdrop —— 极光背景：两团缓漂的渐变光斑 + 细网格（铺在表单底下）
- *   · LogoLoader   —— 启动校验：logo 呼吸 + 细环形旋转
+ *   · LogoLoader   —— 启动校验：毛玻璃背景 + 透明 Tora 标志
  *   · SuccessCheck —— 登录成功：圆圈 + 对勾 stroke 描边
  *   · DotPulse     —— 单色三点跳动（提交按钮 busy 态）
  * keyframes 统一在 index.css。
@@ -35,14 +35,11 @@ export function AuthBackdrop() {
 	);
 }
 
-/** 启动校验：logo 呼吸 + 环形旋转 */
+/** 与 React 挂载前的静态加载页共用同一背景与透明标志。 */
 export function LogoLoader() {
 	return (
-		<div className="relative flex items-center justify-center">
-			{/* 环形 spinner：底环 + 旋转亮弧 */}
-			<span className="absolute size-20 rounded-full border-2 border-border" />
-			<span className="ring-spin absolute size-20 rounded-full border-2 border-transparent border-t-primary" />
-			<BrandLogo size={52} />
+		<div className="startup-loading-surface" role="status" aria-label="Loading Tora">
+			<img className="startup-loading-mark" src="/tora-mark-transparent.png" alt="" width={88} height={88} />
 		</div>
 	);
 }
