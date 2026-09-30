@@ -1028,6 +1028,12 @@ body {
 .first-run-finish-backdrop { position: fixed; z-index: 250; inset: 0; display: grid; place-items: center; padding: 16px; background: rgba(0, 0, 0, .68); }
 .first-run-finish { width: min(390px, 100%); padding: 28px; border: 1px solid var(--border); border-radius: var(--radius-rect); background: var(--card); color: var(--card-foreground); text-align: center; box-shadow: 0 26px 70px rgba(0, 0, 0, .28); }
 .first-run-finish-mark { display: grid; place-items: center; width: 45px; height: 45px; margin: 0 auto; border-radius: 11px; background: var(--foreground); color: var(--background); font-size: 22px; }
+.message-copy-action { opacity: 0; transition: opacity 150ms ease; }
+[data-slot='message']:has([data-slot='bubble']:hover) .message-copy-action,
+.message-copy-action:hover,
+.message-copy-action:focus-within { opacity: 1; }
+@media (hover: none) { .message-copy-action { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .message-copy-action { transition: none; } }
 @media (max-width: 600px) {
 	.first-run-demo { top: 47%; left: 50%; }
 	.first-run-paused { width: calc(100vw - 24px); }

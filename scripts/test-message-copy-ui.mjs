@@ -73,18 +73,32 @@ try {
 	assert.equal(await userCopy.count(), 1, '用户气泡应保留复制按钮');
 	assert.equal(await assistantCopy.count(), 1, '旧 AI 消息即使缺 finished_reason 也应有复制按钮');
 	assert.equal(await unfinished.getByRole('button', { name: '复制' }).count(), 0, '未完成回复不得复制半截文本');
-	await assistant.hover();
+	const copyOpacity = button => button.evaluate(element => Number(getComputedStyle(element.parentElement).opacity));
+	await page.mouse.move(1, 1);
+	assert.ok(await copyOpacity(assistantCopy) < 0.1, '鼠标未进入消息时复制按钮应隐藏');
+	const rowBox = await assistant.boundingBox();
+	const bubbleBox = await assistant.locator('[data-slot="bubble"]').first().boundingBox();
+	assert.ok(rowBox && bubbleBox && rowBox.x + rowBox.width > bubbleBox.x + bubbleBox.width + 20);
+	await page.mouse.move(rowBox.x + rowBox.width - 5, bubbleBox.y + bubbleBox.height / 2);
+	assert.ok(await copyOpacity(assistantCopy) < 0.1, '消息行的空白处不应触发复制按钮');
+	await assistant.locator('[data-slot="bubble"]').first().hover();
 	await page.waitForFunction(() => {
 		const button = [...document.querySelectorAll('[data-role="assistant"] button[aria-label="复制"]')][0];
 		return button && Number(getComputedStyle(button.parentElement).opacity) > 0.9;
 	});
 	await assistantCopy.click();
 	assert.equal(await page.evaluate(() => window.__copiedText), assistantText);
-	await user.hover();
+	await page.mouse.move(1, 1);
+	await userCopy.focus();
+	await page.waitForFunction(() => {
+		const button = [...document.querySelectorAll('[data-role="user"] button[aria-label="复制"]')][0];
+		return button && Number(getComputedStyle(button.parentElement).opacity) > 0.9;
+	});
+	await user.locator('[data-slot="bubble"]').first().hover();
 	await userCopy.click();
 	assert.equal(await page.evaluate(() => window.__copiedText), userText);
 	assert.deepEqual(errors, [], `浏览器脚本错误：${errors.join(' | ')}`);
-	console.log('用户复制、旧 AI 消息复制、悬停显现、未完成回复隐藏：通过');
+	console.log('用户复制、旧 AI 消息复制、仅气泡悬停显现、键盘聚焦与未完成回复隐藏：通过');
 } finally {
 	await browser.close();
 	server.closeAllConnections?.();

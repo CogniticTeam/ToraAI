@@ -324,8 +324,8 @@ function AudioInlineControl({ block }: { block: DataBlock }) {
 
 /**
  * Copies the message's text to the clipboard, flipping to a check mark
- * for a moment so the click has visible feedback. It remains visible so
- * the action is always discoverable.
+ * for a moment so the click has visible feedback. The surrounding message
+ * reveals this control on hover or keyboard focus.
  */
 function CopyButton({ text }: { text: string }) {
 	const { t } = useTranslation();
@@ -641,7 +641,7 @@ function ASMessageBubbleComponent({
 						{showThinking && <ThinkingStatus />}
 						{timestamp}
 						{plainText && (
-							<span className="opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100 focus-within:opacity-100">
+							<span className="message-copy-action">
 								<CopyButton text={plainText} />
 							</span>
 						)}
@@ -659,7 +659,7 @@ function ASMessageBubbleComponent({
 						)}
 						{/* 流式中的半截回复不可复制；旧会话只存 finished_at 时仍要显示。 */}
 						{plainText && replyFinished && (
-							<span className="opacity-0 transition-opacity duration-150 group-hover/message:opacity-100 group-focus-within/message:opacity-100 focus-within:opacity-100">
+							<span className="message-copy-action">
 								<CopyButton text={plainText} />
 							</span>
 						)}
