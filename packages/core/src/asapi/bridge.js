@@ -8,17 +8,19 @@
 //    路由到挂起的 resolver。等待期间会把当前回复快照写进 display，
 //    这样刷新页面仍能看到确认卡片并作答。
 import { readdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
-import { getCredential, loadSessionRecord, saveSessionRecord } from './store.js';
+import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import { recordUsage } from './usage-store.js';
 import { accessBlockReason } from './access.js';
 import { generateTitle, placeholderTitle } from '../title.js';
 import { distillAfterRun } from './memory-distill.js';
+import { appendSessionEvent } from './session-events.js';
 
 /** 每个会话一个 bus：running 时含事件缓冲与订阅者 */
 const buses = new Map();
@@ -28,6 +30,7 @@ function getBus(sessionId) {
   if (!bus) {
     bus = {
       running: false, replyId: null, events: [], subs: new Set(), ac: null,
+      streamId: randomUUID(), sequence: 0,
       lastReplyEnd: null,
       // HITL：tool_call_id -> resolver
       pending: new Map(),
@@ -47,10 +50,18 @@ function getBus(sessionId) {
 
 function push(bus, event) {
   if (event.type === 'REPLY_END') bus.lastReplyEnd = event;
-  bus.events.push(event);
+  const frame = { cursor: `${bus.streamId}:${++bus.sequence}`, sequence: bus.sequence, event };
+  bus.events.push(frame);
   for (const send of bus.subs) {
-    try { send(event); } catch { /* 订阅者已断开 */ }
+    try { send(frame); } catch { /* 订阅者已断开 */ }
   }
+}
+
+function journal(session, type, data) {
+  const entry = appendSessionEvent(session.id, type, data);
+  // This in-memory record already contains the change just journaled. If it is
+  // saved later by naming or state updates, it must not replay its own old copy.
+  session.__journal_offset = entry.nextOffset;
 }
 
 export function isRunning(sessionId) {
@@ -121,22 +132,20 @@ export function resolveRunCfg(session, agent) {
   let apiKey = toraCfg.apiKey;
   let visionOverride;
   let modelProvider;
-  if (mc.credential_id) {
-    const cred = getCredential(mc.credential_id);
-    if (cred?.data?.base_url) {
-      baseURL = cred.data.base_url;
-      if (cred?.data?.api_key) apiKey = cred.data.api_key;
-    } else {
-      // 合成凭证（cocode-models，来自设置窗口模型列表）：按选中模型名解析
-      const hit = (toraCfg.modelList || []).find(
-        (x) => x.enabled && !x.isOfficial && !String(x.baseURL || '').includes('/official/v1') && x.model === mc.model,
-      );
-      if (hit) {
-        baseURL = hit.baseURL; apiKey = hit.apiKey;
-        modelProvider = hit.provider;
-        // 条目上的显式能力位（vision true/false）覆盖全局推断
-        if (typeof hit.vision === 'boolean') visionOverride = hit.vision;
-      }
+  const cred = mc.credential_id ? getCredential(mc.credential_id) : null;
+  if (cred?.data?.base_url) {
+    baseURL = cred.data.base_url;
+    if (cred?.data?.api_key) apiKey = cred.data.api_key;
+  } else {
+    // 新会话可能没有 credential_id，但仍选中了模型列表中的模型。
+    // 必须按模型名读取其 endpoint / key / 视觉能力，不能只用全局默认值。
+    const hit = (toraCfg.modelList || []).find(
+      (x) => x.enabled && !x.isOfficial && !String(x.baseURL || '').includes('/official/v1') && x.model === mc.model,
+    );
+    if (hit) {
+      baseURL = hit.baseURL; apiKey = hit.apiKey;
+      modelProvider = hit.provider;
+      if (typeof hit.vision === 'boolean') visionOverride = hit.vision;
     }
   }
   const cfg = {
@@ -304,13 +313,21 @@ async function _startChatRunAsync(sessionId, agent, payload) {
           if (!t) return;
           session.config.name = t;
           saveSessionRecord(session);
-          for (const send of bus.subs) { try { send(E.custom('session_updated', {})); } catch { /* ignore */ } }
+          push(bus, E.custom('session_updated', {}));
         })
         .catch(() => { /* 保留占位标题 */ });
     } else {
       saveSessionRecord(session);
     }
   }
+
+  // A run boundary plus the admitted model history lets a restarted process
+  // recover the user input even if it exits before the next JSON snapshot.
+  journal(session, 'run-started', {
+    replyId,
+    user: session.display.at(-1),
+    internal: session.internal
+  });
 
   // 本次运行的 display 块由事件流增量构建（见 _runImpl）。不能在收尾时
   // 从 session.internal 反推：上下文自动压缩会 splice 掉中段历史，按索
@@ -329,10 +346,14 @@ async function _startChatRunAsync(sessionId, agent, payload) {
  * 把当前 replyBlocks 快照写入 display（按 reply_id upsert）。
  * 等待用户确认时用它 —— 否则刷新页面会因为"回复还没结束"而看不到确认卡片。
  */
-function syncReplyDisplay(session, replyId, replyBlocks) {
+function syncReplyDisplay(session, replyId, replyBlocks, { includeInternal = false } = {}) {
   const msg = assistantMsgShell(replyId);
   msg.content = replyBlocks;
   msg.finished_at = null;
+  journal(session, 'reply-progress', {
+    reply: msg,
+    ...(includeInternal ? { internal: session.internal } : {})
+  });
   const idx = session.display.findIndex((m) => m.id === replyId);
   if (idx >= 0) session.display[idx] = msg;
   else session.display.push(msg);
@@ -349,6 +370,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   let modelOpen = false;    // 本轮模型调用是否已发 MODEL_CALL_START
   let doneReason = null, doneError = null;
   let inputTokens = 0, outputTokens = 0;
+  let lastPartialSave = Date.now();
 
   const ts = () => new Date().toISOString();
   // 关闭当前 text block：把它固化进 replyBlocks（供持久化 display 用），
@@ -458,6 +480,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
           const s = loadSessionRecord(sessionId);
           if (!s) return;
           s.state = { ...(s.state ?? {}), ...patch };
+          session.state = s.state;
           saveSessionRecord(s);
           push(bus, E.custom('state_updated', patch));
         }
@@ -484,6 +507,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
           const s = loadSessionRecord(sessionId);
           if (!s) return;
           s.state = { ...(s.state ?? {}), computer_confirmed: true };
+          session.state = s.state;
           saveSessionRecord(s);
         }
       },
@@ -552,6 +576,8 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
             push(bus, E.toolResultTextDelta(replyId, e.id, text.slice(i, i + CHUNK)));
           }
           push(bus, E.toolResultEnd(replyId, e.id, e.ok ? 'success' : 'error', { duration_ms: e.durationMs }));
+          syncReplyDisplay(session, replyId, replyBlocks, { includeInternal: true });
+          lastPartialSave = Date.now();
           break;
         }
         case 'ask-user': {
@@ -633,6 +659,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
             tokensAfter: e.tokensAfter,
             budget: e.budget
           }));
+          journal(session, 'internal-snapshot', { internal: session.internal });
           break;
         case 'review-start':
           push(bus, E.custom('review_progress', {
@@ -653,6 +680,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
         case 'done':
           doneReason = e.reason;
           if (e.reason === 'blocked') {
+            doneError = { type: 'blocked', message: e.message || '本轮被钩子拦下' };
             // 钩子在 UserPromptSubmit 拦下了整轮：模型一个字都没输出，
             // 但用户必须知道发生了什么，否则界面看起来像"卡住了"。
             closeText();
@@ -664,11 +692,18 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
             push(bus, E.textBlockDelta(replyId, bid, text));
             push(bus, E.textBlockEnd(replyId, bid));
           }
+          journal(session, 'internal-snapshot', { internal: session.internal });
           break;
         case 'error':
           doneReason = 'error';
           doneError = { type: 'internal', message: e.error };
           break;
+      }
+      // SSE 断线或后端进程退出时，历史接口仍能还原最近的正文；限频落盘，
+      // 避免逐 token 重写整份会话 JSON。
+      if (replyBlocks.length && Date.now() - lastPartialSave >= 1500) {
+        syncReplyDisplay(session, replyId, replyBlocks);
+        lastPartialSave = Date.now();
       }
       if (doneReason) break;
     }
@@ -718,7 +753,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
     }).catch(() => {});
   }
 
-  const reason = doneReason === 'completed' || doneReason === 'blocked' ? 'completed'
+  const reason = doneReason === 'completed' ? 'completed'
     : doneReason === 'aborted' ? 'interrupted'
     : doneReason === 'max-turns' ? 'exceed_max_iters'
     : 'error';
@@ -726,28 +761,37 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
 }
 
 function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
+  const latest = loadSessionRecord(sessionId);
+  if (latest) {
+    session.config = { ...session.config, ...latest.config };
+    session.state = { ...session.state, ...latest.state };
+  }
   // display 的 assistant Msg 直接用事件流增量构建好的块（与前端从同一
   // 事件流还原出来的视图同源）。不从 session.internal 反推，因为上下文
   // 自动压缩会在运行中 splice 掉中段历史，事后按索引或标记筛选都会错。
-  if (replyBlocks.length) {
-    const msg = assistantMsgShell(replyId);
-    msg.content = replyBlocks;
-    msg.finished_at = new Date().toISOString();
-    const end = bus.lastReplyEnd?.reply_id === replyId ? bus.lastReplyEnd : null;
-    if (end?.finished_reason) msg.finished_reason = end.finished_reason;
-    if (end?.error) msg.error = end.error;
-    delete msg.run_state;
-    // 等待确认期间可能已经写过同 id 的快照 → upsert 而不是 push，否则会出现两条
-    const idx = session.display.findIndex((m) => m.id === replyId);
-    if (idx >= 0) session.display[idx] = msg;
-    else session.display.push(msg);
-  }
+  const msg = assistantMsgShell(replyId);
+  msg.content = replyBlocks;
+  msg.finished_at = new Date().toISOString();
+  const end = bus.lastReplyEnd?.reply_id === replyId ? bus.lastReplyEnd : null;
+  if (end?.finished_reason) msg.finished_reason = end.finished_reason;
+  if (end?.error) msg.error = end.error;
+  delete msg.run_state;
+  // Waiting approval may have saved an earlier version of the same reply.
+  const idx = session.display.findIndex((m) => m.id === replyId);
+  if (idx >= 0) session.display[idx] = msg;
+  else session.display.push(msg);
+  try { journal(session, 'reply-finished', { reply: msg, internal: session.internal }); }
+  catch (e) { console.error('[bridge] 回复事件日志落盘失败:', e?.message || e); }
   // 落盘失败（磁盘满 / 权限 / 序列化）不能崩 finally 链、更不能卡住会话。
   // 记录错误继续走完清理，下次运行不受影响。
+  if (replyBlocks.length) {
+    try { saveForkSnapshot(session, replyId); }
+    catch (e) { console.error('[bridge] 分支快照落盘失败:', e?.message || e); }
+  }
   try { saveSessionRecord(session); } catch (e) { console.error('[bridge] _finishRun 落盘失败:', e?.message || e); }
 
   // 通知前端会话有更新（侧栏自动命名等）
-  for (const send of bus.subs) { try { send(E.custom('session_updated', {})); } catch { /* ignore */ } }
+  push(bus, E.custom('session_updated', {}));
 
   // 结束：清理运行状态；保留订阅者供下次运行复用
   bus.running = false;
@@ -774,10 +818,19 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
   }, 30000);
 }
 
-/** SSE 订阅：运行中则重放缓冲事件，再实时推送。返回取消订阅函数。 */
-export function subscribe(sessionId, send) {
+/** SSE 订阅：用 streamId:sequence 游标补发；缓冲缺口或服务重启要求客户端重读历史。 */
+export function subscribe(sessionId, send, afterCursor = null, onStatus = () => {}) {
   const bus = getBus(sessionId);
-  for (const e of bus.events) send(e);
+  const parts = typeof afterCursor === 'string' ? /^([\w-]+):(\d+)$/.exec(afterCursor) : null;
+  const after = parts ? Number(parts[2]) : null;
+  const gap = after !== null && after < bus.sequence &&
+    (!bus.events.length || bus.events[0].sequence > after + 1);
+  const mode = !afterCursor ? 'initial'
+    : parts?.[1] === bus.streamId && after <= bus.sequence && !gap ? 'resume' : 'reset';
+  onStatus({ mode, streamId: bus.streamId });
+  for (const frame of bus.events) {
+    if (mode !== 'resume' || frame.sequence > after) send(frame);
+  }
   bus.subs.add(send);
   return () => bus.subs.delete(send);
 }

@@ -1,0 +1,1797 @@
+{
+  "languageDialog": {
+    "subtitle": "言語を選択",
+    "search": "言語を検索",
+    "noResults": "一致する言語がありません",
+    "systemSuggestion": "システム言語は{{language}}です。切り替えますか？",
+    "switch": "{{language}}に切り替え",
+    "later": "今はしない",
+    "close": "言語セレクターを閉じる",
+    "switchError": "言語を切り替えられません"
+  },
+  "usageMilestone": {
+    "title": "トークンのマイルストーン達成",
+    "subtitle": "Tora での累計トークン使用量が新しいマイルストーンに到達しました。",
+    "total": "合計 {{count}} トークン使用",
+    "more": "あと {{count}} 件のマイルストーンを表示",
+    "continue": "Tora を続行",
+    "retry": "このマイルストーンを保存できませんでした。もう一度お試しください。",
+    "levels": {
+      "100k": "100K",
+      "1m": "1M",
+      "10m": "10M",
+      "100m": "100M",
+      "500m": "500M",
+      "1b": "1B",
+      "2b": "2B",
+      "5b": "5B",
+      "10b": "10B"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "外部リンクを開きますか？",
+    "externalLinkWarning": "外部ウェブサイトにアクセスしようとしています。",
+    "copyLink": "リンクをコピー",
+    "copied": "コピーしました",
+    "openLink": "リンクを開く",
+    "close": "閉じる"
+  },
+  "inbox": {
+    "translateToLanguage": "{{language}}に翻訳",
+    "detail": "メッセージの詳細",
+    "translateToChinese": "中国語に翻訳",
+    "translateToEnglish": "英語に翻訳",
+    "translating": "翻訳中…",
+    "showOriginal": "原文を表示",
+    "showTranslation": "翻訳を表示",
+    "noTranslationNeeded": "翻訳は不要です",
+    "translationError": "翻訳に失敗しました。翻訳ボタンをクリックして再試行してください。",
+    "translationRateLimit": "翻訳リクエストが多すぎます。しばらくしてからもう一度お試しください。",
+    "title": "メッセージ",
+    "newMessage": "Tora からの新着メッセージ",
+    "empty": "メッセージはまだありません",
+    "loading": "読み込み中…",
+    "unread": "未読",
+    "more": "さらに読み込む",
+    "back": "メッセージに戻る",
+    "retry": "再試行",
+    "loadError": "メッセージを読み込めません",
+    "readError": "メッセージを既読にできませんでした。もう一度お試しください。",
+    "blocked": "アカウント停止中",
+    "blockedReason": "このアカウントは現在 Tora を利用できません。",
+    "unbanHint": "管理者が停止を解除すると、自動的にアクセスが再開されます。",
+    "signOut": "サインアウト"
+  },
+  "requiredUpdate": {
+    "title": "Tora を更新",
+    "description": "バージョン {{version}} が利用可能です。続行するには更新してください。",
+    "download": "公式ダウンロードページを開く",
+    "macHint": "自動更新が利用できない場合は、公式サイトから最新の DMG をダウンロードし、アプリを手動で置き換えてください。",
+    "downloading": "更新をダウンロード中… {{percent}}%",
+    "install": "再起動してインストール",
+    "retry": "ダウンロードを再試行",
+    "error": "自動更新に失敗しました。再試行するか、公式ウェブサイトからダウンロードしてください。",
+    "quit": "Tora を終了"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Tora 初回起動時のウェルカムアニメーション",
+      "welcome": "Tora へようこそ",
+      "headlineFirst": "アイデアを",
+      "headlineSecond": "行動に。",
+      "description": "モデルを接続し、プロジェクトを開き、会話を始めましょう。Tora はコードの読解や編集、作業の遂行を支援します。",
+      "hint": "短いガイドで基本を案内します",
+      "foot": "ワークスペースの準備がほぼ整いました。",
+      "logoAlt": "Tora ロゴ",
+      "enter": "開始する",
+      "skip": "アニメーションをスキップ"
+    },
+    "tour": {
+      "skip": "ガイドをスキップ",
+      "later": "後で設定",
+      "next": "次へ",
+      "pauseSettings": "モデル管理が開いています。完了したら設定を閉じると、ガイドが続行します。",
+      "pauseFolder": "プロジェクトフォルダを選択するか、続行するにはメニューを閉じてください。",
+      "pausePermission": "承認モードを確認または選択し、続行するにはメニューを閉じてください。",
+      "demoSend": "送信をシミュレートします。実際には送信されません",
+      "clickHint": "続行するにはハイライトされたコントロールをクリックしてください",
+      "loading": "コントロールを検索中…",
+      "demoTag": "ガイド付きデモ · 実際のコマンドは実行されません",
+      "demoMessage": "このプロジェクトのビルドスクリプトを確認して、まず計画を立ててください。",
+      "demoResponse": "Tora はまずタスクを理解し、必要に応じてツールの権限を求めます。各ステップを確認し、続行するかどうかを判断できます。",
+      "demoApprove": "今回のみ許可（デモ）",
+      "demoCheckpoint": "チェックポイントを表示（デモ）",
+      "completeTitle": "作成する準備ができました。",
+      "completeBody": "モデル、フォルダ、権限はいつでも変更できます。不確かな操作は続行する前に確認してください。",
+      "startWorking": "Tora を開始",
+      "startAgain": "ガイドをもう一度見る",
+      "steps": [
+        {
+          "chapter": "準備する",
+          "title": "自分のモデルを選択",
+          "body": "Toraはあなたが追加したモデルを使用します。モデルピッカーをクリックして、プロバイダーを接続する場所を確認してください。"
+        },
+        {
+          "chapter": "準備する",
+          "title": "モデルプロバイダーを追加",
+          "body": "「モデルを追加」をクリックしてモデル管理を開きます。プロバイダーを選択し、モデルの詳細を入力します。セットアップを完了するかスキップすると、ガイドが再開します。"
+        },
+        {
+          "chapter": "準備する",
+          "title": "プロジェクトの範囲を設定",
+          "body": "フォルダコントロールをクリックしてプロジェクトを選択します。エージェントは、あなたが許可したワークスペース内で読み取り、編集、ツールの実行を行います。これは後で行うこともできます。"
+        },
+        {
+          "chapter": "準備する",
+          "title": "制御を維持する",
+          "body": "許可モードをクリックしてオプションを確認します。手動承認は良い出発点です。リスクの高いアクションはあなたの決定を待ちます。"
+        },
+        {
+          "chapter": "タスクを開始",
+          "title": "明確な目標を説明",
+          "body": "メッセージボックスをクリックします。達成すべきこと、触れてはいけないこと、完了したと判断する方法を述べてください。"
+        },
+        {
+          "chapter": "タスクを開始",
+          "title": "最初のタスクを開始",
+          "body": "これは送信ボタンです。次のステップは実行をシミュレートするだけです。モデルクレジットは消費されず、実際のメッセージは送信されません。"
+        },
+        {
+          "chapter": "レビューとリカバリ",
+          "title": "各重要なステップを承認します",
+          "body": "これは許可リクエストのデモです。ツールが何をしようとしているかを読んでから、許可または拒否してください。"
+        },
+        {
+          "chapter": "レビューとリカバリ",
+          "title": "間違った方向から回復する",
+          "body": "チェックポイントは変更前の状態を記録します。実際に復元する前に、影響を受けるファイルを確認してください。"
+        },
+        {
+          "chapter": "Toraを拡張",
+          "title": "スキルでワークフローを再利用",
+          "body": "スキルをクリックします。信頼できるスキルをインポートまたはインストールして、便利なワークフローを繰り返し可能にします。"
+        },
+        {
+          "chapter": "Toraを拡張",
+          "title": "ブラウザで結果を確認",
+          "body": "内蔵ブラウザをクリックします。あなたとエージェントは同じページでWebアプリを検査、デバッグ、検証できます。"
+        },
+        {
+          "chapter": "Toraを拡張",
+          "title": "反復作業をスケジュール",
+          "body": "「自動化」をクリックして、定期的なチェックや整理タスクをスケジュールし、各実行を確認します。"
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "始める前に",
+    "description": "利用規約、プライバシーポリシー、越境データ転送に関する通知を個別に確認し、同意してください。3つすべてが選択されるまで、Toraはサインインやワークスペースを開きません。",
+    "terms": "利用規約を読み、同意します",
+    "readTerms": "利用規約を読む",
+    "privacy": "プライバシーポリシーを読み、理解しました",
+    "readPrivacy": "プライバシーポリシーを読む",
+    "crossBorder": "個人情報の越境移転に個別に同意します",
+    "crossBorderHint": "アカウントやクラウド機能を使用すると、必要な情報が中国本土外に転送される場合があります。範囲と取り扱いの詳細を確認してください。",
+    "readCrossBorder": "越境移転に関する通知を読む",
+    "decline": "拒否して終了",
+    "agree": "確認して続行"
+  },
+  "sponsors": {
+    "title": "今月のサポーター",
+    "description": "今月AfdianでToraを支援してくださっているユーザーの皆様、ありがとうございます。表示名のみが表示され、金額やアカウントの詳細は表示されません。",
+    "source": "Afdianからのデータ",
+    "total": "{{count}}人のサポーター",
+    "loaded": "{{count}}人のサポーターを表示中",
+    "empty": "今月のサポーターはいません",
+    "emptyMore": "このページには今月のサポーターがいません。続行するにはさらに読み込んでください。",
+    "loading": "サポーターを読み込み中…",
+    "loadError": "サポーターは一時的に利用できません。後でもう一度お試しください。",
+    "retry": "再試行",
+    "more": "さらに読み込む",
+    "donate": "スポンサー",
+    "leaveTitle": "Afdianを開いてスポンサーになりますか？",
+    "leaveDescription": "確認後、Toraはこの外部ウェブサイトをシステムブラウザで開きます。",
+    "confirmLeave": "確認して開く"
+  },
+  "polls": {
+    "title": "投票",
+    "subtitle": "投票して結果をフォロー",
+    "all": "すべての投票",
+    "history": "自分の投票履歴",
+    "search": "検索",
+    "loadMore": "さらに読み込む",
+    "from": "開始",
+    "to": "終了",
+    "starts": "開始日時",
+    "ends": "終了日時",
+    "forever": "期限なし",
+    "refresh": "投票を更新",
+    "startsIn": "{{time}}後に開始",
+    "startingSoon": "まもなく開始、ステータスを確認中…",
+    "dayUnit": "日",
+    "state": {
+      "draft": "下書き",
+      "scheduled": "未開始",
+      "active": "受付中",
+      "ended": "終了",
+      "archived": "アーカイブ済み"
+    },
+    "type": {
+      "single": "単一選択",
+      "multiple": "複数選択",
+      "score": "100点満点"
+    },
+    "frequency": {
+      "once": "1人1回",
+      "daily": "1日1回（北京時間）",
+      "unlimited": "無制限"
+    },
+    "maxSelections": "最大{{count}}個選択",
+    "voted": "投票済み",
+    "votedCount": "{{count}}回送信済み",
+    "available": "投票受付中",
+    "choose": "左側の投票を選択してください",
+    "empty": "投票はまだありません",
+    "loading": "投票を読み込み中…",
+    "noHistory": "投票履歴がありません",
+    "results": "結果",
+    "participants": "{{count}} 票",
+    "countHidden": "投票者数は非公開です",
+    "detailsHidden": "選択肢の詳細は非公開です",
+    "resultsUnavailable": "結果はまだ公開されていません",
+    "autoRefresh": "5秒ごとに更新",
+    "pieHint": "リングは各選択肢の割合を示します。複数選択の選択率は合計が100%を超える場合があります。",
+    "submit": "投票を送信",
+    "submitting": "送信中…",
+    "confirmVote": "この投票を送信しますか？送信後は編集できません。",
+    "submitted": "投票を送信しました",
+    "queued": "オフラインで保存されました。接続時に同期されますが、サーバーが確認するまで集計されません。",
+    "pending": "保留中の投票",
+    "waitingSync": "サーバーの確認待ち",
+    "retry": "再試行",
+    "remove": "削除",
+    "removePending": "この保留中の投票を削除しますか？",
+    "selectionRequired": "有効な選択肢を選択してください",
+    "scoreRequired": "各選択肢に0～100の整数スコアを入力してください",
+    "submitError": "投票を送信できませんでした",
+    "loadError": "投票を読み込めませんでした",
+    "disabled": "投票は管理者によって無効化されています。"
+  },
+  "common": {
+    "toraModels": "Toraモデル",
+    "add": "追加",
+    "agent": "エージェント",
+    "cancel": "キャンセル",
+    "channel": "チャンネル",
+    "chat": "チャット",
+    "new-task": "新規タスク",
+    "model-switch-warning": "タスク実行中にモデルを切り替えると、会話コンテキストが失われ、トークン使用量が増え、古い履歴が圧縮されて出力品質が低下する可能性があります。",
+    "automation": "自動化",
+    "workflow": "ワークフロー",
+    "close": "閉じる",
+    "confirm": "確認",
+    "create": "作成",
+    "creating": "作成中…",
+    "credential": "認証情報",
+    "date": "日付",
+    "delete": "削除",
+    "disabled": "無効",
+    "edit": "編集",
+    "error": "問題が発生しました",
+    "information": "情報",
+    "knowledge": "ナレッジベース",
+    "loading": "読み込み中...",
+    "shownCount": "{{count}} 件表示",
+    "selectedCount": "{{total}} 件中 {{selected}} 件選択",
+    "model": "モデル",
+    "name": "名前",
+    "no": "いいえ",
+    "noData": "データなし",
+    "readOnly": "読み取り専用",
+    "readOnlyTooltip": "読み取り専用で共有されています。編集と削除は無効です。",
+    "completed": "完了",
+    "failed": "失敗",
+    "running": "実行中",
+    "save": "保存",
+    "saving": "保存中…",
+    "schedule": "スケジュール",
+    "selectAgent": "エージェントを選択",
+    "settings": "設定",
+    "switchToZh": "中国語に切り替え",
+    "switchToZhHant": "繁体字中国語に切り替え",
+    "switchToEn": "英語に切り替え",
+    "team": "チーム",
+    "uploading": "アップロード中",
+    "leader": "リーダー",
+    "time": "時刻",
+    "yes": "はい",
+    "deleteTitle": "{{entity}}「{{name}}」を削除しますか？",
+    "deleteDescription": "この操作は元に戻せません。",
+    "mcp-hub": "MCPハブ",
+    "mine": "マイ",
+    "my-mcp": "インストール済みMCP",
+    "skill-hub": "スキルハブ",
+    "browser": "ブラウザ",
+    "polls": "投票",
+    "my-skill": "インストール済みスキル",
+    "message": "メッセージ",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "埋め込み",
+    "select": "選択"
+  },
+  "error": {
+    "description": "ページで予期しないエラーが発生しました。再試行するか、ホームに戻ってください。",
+    "retry": "再試行",
+    "home": "ホームに戻る"
+  },
+  "tool": {
+    "callGeneric": "ツールを呼び出す",
+    "read": {
+      "name": "読み取り",
+      "fileCount_one": "{{count}} ファイル",
+      "fileCount_other": "{{count}} ファイル",
+      "lineCount_one": "{{formatted}} 行を読み込み",
+      "lineCount_other": "{{formatted}} 行を読み込み"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} コマンド",
+      "read": "{{count}} 読み込み",
+      "edit": "{{count}} 編集",
+      "search": "{{count}} 検索",
+      "todo": "{{count}} ToDo",
+      "mcp": "{{count}} MCP 呼び出し",
+      "separator": "、",
+      "fallback": "{{count}} ツール呼び出し"
+    }
+  },
+  "textInput": {
+    "toComplete": "完了まで",
+    "attach": "ファイルを添付",
+    "attachNotSupported": "このモデルはファイルの添付に対応していません",
+    "send": "送信",
+    "stop": "生成を停止",
+    "stopping": "停止中…",
+    "sendWithSkills": "{{count}} 個のスキルを付けて送信",
+    "selectedSkills": "選択したスキル",
+    "removeSkill": "{{name}} を削除",
+    "skillOnlyPrompt": "添付したスキルを使用してください。",
+    "selectedElements": "参照された要素",
+    "removeElement": "要素 {{tag}} を削除",
+    "elementRefLine": "ページ要素 `{{selector}}` を操作",
+    "slashMenu": {
+      "selectedLabel": "選択済み",
+      "hintSelect": "Enter で選択、Space で複数選択",
+      "hintSend": "Enter を押して送信",
+      "clear": "クリア",
+      "close": "閉じる",
+      "empty": "スキルがまだインストールされていません — スキルセンターへ",
+      "emptyQuery": "「{{query}}」に一致するスキルがありません",
+      "moreMatches": "他に {{count}} 件一致 — 入力を続けて絞り込む",
+      "selectedCount": "{{count}} 個のスキルを選択中",
+      "keyboardHighlight": "+ キーボードハイライト",
+      "clickToMulti": "行をクリックして複数選択、Esc で閉じる"
+    },
+    "optimize": "プロンプトを最適化",
+    "optimizing": "最適化中…",
+    "optimizeTitle": "最適化されたプロンプト",
+    "optimizeFailed": "最適化に失敗しました",
+    "optimizeApply": "適用",
+    "optimizeRetry": "再試行",
+    "optimizeDiscard": "破棄",
+    "optimizeBy": "DeepSeek による最適化"
+  },
+  "browserPanel": {
+    "newTab": "新しいタブ",
+    "createTab": "新しいタブ",
+    "closeTab": "タブを閉じる",
+    "back": "戻る",
+    "forward": "進む",
+    "reload": "再読み込み",
+    "pickElement": "要素を選択",
+    "pickElementHint": "要素を選択: ページ上でホバーしてハイライト、クリックでチャット入力欄にカードとして添付 (Esc でキャンセル)",
+    "openInBrowser": "ブラウザで開く",
+    "openInBrowserHint": "現在のページをシステムブラウザで開く",
+    "urlPlaceholder": "URL または検索クエリを入力して Enter を押す",
+    "noTabPick": "タブがまだ開かれていません。アドレスバーに URL または検索クエリを入力してから、要素を選択してください。",
+    "noTabAction": "タブがまだ開かれていません。右上の + をクリックするか、アドレスバーに URL または検索クエリを入力してください。",
+    "iframeFallbackHint": "ブラウザフォールバックモード (<iframe>) が有効です。同一オリジンのページは動作しますが、クロスオリジンのサイトは X-Frame-Options / CSP により埋め込みが拒否される場合があります。デスクトップアプリでは、これらの制限のない実際の内蔵ブラウザ (<webview>) を使用します。"
+  },
+  "voice": {
+    "micTooltip": "音声入力",
+    "listening": "聞き取り中 — もう一度クリックで停止",
+    "transcribing": "文字起こし中…",
+    "micDenied": "マイクへのアクセスが拒否されました — システム設定で許可してください",
+    "transcribeFailed": "音声認識に失敗しました",
+    "emptyTranscript": "認識できませんでした",
+    "keyMissing": "ASR API キーが設定されていません (voice-config.json)"
+  },
+  "confirmCard": {
+    "toConfirm": "確認するには",
+    "yesWithRule": "はい。このセッション中は {{toolName}} に {{ruleContent}} の実行を許可する"
+  },
+  "messageBubble": {
+    "thinking": "思考中",
+    "thinkingFor": "{{duration}} 思考中",
+    "taskProcess": {
+      "title": "タスクの進行状況",
+      "running": "経過時間 {{duration}}",
+      "finished": "所要時間 {{duration}}",
+      "hour": "時間 ",
+      "minute": "分 ",
+      "second": "秒",
+      "noConclusion": "このターンは結論を出さずに終了しました。詳細はタスクの進行状況を展開してください。"
+    },
+    "audioGenerating": "音声を生成中…",
+    "playAudio": "音声を再生",
+    "pauseAudio": "音声を一時停止",
+    "running": "実行中…",
+    "skillAttached": "スキル {{name}} を添付しました",
+    "changedFiles": {
+      "title": "{{count}} ファイルが変更されました",
+      "openPanel": "パネルですべての変更を表示"
+    },
+    "processed": "処理時間 {{duration}}",
+    "completed": "{{duration}} で完了",
+    "duration": {
+      "day": "日 ",
+      "hour": "時間 ",
+      "minute": "分",
+      "second": "秒"
+    },
+    "hintSource": {
+      "tool_output": "ツール出力",
+      "team": "チーム",
+      "team_message": "チーム",
+      "schedule": "スケジュール",
+      "system": "システム",
+      "channel": "チャンネル",
+      "runtime_state": "ランタイム状態"
+    },
+    "error": {
+      "title": "返信に失敗しました",
+      "blockedTitle": "ルールによりブロックされました",
+      "authentication": "認証に失敗しました — モデルのAPIキーまたは資格情報を確認してください。",
+      "permission": "リクエストが許可されていません — 資格情報にこのモデルまたはエンドポイントへの権限がありません。",
+      "rate_limit": "レート制限またはクォータを超えました — 後でもう一度お試しください。",
+      "invalid_request": "モデルへのリクエストが無効として拒否されました。",
+      "upstream": "上流のモデルサービスがエラーを返しました。",
+      "connection": "モデルサービスに到達できませんでした — ネットワークエラーまたはタイムアウトです。",
+      "internal": "予期しない内部エラーが発生しました。",
+      "setup": "セッションを準備できませんでした — エージェントのモデル、ツール、ナレッジベースを確認してください。",
+      "unknown": "不明なエラーで返信に失敗しました。"
+    },
+    "copy": "コピー"
+  },
+  "questionPanel": {
+    "supplementTitle": "他に追加したいことはありますか？",
+    "supplementPlaceholder": "補足情報を追加",
+    "optional": "任意",
+    "of": "の",
+    "prev": "戻る",
+    "next": "次へ",
+    "submit": "送信",
+    "cancel": "キャンセル",
+    "other": "その他",
+    "otherPlaceholder": "ここに入力"
+  },
+  "chat": {
+    "inputPlaceholder": "何でも質問してください",
+    "confirmToolCall": "このアクションを許可しますか？",
+    "subagentConfirmTitle": "{{name}} が確認を求めています",
+    "newSession": "新しいセッション",
+    "newConversation": "新しい会話",
+    "greeting": "Toraで仕事とコーディング",
+    "greetingProject": "{{project}} で何をしましょうか？",
+    "thinking": "考え中",
+    "project": {
+      "label": "プロジェクト",
+      "unassigned": "未割り当て",
+      "rename": "プロジェクト名を変更"
+    },
+    "maxItersExceeded": {
+      "title": "反復制限に達しました",
+      "description": "続行するには新しいメッセージを送信するか、現在のタスクを続けてください。",
+      "continue": "続行"
+    },
+    "context": {
+      "compact": {
+        "title": "コンテキストが自動圧縮されました",
+        "evicted": "{{count}} 件のツール出力を破棄しました",
+        "compacted": "古い履歴を要約しました",
+        "fallback": "圧縮済み",
+        "description": "{{parts}}（約 {{before}} → {{after}} トークン、予算 {{budget}}）"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "エージェントを選択",
+      "emptyTitle": "エージェントがありません",
+      "emptyDescription": "開始するにはエージェントを作成してください。",
+      "groupYours": "あなたの",
+      "groupShared": "あなたと共有"
+    },
+    "session": {
+      "label": "セッション",
+      "emptyTitle": "セッションがありません",
+      "emptyNoAgent": "まずエージェントを選択してください。",
+      "emptyHasAgent": "チャットを開始するにはセッションを作成してください。",
+      "today": "今日",
+      "earlier": "以前"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "エージェントを作成",
+    "description": "新しいエージェントのアイデンティティと振る舞いを定義します。"
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "エージェントのアイデンティティ",
+      "description": "このエージェントの振る舞いを定義する名前と指示。",
+      "name": {
+        "label": "名前",
+        "placeholder": "マイエージェント"
+      },
+      "system-prompt": {
+        "label": "システムプロンプト"
+      }
+    },
+    "context-config": {
+      "legend": "コンテキスト設定",
+      "description": "コンテキストウィンドウの管理と圧縮方法を制御します。",
+      "trigger-ratio": {
+        "label": "トリガー比率"
+      },
+      "reserve-ratio": {
+        "label": "予備比率"
+      },
+      "tool-result-limit": {
+        "label": "ツール結果の制限"
+      },
+      "compression-prompt": {
+        "label": "圧縮プロンプト"
+      },
+      "summary-template": {
+        "label": "要約テンプレート"
+      },
+      "max-image-num": {
+        "label": "最大画像数"
+      }
+    },
+    "react-config": {
+      "legend": "ReAct設定",
+      "description": "推論とアクションのループ動作を制御します。",
+      "max-iters": {
+        "label": "最大反復回数"
+      },
+      "stop-on-reject": {
+        "label": "拒否時に停止"
+      },
+      "structured-output-grace-iters": {
+        "label": "構造化出力の猶予",
+        "description": "最大値を超えて許可される追加の反復。これにより、制限に達した実行でも要求された構造化出力を生成できます。"
+      },
+      "interruption-message": {
+        "label": "中断時の返信",
+        "description": "ユーザーが実行を中断したときに、エージェントの返信として送信されます。"
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "CancelledErrorを発生させる",
+        "description": "中断が処理された後、asyncio.CancelledErrorを再発生させます（握りつぶさない）。"
+      }
+    },
+    "invite-config": {
+      "legend": "招待設定",
+      "description": "他のエージェントがAgentInviteを介してこのエージェントを借用できるかどうかを制御します。",
+      "invitable": {
+        "label": "招待可能"
+      },
+      "invite-description": {
+        "label": "招待の説明",
+        "placeholder": "このエージェントの専門分野を簡単に説明してください。invitable がオンの場合は必須です。"
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "エージェントを編集",
+    "description": "このエージェントの設定を更新します。"
+  },
+  "dialog-agent-delete": {
+    "entity": "エージェント",
+    "confirm": "削除"
+  },
+  "dialog-session-delete": {
+    "entity": "セッション",
+    "confirm": "削除"
+  },
+  "dialog-session-rename": {
+    "title": "セッションの名前を変更",
+    "description": "このセッションに新しい名前を付けます。",
+    "label": "名前",
+    "placeholder": "セッション名"
+  },
+  "dialog-project-rename": {
+    "title": "プロジェクトの名前を変更",
+    "description": "サイドバーとウェルカムメッセージのプロジェクト表示名のみを変更します。フォルダーとセッションタイトルは変更されません。",
+    "label": "プロジェクト名",
+    "placeholder": "プロジェクト名"
+  },
+  "session-menu": {
+    "rename": "名前を変更",
+    "delete": "削除"
+  },
+  "dialog-credential-create": {
+    "title": "認証情報を追加",
+    "description": "モデルプロバイダーの認証情報を追加します。",
+    "selectType": "プロバイダー",
+    "selectTypePlaceholder": "プロバイダーを選択"
+  },
+  "dialog-credential-edit": {
+    "title": "認証情報を編集",
+    "description": "このプロバイダーの保存済み認証情報を更新します。"
+  },
+  "dialog-knowledge-base-create": {
+    "title": "ナレッジベースを作成",
+    "description": "埋め込みモデルを使用して新しいナレッジベースを作成します。",
+    "name": {
+      "label": "名前",
+      "placeholder": "マイナレッジベース"
+    },
+    "descriptionField": {
+      "label": "説明",
+      "placeholder": "このナレッジベースの用途を説明してください。"
+    },
+    "embeddingModel": {
+      "label": "埋め込みモデル"
+    },
+    "dimension": {
+      "label": "次元数"
+    },
+    "chunker": {
+      "label": "チャンカー"
+    },
+    "policy": {
+      "lockedTitle": "次元数は {{dimension}}d に固定されています",
+      "lockedDescription": "このサーバーでは、すべてのナレッジベースが {{dimension}} 次元の埋め込みに固定されています。以下には互換性のあるモデルのみが表示されます。",
+      "noCompatibleTitle": "互換性のある埋め込みモデルがありません",
+      "noCompatibleAny": "どのモデルも埋め込みモデルを提供していません。先に設定でモデルを追加してください。",
+      "noCompatibleLocked": "どの認証情報にも {{dimension}} 次元の埋め込みを生成できるモデルがありません。"
+    },
+    "errors": {
+      "nameRequired": "ナレッジベースに名前を付けてください。",
+      "embeddingRequired": "埋め込みモデルを選択してください。",
+      "dimensionRequired": "次元数を選択してください。",
+      "chunkerRequired": "チャンク分割方法を選択してください。"
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "ナレッジベースを編集",
+    "description": "ナレッジベースの名前と説明を更新します。",
+    "name": {
+      "label": "名前",
+      "placeholder": "マイナレッジベース"
+    },
+    "descriptionField": {
+      "label": "説明",
+      "placeholder": "このナレッジベースの用途を説明してください。"
+    },
+    "embeddingModel": {
+      "label": "埋め込みモデル"
+    },
+    "chunker": {
+      "label": "チャンカー"
+    },
+    "errors": {
+      "nameRequired": "ナレッジベースに名前を付けてください。"
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "ナレッジベースを削除",
+    "description": "ナレッジベース「{{name}}」と、インデックスされたすべてのドキュメントが完全に削除されます。この操作は取り消せません。"
+  },
+  "credential": {
+    "noProviders": "利用可能なプロバイダーがありません",
+    "selectHint": "認証情報が選択されていません",
+    "selectHintDescription": "サイドバーから認証情報を選択して詳細を表示します。",
+    "availableModels": "利用可能なモデル",
+    "noModels": "利用可能なモデルがありません",
+    "noModelsDescription": "このプロバイダーはモデルを返しませんでした。",
+    "deleteEntity": "認証情報",
+    "subtitle": "モデル API 認証情報の設定",
+    "configured": "設定済み",
+    "addProvider": "認証情報を追加",
+    "reasoning": "推論",
+    "realtime": "リアルタイム",
+    "table": {
+      "model": "モデル",
+      "context": "コンテキスト",
+      "maxOutput": "最大出力",
+      "accepts": "入力",
+      "outputs": "出力",
+      "legend": "コンテキストと最大出力はトークン数です。REASONING は拡張思考をサポートするモデルを示します。",
+      "dimensions": "次元数"
+    }
+  },
+  "knowledge": {
+    "subtitle": "エージェントが使用するナレッジベースを管理します",
+    "selectHint": "ナレッジベースが選択されていません",
+    "selectHintDescription": "サイドバーからナレッジベースを選択して詳細を表示します。",
+    "list": {
+      "label": "ナレッジベース",
+      "emptyTitle": "ナレッジベースがありません",
+      "emptyDescription": "ドキュメントのインデックス作成を開始するには、ナレッジベースを作成してください。",
+      "createButton": "ナレッジベースを作成"
+    },
+    "document": {
+      "emptyTitle": "ドキュメントがありません",
+      "emptyDescription": "このナレッジベースにインデックスするには、ドキュメントをアップロードしてください。",
+      "uploadButton": "ドキュメントをアップロード",
+      "uploadButtonShort": "アップロード",
+      "chunkCount_one": "{{count}} チャンク",
+      "chunkCount_other": "{{count}} チャンク",
+      "deleteConfirmTitle": "ドキュメントを削除",
+      "deleteConfirmDescription": "「{{name}}」を削除しますか？ このドキュメントと、インデックスされたすべてのチャンクが削除されます。この操作は取り消せません。",
+      "deleteError": "ドキュメントを削除できませんでした。",
+      "dropHintIdle": "またはここにファイルをドロップ",
+      "unsupportedExtension": "「{{name}}」はスキップされました — ファイル形式がサポートされていません。",
+      "status": {
+        "queued": "キューに追加済み",
+        "uploading": "アップロード中",
+        "pending": "ワーカーを待機中",
+        "parsing": "解析中",
+        "chunking": "チャンク分割中",
+        "indexing": "インデックス作成中",
+        "ready": "準備完了",
+        "error": "エラー",
+        "cancelled": "キャンセル済み"
+      },
+      "actions": {
+        "cancel": "キャンセル",
+        "dismiss": "閉じる",
+        "remove": "削除",
+        "clearFinished": "完了済みをクリア"
+      },
+      "title": "ドキュメント",
+      "chunkCount": "{{count}} チャンク"
+    },
+    "test": {
+      "button": "テスト",
+      "title": "検索をテスト",
+      "description": "アドホッククエリで \"{{name}}\" をプローブします。",
+      "queryLabel": "クエリ",
+      "queryPlaceholder": "自然言語の質問を入力…",
+      "topKLabel": "Top K",
+      "searchButton": "検索",
+      "score": "スコア",
+      "chunkPosition": "チャンク {{index}} / {{total}}",
+      "emptyTitle": "一致なし",
+      "emptyDescription": "このクエリでしきい値を超えたチャンクはありません。"
+    },
+    "config": {
+      "title": "構成",
+      "embeddingModel": "埋め込みモデル",
+      "dimensions": "次元数",
+      "credential": "認証情報",
+      "chunker": "チャンカー",
+      "counts": "内容",
+      "countsValue": "{{documents}} ドキュメント · {{chunks}} チャンク",
+      "status": "インデックス作成中",
+      "statusValue": "{{ready}} 準備完了 · {{indexing}} 進行中 · {{failed}} 失敗",
+      "createdAt": "作成日時"
+    },
+    "documentDetail": {
+      "description": "{{count}} 件のインデックス済みチャンク",
+      "chunksTab": "チャンク",
+      "previewTab": "プレビュー",
+      "chunksEmptyTitle": "チャンクがありません",
+      "chunksEmptyDescription": "このドキュメントにはまだインデックス化されたチャンクがありません。",
+      "chunksUnsupportedTitle": "チャンクの閲覧は利用できません",
+      "chunksUnsupportedDescription": "設定されたベクトルストアはチャンクの一覧表示に対応していません。",
+      "previousPage": "前へ",
+      "nextPage": "次へ",
+      "pageIndicator": "{{page}} / {{pageCount}} ページ",
+      "previewUnavailableTitle": "インラインプレビューはありません",
+      "previewUnavailableDescription": "このファイル形式はブラウザでプレビューできません。",
+      "previewTooLargeTitle": "ファイルが大きすぎてプレビューできません",
+      "previewTooLargeDescription": "このファイルはインラインプレビューの上限を超えています。ダウンロードして原本を表示してください。",
+      "downloadButton": "元のファイルをダウンロード"
+    }
+  },
+  "llm-select": {
+    "placeholder": "モデルを選択",
+    "loading": "読み込み中…",
+    "empty": {
+      "title": "利用可能なモデルがありません",
+      "description": "開始するには設定でモデルを追加してください。"
+    },
+    "addCredential": "モデルを追加",
+    "clear": "選択をクリア",
+    "noFallback": "フォールバックなし",
+    "pickForDetails": "詳細を表示するにはモデルを選択してください",
+    "vision": "ビジョン",
+    "contextBadge": "{{size}} コンテキスト",
+    "thinking": "思考",
+    "contextWindow": "コンテキストウィンドウ",
+    "hintSmallContext": "小規模コンテキストモデル — 1M はサポートされていません",
+    "level": {
+      "off": "オフ",
+      "low": "低",
+      "high": "高",
+      "max": "最大"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "埋め込みモデルを選択",
+    "loading": "読み込み中…",
+    "empty": {
+      "title": "利用可能な埋め込みモデルがありません",
+      "description": "開始するには、設定で埋め込みに対応したモデルを追加してください。"
+    },
+    "addCredential": "モデルを追加"
+  },
+  "chunker-select": {
+    "placeholder": "チャンカーを選択",
+    "loading": "読み込み中…",
+    "empty": "利用可能なチャンカーがありません"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "概算トークン",
+      "params": {
+        "chunk_size": {
+          "label": "チャンクサイズ",
+          "description": "チャンクあたりの概算トークンの最大数。"
+        },
+        "overlap": {
+          "label": "オーバーラップ",
+          "description": "連続するチャンク間で共有される概算トークン数。"
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "次元数を選択",
+    "pickModelFirst": "先にモデルを選択してください"
+  },
+  "permission-mode": {
+    "placeholder": "権限モードを選択",
+    "trigger-tooltip": "権限モード",
+    "panel-title": "エージェントはどのように承認を求めますか？",
+    "learn-more": "詳細を見る",
+    "default": "手動承認",
+    "default-desc": "重要な操作はあなたが確認します — 最も安全なオプション",
+    "accept_edits": "編集を自動承認",
+    "accept_edits-desc": "ワークスペース内のファイルの読み書きを自動許可。それ以外は引き続き確認を求めます",
+    "explore": "読み取り専用",
+    "explore-desc": "読み取りと検索のみ — 書き込みやコマンド実行は行いません",
+    "bypass": "フルアクセス",
+    "bypass-desc": "承認なしでローカルで全て実行 — 信頼済みまたはサンドボックス環境のみ",
+    "dont_ask": "無人",
+    "dont_ask-desc": "確認が必要な操作はすべて拒否 — スケジュールタスクに最適"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "MCP設定",
+    "keepAlive": "キープアライブ",
+    "keepAliveDesc": "インタラクション間で状態を維持します。ブラウザ操作やその他の長時間実行MCPで有効にします。",
+    "parseError": "無効なJSON設定: {{message}}",
+    "missingMcpServers": "設定には\"mcpServers\"オブジェクトが必要です。",
+    "emptyMcpServers": "設定にMCPサーバーが見つかりません。"
+  },
+  "dialog-mcp-delete": {
+    "entity": "MCPサーバー",
+    "skillEntity": "スキル",
+    "skillDescription": "このスキルをワークスペースから削除してもよろしいですか？"
+  },
+  "schedule": {
+    "subtitle": "自動タスクの設定と管理 - Toraはスケジュールに従ってワークフローを実行します",
+    "calendar": "カレンダー",
+    "createSchedule": {
+      "description": "エージェント用の定期または単発の自動化タスクを設定します。",
+      "descriptionLabel": "説明",
+      "descriptionPlaceholder": "この自動化が何を行うか説明してください...",
+      "namePlaceholder": "例: 日次レポート",
+      "title": "自動化タスクを作成"
+    },
+    "deleteSchedule": {
+      "entity": "自動化タスク"
+    },
+    "endAt": "終了日",
+    "end_at": "終了時刻",
+    "executionHistory": "実行履歴",
+    "freqDaily": "毎日",
+    "freqMonthly": "毎月",
+    "freqOnce": "1回",
+    "freqWeekly": "毎週",
+    "frequency": "頻度",
+    "friday": "金",
+    "list": "リスト",
+    "monday": "月",
+    "more": "もっと",
+    "nextMonth": "翌月",
+    "nextYear": "翌年",
+    "noSchedules": "自動化タスクがありません",
+    "noSchedulesDescription": "スケジュールに従ってワークフローを実行する自動化タスクを作成します。",
+    "pickDate": "日付を選択",
+    "permissionMode": "権限モード",
+    "timezone": "タイムゾーン",
+    "triggerTime": "実行時刻",
+    "createdAt": "作成日時",
+    "dayOfMonthSuffix": "",
+    "stateful": "ステートフル",
+    "statefulDesc": "すべての実行で1つのセッションを再利用してコンテキストを蓄積します。無効にすると、実行ごとに新しいセッションが作成されます。",
+    "previousMonth": "前月",
+    "previousYear": "前年",
+    "saturday": "土",
+    "sunday": "日",
+    "thursday": "木",
+    "today": "今日",
+    "tuesday": "火",
+    "wednesday": "水"
+  },
+  "model-parameters": {
+    "title": "モデルパラメータ",
+    "description": "選択したモデルの推論パラメータを調整します。",
+    "empty": "設定可能なパラメータがありません。",
+    "fallbackLabel": "フォールバックモデル",
+    "fallbackLabelWithModel": "フォールバックモデル ({{model}})",
+    "parametersLabel": "パラメータ",
+    "ttsLabel": "TTS",
+    "ttsEmpty": "利用可能なTTSモデルがありません。",
+    "ttsParameters": "パラメータ",
+    "ttsParametersDescription": "選択したTTSモデルのパラメータを調整します。",
+    "noTts": "TTSなし"
+  },
+  "setup": {
+    "title": "サービスに接続",
+    "description": "開始するにはサーバーのURLとユーザー名を入力してください。",
+    "serverUrl": "サーバーURL",
+    "serverUrlPlaceholder": "https://...",
+    "username": "ユーザー名",
+    "usernamePlaceholder": "ユーザー名を入力",
+    "submit": "開始",
+    "checking": "接続中...",
+    "errorUnreachable": "このサーバーに到達できません。アドレスを確認し、サービスが実行中で、クロスオリジンリクエストが許可されていることを確認してください。",
+    "errorTimeout": "サーバーは接続を受け入れましたが、時間内に応答しませんでした。過負荷か、起動中に停止している可能性があります。",
+    "errorNotAgentScope": "アドレスには到達しましたが、AgentScopeサービスではありません — URLを確認するか、ヘルスエンドポイントを公開できないほど古いバックエンドをアップグレードしてください。",
+    "errorUnauthorized": "サーバーがこのユーザー名を拒否しました。有効なユーザー名を入力してください。",
+    "errorNotReady": "サーバーには到達できますが、準備ができていません。以下のサブシステムが起動に失敗しました:",
+    "hint": "これはフロントエンドのみのアプリケーションで、すべてのデータは上記のサーバーURLから提供されます。ユーザー名はサーバー側の認証にのみ使用されます。"
+  },
+  "task-panel": {
+    "blockedBy": "ブロック元"
+  },
+  "panel": {
+    "plan": {
+      "title": "プラン",
+      "completed": "完了: {{count}}",
+      "total": "合計: {{count}}",
+      "emptyTitle": "タスクはまだありません",
+      "emptyDescription": "エージェントが計画したタスクがここに表示されます。"
+    },
+    "mcp": {
+      "description": "ワークスペースに装備されたMCPサーバー。",
+      "searchPlaceholder": "ワークスペースでMCPを検索",
+      "add": "MCPを追加",
+      "addDescription": "既にインストール済みのものを再利用するか、設定を貼り付けてください。",
+      "fromConfig": "設定から",
+      "tools": "{{count}} 個のツール",
+      "unhealthy": "この MCP に接続できませんでした",
+      "healthy": "接続済み",
+      "emptyTitle": "MCP サーバーがありません",
+      "emptyDescription": "MCP サーバーを追加して、ワークスペースにツールを装備しましょう。",
+      "fromInstalled": "インストール済みの MCP",
+      "installedEmptyTitle": "まだ何もインストールされていません",
+      "installedEmptyDescription": "MCP Hub からインストールするか、設定を貼り付けてください。"
+    },
+    "skill": {
+      "title": "スキル",
+      "description": "ワークスペースに装備されているスキル。",
+      "searchPlaceholder": "ワークスペース内のスキルを検索",
+      "add": "スキルを追加",
+      "emptyTitle": "スキルがありません",
+      "emptyDescription": "スキルを追加してワークスペースに装備しましょう。",
+      "addDescription": "インストール済みのスキルから選ぶか、ローカルフォルダをアップロードしてください。",
+      "fromInstalled": "インストール済みから",
+      "fromFolder": "フォルダをアップロード",
+      "installedEmptyTitle": "インストール済みのスキルはまだありません",
+      "installedEmptyDescription": "スキルハブからインストールして、ここに追加してください。",
+      "pickFolderTitle": "スキルフォルダを選択",
+      "pickFolderDescription": "フォルダのルートに SKILL.md が必要です。",
+      "pickFolder": "フォルダを選択",
+      "importLocal": "ローカルフォルダからインポート",
+      "pickAnother": "別のものを選択",
+      "fileCount": "{{count}} 個のファイル"
+    },
+    "workspace": {
+      "checkpoint": "チェックポイント",
+      "diff": "変更",
+      "browser": "ブラウザ",
+      "terminal": "ターミナル",
+      "hooks": "フック"
+    },
+    "knowledge": {
+      "title": "ナレッジベース",
+      "description": "エージェントが参照できるナレッジベース。",
+      "searchPlaceholder": "ナレッジベースを検索",
+      "emptyTitle": "ナレッジベースがありません",
+      "emptyDescription": "まずナレッジベースページで作成してください。",
+      "parametersTitle": "取得設定",
+      "parametersDescription": "ナレッジベースの取得設定。"
+    },
+    "permission": {
+      "title": "権限",
+      "description": "このセッションに適用される権限。",
+      "mode": "モード: {{mode}}",
+      "workingDirectories": "作業ディレクトリ",
+      "noWorkingDirectories": "作業ディレクトリがありません。",
+      "allow": "許可",
+      "deny": "拒否",
+      "ask": "確認",
+      "anyInvocation": "すべての呼び出し",
+      "rulesTitle": "ルール（すべてのセッションに適用）",
+      "addButton": "追加",
+      "contentPlaceholder": "一致させるパターン。空 = すべての呼び出し",
+      "deleteRule": "このルールを削除",
+      "loadFailed": "ルールの読み込みに失敗しました: {{detail}}",
+      "emptyTitle": "ルールが設定されていません",
+      "emptyDescription": "許可 / 拒否 / 確認ルールは追加されるとここに表示されます。"
+    },
+    "search": {
+      "emptyTitle": "結果なし",
+      "emptyDescription": "「{{query}}」に一致するものはありません。"
+    },
+    "loading": "読み込み中…",
+    "team": {
+      "membersHeading": "メンバー",
+      "noMembers": "メンバーはまだいません — リーダーに AgentCreate で作成するよう依頼してください。",
+      "emptyTitle": "チームなし",
+      "emptyDescription": "このセッションはチームに属していません。エージェントは TeamCreate でチームを形成します。",
+      "running": "実行中",
+      "idle": "アイドル",
+      "missingSession": "（セッションなし）"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "QR コードをスキャン",
+      "manualTab": "手動で入力",
+      "scanHint": "プラットフォームアプリでスキャンし、承認して認証情報を作成してください。",
+      "authorized": "承認されました。認証情報の準備ができました。",
+      "failed": "連携を完了できませんでした。",
+      "unsafeUrl": "プラットフォームが安全に表示できないリンクを返しました。",
+      "retry": "再試行"
+    },
+    "title": "チャンネル",
+    "subtitle": "Feishu や Discord などの外部プラットフォームを接続して、エージェントがグループチャットで動作できるようにします",
+    "status": "ステータス",
+    "connected": "接続済み",
+    "enable": "有効化",
+    "disable": "無効化",
+    "deleteEntity": "チャンネル",
+    "routing": "ルーティング",
+    "routingDesc": "受信メッセージをエージェントとセッションスコープにマッチさせます。最後のルールがそれ以外すべてにマッチします。",
+    "sectionActive": "接続済み",
+    "sectionAdd": "チャンネルを追加",
+    "rules": "{{count}} 件のルール",
+    "empty": {
+      "title": "チャンネルがありません",
+      "description": "チャンネルを作成して、エージェントを Feishu や DingTalk などの外部プラットフォームに接続します。"
+    },
+    "create": {
+      "title": "チャンネルを作成",
+      "titleFor": "{{name}} を接続",
+      "description": "エージェントを外部メッセージングプラットフォームに接続します。",
+      "channelType": "プラットフォーム",
+      "nameLabel": "名前",
+      "namePlaceholder": "例: サポートデスク",
+      "nameDesc": "同じプラットフォーム上のチャンネルを区別します",
+      "modelDesc": "新しいセッションの初期モデル",
+      "permissionMode": "権限モード",
+      "permissionModeDesc": "新しいセッションの初期権限モード",
+      "showToolMessages": "ツールメッセージを表示",
+      "showToolMessagesDesc": "チャンネルにツール呼び出し/結果メッセージを表示します。",
+      "showThinking": "思考を表示",
+      "showThinkingDesc": "チャンネルにモデルの推論プロセスを表示します。"
+    },
+    "fields": {
+      "app_id": {
+        "title": "アプリID",
+        "description": "Feishu アプリID"
+      },
+      "app_secret": {
+        "title": "アプリシークレット",
+        "description": "Feishu アプリシークレット"
+      },
+      "bot_token": {
+        "title": "ボットトークン"
+      },
+      "application_id": {
+        "title": "アプリケーションID"
+      },
+      "only_at_reply": {
+        "title": "メンションされた場合のみ返信",
+        "description": "グループチャットでは、ボットが@メンションされた場合のみ返信します"
+      },
+      "show_tool_process": {
+        "title": "ツールの処理を表示",
+        "description": "返信内にツール呼び出しと結果をインラインで表示します"
+      },
+      "show_thinking": {
+        "title": "思考を表示",
+        "description": "返信内にモデルの推論をインラインで表示します"
+      }
+    },
+    "edit": {
+      "title": "チャンネルを編集",
+      "description": "ルーティング、モデル、返信設定を更新します。プラットフォームと認証情報は変更できません。"
+    },
+    "sessionScope": {
+      "per_chat": "チャットごと",
+      "per_chat_user": "チャットユーザーごと"
+    },
+    "sessions": {
+      "title": "セッション",
+      "empty": "セッションはまだありません",
+      "openInChat": "チャットで開く"
+    },
+    "detail": {
+      "config": "設定",
+      "configDesc": "新しいセッションに適用される初期設定",
+      "configItem": "項目",
+      "configValue": "値",
+      "condition": "条件",
+      "created": "作成日時",
+      "deleteChannel": "チャンネルを削除",
+      "routingDesc": "受信メッセージがエージェントとセッションスコープにどのようにマッピングされるか",
+      "sessionsDesc": "このチャンネルが生成したセッション",
+      "selectHint": "詳細を表示するにはチャンネルを選択してください"
+    },
+    "state": {
+      "stopped": "停止",
+      "connecting": "接続中",
+      "retrying": "再接続中",
+      "connected": "接続済み",
+      "failed": "失敗"
+    },
+    "binding": {
+      "rule": "マッチルール",
+      "matchKey": "マッチフィールド",
+      "matchValue": "マッチ値",
+      "matchValuePlaceholder": "例: chat_id",
+      "routeTo": "ルーティング先",
+      "scope": "セッションスコープ",
+      "fallback": "フォールバックルール",
+      "fallbackDesc": "上記のどのルールにも一致しないメッセージはここにルーティングされます",
+      "catchAll": "その他のすべてのメッセージ",
+      "addRule": "ルールを追加"
+    }
+  },
+  "mcp": {
+    "subtitle": "MCPサーバーを閲覧してインストール",
+    "hubsLabel": "ハブ",
+    "searchPlaceholder": "このハブを検索",
+    "mineSearchPlaceholder": "MCPを検索",
+    "noHubsTitle": "利用可能なハブがありません",
+    "noHubsDescription": "管理者に追加を依頼してください。",
+    "noCardsTitle": "何も見つかりません",
+    "noCardsDescription": "別のキーワードを試してください。",
+    "mineDescription": "インストール済みのMCPサーバー",
+    "mineEmptyTitle": "MCPサーバーはまだありません",
+    "mineEmptyDescription": "左側のハブからインストールしてください。",
+    "needsConfig": "設定が必要",
+    "stateful": "ステートフル",
+    "configLabel": "設定",
+    "install": "インストール",
+    "installed": "インストール済み",
+    "installTitle": "{{name}}をインストール",
+    "installDescription": "MCPに追加します。その後、使用するセッションを選択してください。",
+    "editTitle": "{{name}}を編集",
+    "editDescription": "シークレットを空欄にすると、保存済みのものが保持されます。",
+    "nameLabel": "名前",
+    "loadFailedTitle": "サーバーに接続できませんでした",
+    "loadFailedDescription": "サーバーURLと、サービスが実行中であることを確認してください。",
+    "retry": "再試行"
+  },
+  "skill": {
+    "category": {
+      "testing": "テストとデバッグ",
+      "security": "セキュリティ",
+      "devops": "デプロイと運用",
+      "writing": "ライティング",
+      "office-efficiency": "オフィス効率化",
+      "knowledge-management": "ナレッジ管理",
+      "content-creation": "コンテンツ作成",
+      "ai-agent": "AIエージェント",
+      "dev-programming": "開発",
+      "design-media": "デザインとメディア",
+      "data-analysis": "データ分析",
+      "life-service": "ライフスタイル",
+      "professional": "プロフェッショナル",
+      "design-creative": "デザインとクリエイティブ",
+      "coding-agents": "コーディングエージェント",
+      "agent-skills": "エージェントスキル",
+      "development": "エンジニアリング",
+      "agent-frameworks": "エージェントフレームワーク",
+      "browser-automation": "ブラウザ自動化",
+      "productivity": "生産性",
+      "rag-knowledge": "RAGとナレッジ",
+      "automation": "自動化",
+      "document-processing": "ドキュメント処理",
+      "education": "教育",
+      "finance": "金融",
+      "legal-compliance": "法務とコンプライアンス",
+      "media-automation": "メディア自動化",
+      "Personal AI": "パーソナルAI",
+      "research": "リサーチ",
+      "web-automation": "Web自動化"
+    },
+    "allCategories": "すべて",
+    "matchButton": "タスクにマッチ",
+    "matchHint": "まず検索ボックスにタスクを入力してください",
+    "matchRecommends": "このタスクにおすすめ",
+    "matchAlternatives": "代替案",
+    "matchScore": "マッチ度 {{score}}",
+    "matchSearched": "{{count}} 件のスキルを検索しました",
+    "matchFailed": "スキルをマッチできませんでした",
+    "matchDismiss": "閉じる",
+    "matchPolicy": "ソースポリシー: {{policy}}",
+    "subtitle": "スキルを閲覧してインストール",
+    "hubsLabel": "ハブ",
+    "searchPlaceholder": "このハブを検索",
+    "mineSearchPlaceholder": "自分のスキルを検索",
+    "noHubsTitle": "利用可能なハブがありません",
+    "noHubsDescription": "管理者に追加を依頼してください。",
+    "noCardsTitle": "何も見つかりません",
+    "noCardsDescription": "別のキーワードを試してください。",
+    "mineDescription": "インストール済みのスキル",
+    "mineEmptyTitle": "スキルはまだありません",
+    "mineEmptyDescription": "左のハブからインストールしてください。",
+    "install": "インストール",
+    "installed": "インストール済み",
+    "versionLabel": "バージョン",
+    "hubLabel": "ハブ",
+    "updatedLabel": "更新日時",
+    "updatedAgo": "{{ago}}前に更新",
+    "updatedRecently": "たった今更新",
+    "installsLabel": "インストール数",
+    "downloadsLabel": "ダウンロード数",
+    "linkLabel": "ページ",
+    "viewOnHub": "ハブで表示",
+    "noReadme": "このスキルには SKILL.md の本文が含まれていません。",
+    "loadFailedTitle": "サーバーに接続できませんでした",
+    "loadFailedDescription": "サーバーURLとサービスが実行中か確認してください。",
+    "retry": "再試行"
+  },
+  "agent-menu": {
+    "settings": "設定",
+    "delete": "エージェントを削除"
+  },
+  "workdir": {
+    "title": "作業ディレクトリ",
+    "description": "エージェントの作業ディレクトリを選択してください。",
+    "root": "ワークスペースのルート",
+    "parent": "1 つ上の階層へ",
+    "errorTitle": "このフォルダーを一覧表示できませんでした",
+    "pathPlaceholder": "パスを入力または貼り付け",
+    "empty": "このフォルダーは空です",
+    "pressEnter": "Enter を押して先にこのパスを確認",
+    "pickerPlaceholder": "ツールを使用するフォルダーを選択",
+    "recent": "最近使用した項目",
+    "recentEmpty": "最近使用したフォルダーはありません",
+    "browse": "フォルダーを選択",
+    "gitTooltip": "{{staged}} ステージ済み · {{unstaged}} 変更あり · {{untracked}} 未追跡\n行数に未追跡ファイルは含まれません"
+  },
+  "settings": {
+    "title": "設定",
+    "backToApp": "Tora に戻る",
+    "close": "閉じる",
+    "loadFailed": "設定の読み込みに失敗しました（バックエンドがオフラインか、間違ったポートを使用している可能性があります）: {{error}}",
+    "loadingRuntime": "ランタイム設定を読み込み中…",
+    "sections": {
+      "general": "一般",
+      "theme": "テーマ",
+      "agent": "エージェント",
+      "model": "モデル",
+      "memory": "メモリ",
+      "data": "データ",
+      "about": "Tora について",
+      "usage": "使用状況",
+      "account": "アカウント",
+      "developer": "開発者とデバッグ"
+    },
+    "memory": {
+      "title": "メモリ",
+      "desc": "セッションをまたぐ長期メモリ: セッション開始時に関連するエントリが注入され、オプションでセッション後の抽出も行われます",
+      "inject": "セッション注入",
+      "injectDesc": "現在のプロジェクトについて、セッション開始時に関連するメモリをシステムプロンプトに注入します",
+      "distill": "自動抽出",
+      "distillDesc": "セッション完了後、モデルが会話をレビューし、記憶に値するエントリを 0〜3 件抽出します",
+      "searchPh": "メモリを検索（Enter で検索）",
+      "contentPh": "メモリの内容（例：このプロジェクトのテストは常に node --test で実行される）",
+      "projectKeyPh": "プロジェクトの絶対パス（空の場合はグローバルにフォールバック）",
+      "scopeGlobal": "グローバル",
+      "scopeProject": "プロジェクト",
+      "add": "メモリを追加",
+      "save": "保存",
+      "cancel": "キャンセル",
+      "edit": "編集",
+      "delete": "削除",
+      "confirmDelete": "削除してもよろしいですか？",
+      "pin": "ピン留め",
+      "unpin": "ピン留めを解除",
+      "dedupedToast": "類似のメモリが既に存在するため、再保存されませんでした",
+      "projectGroup": "プロジェクトのメモリ",
+      "globalGroup": "グローバルのメモリ",
+      "empty": "メモリはまだありません。会話でアシスタントに「覚えて…」と依頼するか、ここで追加してください。",
+      "emptySearch": "一致するメモリがありません",
+      "kinds": {
+        "preference": "好み",
+        "fact": "事実",
+        "pitfall": "落とし穴",
+        "convention": "規約"
+      },
+      "sources": {
+        "manual": "手動",
+        "tool": "ツール",
+        "distill": "蒸留"
+      }
+    },
+    "theme": {
+      "title": "テーマ",
+      "subtitle": "外観、モーション、ワークスペースの背景を選択",
+      "modeTitle": "外観",
+      "modeDesc": "ライト、ダーク、またはシステムに従う",
+      "light": "ライト",
+      "dark": "ダーク",
+      "system": "システム",
+      "motionTitle": "インタラクションのモーション",
+      "motionDesc": "クリックのフィードバックとページ切り替えの速度を設定します。システムの「動きを減らす」設定が常に優先されます。",
+      "motionModeTitle": "モーションの速度",
+      "motion": {
+        "system": "システム",
+        "off": "オフ",
+        "gentle": "やさしい",
+        "standard": "標準",
+        "fast": "高速"
+      },
+      "motionReduced": "システムで「動きを減らす」が有効になっているため、現在アニメーションは無効です。",
+      "motionClickTitle": "クリックのフィードバック",
+      "motionClickDesc": "ボタン、リンク、メニュー項目を押したときの短いフィードバック",
+      "motionPageTitle": "ページ遷移",
+      "motionPageDesc": "ワークスペースのページ間のスムーズな切り替え",
+      "backgroundTitle": "背景",
+      "backgroundDesc": "ワークスペース、設定、サインイン画面で共有されます",
+      "lavender": "ソフトラベンダー",
+      "mist": "ブルーミスト",
+      "stone": "ウォームストーン",
+      "midnight": "ミッドナイト",
+      "none": "なし",
+      "custom": "カスタム",
+      "import": "画像をインポート",
+      "replace": "画像を置き換え",
+      "remove": "カスタム背景を削除",
+      "localOnly": "カスタム背景はこのデバイスに保存され、アップロードされることはありません。PNG、JPEG、WebP は最大 16 MB です。",
+      "invalidType": "PNG、JPEG、WebP 画像を選択",
+      "tooLarge": "画像は 16 MB 未満である必要があります",
+      "processFailed": "この画像を読み込めませんでした。別のファイルをお試しください。",
+      "storageFailed": "背景を保存できませんでした。ローカルストレージが満杯の可能性があります。"
+    },
+    "general": {
+      "title": "一般",
+      "common": "共通",
+      "language": {
+        "title": "言語",
+        "desc": "インターフェースの言語",
+        "zh": "簡体字中国語",
+        "zhHant": "繁体字中国語",
+        "en": "英語",
+        "ja": "日本語",
+        "ko": "韓国語",
+        "fr": "フランス語",
+        "de": "ドイツ語",
+        "it": "イタリア語",
+        "ar": "アラビア語",
+        "es": "スペイン語",
+        "pt": "ポルトガル語",
+        "ru": "ロシア語",
+        "hi": "ヒンディー語",
+        "lzh": "漢文"
+      },
+      "searchEngine": {
+        "title": "検索エンジン",
+        "desc": "アドレスバーの入力が URL でない場合に使用されます",
+        "engines": {
+          "360": "360 Search",
+          "baidu": "Baidu",
+          "google": "Google",
+          "sogou": "Sogou",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "Bing"
+        }
+      },
+      "systemNotifications": {
+        "title": "システムメッセージ通知",
+        "desc": "新着メッセージにシステム通知を使用します。メッセージのタイトルと本文は非表示のままです。システム通知設定で Tora を許可してください。",
+        "test": "テスト通知",
+        "testing": "テスト中…",
+        "shown": "システムは通知を受け入れました。バナーが表示されない場合は、通知設定または集中モードを確認してください。",
+        "failed": "システムは通知を拒否しました。macOSでは、署名済みビルドでテストし、通知権限を確認してください。",
+        "unsupported": "このシステムではネイティブ通知はサポートされていません。",
+        "unconfirmed": "通知が要求されましたが、表示は確認されませんでした。通知権限を確認してください。"
+      },
+      "sound": {
+        "title": "通知音",
+        "desc": "タスクイベントのサウンドアラート",
+        "replyDoneTitle": "返信完了",
+        "replyDoneDesc": "エージェントが返信を終了したときに再生",
+        "needConfirmTitle": "確認が必要",
+        "needConfirmDesc": "確認や質問であなたの対応が必要なときに再生",
+        "kindTitle": "サウンド",
+        "kindDesc": "アラートサウンドを選択",
+        "kindDing": "ディン",
+        "kindCrisp": "クリスプ",
+        "kindSoft": "ソフト",
+        "kindCustom": "カスタム",
+        "preview": "プレビュー",
+        "customTitle": "カスタムサウンド",
+        "customDesc": "ローカルオーディオファイルを使用（mp3 / wav / ogg など）",
+        "customChoose": "ファイルを選択",
+        "customClear": "クリア",
+        "volumeTitle": "音量",
+        "volumeDesc": "アラートサウンドの再生音量",
+        "tooLarge": "ファイルが大きすぎます（最大10MB）",
+        "saveFailed": "保存に失敗しました。再試行してください"
+      },
+      "behavior": "動作"
+    },
+    "developer": {
+      "title": "開発者とデバッグ",
+      "desc": "エージェントのランタイム動作、フック、コードインデックス、言語サーバー。変更は次回の実行時に適用されます。",
+      "behavior": "動作"
+    },
+    "behavior": {
+      "presets": {
+        "title": "実行プロファイル",
+        "desc": "実績のあるランタイムプロファイルを適用し、必要に応じて以下の個別制限を微調整します。",
+        "fast": {
+          "title": "高速",
+          "desc": "低コストの短いタスク"
+        },
+        "balanced": {
+          "title": "バランス",
+          "desc": "日常業務に推奨"
+        },
+        "deep": {
+          "title": "徹底",
+          "desc": "反復の余地が大きい複雑なタスク"
+        }
+      },
+      "context": {
+        "title": "コンテキストトークン制限",
+        "desc": "会話がこの値を超えると、以前の履歴が自動圧縮されます（デフォルト24000）。低くするとトークンを節約できますが、履歴の詳細が失われます。",
+        "suffix": "トークン"
+      },
+      "toolOutput": {
+        "title": "単一ツール出力制限",
+        "desc": "単一ツール呼び出しで返される最大文字数（デフォルト6000）。それより長い出力は切り捨てられます。",
+        "suffix": "文字"
+      },
+      "maxTurns": {
+        "title": "最大エージェント反復回数",
+        "desc": "タスクあたりの最大エージェントループ回数（デフォルト40）。超過した実行は強制停止されます。",
+        "suffix": "ターン"
+      },
+      "shellSandbox": {
+        "title": "コマンドプロセスサンドボックス",
+        "desc": "エージェントのBashおよびGitコマンドが書き込める場所を制限します。無効にすると、コマンドにユーザーアカウントのファイルアクセス権が付与されます。"
+      },
+      "shellNetwork": {
+        "title": "サンドボックス化されたコマンドのネットワーク使用を許可",
+        "desc": "デフォルトではオフ。有効にすると、コマンドがインターネットやローカルサービスにアクセスできるようになります。必要な場合にのみ有効にしてください。"
+      }
+    },
+    "data": {
+      "title": "データ",
+      "subtitle": "ローカルおよびサーバー側のセッションデータをクリア",
+      "wipe": {
+        "title": "すべてのセッションをクリア",
+        "desc": "すべてのセッション記録、エージェント、認証情報を削除します。これは元に戻せません。",
+        "button": "クリア",
+        "confirm": "クリアを確認",
+        "cancel": "キャンセル",
+        "processing": "処理中…",
+        "error": "クリアに失敗しました: {{error}}"
+      }
+    },
+    "about": {
+      "title": "情報",
+      "tora": "ローカルエージェントワークスペース · v{{version}}",
+      "runtime": "Electronデスクトップ · ローカルASAPIサービス · 独自のモデルを持ち込む",
+      "runtimeTitle": "ランタイム",
+      "update": {
+        "title": "ソフトウェアアップデート",
+        "desc": "新しいToraリリースを確認します。macOSとWindowsではバックグラウンドでダウンロードされ、再起動とインストールを促されます。",
+        "check": "アップデートを確認",
+        "checking": "確認中…",
+        "upToDate": "最新です。",
+        "available": "Tora {{version}} が利用可能です。続行するにはアップデートのプロンプトに従ってください。",
+        "downloading": "Tora {{version}} が利用可能で、バックグラウンドでダウンロード中です。",
+        "ready": "Tora {{version}} のダウンロードが完了し、インストールの準備ができました。",
+        "development": "開発ビルドではアップデートは利用できません。",
+        "unavailable": "このプラットフォームでは自動アップデートは利用できません。",
+        "desktopOnly": "Toraデスクトップアプリからアップデートを確認してください。",
+        "failed": "アップデートを確認できませんでした: {{error}}"
+      }
+    },
+    "errors": {
+      "backend": "バックエンドが {{status}} を返しました",
+      "runtimeSave": "保存に失敗しました ({{status}}): {{text}}",
+      "saveFailed": "保存に失敗しました: {{error}}",
+      "wipeFailed": "クリアに失敗しました: {{error}}"
+    },
+    "advanced": {
+      "title": "詳細設定",
+      "subtitle": "フック、コードインデックス、言語サーバー。変更は次回の実行時に適用されます。",
+      "hooks": {
+        "title": "ライフサイクルフック",
+        "desc": "UserPromptSubmit / PreToolUse / PostToolUse / Stop で独自のコマンドを実行します。オフの場合、フックは一切実行されません。"
+      },
+      "changes": {
+        "title": "変更認識コンテキスト",
+        "desc": "「最近変更された + gitダーティなファイル」をシステムプロンプトに注入し、モデルがディスクの状態が変わっている可能性を認識できるようにします。"
+      },
+      "lsp": {
+        "title": "言語サーバー (LSP)",
+        "desc": "設定されている場合、Lspは定義 / 参照 / 診断のために実際のサーバーにアクセスし、型情報を取得します。それ以外の場合はローカルシンボルインデックスを使用します。",
+        "none": "言語サーバーが検出されませんでした",
+        "enable": "有効にする",
+        "enabled": "有効",
+        "disable": "無効にする",
+        "probeFailed": "プローブに失敗しました: {{error}}"
+      },
+      "index": {
+        "title": "コードインデックス",
+        "desc": "シンボルインデックスとセマンティック転置インデックス（検索で使用）。mtime により増分更新されます。手動での再構築はほとんど不要です。",
+        "rebuild": "インデックスを再構築",
+        "rebuilding": "再構築中…",
+        "done": "インデックスを再構築しました: {{files}} ファイル / {{symbols}} シンボル / {{tokens}} 用語",
+        "noWorkspace": "先にセッションで作業ディレクトリを選択してください",
+        "stats": "現在: {{files}} ファイル / {{symbols}} シンボル"
+      },
+      "mcp": {
+        "title": "MCP サーバー",
+        "desc": "stdio 経由の Model Context Protocol サーバー。それらのツールは mcp__server__tool としてセッションに参加します。保存した変更は次回の実行時に適用されます。",
+        "add": "追加",
+        "namePlaceholder": "名前（英字、数字、- _）",
+        "commandPlaceholder": "コマンド、例: npx",
+        "argsPlaceholder": "引数（スペース区切り、任意）",
+        "probe": "プローブ",
+        "probing": "プローブ中…",
+        "toolsCount": "{{count}} 個のツール",
+        "noServers": "MCP サーバーが構成されていません",
+        "delete": "このサーバーを削除",
+        "probeFailed": "プローブに失敗しました: {{error}}"
+      },
+      "trust": {
+        "title": "プロジェクトフックを信頼する",
+        "desc": "ワークスペースの .tora/hooks.json はリポジトリの内容に由来します。信頼すると、そのリポジトリでコマンドを実行できるようになります — 先に内容を確認してください。",
+        "trusted": "このディレクトリのプロジェクトフックは信頼されています",
+        "trust": "現在のディレクトリを信頼する",
+        "revoke": "信頼を取り消す",
+        "none": "作業ディレクトリがまだありません"
+      },
+      "saveFailed": "保存に失敗しました: {{error}}"
+    },
+    "usage": {
+      "title": "使用統計",
+      "desc": "ローカルセッションと実行から集計（トークン、チャット時間、連続日数、ツール使用）",
+      "cards": {
+        "totalTokens": "合計トークン",
+        "peakTokens": "ピークトークン",
+        "longestChat": "最長チャット",
+        "currentStreak": "現在の連続日数",
+        "longestStreak": "最長連続日数"
+      },
+      "activity": {
+        "title": "トークンアクティビティ",
+        "daily": "日次",
+        "weekly": "週次",
+        "cumulative": "累積",
+        "tipDaily": "{{tokens}} トークンを使用",
+        "tipWeekly": "週間合計: {{tokens}} トークン",
+        "tipCumulative": "合計 {{tokens}} トークン"
+      },
+      "insights": {
+        "title": "インサイト",
+        "chats": "合計チャット数",
+        "runs": "合計実行数",
+        "activeDays": "アクティブ日数",
+        "toolRuns": "ツール実行",
+        "topModel": "トップモデル"
+      },
+      "topTools": {
+        "title": "最も使用されたツール",
+        "empty": "ツールの使用はまだありません",
+        "runs": "{{count}} 回の実行"
+      },
+      "loading": "読み込み中…",
+      "loadFailed": "使用統計の読み込みに失敗しました: {{error}}",
+      "days": "{{count}} 日",
+      "refresh": "更新"
+    },
+    "account": {
+      "title": "アカウント",
+      "homeTitle": "Tora にサインイン",
+      "homeDesc": "ユーザー名またはメールアドレスを入力してください — サインインまたはサインアップに誘導します",
+      "continue": "サインイン / サインアップ",
+      "nextStep": "続ける",
+      "otherWays": "その他のサインイン方法",
+      "register": "サインアップ",
+      "emailTitle": "サインインまたはサインアップ",
+      "registerTitle": "アカウント作成",
+      "emailDesc": "よりスマートな返信とクラウド機能を利用できます。",
+      "emailLabel": "メールアドレス",
+      "emailPlaceholder": "メールアドレス",
+      "passwordTitle": "パスワードを入力",
+      "createPasswordTitle": "パスワードを作成",
+      "passwordLabel": "パスワード（最低 8 文字）",
+      "confirmLabel": "パスワードを確認",
+      "login": "サインイン",
+      "createAccount": "アカウント作成",
+      "or": "または",
+      "terms": "続行することで、Tora の利用規約とプライバシーポリシーに同意したことになります。",
+      "back": "戻る",
+      "logout": "サインアウト",
+      "since": "{{date}} からメンバー",
+      "errors": {
+        "confirmMismatch": "パスワードが一致しません",
+        "shortPassword": "パスワードは 8 文字以上である必要があります",
+        "alreadyRegistered": "このメールアドレスは既に登録されています — サインインしてください",
+        "invalidEmail": "無効なメールアドレス",
+        "longPassword": "パスワードが長すぎます",
+        "wrongCredentials": "アカウントまたはパスワードが正しくありません",
+        "wrongPassword": "現在のパスワードが正しくありません",
+        "emailTaken": "このメールアドレスは既に使用されています",
+        "avatarTooLarge": "アバターが大きすぎます。より小さい画像を選択してください",
+        "avatarInvalid": "アバター形式がサポートされていません",
+        "invalidUsername": "ユーザー名は2〜32文字の英字、数字、アンダースコア、ハイフン、またはCJK文字である必要があります",
+        "usernameTaken": "このユーザー名は既に使用されています",
+        "codeTooFrequent": "リクエストが多すぎます。後でもう一度お試しください",
+        "codeSendFailed": "コードの送信に失敗しました。後でもう一度お試しください",
+        "codeInvalid": "認証コードが無効か期限切れです",
+        "turnstileFailed": "人間認証に失敗しました。もう一度お試しください"
+      },
+      "networkWarning": "認証サービスに接続できませんでした。ネットワークを確認して再試行してください",
+      "networkRetryHint": "ログイン情報は保持されています。接続が復旧したら確認を再試行してください。",
+      "manager": {
+        "description": "プロフィールとアカウントの安全を管理します。",
+        "profileTitle": "プロフィール",
+        "securityTitle": "アカウントのセキュリティ",
+        "registeredAt": "登録日",
+        "passwordHint": "Tora へのログインに使うパスワードを変更します",
+        "emailPasswordHint": "本人確認のため、現在のパスワードを入力してください",
+        "confirmNewPassword": "新しいパスワードを確認",
+        "savePassword": "パスワードを保存",
+        "saveEmail": "メールを保存",
+        "logoutTitle": "このアカウントからログアウト",
+        "logoutHint": "次回は再度ログインが必要です。",
+        "logoutConfirmTitle": "ログアウトしますか？",
+        "logoutConfirmDescription": "Tora を引き続き使うには、再度ログインが必要です。",
+        "changeAvatar": "アバターを変更",
+        "avatarHint": "アバターをクリックして変更（PNG / JPG / WebP、自動トリミング＆圧縮）",
+        "avatarSaved": "アバターを更新しました",
+        "changePassword": "パスワードを変更",
+        "changeEmail": "メールアドレスを変更",
+        "currentEmail": "現在のメールアドレス: {{email}}",
+        "newEmail": "新しいメールアドレス",
+        "currentPassword": "現在のパスワード",
+        "newPassword": "新しいパスワード（8文字以上）",
+        "save": "保存",
+        "passwordSaved": "パスワードを更新しました",
+        "emailSaved": "メールアドレスを更新しました"
+      },
+      "accountLabel": "ユーザー名またはメールアドレス",
+      "accountPlaceholder": "ユーザー名またはメールアドレス",
+      "usernameLabel": "ユーザー名（2〜32文字の英字、数字、またはCJK）",
+      "codeLabel": "メール認証コード",
+      "captchaTitle": "セキュリティチェック",
+      "captchaLoginDesc": "サインインするには人間認証を完了してください",
+      "captchaRegisterDesc": "アカウントを作成するには人間認証を完了してください",
+      "showPassword": "パスワードを表示",
+      "hidePassword": "パスワードを非表示",
+      "sendCode": "コードを送信",
+      "codeCooldown": "{{s}}秒後に再送信"
+    }
+  },
+  "agentSection": {
+    "title": "エージェント",
+    "desc": "デフォルトのエージェント名とシステムプロンプトを設定します。システムプロンプトを空にすると、組み込みのCoreyプロンプトが使用されます。",
+    "select": "エージェントを選択",
+    "name": "名前",
+    "namePlaceholder": "エージェント名",
+    "systemPrompt": "システムプロンプト",
+    "systemPromptPlaceholder": "空にすると組み込みのCoreyシステムプロンプトが使用されます",
+    "save": "保存",
+    "saved": "保存しました",
+    "saveFailed": "保存に失敗しました: {{error}}"
+  },
+  "modelSection": {
+    "title": "モデル",
+    "subtitle": "モデル管理",
+    "desc": "APIキーを設定して利用可能なモデルを追加します。最初に有効にしたモデルがデフォルトの会話モデルになります。",
+    "addModel": "モデルを追加",
+    "empty": "モデルがまだありません — 「モデルを追加」をクリックして最初のモデルを接続してください",
+    "loading": "読み込み中…",
+    "tableHeaders": {
+      "model": "モデル",
+      "provider": "プロバイダー",
+      "actions": "操作"
+    },
+    "aria": {
+      "edit": "編集",
+      "delete": "削除",
+      "close": "閉じる",
+      "back": "戻る"
+    },
+    "errors": {
+      "noModels": "プロバイダーがモデルを返しませんでした",
+      "submitFailed": "送信に失敗しました: {{error}}",
+      "backend": "バックエンドが{{status}}を返しました",
+      "loginRequired": "先に「アカウント」でサインインしてください — モデルはクラウドのアカウントに同期されます"
+    },
+    "form": {
+      "titleEdit": "モデルを編集",
+      "titleAdd": "プロバイダー経由で追加",
+      "provider": "プロバイダー",
+      "apiKey": "APIキー",
+      "apiKeyPlaceholder": "APIキーを入力",
+      "apiKeyKeepEmpty": "空にすると現在のキーが保持されます",
+      "getApiKey": "APIキーを取得",
+      "model": "モデル",
+      "modelPlaceholder": "モデルを選択",
+      "modelInputPlaceholder": "モデルIDを選択または入力（例: glm-4.6）",
+      "fetchingModels": "利用可能なモデルを取得中…",
+      "fetchHint": "APIキーを入力するとモデルが自動読み込みされます。モデルIDを直接入力することもできます",
+      "advanced": "詳細設定",
+      "vision": {
+        "title": "画像入力",
+        "auto": "自動",
+        "on": "オン",
+        "off": "オフ",
+        "hint": "モデル名で自動判定されます。deepseek-flash、gpt-4o、qwen-vlなどの画像対応モデルは画像を受け付けます"
+      },
+      "baseUrl": "エンドポイント（ベースURL）",
+      "saveHint": "保存時にモデル一覧エンドポイント経由で接続を確認します。キーはローカルにのみ保存されます",
+      "reset": "リセット",
+      "saveEdit": "変更を保存",
+      "saveAdd": "モデルを追加",
+      "selectedCount": "{{count}}件選択中",
+      "selectAll": "すべて選択",
+      "deselectAll": "クリア",
+      "alreadyAdded": "追加済み",
+      "apiKeyReused": "空にすると既存のキーを再利用します",
+      "keyReusedHint": "このプロバイダーには既にAPIキーが設定されています — 空にすると再利用されます。モデルを選択して保存するだけです。"
+    },
+    "providers": {
+      "custom": "カスタムモデル",
+      "volcengine": "Volcengine",
+      "dashscope": "Alibaba Cloud",
+      "siliconflow": "SiliconFlow",
+      "stepfun": "StepFun 中国",
+      "stepfunGlobal": "StepFun グローバル",
+      "hunyuan": "Tencent Cloud",
+      "ollama": "Ollama（ローカル）"
+    }
+  }
+}

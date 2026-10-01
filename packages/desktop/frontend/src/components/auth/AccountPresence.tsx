@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { useTranslation } from '@/i18n/useI18n';
+import { systemMessageNotificationsEnabled } from '@/lib/systemNotifications';
 import { clearAll, getToken } from '@/utils/authStore';
 import { cloudApi, cloudFetch } from '@/utils/modelSync';
 
@@ -31,7 +32,7 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
     const controller = new AbortController();
     setBlocked(false); setReason(''); setUnread(0);
     if (!token) return;
-    const desktop = (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<unknown> } }).toraWindow;
+    const desktop = (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<unknown>; notifyNewMessage?: () => Promise<{ status: string }> } }).toraWindow;
     async function refresh() {
       if (checking) { checkAgain = true; return; }
       checking = true;
@@ -77,7 +78,12 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
             if (event.type === 'messages-changed') setRevision(value => value + 1);
             if (event.type === 'message-received') {
               setRevision(value => value + 1);
+              // 保留原有的应用内提示；系统横幅是额外提醒，不应取代它。
               toast(t('inbox.newMessage'));
+              if (systemMessageNotificationsEnabled() && desktop?.notifyNewMessage) {
+                void Promise.resolve(desktop.notifyNewMessage())
+                  .catch(() => { /* 原生通知失败不影响应用内提示。 */ });
+              }
             }
             void refresh();
           } catch { /* 忽略非协议消息。 */ }

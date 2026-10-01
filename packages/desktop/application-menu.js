@@ -1,3 +1,5 @@
+import { nativeText, normalizeNativeLanguage } from './native-i18n.js';
+
 export function isTraditionalChineseLocale(language = '') {
   return /^zh(?:[-_](?:hant|tw|hk|mo))(?:[-_]|$)/i.test(language);
 }
@@ -17,8 +19,9 @@ const traditionalLabels = {
 };
 
 export function applicationMenuTemplate({ language = 'zh', isMac, send, checkUpdates, openWebsite, openDownloads, openLogs, about }) {
-  const label = (zh, en) => isTraditionalChineseLocale(language)
-    ? (traditionalLabels[zh] ?? zh) : language.startsWith('zh') ? zh : en;
+  const selected = normalizeNativeLanguage(language);
+  const label = (zh, en) => selected === 'zh-Hant'
+	? (traditionalLabels[zh] ?? zh) : selected === 'zh' ? zh : nativeText(selected, en);
   const command = (zh, en, action, accelerator) => ({ label: label(zh, en), accelerator, click: () => send(action) });
   const appItems = [
     { label: label('关于 Tora', 'About Tora'), click: about },

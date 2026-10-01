@@ -1,9 +1,11 @@
 // ASAPI 存储：agents / credentials / sessions（~/.tora/asapi/）
 // sessions 双轨存储：internal（OpenAI 格式，供 runAgent/压缩治理）+ display（agentscope Msg[]，供前端）
-import { readFileSync, writeFileSync, readdirSync, unlinkSync, mkdirSync, existsSync, statSync, renameSync } from 'node:fs';
+import { readFileSync, writeFileSync, readdirSync, unlinkSync, mkdirSync, existsSync, statSync, renameSync, copyFileSync, rmSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { gzipSync, gunzipSync } from 'node:zlib';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
+import { projectSessionEvents, readSessionEvents, sessionEventPath } from './session-events.js';
 import { LEGACY_AGENT_NAME, PREVIOUS_AGENT_NAME } from '../legacy-migration.js';
 // 规则里的工具名必须归一化到 PascalCase，否则 decidePermission 查表时
 // 对不上（用户从 UI 存 "bash"，agent 里问的是 "Bash"）。builtin.js 不反向
@@ -14,6 +16,7 @@ export const ASAPI_DIR = join(TORA_DIR, 'asapi');
 const AGENTS_PATH = join(ASAPI_DIR, 'agents.json');
 const CREDS_PATH = join(ASAPI_DIR, 'credentials.json');
 const SESSIONS_DIR = join(ASAPI_DIR, 'sessions');
+const FORK_SNAPSHOTS_DIR = join(ASAPI_DIR, 'fork-snapshots');
 const RECENTS_PATH = join(ASAPI_DIR, 'workspace-recents.json');
 const SKILLS_PATH = join(ASAPI_DIR, 'skills.json');
 
@@ -380,6 +383,28 @@ function sessionPath(id) {
   return join(SESSIONS_DIR, `${id}.json`);
 }
 
+function forkSnapshotPath(sessionId, replyId) {
+  sessionPath(sessionId); // 与会话文件共用 ID 校验
+  if (!/^[\w-]+$/.test(replyId)) throw new Error('非法回复 ID');
+  return join(FORK_SNAPSHOTS_DIR, sessionId, `${replyId}.json.gz`);
+}
+
+/** 完成一轮后保存真实模型上下文与任务状态；压缩历史不再破坏旧轮次的分支边界。 */
+export function saveForkSnapshot(session, replyId) {
+  const target = forkSnapshotPath(session.id, replyId);
+  mkdirSync(join(FORK_SNAPSHOTS_DIR, session.id), { recursive: true, mode: 0o700 });
+  const temp = `${target}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temp, gzipSync(JSON.stringify({ internal: session.internal, state: session.state, config: session.config })), { mode: 0o600 });
+    renameSync(temp, target);
+  } catch (error) { rmSync(temp, { force: true }); throw error; }
+}
+
+function loadForkSnapshot(sessionId, replyId) {
+  try { return JSON.parse(gunzipSync(readFileSync(forkSnapshotPath(sessionId, replyId))).toString('utf8')); }
+  catch { return null; }
+}
+
 export function defaultModelConfig(cfg) {
   return {
     type: 'openai_compatible',
@@ -425,7 +450,7 @@ export function listSessionRecords() {
   if (!existsSync(SESSIONS_DIR)) return [];
   return readdirSync(SESSIONS_DIR)
     .filter((f) => f.endsWith('.json'))
-    .map((f) => { try { return JSON.parse(readFileSync(join(SESSIONS_DIR, f), 'utf8')); } catch { return null; } })
+    .map((f) => loadSessionRecord(f.slice(0, -'.json'.length)))
     .filter(Boolean)
     .sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1));
 }
@@ -433,10 +458,35 @@ export function listSessionRecords() {
 export function loadSessionRecord(id) {
   const p = sessionPath(id);
   if (!existsSync(p)) return null;
-  try { return JSON.parse(readFileSync(p, 'utf8')); } catch { return null; }
+  let record;
+  try {
+    record = JSON.parse(readFileSync(p, 'utf8'));
+  } catch { return null; }
+  try {
+    const { events, nextOffset } = readSessionEvents(id, record.__journal_offset || 0);
+    projectSessionEvents(record, events);
+    record.__journal_offset = nextOffset;
+    return record;
+  } catch (error) {
+    console.warn(`[store] 会话 ${id} 事件日志读取失败，使用 JSON 快照: ${error?.message || error}`);
+    return record;
+  }
 }
 
 export function saveSessionRecord(record) {
+  try {
+    const { events, nextOffset } = readSessionEvents(record.id, record.__journal_offset || 0);
+    projectSessionEvents(record, events);
+    record.__journal_offset = nextOffset;
+  } catch (error) {
+    // Keep the damaged log for manual recovery, then let the intact JSON
+    // snapshot become the new baseline instead of making the session unwritable.
+    const path = sessionEventPath(record.id);
+    const backup = `${path}.corrupt-${Date.now()}`;
+    if (existsSync(path)) renameSync(path, backup);
+    record.__journal_offset = 0;
+    console.warn(`[store] 会话 ${record.id} 事件日志损坏，已隔离为 ${basename(backup)}: ${error?.message || error}`);
+  }
   record.updated_at = now();
   writeJson(sessionPath(record.id), record);
   return record;
@@ -445,6 +495,9 @@ export function saveSessionRecord(record) {
 export function deleteSession(id) {
   const p = sessionPath(id);
   if (existsSync(p)) unlinkSync(p);
+  const journal = sessionEventPath(id);
+  if (existsSync(journal)) unlinkSync(journal);
+  rmSync(join(FORK_SNAPSHOTS_DIR, id), { recursive: true, force: true });
   return true;
 }
 
@@ -504,37 +557,47 @@ export function forkSession(id, { upto, name } = {}) {
   if (!src) return null;
   const display = Array.isArray(src.display) ? src.display : [];
   const internal = Array.isArray(src.internal) ? src.internal : [];
-  const keep = Number.isFinite(upto) ? Math.max(0, Math.min(upto, display.length)) : display.length;
+  const keep = Number.isFinite(upto) ? Math.max(0, Math.min(Math.floor(upto), display.length)) : display.length;
 
-  // internal 与 display 不是一一对应（隐式上下文、压缩都会错位），所以按
-  // "保留最后 N 条 assistant 回复之后的边界"来截断内部历史：从 display 里
-  // 找出被保留的最后一条 assistant 的文本，在 internal 里定位到它就截断。
-  let internalEnd = internal.length;
+  let snapshot = null;
   if (keep < display.length) {
-    const lastKept = [...display.slice(0, keep)].reverse().find((m) => m.role === 'assistant');
-    const marker = lastKept ? displayTextOf({ display: [lastKept] }).trim().slice(0, 60) : '';
-    if (marker) {
-      for (let i = internal.length - 1; i >= 0; i--) {
-        if (String(internal[i].content ?? '').includes(marker)) { internalEnd = i + 1; break; }
-      }
-    } else {
-      internalEnd = 0;
+    if (keep > 0 && display[keep - 1]?.role !== 'assistant') {
+      return { error: '只能从已完成的助手回复处分支，请选中该轮回复。' };
+    }
+    snapshot = keep === 0 ? { internal: [], state: { permission_mode: 'default' } }
+      : loadForkSnapshot(id, display[keep - 1].id);
+    if (!snapshot || !Array.isArray(snapshot.internal)) {
+      return { error: '该历史轮次没有精确上下文快照，无法安全地从此处创建分支。' };
     }
   }
 
+  const sourceConfig = snapshot?.config ?? src.config;
   const record = createSessionRecord({
     agent_id: src.agent_id,
-    chat_model_config: src.config?.chat_model_config || null,
-    fallback_chat_model_config: src.config?.fallback_chat_model_config || null,
+    chat_model_config: sourceConfig?.chat_model_config || null,
+    fallback_chat_model_config: sourceConfig?.fallback_chat_model_config || null,
     toraCfg: loadConfig(),
-    cwd: src.config?.cwd || null,
+    cwd: sourceConfig?.cwd || null,
   });
   record.config.name = name || `${src.config?.name || '会话'}（分支）`;
   record.config.naming = { auto: false };
-  record.state = { ...(src.state || {}) };
+  record.state = { ...(snapshot?.state ?? src.state ?? {}) };
   record.display = display.slice(0, keep).map((m) => JSON.parse(JSON.stringify(m)));
-  record.internal = internal.slice(0, internalEnd).map((m) => JSON.parse(JSON.stringify(m)));
-  saveSessionRecord(record);
+  record.internal = (snapshot?.internal ?? internal).map((m) => JSON.parse(JSON.stringify(m)));
+  try {
+    saveSessionRecord(record);
+    for (const message of record.display) {
+      if (message.role !== 'assistant' || !message.id) continue;
+      const source = forkSnapshotPath(id, message.id);
+      if (!existsSync(source)) continue;
+      const target = forkSnapshotPath(record.id, message.id);
+      mkdirSync(join(FORK_SNAPSHOTS_DIR, record.id), { recursive: true, mode: 0o700 });
+      copyFileSync(source, target);
+    }
+  } catch (error) {
+    deleteSession(record.id);
+    return { error: `复制分支快照失败：${error?.message || String(error)}` };
+  }
   return { id: record.id, name: record.config.name, messages: record.display.length };
 }
 
@@ -633,6 +696,7 @@ export function clearPermissionRules() {
       if (f.endsWith('.json')) { try { unlinkSync(join(SESSIONS_DIR, f)); } catch { /* 忽略单个失败 */ } }
     }
   }
+  rmSync(FORK_SNAPSHOTS_DIR, { recursive: true, force: true });
   const credentials = listCredentials().length;
   if (existsSync(CREDS_PATH)) { try { unlinkSync(CREDS_PATH); } catch { /* 忽略 */ } }
   const agents = listAgents().length;

@@ -449,6 +449,7 @@ export async function runOneShot(cfg, content) {
     throw new Error('未配置 apiKey：运行 `tora config` 或设置环境变量 TORA_API_KEY');
   }
   const session = createSession('oneshot');
+  session.messages.push({ role: 'user', content: String(content) });
   const renderer = createAgentRenderer();
   const ac = new AbortController();
   process.on('SIGINT', () => { ac.abort(); });

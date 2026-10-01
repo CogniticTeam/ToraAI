@@ -13,11 +13,16 @@ const KEY = 'tora.theme';
 const BACKGROUND_KEY = 'tora.background';
 const CUSTOM_BACKGROUND_KEY = 'tora.background.custom';
 const BACKGROUND_CHANGED_EVENT = 'tora:background-changed';
+const MOTION_MODE_KEY = 'tora.motion.mode';
+const MOTION_CLICK_KEY = 'tora.motion.click';
+const MOTION_PAGE_KEY = 'tora.motion.page';
+const MOTION_CHANGED_EVENT = 'tora:motion-changed';
 const BACKGROUND_OPTIONS = new Set(['lavender', 'mist', 'stone', 'midnight', 'none', 'custom']);
 const readStored = (key) => {
 	try { return localStorage.getItem(key); } catch { return null; }
 };
 const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
 const applyTheme = () => {
 	const stored = readStored(KEY);
 	let useDark;
@@ -42,11 +47,34 @@ const applyBackground = () => {
 	if (choice === 'custom' && safeCustom) root.style.setProperty('--app-custom-wallpaper', `url("${custom}")`);
 	else root.style.removeProperty('--app-custom-wallpaper');
 };
+const applyMotion = () => {
+	const saved = readStored(MOTION_MODE_KEY);
+	const mode = ['off', 'gentle', 'standard', 'fast'].includes(saved) ? saved : 'system';
+	const effective = reducedMotionQuery.matches || mode === 'off' ? 'off' : mode === 'system' ? 'standard' : mode;
+	const clickEnabled = effective !== 'off' && readStored(MOTION_CLICK_KEY) !== '0';
+	const pageEnabled = effective !== 'off' && readStored(MOTION_PAGE_KEY) !== '0';
+	const profiles = {
+		off: { duration: '0ms', scale: '1' },
+		gentle: { duration: '190ms', scale: '0.985' },
+		standard: { duration: '140ms', scale: '0.975' },
+		fast: { duration: '85ms', scale: '0.985' },
+	};
+	const root = document.documentElement;
+	root.dataset.motion = effective;
+	root.dataset.motionClick = clickEnabled ? 'on' : 'off';
+	root.dataset.motionPage = pageEnabled ? 'on' : 'off';
+	root.style.setProperty('--tora-click-duration', profiles[effective].duration);
+	root.style.setProperty('--tora-press-scale', profiles[effective].scale);
+};
 applyTheme();
 applyBackground();
+applyMotion();
 darkQuery.addEventListener('change', applyTheme);
+reducedMotionQuery.addEventListener('change', applyMotion);
 window.addEventListener(BACKGROUND_CHANGED_EVENT, applyBackground);
+window.addEventListener(MOTION_CHANGED_EVENT, applyMotion);
 window.addEventListener('storage', (event) => {
 	if (event.key === KEY) applyTheme();
 	if (event.key === BACKGROUND_KEY || event.key === CUSTOM_BACKGROUND_KEY) applyBackground();
+	if ([MOTION_MODE_KEY, MOTION_CLICK_KEY, MOTION_PAGE_KEY].includes(event.key)) applyMotion();
 });

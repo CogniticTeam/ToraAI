@@ -74,12 +74,17 @@ function importTracesOnce(daily) {
   usageStoreMarkMeta('__tracesImported', true);
 }
 
+/** 里程碑端点在读取累计值前也需要完成旧 traces 的一次性迁移。 */
+export function ensureUsageHistoryImported() {
+  importTracesOnce(usageStoreDaily());
+}
+
 /**
  * 聚合全部使用数据（纯读 + 可能的一次性迁移）。
  */
 export function usageStats() {
   const daily = usageStoreDaily();
-  importTracesOnce(daily);
+  ensureUsageHistoryImported();
 
   // ---- daily.json：token / 工具 / 模型 / 运行 ----
   const perDay = {}; // 'YYYY-MM-DD' -> { tokens, runs }

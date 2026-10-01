@@ -1,7 +1,6 @@
 export const FIRST_RUN_INTRO_KEY = 'tora:first-run:intro:v1';
 export const FIRST_RUN_TOUR_KEY = 'tora:first-run:tour:v1';
 export const FIRST_RUN_STEP_KEY = 'tora:first-run:step:v1';
-export const FIRST_RUN_REPLAY_EVENT = 'tora:first-run:replay';
 export const FIRST_RUN_SETTINGS_CLOSED_EVENT = 'tora:first-run:settings-closed';
 export const FIRST_RUN_CLOSE_SETTINGS_EVENT = 'tora:first-run:close-settings';
 export const FIRST_RUN_CLOSE_MODEL_EVENT = 'tora:first-run:close-model';

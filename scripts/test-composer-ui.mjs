@@ -50,7 +50,8 @@ try {
 	}, project);
 	await page.goto(base + '/', { waitUntil: 'commit' });
 	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'composer-test', username: 'composer-test' }) }));
-	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	let cloudModels = [];
+	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: cloudModels }) }));
 	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
 	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
 	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'composer-test-ticket' }) }));
@@ -60,6 +61,7 @@ try {
 		localStorage.setItem('tora_auth_token', 'composer-test-token');
 		localStorage.setItem('username', 'composer-test');
 		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-use-consent:v1', JSON.stringify({ terms: true, privacy: true, crossBorder: true }));
 		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });
@@ -164,8 +166,35 @@ try {
 	assert.equal(await page.locator('#tour-llm-select').first().count(), 1);
 	assert.equal(await page.locator('#tour-permission-mode').first().count(), 1);
 	await page.screenshot({ path: '/tmp/tora-composer-existing.png' });
+	// 图像附件必须转为 data URL，不能把本机路径送给模型。
+	cloudModels = [{ id: 'deepseek-ui-test', provider: 'deepseek', label: 'DeepSeek', model: 'deepseek-flash', baseURL: 'https://api.deepseek.com/v1', apiKey: 'test', enabled: true, vision: null }];
+	const { saveConfig } = await import('../packages/core/src/config.js');
+	saveConfig({ modelList: cloudModels });
+	record.config.chat_model_config = { type: 'openai_compatible', credential_id: 'cocode-models', model: 'deepseek-flash', parameters: {} };
+	saveSessionRecord(record);
+	await page.reload({ waitUntil: 'domcontentloaded' });
+	const fileInput = page.locator('#tour-chat-input input[type="file"]');
+	await page.waitForFunction(() => document.querySelector('#tour-chat-input input[type="file"]')?.accept.includes('image/png'));
+	await fileInput.setInputFiles({ name: 'sample.png', mimeType: 'image/png', buffer: Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9W4YtuwAAAAASUVORK5CYII=', 'base64') });
+	const image = page.locator('img[alt="sample.png"]');
+	await image.waitFor({ state: 'visible' });
+	assert.match(await image.getAttribute('src'), /^data:image\/png;base64,/, '图片附件应内联，不得传 file://');
+	const previousFetch = globalThis.fetch;
+	let modelRequest = null;
+	globalThis.fetch = async (_url, init) => {
+		const body = JSON.parse(init?.body || '{}');
+		if (body.messages?.some(message => Array.isArray(message.content) && message.content.some(part => part.type === 'image_url'))) modelRequest = body;
+		return new Response('data: {"choices":[{"delta":{"content":"图片已收到"}}]}\n\ndata: [DONE]\n\n', { status: 200, headers: { 'content-type': 'text/event-stream' } });
+	};
+	try {
+		await page.locator('#tour-chat-textarea').first().fill('描述图片');
+		await page.locator('#tour-chat-textarea').first().press('Enter');
+		for (let attempt = 0; attempt < 100 && !modelRequest; attempt++) await new Promise(resolve => setTimeout(resolve, 50));
+		const user = modelRequest?.messages.find(message => Array.isArray(message.content) && message.content.some(part => part.type === 'image_url'));
+		assert.match(user?.content.find(part => part.type === 'image_url')?.image_url?.url || '', /^data:image\/png;base64,/, '发往模型的图片必须是 data URL');
+	} finally { globalThis.fetch = previousFetch; }
 	assert.deepEqual(errors, [], `浏览器脚本错误：${errors.join(' | ')}`);
-	console.log('空对话欢迎页（含已有 ID）显示项目条、有消息后隐藏、紧凑卡片与控件布局：通过');
+	console.log('紧凑输入卡片与 DeepSeek 图片附件前端到模型请求全链路：通过');
 } finally {
 	await browser.close();
 	server.closeAllConnections?.();

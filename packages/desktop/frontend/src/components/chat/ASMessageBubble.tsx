@@ -447,6 +447,81 @@ function summarizeToolGroup(calls: ToolCallWithResult[], t: TFunction) {
 	return { title, insertions, deletions };
 }
 
+/** 最后一段工具/思考之后的正文是结语；此前的正文属于任务过程。 */
+function splitAssistantContent(blocks: ExtendedContentBlock[]) {
+	const visible = blocks.filter((block) => block.type !== 'data');
+	let lastProcessIndex = -1;
+	for (let index = visible.length - 1; index >= 0; index -= 1) {
+		if (visible[index].type !== 'text') {
+			lastProcessIndex = index;
+			break;
+		}
+	}
+	return {
+		processBlocks: visible.slice(0, lastProcessIndex + 1),
+		finalBlocks: visible.slice(lastProcessIndex + 1),
+	};
+}
+
+function formatProcessDuration(seconds: number, t: TFunction) {
+	const whole = Math.max(0, Math.floor(seconds));
+	const hours = Math.floor(whole / 3600);
+	const minutes = Math.floor((whole % 3600) / 60);
+	const rest = whole % 60;
+	if (hours) return `${hours}${t('messageBubble.taskProcess.hour')}${minutes}${t('messageBubble.taskProcess.minute')}`.trim();
+	if (minutes) return `${minutes}${t('messageBubble.taskProcess.minute')}${rest}${t('messageBubble.taskProcess.second')}`.trim();
+	return `${rest}${t('messageBubble.taskProcess.second')}`.trim();
+}
+
+/** 秒表单独更新，避免长任务每秒重新渲染整段过程与 Markdown。 */
+function ProcessDurationLabel({ message, finished }: { message: Msg; finished: boolean }) {
+	const { t } = useTranslation();
+	const [now, setNow] = useState(() => Date.now());
+	useEffect(() => {
+		if (finished) return;
+		const timer = setInterval(() => setNow(Date.now()), 1000);
+		return () => clearInterval(timer);
+	}, [finished]);
+
+	const start = Date.parse(message.created_at);
+	const end = finished ? Date.parse(message.finished_at ?? '') : now;
+	const duration = Number.isFinite(start) && Number.isFinite(end)
+		? formatProcessDuration((end - start) / 1000, t)
+		: null;
+	const title = duration
+		? t(finished ? 'messageBubble.taskProcess.finished' : 'messageBubble.taskProcess.running', { duration })
+		: t('messageBubble.taskProcess.title');
+	return <span>{title}</span>;
+}
+
+/** 一轮任务的轨迹只折叠一次，结语与改动摘要始终留在外面。 */
+function AssistantTaskProcess({ message, blocks, finished }: {
+	message: Msg;
+	blocks: ExtendedContentBlock[];
+	finished: boolean;
+}) {
+	const [open, setOpen] = useState(() => !finished);
+	const wasFinished = useRef(finished);
+	useEffect(() => {
+		if (!wasFinished.current && finished) setOpen(false);
+		wasFinished.current = finished;
+	}, [finished]);
+
+	return <Collapsible open={open} onOpenChange={setOpen} className="mb-2 w-full" data-task-process>
+		<CollapsibleTrigger asChild>
+			<button type="button" className="group/process flex min-h-8 w-full items-center gap-2 border-b border-foreground/15 pb-2 text-left text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+				<ProcessDurationLabel message={message} finished={finished} />
+				<ChevronRight className="size-4 shrink-0 transition-transform group-data-[state=open]/process:rotate-90" />
+			</button>
+		</CollapsibleTrigger>
+		<CollapsibleContent className="flex flex-col gap-1.5 pt-3" data-task-process-content>
+			{blocks.map((block, index) => <Bubble key={index} variant="ghost">
+				<BubbleContent><ASBlock block={block} /></BubbleContent>
+			</Bubble>)}
+		</CollapsibleContent>
+	</Collapsible>;
+}
+
 interface MessageBubbleProps {
 	message: Msg;
 	/** 由消息列表统一读取，避免长对话中每个气泡各自订阅技能查询。 */
@@ -552,6 +627,9 @@ function ASMessageBubbleComponent({
 	);
 
 	const blocks = groupToolCalls(message.content);
+	const { processBlocks, finalBlocks } = isUser
+		? { processBlocks: [], finalBlocks: blocks.filter((block) => block.type !== 'data') }
+		: splitAssistantContent(blocks);
 
 	// 历史 Msg 的 finished_reason 可能为空，但 finished_at 已写入。
 	// 流式消息两者都为空；统一判据同时用于改动汇总与复制按钮。
@@ -566,7 +644,7 @@ function ASMessageBubbleComponent({
 
 	// What the copy button hands over — the prose of the message, without
 	// the tool calls and attachments around it.
-	const plainText = message.content
+	const plainText = (isUser ? message.content : finalBlocks)
 		.filter((b): b is TextBlock => b.type === 'text')
 		.map((b) => b.text)
 		.join('\n\n');
@@ -610,15 +688,22 @@ function ASMessageBubbleComponent({
 						))}
 					</div>
 				)}
-				{blocks
-					.filter((block) => block.type !== 'data')
-					.map((block, index) => (
-						<Bubble key={index} variant={isUser ? 'tinted' : 'ghost'}>
-							<BubbleContent>
-								<ASBlock block={block} />
-							</BubbleContent>
-						</Bubble>
-					))}
+				{!isUser && processBlocks.length > 0 && (
+					<AssistantTaskProcess message={message} blocks={processBlocks} finished={replyFinished} />
+				)}
+				{finalBlocks.map((block, index) => (
+					<Bubble key={index} variant={isUser ? 'tinted' : 'ghost'}>
+						<BubbleContent>
+							<ASBlock block={block} />
+						</BubbleContent>
+					</Bubble>
+				))}
+				{!isUser && processBlocks.length > 0 && finalBlocks.length === 0 && replyFinished &&
+					message.finished_reason !== ReplyFinishedReason.ERROR && (
+					<p className="py-2 text-sm text-muted-foreground" data-task-conclusion-missing>
+						{t('messageBubble.taskProcess.noConclusion')}
+					</p>
+				)}
 				{changedFiles.length > 0 && <ChangedFilesCard files={changedFiles} />}
 				{message.finished_reason === ReplyFinishedReason.ERROR && (
 					<Alert
@@ -626,7 +711,7 @@ function ASMessageBubbleComponent({
 						className="m-2 w-[calc(100%-1rem)] border-red-200 bg-red-50 text-destructive dark:border-red-900 dark:bg-red-950 dark:text-red-50"
 					>
 						<TriangleAlert />
-						<AlertTitle>{t('messageBubble.error.title')}</AlertTitle>
+						<AlertTitle>{t(String(message.error?.type) === 'blocked' ? 'messageBubble.error.blockedTitle' : 'messageBubble.error.title')}</AlertTitle>
 						<AlertDescription>
 							{(() => {
 								const raw = message.error?.message?.trim();

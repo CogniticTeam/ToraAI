@@ -11,13 +11,14 @@
  * 后端：Cloudflare Worker（packages/auth-worker，D1 存储 + Resend 发验证码）。
  * 服务地址存 localStorage('tora_auth_api')，默认线上部署地址。
  */
-import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, AtSign, Camera, ChevronDown, Eye, EyeOff, KeyRound, Languages, Loader2 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ArrowLeft, AtSign, Camera, ChevronRight, Eye, EyeOff, KeyRound, Languages, Loader2, LogOut } from 'lucide-react';
+import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from '@/i18n/useI18n';
 import {
 	getToken, getEmail, getUsername,
@@ -81,7 +82,7 @@ const SUBMIT_CLS =
 	'btn-brand flex h-11 w-full items-center justify-center rounded-sm text-sm font-medium text-primary-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:filter-none';
 /** 返回按钮 */
 const BACK_CLS =
-	'absolute -left-2 -top-1 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground';
+	'absolute -left-2 -top-1 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground rtl:left-auto rtl:-right-2';
 /** 标题层级 */
 const TITLE_CLS = 'text-[21px] font-semibold tracking-[-0.02em]';
 /** 错误条：淡入下滑出现，退场收起，避免卡片高度突跳 */
@@ -169,11 +170,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 /** 用户名（与服务端 isValidUsername 同规则）：2-32 位字母/数字/下划线/连字符/文字 */
 const USERNAME_RE = /^[\p{L}\p{N}_-]{2,32}$/u;
 
-export function AccountSection({ onAuthenticated }: {
+export function AccountSection({ onAuthenticated, mode = 'settings' }: {
+	/** 启动认证界面不能将缓存资料误当作已验证的账户。 */
+	mode?: 'auth' | 'settings';
 	/** 登录/注册成功回调（LoginGate 全屏门槛用；设置窗口内不传） */
 	onAuthenticated?: (user: { email: string; createdAt?: string }) => void;
 }) {
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
 	const [languageOpen, setLanguageOpen] = useState(false);
 	const [step, setStep] = useState<Step>('home');
 	const [account, setAccount] = useState(() =>
@@ -193,8 +196,9 @@ export function AccountSection({ onAuthenticated }: {
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [user, setUser] = useState<{ email: string; username?: string | null; createdAt?: string; avatar?: string | null } | null>(() => {
+		if (mode === 'auth') return null;
 		const saved = getEmail();
-		return saved
+		return saved && getToken()
 			? { email: saved, username: getUsername() }
 			: null;
 	});
@@ -208,7 +212,7 @@ export function AccountSection({ onAuthenticated }: {
 
 	// 已有 token 时拉一次最新资料（邮箱/用户名可能改过、头像只存在服务端）
 	useEffect(() => {
-		if (!getToken()) return;
+		if (mode === 'auth' || !getToken()) return;
 		let alive = true;
 		authFetch('/auth/me')
 			.then(async (r) => (r.ok ? await r.json() : null))
@@ -221,7 +225,7 @@ export function AccountSection({ onAuthenticated }: {
 			})
 			.catch(() => {});
 		return () => { alive = false; };
-	}, []);
+	}, [mode]);
 
 	/** 首页输入：邮箱或用户名均可（有 @ 按邮箱校验，否则按用户名规则） */
 	const accountOk = EMAIL_RE.test(account.trim()) || USERNAME_RE.test(account.trim());
@@ -380,7 +384,7 @@ export function AccountSection({ onAuthenticated }: {
 	};
 
 	// 已登录：账号管理视图（设置窗口）——不含登录卡片背景
-	if (user) {
+	if (mode === 'settings' && user) {
 		return (
 			<AccountManager
 				user={user}
@@ -391,25 +395,25 @@ export function AccountSection({ onAuthenticated }: {
 				onAvatarChanged={(av) => {
 					setUser((u) => (u ? { ...u, avatar: av } : u));
 				}}
-				onLogout={() => void logout()}
+				onLogout={logout}
 			/>
 		);
 	}
 
 
 	return (
-		<div className="app-drag relative flex h-full w-full items-center justify-center overflow-hidden">
+		<div className="app-drag relative flex h-full w-full items-center justify-center overflow-hidden" data-language-open={languageOpen}>
 			<AuthBackdrop />
 
 			{onAuthenticated ? (
 				<button
 					type="button"
 					onClick={() => setLanguageOpen(true)}
-					aria-label="Language"
+					aria-label={t('settings.general.language.title')}
 					className="app-no-drag absolute right-5 top-5 z-30 flex h-9 items-center gap-2 rounded-rect border border-border bg-background/90 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
 				>
 					<Languages className="size-4 text-muted-foreground" />
-					<span>Language</span>
+					<span>{t('settings.general.language.title')}</span>
 				</button>
 			) : null}
 			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
@@ -458,9 +462,9 @@ export function AccountSection({ onAuthenticated }: {
 										scale: accountFocus || account ? 0.72 : 1,
 									}}
 									transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-									style={{ transformOrigin: 'left top', x: 14 }}
+									style={{ transformOrigin: i18n.language === 'ar' ? 'right top' : 'left top', x: i18n.language === 'ar' ? -14 : 14 }}
 									className={
-										'pointer-events-none absolute left-0 top-0 text-sm transition-colors duration-200 ' +
+										'pointer-events-none absolute left-0 top-0 text-sm transition-colors duration-200 rtl:left-auto rtl:right-0 ' +
 										(accountFocus ? 'text-primary' : 'text-muted-foreground')
 									}
 								>
@@ -495,7 +499,7 @@ export function AccountSection({ onAuthenticated }: {
 								className={BACK_CLS}
 								onClick={() => { setStep('home'); setError(null); }}
 							>
-								<ArrowLeft className="size-4" />
+								<ArrowLeft className="size-4 rtl:rotate-180" />
 							</button>
 
 							<h3 className={TITLE_CLS}>{t('settings.account.passwordTitle')}</h3>
@@ -534,7 +538,7 @@ export function AccountSection({ onAuthenticated }: {
 								className={BACK_CLS}
 								onClick={() => { setStep('password'); setError(null); setLoginTs(''); }}
 							>
-								<ArrowLeft className="size-4" />
+								<ArrowLeft className="size-4 rtl:rotate-180" />
 							</button>
 
 							<h3 className={TITLE_CLS}>{t('settings.account.captchaTitle')}</h3>
@@ -568,7 +572,7 @@ export function AccountSection({ onAuthenticated }: {
 								className={BACK_CLS}
 								onClick={() => { setStep('home'); setError(null); }}
 							>
-								<ArrowLeft className="size-4" />
+								<ArrowLeft className="size-4 rtl:rotate-180" />
 							</button>
 
 							<div className="text-center">
@@ -661,7 +665,7 @@ export function AccountSection({ onAuthenticated }: {
 								className={BACK_CLS}
 								onClick={() => { setStep('register'); setError(null); setRegisterTs(''); }}
 							>
-								<ArrowLeft className="size-4" />
+								<ArrowLeft className="size-4 rtl:rotate-180" />
 							</button>
 
 							<h3 className={TITLE_CLS}>{t('settings.account.captchaTitle')}</h3>
@@ -702,42 +706,82 @@ const INPUT_CLS =
 function CollapseRow({
 	icon: Icon,
 	label,
+	description,
 	open,
 	busy,
+	disabled,
+	buttonRef,
 	children,
 	onToggle,
 }: {
 	icon: typeof KeyRound;
 	label: string;
+	description: string;
 	open: boolean;
 	busy?: boolean;
+	disabled?: boolean;
+	buttonRef: React.RefObject<HTMLButtonElement | null>;
 	children: React.ReactNode;
 	onToggle: () => void;
 }) {
+	const id = useId();
+	const reducedMotion = useReducedMotion();
 	return (
-		<div className="overflow-hidden rounded-xl border border-border bg-card">
+		<div>
 			<button
+				ref={buttonRef}
 				type="button"
-				className="flex w-full items-center gap-3 px-5 py-3.5 text-left transition-colors hover:bg-muted"
+				id={`${id}-toggle`}
+				aria-expanded={open}
+				aria-controls={`${id}-panel`}
+				disabled={disabled}
+				className="flex w-full items-center gap-3 px-5 py-5 text-start transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring disabled:cursor-wait sm:gap-4 sm:px-6"
 				onClick={onToggle}
 			>
-				<Icon className="size-4 shrink-0 text-muted-foreground" />
-				<span className="flex-1 text-sm font-medium">{label}</span>
+				<span className="flex size-8.5 shrink-0 items-center justify-center rounded-[10px] border border-border text-muted-foreground"><Icon className="size-4" /></span>
+				<span className="min-w-0 flex-1">
+					<span className="block text-sm font-medium">{label}</span>
+					<span className="mt-1 block break-words text-xs text-muted-foreground">{description}</span>
+				</span>
 				{busy && <Loader2 className="size-3.5 animate-spin text-muted-foreground" />}
-				<ChevronDown className={`size-4 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+				<ChevronRight className={`size-4 shrink-0 text-muted-foreground transition-transform duration-150 motion-reduce:transition-none rtl:rotate-180 ${open ? 'rotate-90 rtl:rotate-90' : ''}`} />
 			</button>
+			<div id={`${id}-panel`} role="region" aria-labelledby={`${id}-toggle`} hidden={!open}>
 			<AnimatePresence initial={false}>
 				{open && (
 					<motion.div
-						initial={{ height: 0, opacity: 0 }}
-						animate={{ height: 'auto', opacity: 1 }}
-						exit={{ height: 0, opacity: 0 }}
-						transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
+						initial={{ opacity: reducedMotion ? 1 : 0, y: reducedMotion ? 0 : -3 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: reducedMotion ? 0 : 0.15 }}
 					>
-						<div className="border-t border-border px-5 pb-4 pt-4">{children}</div>
+						<div className="border-t border-border p-5 sm:ps-[74px] sm:pe-6 sm:py-6">{children}</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
+			</div>
+		</div>
+	);
+}
+
+function AccountPasswordField({ label, value, onChange, autoComplete, disabled }: {
+	label: string; value: string; onChange: (value: string) => void;
+	autoComplete: 'current-password' | 'new-password'; disabled: boolean;
+}) {
+	const { t } = useTranslation();
+	const id = useId();
+	const [visible, setVisible] = useState(false);
+	return (
+		<div className="space-y-2">
+			<label htmlFor={id} className="block text-xs font-medium">{label}</label>
+			<div className="relative">
+				<input id={id} type={visible ? 'text' : 'password'} value={value} onChange={e => onChange(e.target.value)}
+					autoComplete={autoComplete} required disabled={disabled} className={`${INPUT_CLS} pe-10`} />
+				<button type="button" aria-label={t(visible ? 'settings.account.hidePassword' : 'settings.account.showPassword')}
+					aria-pressed={visible} className="absolute end-1 top-1 flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring"
+					onClick={() => setVisible(current => !current)}>
+					{visible ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+				</button>
+			</div>
 		</div>
 	);
 }
@@ -751,7 +795,7 @@ function AccountManager({
 	user: { email: string; username?: string | null; createdAt?: string; avatar?: string | null };
 	onEmailChanged: (email: string) => void | Promise<void>;
 	onAvatarChanged?: (avatar: string | null) => void;
-	onLogout: () => void;
+	onLogout: () => void | Promise<void>;
 }) {
 	const { t } = useTranslation();
 	const [avatar, setAvatar] = useState(user.avatar ?? null);
@@ -766,6 +810,8 @@ function AccountManager({
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [note, setNote] = useState<string | null>(null);
+	const [logoutOpen, setLogoutOpen] = useState(false);
+	const [logoutBusy, setLogoutBusy] = useState(false);
 
 	const [curPwd, setCurPwd] = useState('');
 	const [newPwd, setNewPwd] = useState('');
@@ -773,6 +819,8 @@ function AccountManager({
 	const [emailPwd, setEmailPwd] = useState('');
 	const [newEmail, setNewEmail] = useState('');
 	const fileRef = useRef<HTMLInputElement>(null);
+	const passwordToggleRef = useRef<HTMLButtonElement>(null);
+	const emailToggleRef = useRef<HTMLButtonElement>(null);
 
 	const flashNote = (msg: string) => {
 		setNote(msg);
@@ -818,6 +866,7 @@ function AccountManager({
 			if (!res.ok) throw new Error(String(body?.detail ?? `HTTP ${res.status}`));
 			setPanel('none');
 			setCurPwd(''); setNewPwd(''); setNewPwd2('');
+			requestAnimationFrame(() => passwordToggleRef.current?.focus());
 			flashNote(t('settings.account.manager.passwordSaved'));
 		} catch (e) {
 			fail(e);
@@ -840,9 +889,10 @@ function AccountManager({
 			});
 			const body = await res.json().catch(() => ({}));
 			if (!res.ok) throw new Error(String(body?.detail ?? `HTTP ${res.status}`));
-			onEmailChanged(body.email ?? newEmail.trim());
+			await onEmailChanged(body.email ?? newEmail.trim());
 			setPanel('none');
 			setEmailPwd(''); setNewEmail('');
+			requestAnimationFrame(() => emailToggleRef.current?.focus());
 			flashNote(t('settings.account.manager.emailSaved'));
 		} catch (e) {
 			fail(e);
@@ -857,116 +907,115 @@ function AccountManager({
 	};
 
 	const initial = (user.username || user.email).trim().charAt(0).toUpperCase();
+	const cancelEdit = () => {
+		(panel === 'password' ? passwordToggleRef : emailToggleRef).current?.focus();
+		setPanel('none');
+		setError(null);
+		setCurPwd(''); setNewPwd(''); setNewPwd2(''); setEmailPwd(''); setNewEmail('');
+	};
+	const confirmLogout = async () => {
+		setLogoutBusy(true);
+		try { await onLogout(); }
+		catch (e) { fail(e); setLogoutOpen(false); }
+		finally { setLogoutBusy(false); }
+	};
 
 	return (
-		<div className="mx-auto w-full max-w-md">
-			{/* 资料卡：头像（点击更换） + 邮箱 + 注册时间 */}
-			<div className="flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-4">
-				<button
-					type="button"
-					aria-label={t('settings.account.manager.changeAvatar')}
-					className="group relative size-16 shrink-0 overflow-hidden rounded-sm border border-border bg-muted"
-					onClick={() => fileRef.current?.click()}
-				>
-					{avatar ? (
-						<img src={avatar} alt="" className="size-full object-cover" draggable={false} />
-					) : (
-						<span className="flex size-full items-center justify-center text-xl font-semibold text-muted-foreground">{initial}</span>
-					)}
-					{avatarBusy ? (
-						<span className="absolute inset-0 flex items-center justify-center bg-scrim">
-							<Loader2 className="size-4 animate-spin text-white" />
-						</span>
-					) : (
-						<span className="absolute inset-0 hidden items-center justify-center bg-scrim text-white group-hover:flex">
-							<Camera className="size-4" />
-						</span>
-					)}
-				</button>
-				<input
-					ref={fileRef}
-					type="file"
-					accept="image/png,image/jpeg,image/webp"
-					className="hidden"
-					onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; void pickAvatar(f); }}
-				/>
-				<div className="min-w-0">
-					<div className="truncate text-sm font-semibold">{user.username || user.email}</div>
-					{user.username && user.email && (
-						<div className="mt-0.5 truncate text-xs text-muted-foreground">{user.email}</div>
-					)}
-					{user.createdAt && (
-						<div className="mt-0.5 text-xs text-muted-foreground">
-							{t('settings.account.since', { date: user.createdAt.slice(0, 10) })}
+		<div className="w-full" data-testid="account-manager">
+			<section aria-labelledby="account-profile-heading" className="mb-8">
+				<h4 id="account-profile-heading" className="mb-3 text-[13px] font-semibold">{t('settings.account.manager.profileTitle')}</h4>
+				<div className="overflow-hidden rounded-2xl border border-border bg-card">
+					<div className="grid grid-cols-[64px_minmax(0,1fr)] items-center gap-x-4 gap-y-3 p-5 sm:grid-cols-[76px_minmax(0,1fr)_auto] sm:gap-x-5 sm:p-6">
+						<button type="button" aria-label={t('settings.account.manager.changeAvatar')} title={t('settings.account.manager.avatarHint')}
+							disabled={avatarBusy || busy || logoutBusy}
+							className="group relative size-16 shrink-0 overflow-hidden rounded-2xl border border-border bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring sm:size-[76px] sm:rounded-[18px]"
+							onClick={() => fileRef.current?.click()}>
+							{avatar ? <img src={avatar} alt="" className="size-full object-cover" draggable={false} />
+								: <span className="flex size-full items-center justify-center text-3xl font-medium text-muted-foreground">{initial}</span>}
+							{avatarBusy ? <span className="absolute inset-0 flex items-center justify-center bg-scrim"><Loader2 className="size-4 animate-spin text-white" /></span>
+								: <span className="absolute inset-0 hidden items-center justify-center bg-scrim text-white group-hover:flex group-focus-visible:flex"><Camera className="size-4" /></span>}
+						</button>
+						<div className="min-w-0">
+							<div className="break-words text-xl font-semibold tracking-tight sm:text-[22px]">{user.username || user.email}</div>
+							{user.username && user.email && <div className="mt-1 break-words text-[13px] text-muted-foreground">{user.email}</div>}
 						</div>
-					)}
-					<div className="mt-0.5 text-[11px] text-muted-foreground">{t('settings.account.manager.avatarHint')}</div>
-				</div>
-			</div>
-
-			{/* 操作反馈条 */}
-			{note && (
-				<div className="mt-3 rounded-md border border-emerald-500 bg-emerald-50 dark:bg-emerald-950 px-3 py-2 text-xs text-emerald-600 dark:text-emerald-400">
-					{note}
-				</div>
-			)}
-			{error && (
-				<div className="mt-3 rounded-md border border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">
-					{error}
-				</div>
-			)}
-
-			{/* 修改密码 */}
-			<div className="mt-3">
-				<CollapseRow
-					icon={KeyRound}
-					label={t('settings.account.manager.changePassword')}
-					open={panel === 'password'}
-					busy={busy && panel === 'password'}
-					onToggle={() => toggle('password')}
-				>
-					<div className="space-y-2.5">
-						<input type="password" value={curPwd} onChange={(e) => setCurPwd(e.target.value)}
-							placeholder={t('settings.account.manager.currentPassword')} className={INPUT_CLS} />
-						<input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)}
-							placeholder={t('settings.account.manager.newPassword')} className={INPUT_CLS} />
-						<input type="password" value={newPwd2} onChange={(e) => setNewPwd2(e.target.value)}
-							placeholder={t('settings.account.confirmLabel')} className={INPUT_CLS}
-							onKeyDown={(e) => e.key === 'Enter' && void submitPassword()} />
-						<Button type="button" size="sm" disabled={busy || !curPwd || !newPwd || !newPwd2} onClick={() => void submitPassword()}>
-							{t('settings.account.manager.save')}
+						<Button type="button" variant="outline" size="sm" className="col-start-2 w-fit gap-2 rounded-[8px] text-xs sm:col-auto"
+							title={t('settings.account.manager.avatarHint')} disabled={avatarBusy || busy || logoutBusy} onClick={() => fileRef.current?.click()}>
+							{avatarBusy ? <Loader2 className="size-3.5 animate-spin" /> : <Camera className="size-3.5" />}
+							{t('settings.account.manager.changeAvatar')}
 						</Button>
+						<input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
+							onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; void pickAvatar(file); }} />
 					</div>
-				</CollapseRow>
-			</div>
+					{user.createdAt && <dl className="flex justify-between gap-4 border-t border-border px-5 py-4 text-xs sm:px-6">
+						<dt className="text-muted-foreground">{t('settings.account.manager.registeredAt')}</dt>
+						<dd><time dateTime={user.createdAt}>{user.createdAt.slice(0, 10)}</time></dd>
+					</dl>}
+				</div>
+				<div role="status" aria-live="polite">
+					{note && <div className="mt-3 rounded-[8px] border border-border bg-muted px-3 py-2 text-xs">{note}</div>}
+				</div>
+				{error && panel === 'none' && <div role="alert" className="mt-3 rounded-[8px] bg-destructive-soft px-3 py-2 text-xs text-destructive">{error}</div>}
+			</section>
 
-			{/* 修改邮箱 */}
-			<div className="mt-3">
-				<CollapseRow
-					icon={AtSign}
-					label={t('settings.account.manager.changeEmail')}
-					open={panel === 'email'}
-					busy={busy && panel === 'email'}
-					onToggle={() => toggle('email')}
-				>
-					<div className="space-y-2.5">
-						<div className="text-xs text-muted-foreground">{t('settings.account.manager.currentEmail', { email: user.email })}</div>
-						<input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
-							placeholder={t('settings.account.manager.newEmail')} className={INPUT_CLS} />
-						<input type="password" value={emailPwd} onChange={(e) => setEmailPwd(e.target.value)}
-							placeholder={t('settings.account.manager.currentPassword')} className={INPUT_CLS}
-							onKeyDown={(e) => e.key === 'Enter' && void submitEmail()} />
-						<Button type="button" size="sm" disabled={busy || !newEmail.trim() || !emailPwd} onClick={() => void submitEmail()}>
-							{t('settings.account.manager.save')}
-						</Button>
-					</div>
-				</CollapseRow>
-			</div>
+			<section aria-labelledby="account-security-heading" className="mb-8">
+				<h4 id="account-security-heading" className="mb-3 text-[13px] font-semibold">{t('settings.account.manager.securityTitle')}</h4>
+				<div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+					<CollapseRow icon={KeyRound} label={t('settings.account.manager.changePassword')} description={t('settings.account.manager.passwordHint')}
+						buttonRef={passwordToggleRef} open={panel === 'password'} busy={busy && panel === 'password'} disabled={busy || avatarBusy || logoutBusy} onToggle={() => toggle('password')}>
+						<form className="max-w-[430px] space-y-4" onSubmit={e => { e.preventDefault(); if (!busy && curPwd && newPwd && newPwd2) void submitPassword(); }}>
+							<AccountPasswordField label={t('settings.account.manager.currentPassword')} value={curPwd} onChange={setCurPwd} autoComplete="current-password" disabled={busy} />
+							<AccountPasswordField label={t('settings.account.manager.newPassword')} value={newPwd} onChange={setNewPwd} autoComplete="new-password" disabled={busy} />
+							<AccountPasswordField label={t('settings.account.manager.confirmNewPassword')} value={newPwd2} onChange={setNewPwd2} autoComplete="new-password" disabled={busy} />
+							{error && panel === 'password' && <div role="alert" className="text-xs text-destructive">{error}</div>}
+							<div className="flex gap-2 pt-2">
+								<Button type="submit" size="sm" className="gap-2 rounded-[8px] text-xs" disabled={busy || !curPwd || !newPwd || !newPwd2}>
+									{busy && <Loader2 className="size-3.5 animate-spin" />}{t('settings.account.manager.savePassword')}
+								</Button>
+								<Button type="button" variant="outline" size="sm" className="rounded-[8px] text-xs" disabled={busy} onClick={cancelEdit}>{t('common.cancel')}</Button>
+							</div>
+						</form>
+					</CollapseRow>
+					<CollapseRow icon={AtSign} label={t('settings.account.manager.changeEmail')} description={t('settings.account.manager.currentEmail', { email: user.email })}
+						buttonRef={emailToggleRef} open={panel === 'email'} busy={busy && panel === 'email'} disabled={busy || avatarBusy || logoutBusy} onToggle={() => toggle('email')}>
+						<form className="max-w-[430px] space-y-4" onSubmit={e => { e.preventDefault(); if (!busy && newEmail.trim() && emailPwd) void submitEmail(); }}>
+							<label className="block space-y-2">
+								<span className="block text-xs font-medium">{t('settings.account.manager.newEmail')}</span>
+								<input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} autoComplete="email" required disabled={busy} className={INPUT_CLS} />
+							</label>
+							<AccountPasswordField label={t('settings.account.manager.currentPassword')} value={emailPwd} onChange={setEmailPwd} autoComplete="current-password" disabled={busy} />
+							<p className="text-xs text-muted-foreground">{t('settings.account.manager.emailPasswordHint')}</p>
+							{error && panel === 'email' && <div role="alert" className="text-xs text-destructive">{error}</div>}
+							<div className="flex gap-2 pt-2">
+								<Button type="submit" size="sm" className="gap-2 rounded-[8px] text-xs" disabled={busy || !newEmail.trim() || !emailPwd}>
+									{busy && <Loader2 className="size-3.5 animate-spin" />}{t('settings.account.manager.saveEmail')}
+								</Button>
+								<Button type="button" variant="outline" size="sm" className="rounded-[8px] text-xs" disabled={busy} onClick={cancelEdit}>{t('common.cancel')}</Button>
+							</div>
+						</form>
+					</CollapseRow>
+				</div>
+			</section>
 
-			{/* 退出登录 */}
-			<Button type="button" variant="outline" className="mt-4 w-full text-destructive hover:bg-destructive-soft" onClick={onLogout}>
-				{t('settings.account.logout')}
-			</Button>
+			<div className="flex flex-wrap items-center justify-between gap-4 border-t border-border py-6">
+				<div>
+					<div className="text-[13px] font-medium">{t('settings.account.manager.logoutTitle')}</div>
+					<p className="mt-1 text-xs text-muted-foreground">{t('settings.account.manager.logoutHint')}</p>
+				</div>
+				<Button type="button" variant="outline" size="sm" className="gap-2 rounded-[8px] text-xs text-destructive hover:bg-destructive-soft hover:text-destructive"
+					disabled={busy || avatarBusy || logoutBusy} onClick={() => setLogoutOpen(true)}><LogOut className="size-3.5" />{t('settings.account.logout')}</Button>
+			</div>
+			<Dialog open={logoutOpen} onOpenChange={open => { if (!logoutBusy) setLogoutOpen(open); }}>
+				<DialogContent showCloseButton={false} onEscapeKeyDown={e => { e.stopPropagation(); if (logoutBusy) e.preventDefault(); }}>
+					<DialogHeader><DialogTitle>{t('settings.account.manager.logoutConfirmTitle')}</DialogTitle>
+						<DialogDescription>{t('settings.account.manager.logoutConfirmDescription')}</DialogDescription></DialogHeader>
+					<DialogFooter>
+						<Button type="button" variant="outline" disabled={logoutBusy} onClick={() => setLogoutOpen(false)}>{t('common.cancel')}</Button>
+						<Button type="button" variant="destructive" disabled={logoutBusy} onClick={() => void confirmLogout()}>
+							{logoutBusy && <Loader2 className="size-4 animate-spin" />}{t('settings.account.logout')}</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	);
 }

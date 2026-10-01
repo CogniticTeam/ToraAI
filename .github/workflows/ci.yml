@@ -41,6 +41,8 @@ jobs:
           retention-days: 30
       - name: Run deterministic core and ASAPI regression suite
         run: npm test
+      - name: Verify isolated work-execution evaluation fixtures
+        run: npm run eval:baseline
       - name: Verify desktop navigation security policy
         run: npm run test:desktop-security
 
@@ -82,3 +84,7 @@ jobs:
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome
         run: npm run test:ui
+      - name: Verify critical chat and composer interactions
+        env:
+          TORA_CHROME_PATH: /usr/bin/google-chrome
+        run: npm run test:ui:critical

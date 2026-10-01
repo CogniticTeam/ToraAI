@@ -182,7 +182,7 @@ export function msgsToOpenAI(display) {
 
 // ---------- SessionView / Msg 视图裁剪 ----------
 export function toSessionView(record, status) {
-  const { internal, display, ...session } = record;
+  const { internal, display, __journal_offset, ...session } = record;
   session.state = { ...(record.state || {}) };
   return {
     session,

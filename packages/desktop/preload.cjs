@@ -10,13 +10,19 @@ if (process.isMainFrame && window.location.protocol === 'http:' && window.locati
 }
 
 contextBridge.exposeInMainWorld('toraWindow', {
+	platform: process.platform,
+	hasNativeTitlebar: process.platform !== 'darwin',
 	// Electron 根据操作系统与应用语言设置解析的区域（如 zh-CN / en-US）。
 	getSystemLocale: () => ipcRenderer.sendSync('app:get-system-locale'),
+	quitApp: () => ipcRenderer.send('app:quit'),
 	// 同步查询当前是否最大化
 	isMaximized: () => ipcRenderer.sendSync('win:is-maximized'),
+	isFullScreen: () => ipcRenderer.sendSync('win:is-fullscreen'),
 	// 订阅最大化状态变化（含全屏进入/退出）
 	onMaximizeChange: (cb) => {
-		ipcRenderer.on('win:maximized-changed', (_event, value) => cb(value));
+		const handler = (_event, value) => cb(value);
+		ipcRenderer.on('win:maximized-changed', handler);
+		return () => ipcRenderer.removeListener('win:maximized-changed', handler);
 	},
 	// 弹出系统文件夹选择对话框（macOS NSOpenPanel / Windows IFileOpenDialog）。
 	// 返回用户选中的绝对路径；用户取消返回 null。浏览器环境无此 API，需调用方判空。
@@ -36,6 +42,14 @@ contextBridge.exposeInMainWorld('toraWindow', {
 	updateAction: (action) => ipcRenderer.invoke('updates:action', action),
 	refreshAccount: () => ipcRenderer.invoke('account:refresh'),
 	reportLanguage: (language) => ipcRenderer.send('app:language', language),
+	// 固定文案的系统消息通知：渲染层不能指定系统通知标题或正文。
+	notifyNewMessage: () => ipcRenderer.invoke('notifications:new-message'),
+	testMessageNotification: () => ipcRenderer.invoke('notifications:test'),
+	onOpenMessagesFromNotification: (cb) => {
+		const handler = () => cb();
+		ipcRenderer.on('notifications:open-messages', handler);
+		return () => ipcRenderer.removeListener('notifications:open-messages', handler);
+	},
 	onMenuCommand: (cb) => {
 		const handler = (_event, action) => cb(action);
 		ipcRenderer.on('app:menu-command', handler);

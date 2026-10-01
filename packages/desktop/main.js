@@ -1,7 +1,7 @@
 // Tora 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
 // 渲染层无任何 Node 集成（contextIsolation 默认开启）；前端通过 127.0.0.1 HTTP/SSE 通信，
 // 与浏览器打开完全同构。preload 在页面脚本执行前预置本地服务连接，首屏只加载一次。
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, safeStorage, session, shell, systemPreferences } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, Notification, safeStorage, session, shell, systemPreferences } from 'electron';
 import electronUpdater from 'electron-updater';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -9,7 +9,9 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { voiceStatus, setAsrApiKey, transcribeSamples } from './voice.js';
 import { optimizePrompt } from './prompt-optimizer.js';
 import { isAppUrl, normalizeExternalHttpUrl } from './navigation-security.js';
-import { applicationMenuTemplate, isTraditionalChineseLocale } from './application-menu.js';
+import { applicationMenuTemplate } from './application-menu.js';
+import { normalizeNativeLanguage, nativeText } from './native-i18n.js';
+import { createAccountMessageNotification } from './message-notifications.js';
 import { desktopStorageName } from './brand-compat.js';
 
 app.setName(desktopStorageName(app.getPath('appData')));
@@ -41,6 +43,51 @@ const { autoUpdater } = electronUpdater;
 
 let win = null;
 let serverUrl = '';
+let notificationLanguage = 'zh';
+const activeMessageNotifications = new Set();
+
+function isMainWindowSender(event) {
+  return !!win && event.sender === win.webContents
+    && (!event.senderFrame || event.senderFrame === win.webContents.mainFrame);
+}
+
+async function showNativeMessageNotification() {
+  const notice = createAccountMessageNotification({ Notification, window: win, language: notificationLanguage });
+  if (!notice) return { status: 'unsupported' };
+  activeMessageNotifications.add(notice);
+  notice.on('click', () => activeMessageNotifications.delete(notice));
+  notice.on('close', () => activeMessageNotifications.delete(notice));
+  const result = await new Promise(resolve => {
+    let settled = false;
+    const finish = status => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve({ status });
+    };
+    const timeout = setTimeout(() => finish('unconfirmed'), 3000);
+    timeout.unref?.();
+    notice.once('show', () => finish('shown'));
+    notice.once('failed', (_event, error) => {
+      activeMessageNotifications.delete(notice);
+      console.warn('[notifications] Native notification failed:', error);
+      finish('failed');
+    });
+    try { notice.show(); }
+    catch (error) {
+      activeMessageNotifications.delete(notice);
+      console.warn('[notifications] Native notification threw:', error);
+      finish('failed');
+    }
+  });
+  // close 在部分系统/超时场景并不保证触发；为最近通知保留引用，同时限制内存。
+  if (activeMessageNotifications.size > 100) activeMessageNotifications.delete(activeMessageNotifications.values().next().value);
+  return result;
+}
+const requestNativeMessageNotification = event => isMainWindowSender(event)
+  ? showNativeMessageNotification() : { status: 'denied' };
+ipcMain.handle('notifications:new-message', requestNativeMessageNotification);
+ipcMain.handle('notifications:test', requestNativeMessageNotification);
 
 // preload 在页面脚本运行前同步读取 Electron 解析后的系统区域设置，供首次语言选择。
 ipcMain.on('app:get-system-locale', (event) => {
@@ -49,6 +96,7 @@ ipcMain.on('app:get-system-locale', (event) => {
 ipcMain.on('app:get-version', (event) => {
   event.returnValue = app.getVersion();
 });
+ipcMain.on('app:quit', () => app.quit());
 
 // macOS 和 Windows 均由 electron-updater 下载、校验并安装 GitHub Release。
 // macOS 更新元数据不可用时，再通过公开 Release 检测新版并提供官网下载兜底。
@@ -253,12 +301,13 @@ function installApplicationMenu(language = app.getLocale()) {
     checkUpdates: async () => {
       const result = await checkForUpdates();
       if (['available', 'downloading', 'ready'].includes(result.status)) return;
-      const zh = language.startsWith('zh');
-      const hant = isTraditionalChineseLocale(language);
+      const selected = normalizeNativeLanguage(language);
+      const zh = selected === 'zh';
+      const hant = selected === 'zh-Hant';
       await dialog.showMessageBox(win, { type: result.status === 'error' ? 'warning' : 'info', title: 'Tora',
-        message: result.status === 'up-to-date' ? (hant ? '目前已是最新版本' : zh ? '当前已是最新版本' : 'Tora is up to date')
-          : result.status === 'development' ? (hant ? '開發版本不檢查更新' : zh ? '开发版本不检查更新' : 'Updates are disabled in development')
-          : (hant ? '暫時無法檢查更新' : zh ? '暂时无法检查更新' : 'Unable to check for updates'),
+		message: result.status === 'up-to-date' ? (hant ? '目前已是最新版本' : zh ? '当前已是最新版本' : nativeText(selected, 'Tora is up to date'))
+		  : result.status === 'development' ? (hant ? '開發版本不檢查更新' : zh ? '开发版本不检查更新' : nativeText(selected, 'Updates are disabled in development'))
+		  : (hant ? '暫時無法檢查更新' : zh ? '暂时无法检查更新' : nativeText(selected, 'Unable to check for updates')),
       });
     },
     openWebsite: () => openSafeExternal('https://ohfun.online'),
@@ -269,12 +318,14 @@ function installApplicationMenu(language = app.getLocale()) {
 }
 
 ipcMain.on('app:language', (_event, language) => {
-  if (language === 'zh' || language === 'zh-Hant' || language === 'en') installApplicationMenu(language);
+  notificationLanguage = normalizeNativeLanguage(language);
+  installApplicationMenu(notificationLanguage);
 });
 app.setAboutPanelOptions({ applicationName: 'Tora', applicationVersion: app.getVersion() });
 
 async function createWindow() {
-  installApplicationMenu();
+  notificationLanguage = normalizeNativeLanguage(app.getLocale());
+  installApplicationMenu(notificationLanguage);
   scheduleUpdateChecks();
   setDesktopAccessBlocked('account', '正在验证 Tora 账户');
 
@@ -319,10 +370,9 @@ async function createWindow() {
       ? join(__dirname, 'assets', 'icon.ico')
       : join(__dirname, 'assets', 'icon.png'),
     backgroundColor: winBackgroundFor(initialDark),
-    // macOS：隐藏标题栏，红绿灯保留并悬浮在应用内部左上角（由前端侧栏头部让位）
-    // 非 macOS 平台退回系统标题栏
+    // macOS 普通窗口隐藏系统标题栏，原生窗口按钮留在侧栏标题区。
     ...(process.platform === 'darwin'
-      ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 16, y: 16 } }
+      ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 16, y: 18 } }
       : {}),
     webPreferences: {
       contextIsolation: true,
@@ -344,6 +394,21 @@ async function createWindow() {
 
   // 窗口状态桥：渲染层据此决定 Tora 标题是否给红绿灯让位
   ipcMain.on('win:is-maximized', (e) => { e.returnValue = win.isMaximized(); });
+  ipcMain.on('win:is-fullscreen', (e) => { e.returnValue = win.isFullScreen(); });
+  const updateTitlebarState = () => {
+    const fullscreen = win.isFullScreen();
+    const expanded = win.isMaximized() || fullscreen;
+    if (process.platform === 'darwin' && !fullscreen) {
+      // 全屏时由系统接管按钮，避免重绘原生按钮造成额外标题栏占位。
+      win.setWindowButtonPosition({ x: 16, y: 18 });
+      win.setWindowButtonVisibility(true);
+    }
+    win.webContents.send('win:maximized-changed', expanded);
+  };
+  for (const event of ['maximize', 'unmaximize', 'enter-full-screen', 'leave-full-screen']) {
+    win.on(event, updateTitlebarState);
+  }
+  win.webContents.on('did-finish-load', updateTitlebarState);
 
   // 深浅色桥：渲染层主题就绪/变化时上报实际深浅，同步窗口原生背景（加载页底色）。
   // 同时持久化进 theme-cache.json，下次启动建窗直接用它（用户固定主题零偏差）。
@@ -407,17 +472,21 @@ async function createWindow() {
   }
   async function refreshAccountAccess() {
     const token = getSecure('token');
-    if (!token) { setDesktopAccessBlocked('account', '请先登录 Tora'); return; }
+    if (!token) { setDesktopAccessBlocked('account', '请先登录 Tora'); return { status: 'expired' }; }
     try {
-      const response = await fetch('https://tora.ohfun.online/auth/me', {
+      const response = await net.fetch('https://tora.ohfun.online/auth/me', {
         headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000),
       });
-      if (token !== getSecure('token')) return;
-      if (response.status === 401) { setDesktopAccessBlocked('account', '登录已过期'); return; }
-      if (!response.ok) return;
+      if (token !== getSecure('token')) return { status: 'stale' };
+      if (response.status === 401 && response.headers.get('content-type')?.includes('application/json')) {
+        setDesktopAccessBlocked('account', '登录已过期'); return { status: 'expired' };
+      }
+      if (!response.ok) return { status: 'unavailable' };
       const account = await response.json();
-      if (token === getSecure('token')) setDesktopAccessBlocked('account', account.banned ? account.banReason || '账户已被封禁' : '');
-    } catch { /* 断网不覆盖已确认的限制状态。 */ }
+      if (token !== getSecure('token')) return { status: 'stale' };
+      setDesktopAccessBlocked('account', account.banned ? account.banReason || '账户已被封禁' : '');
+      return { status: account.banned ? 'banned' : 'ok' };
+    } catch { return { status: 'unavailable' }; /* 断网不覆盖已确认的限制状态。 */ }
   }
   ipcMain.handle('account:refresh', refreshAccountAccess);
   void refreshAccountAccess();
@@ -514,6 +583,11 @@ async function createWindow() {
 
   // preload 在 React 执行前写入当前 origin，无需整页刷新和重复初始化。
   await win.loadURL(serverUrl + '/');
+
+  // 仅供本地签名构建验收：无需账户或管理消息，不会在正常启动时弹出通知。
+  if (process.argv.includes('--tora-notification-self-test')) {
+    void showNativeMessageNotification().then(result => console.log('[notifications] Self-test:', result.status));
+  }
 
   attachBrowserDriver(win);
   scheduleUpdateChecks();

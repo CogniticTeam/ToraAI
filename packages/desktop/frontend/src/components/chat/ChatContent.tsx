@@ -16,6 +16,7 @@ import {
 	commandsToSlashItems,
 	fromLibrary as libraryToSlashItems,
 } from './SlashCommandMenu';
+import { useChatAutoScroll } from './useChatAutoScroll';
 import { Button } from '../ui/button';
 import { skillApi, type SkillView, type SkillRecord } from '@/api';
 import type { GitStatus } from '@/api';
@@ -173,6 +174,9 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	userCommands,
 }) => {
 	const { t, i18n } = useTranslation();
+	// 空态没有消息视口；进入会话后跟随新消息，手动上滑时暂停。
+	const isEmpty = !loading && msgs.length === 0;
+	const { viewportRef, contentRef, onScroll, onWheel, onKeyDown, pause, resume: resumeAutoScroll } = useChatAutoScroll(!loading && !isEmpty);
 
 	// ─────── silent auto-context ───────
 	// Each send attaches an "auto_context" block alongside the user's
@@ -354,6 +358,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	// drives ASMessageBubble.
 	const handleSend = useCallback(
 		async (blocks: ContentBlock[], pickedSkills?: SlashItem[]) => {
+			resumeAutoScroll();
 			// 本地状态先于 SSE 生命周期：技能上下文构建、创建首个会话以及
 			// 服务端接受 trigger 都可能造成短暂空窗，不能让“思考中”漏掉。
 			setWaitingForFirstResponse(true);
@@ -367,12 +372,11 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 				throw error;
 			}
 		},
-		[onSend, contextBlocks, buildSkillContext],
+		[onSend, contextBlocks, buildSkillContext, resumeAutoScroll],
 	);
 	// Only a session that finished loading with nothing in it is empty.
 	// Treating "no messages yet" as empty would flash the greeting over
 	// every session that does have history.
-	const isEmpty = !loading && msgs.length === 0;
 	// 从用户消息发出到第一个文本块或工具调用抵达 SSE 之间，模型已有任务
 	// 但还没有可渲染内容。仅看最后一条消息，避免历史里旧的 assistant 回复
 	// 错误地遮住当前轮的占位提示。
@@ -451,10 +455,16 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 					<TypewriterGreeting key={greeting} text={greeting} />
 				</div>
 			) : (
-				<MessageScrollerProvider autoScroll={true} defaultScrollPosition={'end'}>
+				<MessageScrollerProvider autoScroll={false} defaultScrollPosition={'end'}>
 					<MessageScroller>
-						<MessageScrollerViewport>
-							<MessageScrollerContent className="pt-6 pb-2">
+						<MessageScrollerViewport
+							ref={viewportRef}
+							onScroll={onScroll}
+							onWheel={onWheel}
+							onTouchMove={pause}
+							onKeyDown={onKeyDown}
+						>
+							<MessageScrollerContent ref={contentRef} className="pt-6 pb-2">
 								{msgs.map((message, index) => {
 									const previous = msgs[index - 1];
 									const at = new Date(message.created_at);

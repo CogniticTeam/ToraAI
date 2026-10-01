@@ -3,7 +3,17 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { acquireShell, disposeAllShells } from '../src/tools/shell.js';
+import { acquireShell, disposeAllShells, normalizeShellCwd, shellPath } from '../src/tools/shell.js';
+
+test('Windows Bash 不使用 cmd 的 POSIX 参数，MSYS 工作路径转换为原生路径', () => {
+  const bash = 'C:\\Program Files\\Git\\bin\\bash.exe';
+  assert.equal(shellPath('win32', { ProgramFiles: 'C:\\Program Files' }, path => path === bash), bash);
+  assert.equal(shellPath('win32', { SHELL: 'D:\\Tools\\Git\\bin\\bash.exe' }, () => true), 'D:\\Tools\\Git\\bin\\bash.exe');
+  assert.throws(() => shellPath('win32', { SHELL: 'cmd.exe' }, () => false), /Git for Windows/);
+  assert.equal(normalizeShellCwd('/c/Users/test/中文项目', 'win32'), 'C:\\Users\\test\\中文项目');
+  assert.equal(normalizeShellCwd('/d/', 'win32'), 'D:\\');
+  assert.equal(normalizeShellCwd('/Users/test', 'darwin'), '/Users/test');
+});
 
 test('持久 Bash 回显 printf 时不把格式串当作结束标记', { skip: !existsSync('/bin/bash') }, async t => {
   const directory = mkdtempSync(join(tmpdir(), 'tora-shell-protocol-'));

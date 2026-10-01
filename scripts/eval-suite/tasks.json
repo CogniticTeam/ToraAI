@@ -1,0 +1,26 @@
+[
+  {
+    "id": "strict-port",
+    "prompt": "修复 src/port.mjs 的 parsePort。只接受纯十进制整数（字符串或整数），范围 1–65535；其他输入返回 null。不要改函数名。",
+    "files": {
+      "src/port.mjs": "export function parsePort(value) { return Number.parseInt(value, 10); }\n"
+    }
+  },
+  {
+    "id": "inventory-receipt",
+    "prompt": "完成两个模块：src/inventory.mjs 的 reserve(items, sku, quantity) 返回扣减库存后的新数组，不修改输入；数量必须是正整数，库存不足抛 RangeError，SKU 不存在抛 Error。src/receipt.mjs 的 buildReceipt(lines) 返回 {lines,total}，每行保留 name、unitPrice、quantity 并增加 amount=unitPrice*quantity，总价为各行 amount 之和。",
+    "files": {
+      "src/inventory.mjs": "export function reserve(items, sku, quantity) { return items; }\n",
+      "src/receipt.mjs": "export function buildReceipt(lines) { return { lines: [], total: 0 }; }\n"
+    }
+  },
+  {
+    "id": "red-to-green",
+    "prompt": "修复 src/display-name.mjs，让 formatDisplayName 对 null、undefined、空白字符串返回「访客」，对其他输入去掉首尾空白并把连续空白折叠成一个空格。先运行 npm test，修复失败后再次运行直到通过；保留原有测试。",
+    "files": {
+      "package.json": "{\"type\":\"module\",\"scripts\":{\"test\":\"node --test\"}}\n",
+      "src/display-name.mjs": "export function formatDisplayName(value) { return value.trim(); }\n",
+      "test/display-name.test.mjs": "import test from 'node:test';\nimport assert from 'node:assert/strict';\nimport { formatDisplayName } from '../src/display-name.mjs';\ntest('缺失姓名使用访客', () => assert.equal(formatDisplayName(null), '访客'));\ntest('折叠连续空白', () => assert.equal(formatDisplayName('  张  三  '), '张 三'));\n"
+    }
+  }
+]

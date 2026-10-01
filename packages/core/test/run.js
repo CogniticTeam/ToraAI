@@ -1,7 +1,7 @@
 // Tora core 全链路测试（无需真实模型：mock fetch 模拟 SSE）
 // 运行：node packages/core/test/run.js
 import { strict as assert } from 'node:assert';
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync, statSync, readdirSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync, existsSync, readFileSync, statSync, readdirSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -21,6 +21,8 @@ const { loadConfig } = await import(CORE + 'config.js');
 const { loadProjectContext, buildSystemPrompt } = await import(CORE + 'prompt.js');
 const { sanitizeLoneSurrogates, chatCompletion } = await import(CORE + 'model.js');
 const { decidePermission } = await import(CORE + 'agent.js');
+const { createSessionRecord, loadSessionRecord, saveSessionRecord, saveForkSnapshot, forkSession } = await import(CORE + 'asapi/store.js');
+const { subscribe: subscribeRunEvents, pushCustomToLeaderBus } = await import(CORE + 'asapi/bridge.js');
 
 let passed = 0, failed = 0;
 async function test(name, fn) {
@@ -242,6 +244,37 @@ await test('chatCompletion 上送 body 不含 lone surrogate（端到端）', as
   assert.ok(capturedBody.includes('\ufffd'), '应至少出现一个 U+FFFD');
 });
 
+await test('deepseek-flash 将用户图片和工具截图都以 image_url 发给模型', async () => {
+  const { createClient, detectVision } = await import(CORE + 'model.js');
+  assert.equal(detectVision({ model: 'deepseek-flash' }), true);
+  assert.equal(detectVision({ model: 'deepseek/deepseek-flash' }), true);
+  assert.equal(detectVision({ model: 'deepseek-flash', vision: false }), false, '用户显式关闭视觉应优先');
+  assert.equal(detectVision({ model: 'deepseek-v4-pro' }), false);
+
+  const origFetch = globalThis.fetch;
+  let sent = null;
+  globalThis.fetch = async (_url, init) => {
+    sent = JSON.parse(init.body);
+    return sse([{ content: '看到图片了' }]);
+  };
+  try {
+    const client = createClient({ baseURL: 'https://api.deepseek.com/v1', apiKey: 'test', model: 'deepseek-flash', thinking: false });
+    assert.equal(client.vision, true);
+    await chatCompletion(client, { messages: [
+      { role: 'user', content: [{ type: 'text', text: '描述图片' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,cG5n' } }] },
+      { role: 'tool', tool_call_id: 'tool-1', content: [{ type: 'text', text: '截图' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,cG5n' } }] },
+    ] });
+    assert.equal(sent.messages[0].content[1].image_url.url, 'data:image/png;base64,cG5n');
+    assert.equal(sent.messages[1].content[1].image_url.url, 'data:image/png;base64,cG5n', '工具截图不能在发送前被剥离');
+
+    const textOnly = createClient({ baseURL: 'https://api.deepseek.com/v1', apiKey: 'test', model: 'deepseek-flash', vision: false, thinking: false });
+    await chatCompletion(textOnly, { messages: [
+      { role: 'tool', tool_call_id: 'tool-1', content: [{ type: 'text', text: '截图' }, { type: 'image_url', image_url: { url: 'data:image/png;base64,cG5n' } }] },
+    ] });
+    assert.equal(sent.messages[0].content.length, 1, '显式关闭视觉时仍须剥离工具截图');
+  } finally { globalThis.fetch = origFetch; }
+});
+
 console.log('--- Agent 循环（mock SSE）---');
 function sse(chunks) {
   const events = chunks.map((c) => ({ choices: [{ delta: c }], usage: { prompt_tokens: 10, completion_tokens: 5 } }));
@@ -409,6 +442,27 @@ await test('CLI 模型连接失败返回非零退出码', async () => {
     encoding: 'utf8', timeout: 15_000,
   });
   assert.equal(result.status, 1, `CLI 不应把模型错误报告为成功：${result.stdout}\n${result.stderr}`);
+});
+
+await test('CLI 一次性任务将完整用户指令送入模型请求', async () => {
+  const { runOneShot } = await import('../../cli/src/repl.js');
+  const previousFetch = globalThis.fetch;
+  const previousCwd = process.cwd();
+  let request = null;
+  globalThis.fetch = async (_url, init) => {
+    request = JSON.parse(init.body);
+    return sse([{ content: '已收到任务' }]);
+  };
+  try {
+    process.chdir(tmp);
+    const task = '修复 parsePort：非法输入返回 null，不要只分析项目';
+    await runOneShot({ ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock', injectProjectContext: false }, task);
+    assert.ok(request?.messages?.some((message) => message.role === 'user' && message.content === task),
+      '一次性 CLI 必须把位置参数中的完整任务作为 user 消息发送');
+  } finally {
+    process.chdir(previousCwd);
+    globalThis.fetch = previousFetch;
+  }
 });
 
 await test('上下文自动压缩：超预算触发 compact，历史被摘要但消息仍可持久化', async () => {
@@ -580,10 +634,58 @@ await test('允许清单：allow 规则命中即放行，deny 规则优先级最
   const allowNpm = [{ tool_name: 'Bash', rule_content: 'npm install', behavior: 'allow', source: 'userSettings' }];
   assert.equal(beh('default', 'Bash', { command: 'npm install express' }, allowNpm), 'allow');
   assert.equal(beh('default', 'Bash', { command: 'npm uninstall express' }, allowNpm), 'ask');
+  assert.equal(beh('default', 'Bash', { command: 'npm install; printf changed' }, allowNpm), 'ask', '复合命令不能借前缀放行');
+  assert.equal(beh('default', 'Bash', { command: 'printf npm install' }, allowNpm), 'ask', '命令出现在参数中不能放行');
+  assert.equal(beh('default', 'Bash', { command: 'npm install $(printf x)' }, allowNpm), 'ask', '命令替换不能借规则放行');
+  assert.equal(beh('default', 'Bash', { command: 'npm install "@scope/pkg"' }, allowNpm), 'allow', '普通引号参数仍可放行');
 
   const denyEnv = [{ tool_name: 'Read', rule_content: '**/.env', behavior: 'deny', source: 'userSettings' }];
   assert.equal(beh('bypass', 'Read', { path: '/w/.env' }, denyEnv), 'deny');
   assert.equal(beh('bypass', 'Read', { path: '/w/app.js' }, denyEnv), 'allow');
+});
+
+await test('macOS Bash 沙箱：允许工作目录写入，拒绝相邻目录写入', async () => {
+  if (process.platform !== 'darwin') return;
+  const root = mkdtempSync(join(tmpdir(), 'tora-shell-root-'));
+  const outside = mkdtempSync(join(tmpdir(), 'tora-shell-outside-'));
+  const insideFile = join(root, 'inside.txt');
+  const outsideFile = join(outside, 'outside.txt');
+  try {
+    const result = await bashTool.execute({
+      command: `printf inside > ${JSON.stringify(insideFile)}; printf outside > ${JSON.stringify(outsideFile)}`,
+      timeout: 10000
+    }, { cwd: root, sandboxRoots: [root], permissionMode: 'default', persistentShell: false, toolOutputLimit: 2000 });
+    assert.match(result, /operation not permitted|Operation not permitted/);
+    assert.equal(readFileSync(insideFile, 'utf8'), 'inside');
+    assert.equal(existsSync(outsideFile), false);
+    symlinkSync(outside, join(root, 'escape'));
+    const symlinkWrite = await bashTool.execute({
+      command: `printf unsafe > ${JSON.stringify(join(root, 'escape', 'through-link.txt'))}`,
+      timeout: 10000
+    }, { cwd: root, sandboxRoots: [root], permissionMode: 'default', persistentShell: false, toolOutputLimit: 2000 });
+    assert.match(symlinkWrite, /operation not permitted|Operation not permitted/);
+    assert.equal(existsSync(join(outside, 'through-link.txt')), false);
+    mkdirSync(join(root, '.git'));
+    const gitWrite = await bashTool.execute({
+      command: `printf unsafe > ${JSON.stringify(join(root, '.git', 'config'))}`,
+      timeout: 10000
+    }, { cwd: root, sandboxRoots: [root], permissionMode: 'default', persistentShell: false, toolOutputLimit: 2000 });
+    assert.match(gitWrite, /operation not permitted|Operation not permitted/);
+    assert.equal(existsSync(join(root, '.git', 'config')), false);
+    const network = await bashTool.execute({
+      command: "node -e 'require(\"net\").createServer().on(\"error\",e=>{console.log(e.code);process.exit(2)}).listen(0)'",
+      timeout: 10000
+    }, { cwd: root, sandboxRoots: [root], permissionMode: 'default', persistentShell: false, shellNetworkAccess: false, toolOutputLimit: 2000 });
+    assert.match(network, /EPERM|EACCES/, '默认 Bash 沙箱也应阻断网络监听');
+    const allowedNetwork = await bashTool.execute({
+      command: "node -e 'require(\"net\").createServer().listen(0,function(){console.log(\"LISTENING\");this.close()})'",
+      timeout: 10000
+    }, { cwd: root, sandboxRoots: [root], permissionMode: 'default', persistentShell: false, shellNetworkAccess: true, toolOutputLimit: 2000 });
+    assert.match(allowedNetwork, /exit_code: 0[\s\S]*LISTENING/, '用户显式开启网络后沙箱应允许网络监听');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+    rmSync(outside, { recursive: true, force: true });
+  }
 });
 
 await test('suggestedRules：询问时顺带给出一份可一键固化的规则', () => {
@@ -635,6 +737,28 @@ await test('没有 ask 通道时，ask 降级为 deny 而不是静默放行', as
     assert.match(tr.result, /确认|权限/);
     assert.ok(!existsSync(join(tmp, 'nope.txt')), '文件不应被创建');
   } finally { globalThis.fetch = origFetch; }
+});
+
+await test('Computer 已获会话同意后仍遵守用户显式 deny 规则', async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async () => ++calls === 1
+    ? sse([{ tool_calls: [{ index: 0, id: 'computer-denied', function: { name: 'Computer', arguments: JSON.stringify({ action: 'invalid' }) } }] }])
+    : sse([{ content: '已停止' }]);
+  try {
+    const cfg = { ...loadConfig(), apiKey: 'test', model: 'mock', baseURL: 'http://mock' };
+    const events = [];
+    for await (const event of runAgent({
+      cfg, cwd: tmp, messages: [{ role: 'user', content: '不要使用电脑控制' }],
+      permissionMode: 'bypass', computerConsent: { granted: true },
+      permissionRules: [{ tool_name: 'Computer', rule_content: '', behavior: 'deny', source: 'userSettings' }]
+    })) events.push(event);
+    const result = events.find((event) => event.type === 'tool-result');
+    assert.equal(result?.ok, false);
+    assert.match(result?.result, /用户禁用规则/);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 await test('HITL：有 ask 通道时挂起等待用户答复，答复后才执行', async () => {
@@ -800,6 +924,70 @@ await test('脱敏：登记密钥 + 常见形态在出站文本里被替换', as
 });
 
 console.log('--- 项目指令 / ReAct 降级 / 持久 shell / 新工具 ---');
+await test('会话分支：重复回复文本仍按快照精确回到指定轮次', () => {
+  const record = createSessionRecord({ agent_id: 'test', toraCfg: loadConfig() });
+  record.display = [
+    { id: 'user-one', role: 'user', content: [{ type: 'text', text: '第一轮' }] },
+    { id: 'reply-one', role: 'assistant', content: [{ type: 'text', text: '相同回答' }] }
+  ];
+  record.internal = [{ role: 'user', content: '第一轮' }, { role: 'assistant', content: '相同回答' }];
+  record.state = { permission_mode: 'default', marker: 'first' };
+  record.config.cwd = '/first-workspace';
+  saveForkSnapshot(record, 'reply-one');
+  record.display.push(
+    { id: 'user-two', role: 'user', content: [{ type: 'text', text: '第二轮' }] },
+    { id: 'reply-two', role: 'assistant', content: [{ type: 'text', text: '相同回答' }] }
+  );
+  record.internal.push({ role: 'user', content: '第二轮' }, { role: 'assistant', content: '相同回答' });
+  record.state.marker = 'second';
+  record.config.cwd = '/second-workspace';
+  saveForkSnapshot(record, 'reply-two');
+  saveSessionRecord(record);
+  const fork = forkSession(record.id, { upto: 2 });
+  assert.ok(fork.id);
+  const branch = loadSessionRecord(fork.id);
+  assert.equal(branch.internal.length, 2);
+  assert.equal(branch.internal[0].content, '第一轮');
+  assert.equal(branch.state.marker, 'first');
+  assert.equal(branch.config.cwd, '/first-workspace');
+  assert.ok(forkSession(fork.id, { upto: 2 }).id, '分支后的旧轮次仍可继续分支');
+});
+await test('运行事件：游标重连仅补新事件，旧流游标触发历史重读', () => {
+  const sessionId = 'cursor-test';
+  const first = [];
+  const stopFirst = subscribeRunEvents(sessionId, (frame) => first.push(frame));
+  pushCustomToLeaderBus(sessionId, 'cursor-test', { step: 1 });
+  assert.equal(first.length, 1);
+  stopFirst();
+  const resumed = [];
+  let resumeStatus;
+  const stopResumed = subscribeRunEvents(sessionId, (frame) => resumed.push(frame), first[0].cursor, (status) => { resumeStatus = status; });
+  assert.equal(resumeStatus.mode, 'resume');
+  assert.equal(resumed.length, 0);
+  pushCustomToLeaderBus(sessionId, 'cursor-test', { step: 2 });
+  assert.equal(resumed.length, 1);
+  stopResumed();
+  const reset = [];
+  let resetStatus;
+  const stopReset = subscribeRunEvents(sessionId, (frame) => reset.push(frame), 'old-stream:1', (status) => { resetStatus = status; });
+  assert.equal(resetStatus.mode, 'reset');
+  assert.equal(reset.length, 2);
+  stopReset();
+});
+await test('项目指令：仓库根目录与子目录逐级叠加，子目录规则保留', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'tora-instructions-'));
+  const child = join(root, 'packages', 'feature');
+  mkdirSync(join(root, '.git'));
+  mkdirSync(child, { recursive: true });
+  writeFileSync(join(root, 'AGENTS.md'), '全局规则：检查已有改动。');
+  writeFileSync(join(child, 'AGENTS.md'), '本模块规则：运行专项检查。');
+  const context = await loadProjectContext(child, { repoMapInject: false, changesAware: false });
+  const prompt = buildSystemPrompt({ basePrompt: 'Tora', projectContext: context });
+  assert.ok(prompt.indexOf('全局规则') < prompt.indexOf('本模块规则'));
+  assert.match(prompt, /\.\.\/\.\.\/AGENTS\.md/);
+  assert.match(prompt, /本模块规则/);
+  rmSync(root, { recursive: true, force: true });
+});
 await test('项目指令：TORA.md 注入 system prompt，自称与产品名统一为 Tora', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'tora-prompt-'));
   writeFileSync(join(dir, 'TORA.md'), '本项目规则：禁止使用 any 类型。');
@@ -1686,6 +1874,37 @@ await test('Browser：screenshot 返回图像（多模态），坏数据要如�
   }
 });
 
+await test('Browser 截图经 Agent 工具结果送达 deepseek-flash 模型请求', async () => {
+  browserMod.setBrowserDriver(async (action) =>
+    action === 'screenshot'
+      ? { data_url: 'data:image/png;base64,cG5n', url: 'https://example.com/', title: '示例站点' }
+      : {});
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = async (_url, init) => {
+    requests.push(JSON.parse(init.body));
+    return requests.length === 1
+      ? sse([{ tool_calls: [{ index: 0, id: 'shot-1', type: 'function', function: { name: 'Browser', arguments: '{"action":"screenshot"}' } }] }])
+      : sse([{ content: '我已看到工具返回的截图' }]);
+  };
+  try {
+    const cfg = {
+      ...loadConfig(), baseURL: 'https://api.deepseek.com/v1', apiKey: 'test',
+      model: 'deepseek-flash', thinking: false, review: { enabled: false }, maxTurns: 2,
+    };
+    const events = [];
+    for await (const event of runAgent({ cfg, cwd: tmp, messages: [{ role: 'user', content: '查看当前网页截图' }], permissionMode: 'bypass' })) events.push(event);
+    assert.equal(requests.length, 2, '截图后应带工具结果再次请求模型');
+    const tool = requests[1].messages.find((message) => message.role === 'tool' && message.tool_call_id === 'shot-1');
+    assert.ok(tool, '第二轮必须包含浏览器工具结果');
+    assert.equal(tool.content.find((part) => part.type === 'image_url')?.image_url.url, 'data:image/png;base64,cG5n');
+    assert.ok(events.some((event) => event.type === 'done' && event.reason === 'completed'));
+  } finally {
+    globalThis.fetch = originalFetch;
+    browserMod.clearBrowserDriver();
+  }
+});
+
 await test('Browser：导航算「读」、点击/输入算「写」（决定默认权限下要不要问）', () => {
   const { toolCategory } = builtin;
   assert.equal(toolCategory('Browser', { action: 'open' }), 'read');
@@ -2527,6 +2746,23 @@ await test('mcp-workshop：add/list/update/remove + 模板列表', async () => {
 await test('Agent 不再生成运行记录或交付报告目录', () => {
   assert.equal(existsSync(join(TORA_DIR, 'traces')), false);
   assert.equal(existsSync(join(TORA_DIR, 'deliveries')), false);
+});
+
+await test('累计 Token 里程碑：跨档排队、确认持久化且不重复提醒', async () => {
+  const U = await import(CORE + 'asapi/usage-store.js');
+  U.usageStoreMerge('2026-09-28', { tokens: 99_500 });
+  assert.deepEqual(U.usageMilestoneStatus().pending, [], '已有用量只设基线');
+  U.recordUsage({ tokens: 500 });
+  assert.deepEqual(U.usageMilestoneStatus().pending, [100_000]);
+  assert.equal(U.acknowledgeUsageMilestone(100_000), true);
+  assert.deepEqual(U.usageMilestoneStatus().pending, []);
+  U.recordUsage({ tokens: 9_999_900_000 });
+  assert.deepEqual(U.usageMilestoneStatus().pending, U.TOKEN_MILESTONES.slice(1));
+  U.recordUsage({ tokens: 1 });
+  assert.deepEqual(U.usageMilestoneStatus().pending, U.TOKEN_MILESTONES.slice(1), '同一档不可重复排队');
+  assert.equal(U.acknowledgeUsageMilestone(123), null);
+  const saved = JSON.parse(readFileSync(join(TORA_DIR, 'usage', 'daily.json'), 'utf8'));
+  assert.ok(saved.__tokenMilestones.acknowledged.includes(100_000));
 });
 
 rmSync(tmp, { recursive: true, force: true });

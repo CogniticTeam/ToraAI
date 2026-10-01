@@ -7,12 +7,12 @@
  *   success  —— 登录成功过渡（圆圈对勾描边，~1s）
  *   ok       —— 放行渲染主应用
  *
- * 网络异常（auth 服务不可达）时保守进入 login 态并在顶部提示，用户仍可尝试
- * 登录（登录请求本身失败会显示错误）。
+ * 网络异常时保留凭据，显示独立的重试状态；不渲染账户设置或放行工作区。
  */
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 
-import { LogoLoader, SuccessCheck } from '@/components/auth/LoginAnimation';
+import { BrandLogo, LogoLoader, SuccessCheck } from '@/components/auth/LoginAnimation';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useI18n';
 import { getToken, delToken, delEmail } from '@/utils/authStore';
 import { syncModelsFromCloud } from '@/utils/modelSync';
@@ -28,12 +28,14 @@ const AccountSection = lazy(async () => ({
 
 const authApi = () => (localStorage.getItem(API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
-type Phase = 'checking' | 'login' | 'success' | 'ok';
+type Phase = 'checking' | 'unavailable' | 'login' | 'success' | 'ok';
+type DesktopAuthResult = { status: 'ok' | 'banned' | 'expired' | 'unavailable' | 'stale' };
 
 export function LoginGate({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>('checking');
-  const [netError, setNetError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const retry = useCallback(() => { setPhase('checking'); setAttempt(current => current + 1); }, []);
 
   useEffect(() => {
     if (phase !== 'success') return;
@@ -55,6 +57,13 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (phase !== 'unavailable') return;
+    const onOnline = () => retry();
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, [phase, retry]);
+
+  useEffect(() => {
     let alive = true;
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), 8000);
@@ -70,25 +79,34 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
           headers: { authorization: `Bearer ${token}` },
           signal: controller.signal,
         });
-        if (!alive) return;
+        if (!alive || token !== getToken()) return;
         if (r.ok) {
+          // 确认响应来自认证接口，避免代理错误页被误判为已登录。
+          await r.json();
+          if (!alive || token !== getToken()) return;
+          const desktop = await (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<DesktopAuthResult | void> } }).toraWindow?.refreshAccount?.();
+          if (!alive || token !== getToken()) return;
+          if (desktop?.status === 'unavailable' || desktop?.status === 'stale') { setPhase('unavailable'); return; }
+          if (desktop?.status === 'expired') {
+            await delToken(); await delEmail();
+            if (alive) setPhase('login');
+            return;
+          }
           // 恢复已有登录直接进入工作区，成功动画仅用于用户主动登录。
           setPhase('ok');
           void syncModelsFromCloud();
-        } else if (r.status === 401 || r.status === 403) {
-          // 401 等：token 失效，清掉重新登录
+        } else if (r.status === 401 && r.headers.get('content-type')?.includes('application/json')) {
+          // 仅服务端确认会话失效时清理；代理/WAF 的 403 不等于登出。
           await delToken();
           await delEmail();
           if (alive) setPhase('login');
         } else {
           // 服务暂时异常不等于凭证失效，保留凭证以便下次重试。
-          setNetError(true);
-          setPhase('login');
+          setPhase('unavailable');
         }
       } catch {
         if (alive) {
-          setNetError(true);
-          setPhase('login');
+          setPhase('unavailable');
         }
       } finally {
         window.clearTimeout(timer);
@@ -99,15 +117,20 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, []);
+  }, [attempt]);
 
   if (phase === 'ok') return <>{children}</>;
 
   return (
     <div className="app-wallpaper fixed inset-0 z-[100]">
-      {netError && phase === 'login' && (
-        <div className="absolute left-1/2 top-5 z-20 -translate-x-1/2 rounded-rect bg-destructive-soft px-4 py-1.5 text-xs text-destructive">
-          {t('settings.account.networkWarning')}
+      {phase === 'unavailable' && (
+        <div className="flex h-full items-center justify-center p-6">
+          <div role="alert" className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+            <div className="mb-6 flex justify-center"><BrandLogo /></div>
+            <h2 className="text-base font-semibold leading-relaxed">{t('settings.account.networkWarning')}</h2>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('settings.account.networkRetryHint')}</p>
+            <Button className="mt-6" onClick={retry}>{t('error.retry')}</Button>
+          </div>
         </div>
       )}
 
@@ -126,7 +149,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
       {phase === 'login' && (
         <div className="h-full w-full">
           <Suspense fallback={<div className="flex h-full items-center justify-center"><LogoLoader /></div>}>
-            <AccountSection onAuthenticated={() => setPhase('success')} />
+            <AccountSection mode="auth" onAuthenticated={() => setPhase('success')} />
           </Suspense>
         </div>
       )}

@@ -1,5 +1,33 @@
 {
+  "languageDialog": {
+    "subtitle": "Choose your language",
+    "search": "Search languages",
+    "noResults": "No matching languages",
+    "systemSuggestion": "Your system language is {{language}}. Switch to it?",
+    "switch": "Switch to {{language}}",
+    "later": "Not now",
+    "close": "Close language selector",
+    "switchError": "Unable to switch language"
+  },
+  "usageMilestone": {
+    "title": "Token milestone reached",
+    "subtitle": "Your cumulative Token usage in Tora has reached a new milestone.",
+    "total": "{{count}} Tokens used in total",
+    "more": "{{count}} more milestones to show",
+    "continue": "Continue with Tora",
+    "retry": "Could not save this milestone. Please try again.",
+    "levels": { "100k": "100K", "1m": "1M", "10m": "10M", "100m": "100M", "500m": "500M", "1b": "1B", "2b": "2B", "5b": "5B", "10b": "10B" }
+  },
+  "markdown": {
+    "openExternalLink": "Open external link?",
+    "externalLinkWarning": "You're about to visit an external website.",
+    "copyLink": "Copy link",
+    "copied": "Copied",
+    "openLink": "Open link",
+    "close": "Close"
+  },
   "inbox": {
+    "translateToLanguage": "Translate to {{language}}",
     "detail": "Message details",
     "translateToChinese": "Translate to Chinese", "translateToEnglish": "Translate to English", "translating": "Translating…",
     "showOriginal": "Show original", "showTranslation": "Show translation", "noTranslationNeeded": "No translation needed",
@@ -18,12 +46,14 @@
   },
   "firstRun": {
     "intro": {
-      "aria": "Tora first-launch welcome animation", "tagline": "Turn ideas into action.",
-      "initializing": "Preparing your workspace", "ready": "Ready when you are",
-      "enter": "Get started", "skip": "Skip animation"
+      "aria": "Tora first-launch welcome animation", "welcome": "Welcome to Tora",
+      "headlineFirst": "Turn ideas", "headlineSecond": "into action.",
+      "description": "Connect your model, open a project, and start a conversation. Tora helps you read and edit code and get work done.",
+      "hint": "A short guide will show you the essentials", "foot": "Your workspace is almost ready.",
+      "logoAlt": "Tora Logo", "enter": "Get started", "skip": "Skip animation"
     },
     "tour": {
-      "replay": "Replay the getting-started guide", "skip": "Skip guide", "later": "Set up later", "next": "Next",
+      "skip": "Skip guide", "later": "Set up later", "next": "Next",
       "pauseSettings": "Model management is open. Close Settings when you're done and the guide will continue.", "pauseFolder": "Choose a project folder, or close the menu to continue.", "pausePermission": "Review or select an approval mode, then close the menu to continue.",
       "demoSend": "Simulate sending; nothing will be submitted", "clickHint": "Click the highlighted control to continue", "loading": "Finding the control…",
       "demoTag": "Guided demo · no real command will run", "demoMessage": "Check this project's build scripts and give me a plan first.",
@@ -46,6 +76,27 @@
       ]
     }
   },
+  "firstUseConsent": {
+    "title": "Before you begin",
+    "description": "Please review and confirm the Terms of Service, Privacy Policy, and cross-border data transfer notice separately. Tora will not open sign-in or your workspace until all three are selected.",
+    "terms": "I have read and agree to the Terms of Service",
+    "readTerms": "Read the Terms of Service",
+    "privacy": "I have read and understood the Privacy Policy",
+    "readPrivacy": "Read the Privacy Policy",
+    "crossBorder": "I separately consent to cross-border transfer of my personal information",
+    "crossBorderHint": "When you use an account or cloud features, necessary information may be transferred outside mainland China. Please review the scope and handling details.",
+    "readCrossBorder": "Read the cross-border transfer notice",
+    "decline": "Decline and exit",
+    "agree": "Confirm and continue"
+  },
+  "sponsors": {
+    "title": "This month's supporters", "description": "Thank you to the users supporting Tora on Afdian this month. Only display names are shown, not amounts or account details.",
+    "source": "Data from Afdian", "total": "{{count}} supporters", "loaded": "{{count}} supporters shown", "empty": "No supporters this month", "emptyMore": "No supporters from this month on this page. Load more to continue.",
+    "loading": "Loading supporters…", "loadError": "Supporters are temporarily unavailable. Please try again later.",
+    "retry": "Retry", "more": "Load more", "donate": "Sponsor",
+    "leaveTitle": "Open Afdian to sponsor?", "leaveDescription": "After confirmation, Tora will open this external website in your system browser.",
+    "confirmLeave": "Confirm and open"
+  },
   "polls": {
     "title": "Polls", "subtitle": "Vote and follow the results", "all": "All polls", "history": "My voting history",
     "search": "Search", "loadMore": "Load more", "from": "From", "to": "To",
@@ -67,6 +118,7 @@
     "disabled": "Polls have been disabled by the administrator."
   },
 	"common": {
+		"toraModels": "Tora Models",
 		"add": "Add",
 		"agent": "Agent",
 		"cancel": "Cancel",
@@ -230,6 +282,15 @@
 	"messageBubble": {
 		"thinking": "Thinking",
 		"thinkingFor": "Thinking for {{duration}}",
+		"taskProcess": {
+			"title": "Task process",
+			"running": "Elapsed {{duration}}",
+			"finished": "Took {{duration}}",
+			"hour": "h ",
+			"minute": "m ",
+			"second": "s",
+			"noConclusion": "This turn ended without a conclusion. Expand the task process for details."
+		},
 		"audioGenerating": "Generating audio…",
 		"playAudio": "Play audio",
 		"pauseAudio": "Pause audio",
@@ -258,6 +319,7 @@
 		},
 		"error": {
 			"title": "Reply failed",
+			"blockedTitle": "Blocked by a rule",
 			"authentication": "Authentication failed — check the model's API key or credential.",
 			"permission": "Request not allowed — the credential lacks permission for this model or endpoint.",
 			"rate_limit": "Rate limit or quota exceeded — please try again later.",
@@ -1144,12 +1206,27 @@
 		},
 		"theme": {
 			"title": "Theme",
-			"subtitle": "Choose the appearance and workspace background",
+			"subtitle": "Choose the appearance, motion, and workspace background",
 			"modeTitle": "Appearance",
 			"modeDesc": "Light, dark, or follow the system",
 			"light": "Light",
 			"dark": "Dark",
 			"system": "System",
+			"motionTitle": "Interaction motion",
+			"motionDesc": "Set the pace for click feedback and page changes. Your system's Reduce Motion preference always takes priority.",
+			"motionModeTitle": "Motion pace",
+			"motion": {
+				"system": "System",
+				"off": "Off",
+				"gentle": "Gentle",
+				"standard": "Standard",
+				"fast": "Fast"
+			},
+			"motionReduced": "Reduce Motion is enabled in your system, so animations are currently disabled.",
+			"motionClickTitle": "Click feedback",
+			"motionClickDesc": "Brief press feedback for buttons, links, and menu items",
+			"motionPageTitle": "Page transitions",
+			"motionPageDesc": "Smooth changes between workspace pages",
 			"backgroundTitle": "Background",
 			"backgroundDesc": "Shared by the workspace, settings, and sign-in screens",
 			"lavender": "Soft lavender",
@@ -1175,7 +1252,18 @@
 				"desc": "Interface language",
 				"zh": "Simplified Chinese",
 				"zhHant": "Traditional Chinese",
-				"en": "English"
+				"en": "English",
+				"ja": "Japanese",
+				"ko": "Korean",
+				"fr": "French",
+				"de": "German",
+				"it": "Italian",
+				"ar": "Arabic",
+				"es": "Spanish",
+				"pt": "Portuguese",
+				"ru": "Russian",
+				"hi": "Hindi",
+				"lzh": "Classical Chinese"
 			},
 			"searchEngine": {
 				"title": "Search engine",
@@ -1190,6 +1278,15 @@
 					"ecosia": "Ecosia",
 					"bing": "Bing"
 				}
+			},
+			"systemNotifications": {
+				"title": "System message notifications",
+				"desc": "Use system notifications for new messages. The message title and body stay hidden; allow Tora in system notification settings.",
+				"test": "Test notification", "testing": "Testing…",
+				"shown": "The system accepted the notification. If no banner appeared, check notification settings or Focus mode.",
+				"failed": "The system refused the notification. On macOS, test in a signed build and check notification permission.",
+				"unsupported": "Native notifications are not supported on this system.",
+				"unconfirmed": "A notification was requested, but display was not confirmed. Check notification permissions."
 			},
 			"sound": {
 				"title": "Notification sound",
@@ -1252,6 +1349,14 @@
 				"title": "Max agent iterations",
 				"desc": "Maximum agent loop turns per task (default 40); exceeded runs are force-stopped.",
 				"suffix": "turns"
+			},
+			"shellSandbox": {
+				"title": "Command process sandbox",
+				"desc": "Limits where agent Bash and Git commands can write. Disabling it gives commands your user account's file access."
+			},
+			"shellNetwork": {
+				"title": "Allow sandboxed commands on the network",
+				"desc": "Off by default. When enabled, commands can reach the internet and local services; enable it only when needed."
 			}
 		},
 		"data": {
@@ -1426,7 +1531,21 @@
 			"turnstileFailed": "Human verification failed, please try again"
 			},
 			"networkWarning": "Could not reach the auth service. Check your network and try again",
+			"networkRetryHint": "Your existing sign-in details are preserved. Retry verification when the connection is restored.",
 			"manager": {
+				"description": "Manage your profile and account security.",
+				"profileTitle": "Profile",
+				"securityTitle": "Account security",
+				"registeredAt": "Joined",
+				"passwordHint": "Update the password you use to sign in to Tora",
+				"emailPasswordHint": "Enter your current password to confirm your identity",
+				"confirmNewPassword": "Confirm new password",
+				"savePassword": "Save password",
+				"saveEmail": "Save email",
+				"logoutTitle": "Sign out of this account",
+				"logoutHint": "You will need to sign in again next time.",
+				"logoutConfirmTitle": "Sign out?",
+				"logoutConfirmDescription": "You will need to sign in again to continue using Tora.",
 				"changeAvatar": "Change avatar",
 				"avatarHint": "Click the avatar to change it (PNG / JPG / WebP, auto-cropped & compressed)",
 				"avatarSaved": "Avatar updated",
@@ -1508,7 +1627,7 @@
 				"auto": "Auto",
 				"on": "On",
 				"off": "Off",
-				"hint": "Auto detects by model name; multimodal models (e.g. gpt-4o, qwen-vl) accept images, text-only models block uploads"
+				"hint": "Auto detects by model name; vision models such as deepseek-flash, gpt-4o, and qwen-vl accept images"
 			},
 			"baseUrl": "Endpoint (Base URL)",
 			"saveHint": "Connectivity is verified via the model-list endpoint on save; the key is stored locally only",
@@ -1532,10 +1651,5 @@
 			"hunyuan": "Tencent Cloud",
 			"ollama": "Ollama (Local)"
 		}
-	},
-	"regionNotice": {
-		"title": "Notice for Mainland China Users & Cross-Border Data Transfer Consent",
-		"body": "Tora has detected that your location is in Mainland China. Rest assured, we do not ban accounts of users from Mainland China. However, in accordance with relevant laws of Mainland China, we need your consent: your data will be transferred to Cloudflare servers located outside Mainland China. If you do not agree to this cross-border transfer, please stop using and exit this application immediately.\nAs the servers are located outside Mainland China, your access to Tora may be slow. A VPN is recommended.",
-		"agree": "Agree and continue"
 	}
 }

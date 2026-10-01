@@ -9,6 +9,7 @@ async function request(path, token, body, method = body ? 'POST' : 'GET') {
 const admin = (path, body) => request(path, 'local-test-admin', body);
 const user = (path, body) => request(path, 'local-user-one', body);
 assert.equal((await request('/admin/users', 'local-user-one')).status, 401); ok('普通账户无法访问管理接口');
+assert.equal((await request('/admin/presence', 'local-user-one')).status, 401); ok('在线人数仅管理员可查询');
 assert.equal((await request('/admin/messages', 'wrong', { userId: null, title: 'x', body: 'x' })).status, 401); ok('无效管理密钥无法发消息');
 assert.equal((await admin('/admin/users')).status, 200); ok('管理员可查询账户');
 assert.equal((await admin('/admin/users?q=' + 'long-email-'.repeat(15) + '%40example.invalid')).status, 200); ok('长邮箱搜索不依赖 LIKE 模式限制');
@@ -18,6 +19,21 @@ const socket = new WebSocket(base.replace('http:', 'ws:') + '/account/events?tic
 const events = [];
 socket.addEventListener('message', event => { if (event.data !== 'pong') events.push(JSON.parse(event.data)); });
 await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }); });
+async function waitPresence(users, connections) {
+  const until = Date.now() + 3000;
+  let snapshot;
+  while (Date.now() < until) {
+    const response = await admin('/admin/presence');
+    assert.equal(response.status, 200);
+    snapshot = response.data;
+    if (snapshot.onlineUsers === users && snapshot.connections === connections) return snapshot;
+    await new Promise(resolve => setTimeout(resolve, 25));
+  }
+  assert.deepEqual({ users: snapshot?.onlineUsers, connections: snapshot?.connections }, { users, connections });
+}
+const moreSockets = [];
+await waitPresence(1, 1);
+ok('登录账户建立实时连接后在线人数立即更新');
 async function waitEvent(type, action) {
   events.length = 0;
   const result = await action();
@@ -28,6 +44,18 @@ async function waitEvent(type, action) {
   return result;
 }
 try {
+  for (const token of ['local-user-one', 'local-user-two']) {
+    const nextTicket = await request('/account/events-ticket', token, {});
+    assert.equal(nextTicket.status, 200);
+    const extra = new WebSocket(base.replace('http:', 'ws:') + '/account/events?ticket=' + encodeURIComponent(nextTicket.data.ticket));
+    await new Promise((resolve, reject) => { extra.addEventListener('open', resolve, { once: true }); extra.addEventListener('error', reject, { once: true }); });
+    moreSockets.push(extra);
+  }
+  await waitPresence(2, 3);
+  ok('同一账户多连接去重，不同账户分别计数');
+  moreSockets.pop().close();
+  await waitPresence(1, 2);
+  ok('用户断线后在线人数回落');
   await waitEvent('message-received', () => admin('/admin/messages', { userId: 900001, title: '定向消息', body: '正文 <script>不得执行</script>' }));
   const inbox = await user('/account/messages');
   const message = inbox.data.messages.find(m => m.title === '定向消息');
@@ -52,6 +80,7 @@ try {
   ok('已移除服务保持 404');
   console.log(`${passed} 项管理与实时测试通过`);
 } finally {
+  for (const extra of moreSockets) extra.close();
   socket.close();
   await admin('/admin/users/900001/ban', { banned: false });
 }

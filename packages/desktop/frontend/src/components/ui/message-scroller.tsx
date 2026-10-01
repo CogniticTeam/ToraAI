@@ -43,7 +43,8 @@ function MessageScrollerViewport({
 				// `no-scrollbar`: the stock thin scrollbar is hidden while
 				// autoscrolling and shown otherwise, so a streaming reply
 				// blinks it on and off down the right edge.
-				'size-full min-h-0 min-w-0 scroll-fade-b no-scrollbar overflow-y-auto overscroll-contain contain-content',
+				// 滚动区仍可键盘聚焦，但聚焦时不绘制任何边框或焦点线。
+				'size-full min-h-0 min-w-0 scroll-fade-b no-scrollbar overflow-y-auto overscroll-contain contain-content outline-none',
 				className,
 			)}
 			{...props}

@@ -1,5 +1,43 @@
 {
+  "languageDialog": {
+    "subtitle": "選擇介面語言",
+    "search": "搜尋語言",
+    "noResults": "沒有符合的語言",
+    "systemSuggestion": "目前系統語言為{{language}}，是否切換？",
+    "switch": "切換至{{language}}",
+    "later": "暫不切換",
+    "close": "關閉語言選擇",
+    "switchError": "切換語言失敗"
+  },
+  "usageMilestone": {
+    "title": "Token 里程碑達成",
+    "subtitle": "你在 Tora 的累計 Token 用量達到了新的里程碑。",
+    "total": "當前累計使用 {{count}} Token",
+    "more": "還有 {{count}} 個里程碑等待展示",
+    "continue": "繼續使用 Tora",
+    "retry": "暫時無法儲存里程碑，請重試。",
+    "levels": {
+      "100k": "10萬",
+      "1m": "100萬",
+      "10m": "1000萬",
+      "100m": "1億",
+      "500m": "5億",
+      "1b": "10億",
+      "2b": "20億",
+      "5b": "50億",
+      "10b": "100億"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "開啟外部連結？",
+    "externalLinkWarning": "即將訪問外部網站，請確認連結地址。",
+    "copyLink": "複製連結",
+    "copied": "已複製",
+    "openLink": "開啟連結",
+    "close": "關閉"
+  },
   "inbox": {
+    "translateToLanguage": "翻譯為{{language}}",
     "detail": "訊息詳情",
     "translateToChinese": "翻譯為中文",
     "translateToEnglish": "翻譯為英文",
@@ -38,14 +76,17 @@
   "firstRun": {
     "intro": {
       "aria": "Tora 首次啟動歡迎動畫",
-      "tagline": "讓想法，開始執行。",
-      "initializing": "正在準備你的工作區",
-      "ready": "準備完成，可以開始",
+      "welcome": "歡迎使用 Tora",
+      "headlineFirst": "讓想法，",
+      "headlineSecond": "開始執行。",
+      "description": "接入你的模型，開啟專案，開始對話。Tora 會陪你閱讀、修改程式碼並完成任務。",
+      "hint": "下一步將帶你熟悉主要功能",
+      "foot": "你的工作區，即將就緒。",
+      "logoAlt": "Tora Logo",
       "enter": "開啟體驗",
       "skip": "跳過動畫"
     },
     "tour": {
-      "replay": "重新檢視新手引導",
       "skip": "跳過引導",
       "later": "稍後配置",
       "next": "下一步",
@@ -123,6 +164,36 @@
       ]
     }
   },
+  "firstUseConsent": {
+    "title": "開始使用前，請確認以下事項",
+    "description": "請分別閱讀並確認使用者協議、隱私政策及跨境傳輸說明。未勾選全部專案之前，Tora 不會進入登入或工作區。",
+    "terms": "我已閱讀並同意使用者協議",
+    "readTerms": "檢視使用者協議",
+    "privacy": "我已閱讀並瞭解隱私政策",
+    "readPrivacy": "檢視隱私政策",
+    "crossBorder": "我單獨同意跨境傳輸個人資訊",
+    "crossBorderHint": "使用賬號和雲端功能時，必要資訊可能傳輸至中國大陸境外。請先閱讀具體範圍和處理方式。",
+    "readCrossBorder": "檢視跨境傳輸說明",
+    "decline": "暫不接受並退出",
+    "agree": "確認並繼續"
+  },
+  "sponsors": {
+    "title": "本月贊助者名單",
+    "description": "感謝本月在愛發電支援 Tora 的使用者。這裡僅展示贊助者暱稱，不展示金額或其他賬戶資訊。",
+    "source": "資料來自愛發電",
+    "total": "共 {{count}} 位贊助者",
+    "loaded": "已顯示 {{count}} 位贊助者",
+    "empty": "本月暫無贊助者",
+    "emptyMore": "當前頁暫無本月贊助者，可繼續載入更多。",
+    "loading": "正在載入贊助者…",
+    "loadError": "贊助者名單暫不可用，請稍後重試。",
+    "retry": "重試",
+    "more": "載入更多",
+    "donate": "贊助",
+    "leaveTitle": "前往愛發電贊助？",
+    "leaveDescription": "確認後將離開 Tora，在系統瀏覽器中開啟以下外部網站。",
+    "confirmLeave": "確認並開啟"
+  },
   "polls": {
     "title": "投票",
     "subtitle": "參與投票，檢視活動與結果",
@@ -188,6 +259,7 @@
     "disabled": "投票功能已由管理員關閉。"
   },
   "common": {
+    "toraModels": "Tora 模型",
     "add": "新增",
     "agent": "智慧體",
     "cancel": "取消",
@@ -351,6 +423,15 @@
   "messageBubble": {
     "thinking": "深度思考",
     "thinkingFor": "深度思考 {{duration}}",
+    "taskProcess": {
+      "title": "任務過程",
+      "running": "已用時 {{duration}}",
+      "finished": "用時 {{duration}}",
+      "hour": "小時",
+      "minute": "分鐘",
+      "second": "秒",
+      "noConclusion": "本輪已結束，但模型未給出結語。可展開任務過程檢視詳情。"
+    },
     "audioGenerating": "正在生成音訊…",
     "playAudio": "播放音訊",
     "pauseAudio": "暫停音訊",
@@ -379,6 +460,7 @@
     },
     "error": {
       "title": "回覆失敗",
+      "blockedTitle": "本輪被規則阻止",
       "authentication": "鑑權失敗 —— 請檢查模型的 API key 或憑證。",
       "permission": "請求被拒絕 —— 當前憑證沒有訪問該模型或端點的許可權。",
       "rate_limit": "觸發限流或額度用盡 —— 請稍後重試。",
@@ -1265,12 +1347,27 @@
     },
     "theme": {
       "title": "主題",
-      "subtitle": "選擇外觀和工作區背景",
+      "subtitle": "選擇外觀、動畫和工作區背景",
       "modeTitle": "外觀",
       "modeDesc": "淺色、深色或跟隨系統",
       "light": "淺色",
       "dark": "深色",
       "system": "跟隨系統",
+      "motionTitle": "互動動畫",
+      "motionDesc": "設定點選反饋和頁面切換的節奏。系統的“減少動態效果”設定始終優先。",
+      "motionModeTitle": "動畫節奏",
+      "motion": {
+        "system": "跟隨系統",
+        "off": "關閉",
+        "gentle": "柔和",
+        "standard": "標準",
+        "fast": "快速"
+      },
+      "motionReduced": "系統已啟用減少動態效果，當前以無動畫方式呈現。",
+      "motionClickTitle": "點選反饋",
+      "motionClickDesc": "按鈕、連結和選單項的短促按下反饋",
+      "motionPageTitle": "頁面切換",
+      "motionPageDesc": "在工作區頁面之間平滑過渡",
       "backgroundTitle": "背景",
       "backgroundDesc": "工作區、設定和登入介面共用背景",
       "lavender": "柔紫",
@@ -1296,7 +1393,18 @@
         "desc": "介面顯示語言",
         "zh": "簡體中文",
         "zhHant": "繁體中文",
-        "en": "English"
+        "en": "English",
+        "ja": "日語",
+        "ko": "韓語",
+        "fr": "法語",
+        "de": "德語",
+        "it": "義大利語",
+        "ar": "阿拉伯語",
+        "es": "西班牙語",
+        "pt": "葡萄牙語",
+        "ru": "俄語",
+        "hi": "印地語",
+        "lzh": "文言文"
       },
       "searchEngine": {
         "title": "搜尋引擎",
@@ -1311,6 +1419,16 @@
           "ecosia": "Ecosia",
           "bing": "必應"
         }
+      },
+      "systemNotifications": {
+        "title": "系統訊息通知",
+        "desc": "新訊息使用系統通知提醒；鎖屏通知不顯示標題和正文。系統設定也需允許 Tora 通知。",
+        "test": "測試通知",
+        "testing": "正在測試…",
+        "shown": "系統已接收通知；若沒有橫幅，請檢查 macOS 通知設定或專注模式。",
+        "failed": "系統拒絕顯示通知。macOS 請在正式簽名版中測試，並檢查通知許可權。",
+        "unsupported": "當前系統不支援原生通知。",
+        "unconfirmed": "已請求系統通知，但未收到顯示確認；請檢查通知許可權。"
       },
       "sound": {
         "title": "提示音",
@@ -1373,6 +1491,14 @@
         "title": "最大 Agent 迭代輪數",
         "desc": "單次任務最大 Agent 迴圈輪數（預設 40），超過會強制結束。",
         "suffix": "輪"
+      },
+      "shellSandbox": {
+        "title": "命令程序沙箱",
+        "desc": "限制 Agent 的 Bash 和 Git 命令寫入工作目錄；關閉後命令擁有當前使用者的檔案許可權。"
+      },
+      "shellNetwork": {
+        "title": "允許沙箱命令聯網",
+        "desc": "預設關閉。開啟後命令可訪問外網和本機服務；僅在需要聯網安裝等操作時開啟。"
       }
     },
     "data": {
@@ -1547,7 +1673,21 @@
         "turnstileFailed": "人機驗證失敗，請重試"
       },
       "networkWarning": "認證服務暫時無法連線，請檢查網路後重試",
+      "networkRetryHint": "登入資訊已保留。請在網路恢復後重試驗證。",
       "manager": {
+        "description": "管理你的個人資料與帳戶安全。",
+        "profileTitle": "個人資料",
+        "securityTitle": "帳戶安全",
+        "registeredAt": "註冊時間",
+        "passwordHint": "更新用於登入 Tora 的密碼",
+        "emailPasswordHint": "輸入目前密碼以確認是你本人操作",
+        "confirmNewPassword": "確認新密碼",
+        "savePassword": "儲存密碼",
+        "saveEmail": "儲存電郵",
+        "logoutTitle": "登出目前帳戶",
+        "logoutHint": "下次使用時需要重新登入。",
+        "logoutConfirmTitle": "登出？",
+        "logoutConfirmDescription": "登出後，你需要重新登入才能繼續使用 Tora。",
         "changeAvatar": "更換頭像",
         "avatarHint": "點選頭像更換（支援 PNG / JPG / WebP，自動裁剪壓縮）",
         "avatarSaved": "頭像已更新",
@@ -1629,7 +1769,7 @@
         "auto": "自動",
         "on": "支援",
         "off": "不支援",
-        "hint": "自動 = 按模型名判斷；多模態模型（如 gpt-4o、qwen-vl）可上傳圖片，純文字模型禁用上傳"
+        "hint": "自動 = 按模型名判斷；支援視覺輸入的模型（如 deepseek-flash、gpt-4o、qwen-vl）可上傳圖片"
       },
       "baseUrl": "介面地址（Base URL）",
       "saveHint": "儲存後會用模型列表介面驗證連通性，金鑰僅儲存在本機",
@@ -1653,10 +1793,5 @@
       "hunyuan": "騰訊雲",
       "ollama": "Ollama（本地）"
     }
-  },
-  "regionNotice": {
-    "title": "中國大陸使用者特別提醒及境外傳輸許可",
-    "body": "Tora檢測到你的位置位於中國大陸，請放心，我們並不會封禁來自中國大陸的使用者的賬號，依據中國大陸相關法律，我們需要您同意：您的資料將會被傳輸到Cloudflare境外伺服器上，若您不同意我們向境外傳輸資料，可以立即停止使用並退出本軟體。\n由於伺服器位於中國大陸境外，您訪問Tora的速度可能會慢，建議您開啟VPN使用。",
-    "agree": "同意並繼續使用"
   }
 }

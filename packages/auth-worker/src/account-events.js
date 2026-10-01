@@ -1,9 +1,30 @@
 // 仅由已鉴权的 Worker 路由调用。每个连接使用用户 ID 标签，支持休眠。
+export function snapshotAccountPresence(ctx, now = Date.now()) {
+  const users = new Set();
+  let connections = 0;
+  for (const socket of ctx.getWebSockets()) {
+    // getWebSockets 可能暂时包含正在关闭的连接；仅统计仍打开且会话有效的连接。
+    if (socket.readyState !== 1) continue;
+    let expiresAt;
+    try { expiresAt = Number(socket.deserializeAttachment()?.expiresAt); } catch { continue; }
+    if (!Number.isFinite(expiresAt) || expiresAt <= now) continue;
+    let userId;
+    try { userId = ctx.getTags(socket)?.[0]; } catch { continue; }
+    if (!userId) continue;
+    connections++;
+    users.add(String(userId));
+  }
+  return { onlineUsers: users.size, connections, sampledAt: new Date(now).toISOString() };
+}
+
 export class AccountEvents {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
 
   async fetch(request) {
     const path = new URL(request.url).pathname;
+    if (path === '/presence' && request.method === 'GET') {
+      return Response.json(snapshotAccountPresence(this.ctx));
+    }
     if (path === '/publish' && request.method === 'POST') {
       const { userId, event } = await request.json();
       const sockets = userId == null ? this.ctx.getWebSockets() : this.ctx.getWebSockets(String(userId));

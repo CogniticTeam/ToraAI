@@ -7,7 +7,8 @@
 // 只放行已知子命令；写类子命令（add/commit/checkout/reset/...）在权限层
 // 归到 write 类，会被 default / explore 模式拦下。
 import { spawn } from 'node:child_process';
-import { redact } from '../security.js';
+import { buildChildEnv, redact } from '../security.js';
+import { prepareShellSandbox, sandboxOptionsForContext } from './shell-sandbox.js';
 
 const GIT_TIMEOUT = 20000;
 
@@ -49,12 +50,18 @@ export function gitIsWrite(cmd, args = []) {
 }
 
 /** 执行一次 git，返回 { ok, code, stdout, stderr } */
-export function runGit(args, cwd, { timeout = GIT_TIMEOUT, maxBuffer = 400000 } = {}) {
+export function runGit(args, cwd, { timeout = GIT_TIMEOUT, maxBuffer = 400000, sandbox = {} } = {}) {
   return new Promise((resolve) => {
     let proc;
+    let launch;
     try {
-      proc = spawn('git', args, { cwd, env: { ...process.env, GIT_PAGER: 'cat', GIT_TERMINAL_PROMPT: '0' } });
+      launch = prepareShellSandbox(cwd, sandbox);
+      proc = spawn(launch.executable || 'git', launch.executable ? [...launch.args, 'git', ...args] : args, {
+        cwd,
+        env: { ...(sandbox.enabled ? buildChildEnv(process.env, launch.env) : process.env), GIT_PAGER: 'cat', GIT_TERMINAL_PROMPT: '0' }
+      });
     } catch (e) {
+      launch?.cleanup();
       return resolve({ ok: false, code: -1, stdout: '', stderr: e?.message || String(e) });
     }
     let out = '', err = '';
@@ -65,10 +72,12 @@ export function runGit(args, cwd, { timeout = GIT_TIMEOUT, maxBuffer = 400000 } 
     proc.stderr.on('data', (d) => { if (err.length < maxBuffer) err += d; });
     proc.on('error', (e) => {
       clearTimeout(timer);
+      launch.cleanup();
       resolve({ ok: false, code: -1, stdout: out, stderr: `git 不可用: ${e.message}` });
     });
     proc.on('close', (code) => {
       clearTimeout(timer);
+      launch.cleanup();
       resolve({ ok: code === 0, code, stdout: out, stderr: err });
     });
   });
@@ -182,7 +191,7 @@ export const gitTool = {
     }
     const limit = Number.isFinite(max_chars) ? Math.max(200, Math.min(max_chars, 200000))
       : (ctx?.toolOutputLimit ?? 6000);
-    const res = await runGit([sub, ...argv], ctx?.cwd);
+    const res = await runGit([sub, ...argv], ctx?.cwd, { sandbox: sandboxOptionsForContext(ctx) });
     const head = `$ git ${[sub, ...argv].join(' ')}\nexit_code: ${res.code}\n`;
     let body = res.stdout || '';
     if (res.stderr) body += (body ? '\n' : '') + `[stderr]\n${res.stderr}`;

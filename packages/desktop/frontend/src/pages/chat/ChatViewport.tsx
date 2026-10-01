@@ -1131,7 +1131,14 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									)}
 									fileProcessor={async (file) => {
 										const filePath = (file as File & { path?: string }).path;
-										if (filePath) {
+										// 图片始终内联为 data URL：上游 API 无法读取本机 file:// 路径。
+										const imageMime = /^image\/(?:jpeg|png|gif|webp)$/i.test(file.type)
+											? file.type
+											: /\.png$/i.test(file.name) ? 'image/png'
+												: /\.jpe?g$/i.test(file.name) ? 'image/jpeg'
+													: /\.gif$/i.test(file.name) ? 'image/gif'
+														: /\.webp$/i.test(file.name) ? 'image/webp' : null;
+										if (filePath && !imageMime) {
 											return {
 												id: crypto.randomUUID(),
 												type: 'data' as const,
@@ -1154,19 +1161,20 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 												created_at: new Date().toISOString(),
 											};
 										}
-										const buffer = await file.arrayBuffer();
-										const bytes = new Uint8Array(buffer);
-										let binary = '';
-										for (let i = 0; i < bytes.byteLength; i++) {
-											binary += String.fromCharCode(bytes[i]);
-										}
-										const base64 = btoa(binary);
+										const dataUrl = await new Promise<string>((resolve, reject) => {
+											const reader = new FileReader();
+											reader.onload = () => typeof reader.result === 'string'
+												? resolve(reader.result) : reject(new Error('无法读取附件'));
+											reader.onerror = () => reject(reader.error || new Error('无法读取附件'));
+											reader.readAsDataURL(file);
+										});
+										const base64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
 										return {
 											id: crypto.randomUUID(),
 											type: 'data' as const,
 											source: {
 												type: 'base64' as const,
-												media_type: file.type || 'application/octet-stream',
+												media_type: imageMime || file.type || 'application/octet-stream',
 												data: base64,
 											},
 											name: file.name,

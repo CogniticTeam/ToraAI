@@ -33,7 +33,8 @@ import { discoverLocalModels } from '../discover.js';
 import { loadCommands } from '../commands.js';
 import { detectVision } from '../model.js';
 import { describeHooks, HOOK_EVENTS } from '../hooks.js';
-import { usageStats } from './usage.js';
+import { ensureUsageHistoryImported, usageStats } from './usage.js';
+import { acknowledgeUsageMilestone, usageMilestoneStatus } from './usage-store.js';
 import { buildSymbolIndex } from '../tools/lsp.js';
 import { normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
 import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates } from '../tools/mcp-workshop.js';
@@ -373,6 +374,18 @@ async function route(req, res) {
   if (p === '/admin/usage-stats' && method === 'GET') {
     return json(res, 200, usageStats());
   }
+  if (p === '/admin/usage-milestones' && method === 'GET') {
+    ensureUsageHistoryImported();
+    return json(res, 200, usageMilestoneStatus());
+  }
+  const milestoneAck = p.match(/^\/admin\/usage-milestones\/(\d+)\/ack$/);
+  if (milestoneAck && method === 'POST') {
+    const threshold = Number(milestoneAck[1]);
+    const acknowledged = acknowledgeUsageMilestone(threshold);
+    if (acknowledged === null) return apiError(res, 404, '里程碑不存在或尚未达到');
+    if (!acknowledged) return apiError(res, 500, '里程碑确认尚未保存，请重试');
+    return json(res, 200, { status: 'ok', ...usageMilestoneStatus() });
+  }
 
   // 读取生效 baseURL/model/apiKey 不回明文
   if (p === '/admin/config' && method === 'GET') {
@@ -403,6 +416,8 @@ async function route(req, res) {
       toolOutputLimit: cfg.toolOutputLimit,
       maxTurns: cfg.maxTurns,
       persistentShell: cfg.persistentShell !== false,
+      shellSandbox: cfg.shellSandbox !== false,
+      shellNetworkAccess: cfg.shellNetworkAccess === true,
       injectProjectContext: cfg.injectProjectContext !== false,
       repoMapInject: cfg.repoMapInject !== false,
       checkpointEnabled: cfg.checkpointEnabled !== false,
@@ -438,7 +453,7 @@ async function route(req, res) {
       }
       // 行为开关（布尔）
       for (const k of [
-        'persistentShell', 'injectProjectContext', 'repoMapInject', 'checkpointEnabled',
+        'persistentShell', 'shellSandbox', 'shellNetworkAccess', 'injectProjectContext', 'repoMapInject', 'checkpointEnabled',
         'hooksEnabled', 'trustProjectHooks', 'changesAware'
       ]) {
         if (typeof body[k] === 'boolean') patch[k] = body[k];
@@ -492,6 +507,8 @@ async function route(req, res) {
         toolOutputLimit: next.toolOutputLimit,
         maxTurns: next.maxTurns,
         persistentShell: next.persistentShell !== false,
+        shellSandbox: next.shellSandbox !== false,
+        shellNetworkAccess: next.shellNetworkAccess === true,
         injectProjectContext: next.injectProjectContext !== false,
         repoMapInject: next.repoMapInject !== false,
         checkpointEnabled: next.checkpointEnabled !== false,
@@ -1020,10 +1037,12 @@ async function route(req, res) {
     return json(res, 200, { results, total: results.length, query: q.q || q.query || '' });
   }
   if ((m = p.match(/^\/sessions\/([\w-]+)\/fork$/)) && method === 'POST') {
+    if (isRunning(m[1])) return apiError(res, 409, '会话正在运行，先等待本轮完成再创建分支');
     let body = {};
     try { body = await readBody(req); } catch { /* 允许空 body */ }
     const r = forkSession(m[1], { upto: Number.isFinite(Number(body.upto)) ? Number(body.upto) : undefined, name: body.name });
     if (!r) return apiError(res, 404, '会话不存在');
+    if (r.error) return apiError(res, 409, r.error);
     return json(res, 200, { status: 'ok', session_id: r.id, name: r.name, message_count: r.messages });
   }
   if ((m = p.match(/^\/sessions\/([\w-]+)\/export$/)) && method === 'GET') {
@@ -1119,6 +1138,15 @@ async function route(req, res) {
   if ((m = p.match(/^\/sessions\/([\w-]+)\/messages$/)) && method === 'GET') {
     const s = loadSessionRecord(m[1]);
     if (!s) return apiError(res, 404, '会话不存在');
+    const last = s.display?.[s.display.length - 1];
+    if (!isRunning(m[1]) && last?.role === 'assistant' && last.finished_at === null) {
+      last.finished_at = new Date().toISOString();
+      last.finished_reason = 'interrupted';
+      for (const block of last.content || []) {
+        if (block.type === 'tool_call' && block.state === 'asking') block.state = 'finished';
+      }
+      saveSessionRecord(s);
+    }
     return json(res, 200, { messages: s.display || [], is_running: isRunning(m[1]), has_more: false });
   }
   if ((m = p.match(/^\/sessions\/([\w-]+)\/stream$/)) && method === 'GET') {
@@ -1130,10 +1158,13 @@ async function route(req, res) {
       'x-accel-buffering': 'no'
     });
     res.write(': connected\n\n');
-    const send = (event) => {
-      try { res.write(`data: ${JSON.stringify(event)}\n\n`); } catch { /* closed */ }
+    const send = (frame) => {
+      try { res.write(`id: ${frame.cursor}\ndata: ${JSON.stringify(frame.event)}\n\n`); } catch { /* closed */ }
     };
-    const unsub = subscribe(sid, send);
+    const cursor = typeof q.after_cursor === 'string' ? q.after_cursor : req.headers['last-event-id'];
+    const unsub = subscribe(sid, send, cursor, (status) => {
+      try { res.write(`: stream-status ${JSON.stringify(status)}\n\n`); } catch { /* closed */ }
+    });
     const hb = setInterval(() => {
       try { res.write(': ka\n\n'); } catch { /* closed */ }
     }, 15000);

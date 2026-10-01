@@ -2,7 +2,9 @@ import { Check, ImageOff, ImagePlus, LaptopMinimal, Moon, Sun } from 'lucide-rea
 import { useRef, useState, type ChangeEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { BACKGROUND_OPTIONS, normalizeBackgroundFile, useBackground, type BackgroundPreference } from '@/hooks/useBackground';
+import { useMotionSettings, type MotionMode } from '@/hooks/useMotionSettings';
 import { useTheme, type ThemePreference } from '@/hooks/useTheme';
 import { useTranslation } from '@/i18n/useI18n';
 
@@ -11,11 +13,13 @@ const MODES = [
 	{ value: 'dark', icon: Moon },
 	{ value: 'system', icon: LaptopMinimal },
 ] as const;
+const MOTION_MODES: MotionMode[] = ['system', 'off', 'gentle', 'standard', 'fast'];
 
 export function ThemeSection() {
 	const { t } = useTranslation();
 	const { preference: mode, setPreference: setMode } = useTheme();
 	const background = useBackground();
+	const motion = useMotionSettings();
 	const fileInput = useRef<HTMLInputElement>(null);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -73,6 +77,32 @@ export function ThemeSection() {
 								<Icon className="size-3.5" />{t(`settings.theme.${value}`)}
 							</button>;
 						})}
+					</div>
+				</section>
+
+				<section className="rounded-xl border border-border bg-card px-5 py-4">
+					<div className="text-sm font-medium">{t('settings.theme.motionTitle')}</div>
+					<p className="mt-0.5 text-xs text-muted-foreground">{t('settings.theme.motionDesc')}</p>
+					<div role="group" aria-label={t('settings.theme.motionModeTitle')} className="mt-4 inline-flex flex-wrap items-center gap-1 rounded-lg border border-border bg-muted p-1">
+						{MOTION_MODES.map(value => <button key={value} type="button" aria-pressed={motion.mode === value}
+							onClick={() => motion.setMode(value)}
+							className={'rounded-md px-3 py-1.5 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ' +
+								(motion.mode === value ? 'bg-background text-foreground shadow-sm' : 'text-foreground/75 hover:text-foreground')}>
+							{t(`settings.theme.motion.${value}`)}
+						</button>)}
+					</div>
+					{motion.systemReduced && <p role="status" className="mt-2 text-xs text-muted-foreground">{t('settings.theme.motionReduced')}</p>}
+					<div className="mt-4 divide-y divide-border/70">
+						<div className="flex items-center justify-between gap-4 py-2.5">
+							<div><div id="motion-click-label" className="text-sm">{t('settings.theme.motionClickTitle')}</div>
+								<p className="text-xs text-muted-foreground">{t('settings.theme.motionClickDesc')}</p></div>
+							<Switch aria-labelledby="motion-click-label" checked={motion.clickEnabled} disabled={motion.effective === 'off'} onCheckedChange={motion.setClickEnabled} />
+						</div>
+						<div className="flex items-center justify-between gap-4 py-2.5">
+							<div><div id="motion-page-label" className="text-sm">{t('settings.theme.motionPageTitle')}</div>
+								<p className="text-xs text-muted-foreground">{t('settings.theme.motionPageDesc')}</p></div>
+							<Switch aria-labelledby="motion-page-label" checked={motion.pageEnabled} disabled={motion.effective === 'off'} onCheckedChange={motion.setPageEnabled} />
+						</div>
 					</div>
 				</section>
 

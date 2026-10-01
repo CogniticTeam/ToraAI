@@ -21,6 +21,7 @@
 //   Stop             正常结束时（用于通知、清理、写自己的日志）
 import { createClient, chatCompletion, markToolUnsupported, SYSTEM_PROMPT } from './model.js';
 import { builtinTools, canonicalToolName, toolCategory } from './tools/builtin.js';
+import { createToolRegistry, runToolPipeline } from './tools/registry.js';
 import { evictToolOutputs, compactMessages, estimateMessagesTokens, contentToText } from './context.js';
 import { buildSystemPrompt, loadProjectContext } from './prompt.js';
 import { loadMemoryConfig, renderMemoryContext, MEMORY_GUIDE } from './asapi/memory.js';
@@ -151,6 +152,50 @@ const CATEGORY_LABEL = { read: '只读', write: '写入', execute: '执行' };
 // ---------------------------------------------------------------- 权限
 
 /** 用户规则表：{tool_name, rule_content, behavior, source} */
+// 放行规则只能匹配一条简单命令的 argv 前缀。任何 shell 运算符、展开或
+// 命令替换都交回确认卡；字符串包含匹配会把 `git status; ...` 错当成
+// 已获准的 `git status`。拒绝/询问规则仍保持宽匹配，避免旧规则失效。
+export function simpleCommandTokens(input) {
+  const text = String(input ?? '').trim();
+  if (!text) return null;
+  const tokens = [];
+  let token = '';
+  let quote = null;
+  let started = false;
+  for (const char of text) {
+    if (quote === "'") {
+      if (char === "'") quote = null;
+      else token += char;
+      continue;
+    }
+    if (quote === '"') {
+      if (char === '"') quote = null;
+      else if (char === '$' || char === '`' || char === '\\') return null;
+      else token += char;
+      continue;
+    }
+    if (char === "'" || char === '"') { quote = char; started = true; continue; }
+    if (/\s/.test(char)) {
+      if (char === '\n' || char === '\r') return null;
+      if (started) { tokens.push(token); token = ''; started = false; }
+      continue;
+    }
+    if (/[;&|><`$(){}\\]/.test(char)) return null;
+    token += char;
+    started = true;
+  }
+  if (quote) return null;
+  if (started) tokens.push(token);
+  return tokens.length ? tokens : null;
+}
+
+function matchesBashAllowPrefix(pattern, command) {
+  const expected = simpleCommandTokens(pattern);
+  const actual = simpleCommandTokens(command);
+  return !!expected && !!actual && expected.length <= actual.length &&
+    expected.every((token, index) => token === actual[index]);
+}
+
 export function matchRule(rule, toolName, args = {}) {
   if (!rule || typeof rule !== 'object') return false;
   const want = canonicalToolName(toolName);
@@ -161,7 +206,7 @@ export function matchRule(rule, toolName, args = {}) {
   switch (want) {
     case 'Bash': {
       const cmd = String(args.command ?? '');
-      return cmd.includes(c);
+      return rule.behavior === 'allow' ? matchesBashAllowPrefix(c, cmd) : cmd.includes(c);
     }
     case 'Read': case 'Write': case 'Edit': {
       const p = String(args.path ?? '');
@@ -473,15 +518,8 @@ async function _runAgentImpl(opts, ch) {
     ...(spawnDepth > 0 ? [] : subagentTools),
     ...(spawnDepth > 0 ? [] : teamTools)
   ];
-  const toolDefs = allTools.map((t) => ({
-    type: 'function',
-    function: { name: t.name, description: t.description, parameters: t.parameters }
-  }));
-  const toolMap = new Map();
-  for (const t of allTools) {
-    toolMap.set(t.name, t);
-    toolMap.set(canonicalToolName(t.name).toLowerCase(), t); // 旧名/小写别名
-  }
+  const toolRegistry = createToolRegistry(allTools, canonicalToolName);
+  const toolDefs = toolRegistry.definitions;
 
   // 调用方遗漏权限模式时采用 default，而非 bypass；桌面与 REPL 有确认通道，
   // 一次性 CLI 则仍在调用处明确选择 bypass，语义不被这个兜底悄悄改变。
@@ -491,6 +529,9 @@ async function _runAgentImpl(opts, ch) {
   const toolCtx = {
     cwd,
     sandboxRoots,
+    permissionMode,
+    shellSandbox: cfg.shellSandbox !== false,
+    shellNetworkAccess: cfg.shellNetworkAccess === true,
     toolOutputLimit: cfg.toolOutputLimit ?? 6000,
     persistentShell: cfg.persistentShell !== false,
     vision: client.vision,
@@ -633,7 +674,9 @@ async function _runAgentImpl(opts, ch) {
     // （explore/dont_ask 也允许）。用户显式 deny 规则与钩子仍然优先 ——
     // 它们是用户亲手写下的闸，不该被同意状态绕过。
     let decision = decidePermission(permissionMode, name, effectiveArgs, rules);
-    if (canonical === 'Computer' && !hookDenied && !hookAsk) {
+    // Explicit deny/ask rules remain monotonic even after session consent.
+    if (canonical === 'Computer' && !hookDenied && !hookAsk &&
+        (!decision.matchedRule || decision.matchedRule.behavior === 'allow')) {
       if (opts.computerConsent?.granted) {
         decision = { ...decision, behavior: 'allow' };
       } else {
@@ -706,59 +749,14 @@ async function _runAgentImpl(opts, ch) {
     return pack(answer?.confirmed ? 'allow' : 'deny', { userDenied: !answer?.confirmed });
   }
 
-  /** 真正执行一个工具调用（权限已放行） */
-  async function invoke(tc, args) {
-    const t0 = Date.now();
-    let ok = true;
-    let result;
-    try {
-      const tool = toolMap.get(tc.function?.name) || toolMap.get(canonicalToolName(tc.function?.name).toLowerCase());
-      if (!tool) {
-        result = `未知工具: ${tc.function?.name}`;
-        ok = false;
-      } else if (!toolCtx.cwd && canonicalToolName(tc.function?.name) !== 'WebFetch' && canonicalToolName(tc.function?.name) !== 'WebSearch') {
-        result = '工具不可用：未选择工作目录。请先在会话顶部点击「选择文件夹」。';
-        ok = false;
-      } else if (toolCtx.signal?.aborted) {
-        result = '已中止：用户停止了本次回复。';
-        ok = false;
-      } else {
-        result = await tool.execute(args, toolCtx);
-        const name = canonicalToolName(tc.function?.name);
-        // Write/Edit 成功时返回带 diff 的对象；字符串是可读错误提示。
-        if (['Write', 'Edit'].includes(name) && typeof result === 'string') ok = false;
-        if (name === 'Bash' && typeof result === 'string') {
-          const exitCode = /\bexit_code:\s*(-?\d+|null)\b/.exec(result)?.[1];
-          if (exitCode !== '0' || /^(?:命令已被用户中止|命令超时|命令输出超过)/.test(result)) ok = false;
-        }
-        if (result && typeof result === 'object' && result.ok === false) ok = false;
-      }
-    } catch (e) {
-      ok = false;
-      result = `工具执行异常: ${e?.message || e}`;
-    }
-    // 工具可返回 {text, image, meta}：文本进对话与卡片，图像按多模态 part 附上，
-    // meta 是结构化元数据（如 Write/Edit 的 {diff,added,removed}），随 tool-result
-    // 事件透传给前端渲染 —— 不进模型上下文。
-    let image = null;
-    let meta = null;
-    if (result && typeof result === 'object') {
-      image = result.image || null;
-      meta = result.meta && typeof result.meta === 'object' ? result.meta : null;
-      result = result.text ?? JSON.stringify(result);
-    }
-    return { ok, result: String(result ?? ''), image, meta, durationMs: Date.now() - t0 };
-  }
-
   /**
-   * 工具执行 + PostToolUse 钩子。
+   * PostToolUse 钩子。
    * 钩子能补充上下文（例如「这个文件被 .gitignore 排除了，别看它」），
    * 也能直接把这次结果判为不可接受（decision=deny/ask），此时结果会附带钩子的话
    * 一起回给模型 —— 让模型知道「不是工具坏了，是规则不让这么干」。
    */
-  async function invokeWithHooks(tc, args) {
+  async function afterTool(tc, args, res) {
     const name = canonicalToolName(tc.function?.name);
-    const res = await invoke(tc, args);
     let hk;
     try {
       hk = await runHooks('PostToolUse', {
@@ -781,6 +779,21 @@ async function _runAgentImpl(opts, ch) {
     if (hk.additionalContext) res.result = `${res.result}\n\n[钩子补充] ${hk.additionalContext}`;
     return res;
   }
+
+  const executeTool = (tc, args) => runToolPipeline({
+    call: tc,
+    args,
+    before: gate,
+    invoke: (call, effectiveArgs) => toolRegistry.invoke(call, effectiveArgs, toolCtx),
+    after: afterTool,
+    denied: (decision, call) => ({
+      ok: false,
+      result: hookOrPolicyMessage(decision, call.function?.name, permissionMode),
+      image: null,
+      meta: null,
+      durationMs: 0
+    })
+  });
 
   /** 统一收尾：Stop 钩子 → done 事件 */
   async function finish(reason, { runStopHook = true } = {}) {
@@ -984,13 +997,7 @@ async function _runAgentImpl(opts, ch) {
             const name = action.tool;
             const tc = { id: `review-${round}-${toolCtx.currentTurn}-${Math.random().toString(36).slice(2, 8)}`, function: { name, arguments: JSON.stringify(action.args ?? {}) } };
             emit({ type: 'tool-start', id: tc.id, name: canonicalToolName(name), args: action.args ?? {} });
-            const g = await gate(tc, action.args ?? {});
-            let res;
-            if (g.behavior !== 'allow') {
-              res = { ok: false, result: hookOrPolicyMessage(g, name, permissionMode), image: null, durationMs: 0 };
-            } else {
-              res = await invokeWithHooks(tc, g.args ?? action.args ?? {});
-            }
+            const res = await executeTool(tc, action.args ?? {});
             recordToolMessage(tc, name, res);
             emit({ type: 'tool-result', id: tc.id, name: canonicalToolName(name), ok: res.ok, result: res.result, durationMs: res.durationMs, meta: res.meta ?? undefined });
             continue;
@@ -1012,10 +1019,7 @@ async function _runAgentImpl(opts, ch) {
           }
           for (const c of calls2) {
             if (signal?.aborted) return await finish('aborted', { runStopHook: false });
-            const g = await gate(c.tc, c.args);
-            let res;
-            if (g.behavior === 'allow') res = await invokeWithHooks(c.tc, g.args ?? c.args);
-            else res = { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 };
+            const res = await executeTool(c.tc, c.args);
             recordToolMessage(c.tc, c.tc.function?.name, res);
             emit({ type: 'tool-result', id: c.tc.id, name: canonicalToolName(c.tc.function?.name), ok: res.ok, result: res.result, durationMs: res.durationMs, meta: res.meta ?? undefined });
           }
@@ -1135,18 +1139,7 @@ async function _runAgentImpl(opts, ch) {
       const name = action.tool;
       const tc = { id: `react-${turn}-${Math.random().toString(36).slice(2, 8)}`, function: { name, arguments: JSON.stringify(action.args ?? {}) } };
       emit({ type: 'tool-start', id: tc.id, name: canonicalToolName(name), args: action.args ?? {} });
-      const g = await gate(tc, action.args ?? {});
-      let res;
-      if (g.behavior !== 'allow') {
-        res = {
-          ok: false,
-          result: hookOrPolicyMessage(g, name, permissionMode),
-          image: null,
-          durationMs: 0
-        };
-      } else {
-        res = await invokeWithHooks(tc, g.args ?? action.args ?? {});
-      }
+      const res = await executeTool(tc, action.args ?? {});
       messages.push({
         role: 'user',
         content: `工具 ${canonicalToolName(name)} 的执行结果（${res.ok ? '成功' : '失败'}）：\n${res.result}`
@@ -1187,11 +1180,7 @@ async function _runAgentImpl(opts, ch) {
     if (canParallel) {
       const results = await Promise.all(calls.map(async (c) => {
         if (signal?.aborted) return { c, res: { ok: false, result: '已中止', image: null, durationMs: 0 } };
-        const g = await gate(c.tc, c.args);
-        if (g.behavior !== 'allow') {
-          return { c, res: { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 } };
-        }
-        return { c, res: await invokeWithHooks(c.tc, g.args ?? c.args) };
+        return { c, res: await executeTool(c.tc, c.args) };
       }));
       for (const { c, res } of results) {
         recordToolMessage(c.tc, c.tc.function?.name, res);
@@ -1202,13 +1191,7 @@ async function _runAgentImpl(opts, ch) {
 
     for (const c of calls) {
       if (signal?.aborted) return await finish('aborted', { runStopHook: false });
-      const g = await gate(c.tc, c.args);
-      let res;
-      if (g.behavior === 'allow') {
-        res = await invokeWithHooks(c.tc, g.args ?? c.args);
-      } else {
-        res = { ok: false, result: hookOrPolicyMessage(g, c.tc.function?.name, permissionMode), image: null, durationMs: 0 };
-      }
+      const res = await executeTool(c.tc, c.args);
       recordToolMessage(c.tc, c.tc.function?.name, res);
       emit({ type: 'tool-result', id: c.tc.id, name: canonicalToolName(c.tc.function?.name), ok: res.ok, result: res.result, durationMs: res.durationMs, meta: res.meta ?? undefined });
     }

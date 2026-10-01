@@ -3,12 +3,14 @@ main = "src/index.js"
 compatibility_date = "2024-09-01"
 
 # 管理后台密钥通过 wrangler secret put ADMIN_TOKEN 配置，禁止写入仓库。
+# 赞助者名单通过爱发电开放 API 获取，AFD_USER_ID 与 AFD_TOKEN 也只存 Worker Secrets。
 
 # 自定义域名（需 ohfun.online 托管在同一 Cloudflare 账号下；
 # custom_domain = true 会自动创建 DNS 记录 + 证书）
 routes = [
   { pattern = "tora.ohfun.online", custom_domain = true },
   { pattern = "tora-ai.ohfun.online", custom_domain = true },
+  # 已安装版本继续连接这些兼容域名。
   { pattern = "cocode.ohfun.online", custom_domain = true },
   { pattern = "cocode-ai.ohfun.online", custom_domain = true }
 ]
@@ -16,7 +18,7 @@ routes = [
 # Resend 邮件服务（注册验证码发信）。密钥不进仓库：
 #   线上：wrangler secret put RESEND_API_KEY
 #   本地 dev：写同目录 .dev.vars（已 gitignore）
-# 发件人地址 noreply@cocode.ohfun.online 需先在 Resend 控制台验证该域名（DKIM/SPF）。
+# 发件人地址 noreply@ohfun.online 使用已验证的官网域名（DKIM/SPF）。
 
 # D1 数据库绑定（用户 + 会话）。数据库 id 部署时由 `wrangler d1 create tora-auth`
 # 生成后填入；本地 dev 用 --local 自动建库，无需 id。

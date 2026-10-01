@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
-import { ensureMessageCampaigns, sendMessage, listSentMessages, recallMessage } from '../src/admin-messages.js';
+import { editMessage, ensureMessageCampaigns, sendMessage, listSentMessages, recallMessage } from '../src/admin-messages.js';
 
 async function fixture() {
   const sqlite = new DatabaseSync(':memory:');
@@ -63,6 +63,24 @@ test('撤回同时清除已有收件，停止新用户发放，重复撤回不�
     assert.ok((await listSentMessages(f.env, 0)).messages[0].recalled_at);
   } finally { f.sqlite.close(); }
 });
+test('编辑整批消息同步已有和未来收件人，清除旧译文且不能编辑已撤回消息', async () => {
+  const f = await fixture();
+  try {
+    f.add(1); const sent = await f.send(true);
+    const original = f.inbox(1)[0];
+    f.sqlite.prepare('INSERT INTO message_translations VALUES (?, ?, ?, ?)').run(original.id, 'en', 'Old translation', 'Old body');
+    const result = await editMessage(f.env, sent.data.dispatchId, '更新后的通知', '更新后的正文');
+    assert.equal(result.status, 200); assert.equal(result.data.updated, 1);
+    assert.equal(f.inbox(1)[0].title, '更新后的通知');
+    assert.equal(f.sqlite.prepare('SELECT count(*) AS total FROM message_translations').get().total, 0);
+    f.add(2); assert.equal(f.inbox(2)[0].body, '更新后的正文');
+    assert.equal((await listSentMessages(f.env, 0)).messages[0].title, '更新后的通知');
+    assert.equal(f.sqlite.prepare("SELECT count(*) AS total FROM admin_audit WHERE action = 'message-edit'").get().total, 1);
+    assert.equal(f.pushes.at(-1).event.type, 'messages-changed');
+    await recallMessage(f.env, sent.data.dispatchId);
+    assert.equal((await editMessage(f.env, sent.data.dispatchId, '不应生效', '正文')).status, 409);
+  } finally { f.sqlite.close(); }
+});
 test('零用户也可发布给后续用户，并能在历史中找到和撤回', async () => {
   const f = await fixture();
   try {
@@ -77,6 +95,8 @@ test('兼容旧消息撤回，定向消息不会补发给新用户', async () =>
   try {
     f.add(1);
     f.sqlite.exec("INSERT INTO account_messages VALUES ('legacy',1,'旧通知','正文','2026-09-21',NULL,NULL)");
+    assert.equal((await editMessage(f.env, 'legacy', '旧通知已改', '改后的正文')).data.updated, 1);
+    assert.equal(f.inbox(1)[0].title, '旧通知已改');
     await sendMessage(f.env, { target: 1, title: '私人通知', body: '仅本人可见', includeNewUsers: false });
     const history = await listSentMessages(f.env, 0); assert.equal(history.messages.length, 2);
     assert.equal((await recallMessage(f.env, 'legacy')).data.recalled, 1);

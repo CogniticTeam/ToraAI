@@ -9,7 +9,7 @@ import desktop from '../packages/desktop/package.json' with { type: 'json' };
 
 if (process.platform !== 'darwin') throw new Error('macOS 安装包验证必须在 macOS 上运行');
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const dmg = join(root, 'packages', 'desktop', 'release', `Tora-${desktop.version}-mac.dmg`);
+const dmg = resolve(process.argv[2] || join(root, 'packages', 'desktop', 'release', `Tora-${desktop.version}-mac.dmg`));
 if (!existsSync(dmg)) throw new Error(`未找到安装包：${dmg}`);
 
 function run(command, args) {

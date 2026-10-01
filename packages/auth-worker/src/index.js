@@ -10,6 +10,7 @@
 //   POST /auth/password  (Bearer) {currentPassword, newPassword} -> {ok}
 //   POST /auth/email     (Bearer) {currentPassword, newEmail, code}    -> {ok, email}
 //   POST /auth/avatar    (Bearer) {avatar: dataURL|null}          -> {ok, avatar}
+//   GET  /supporters?page=N (Bearer) -> {supporters:[{name}],page,hasMore,totalCount}
 //   GET    /models       (Bearer)  -> {models:[{id,provider,label,model,baseURL,apiKeySet,enabled,vision}]}
 //   POST   /models       (Bearer)  {models:[..],baseURL,provider,label,apiKey?,vision?} -> {added,updated}
 //   PATCH  /models/:id   (Bearer)  {model?,baseURL?,apiKey?,label?,enabled?,vision?}    -> {ok}
@@ -26,7 +27,7 @@
 //   TURNSTILE_HOSTNAMES（可选，逗号分隔）——siteverify 返回 hostname 白名单；
 //     未配置默认 "127.0.0.1,localhost,ohfun.online"（桌面客户端 token 的 hostname
 //     为 127.0.0.1；生产收紧时删掉本地项即可）。
-// 发件人：noreply@cocode.ohfun.online（自定义域名路由，见 wrangler.toml）
+// 发件人使用已验证的官网域名。
 //
 // 设计取舍：
 //   · 密码哈希用 WebCrypto 的 PBKDF2（SHA-256，210k 次迭代）——Workers 里
@@ -42,8 +43,9 @@ import helloEmailHtml from '../../../tora-hello-email.html';
 import pollSchemaSql from '../migrations/0001_polls.sql';
 import { publishAccountEvent } from './account-events.js';
 import { detectMessageLanguage, translateAccountMessage } from './message-translation.js';
-import { ensureMessageCampaigns, listSentMessages, recallMessage, sendMessage } from './admin-messages.js';
+import { editMessage, ensureMessageCampaigns, listSentMessages, recallMessage, sendMessage } from './admin-messages.js';
 import { handleAdminPoll, handleUserPoll } from './polls.js';
+import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
 export { AccountEvents } from './account-events.js';
 
 const SESSION_TTL_MS = 30 * 24 * 3600 * 1000;
@@ -468,6 +470,12 @@ async function handle(request, env, ctx) {
       const key = request.headers.get('authorization')?.replace(/^Bearer /, '') || '';
       if (!env.ADMIN_TOKEN || !timingSafeEqual(key, env.ADMIN_TOKEN)) return bad('管理密钥无效', 401);
       if (p.startsWith('/admin/polls')) return handleAdminPoll(request, env, url);
+      if (p === '/admin/presence' && method === 'GET') {
+        const hub = env.ACCOUNT_EVENTS.get(env.ACCOUNT_EVENTS.idFromName('accounts'));
+        const response = await hub.fetch('https://internal/presence');
+        if (!response.ok) return bad('在线状态暂不可用', 502);
+        return json(await response.json());
+      }
       if (p === '/admin/users' && method === 'GET') {
         const search = (url.searchParams.get('q') || '').trim().slice(0, 254);
         const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0', 10) || 0);
@@ -489,6 +497,15 @@ async function handle(request, env, ctx) {
       if (p === '/admin/messages' && method === 'GET') {
         const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0', 10) || 0);
         return json(await listSentMessages(env, offset));
+      }
+      const editMatch = p.match(/^\/admin\/messages\/([a-zA-Z0-9-]{1,100})$/);
+      if (editMatch && method === 'PATCH') {
+        const body = await request.json().catch(() => ({}));
+        const title = String(body.title || '').trim();
+        const message = String(body.body || '').trim();
+        if (!title || title.length > 120 || !message || message.length > 10000) return bad('标题 1–120 字，正文 1–10000 字', 422);
+        const result = await editMessage(env, editMatch[1], title, message);
+        return json(result.data, result.status);
       }
       const recallMatch = p.match(/^\/admin\/messages\/([a-zA-Z0-9-]{1,100})\/recall$/);
       if (recallMatch && method === 'POST') {
@@ -691,6 +708,19 @@ async function handle(request, env, ctx) {
       const user = await userFromRequest(env.DB, request, true);
       if (!user) return bad('未登录或会话已过期', 401);
       return json({ email: user.email, username: user.username, createdAt: user.created_at, avatar: user.avatar ?? null, banned: !!user.banned, banReason: user.ban_reason || '' });
+    }
+
+    if (p === '/supporters' && method === 'GET') {
+      const user = await userFromRequest(env.DB, request);
+      if (!user) return bad('未登录或会话已过期', 401);
+      const rawPage = url.searchParams.get('page') || '1';
+      if (!/^\d{1,4}$/.test(rawPage) || Number(rawPage) < 1 || Number(rawPage) > 1000) return bad('页码无效', 422);
+      try { return json(await querySponsorPage(env, Number(rawPage))); }
+      catch (error) {
+        // 仅记录阶段/状态码，不记录爱发电响应、签名、用户 ID 或 Token。
+        console.warn('[sponsors] query failed:', error instanceof SponsorQueryFailure ? error.code : error?.name || 'unknown');
+        return bad('赞助者名单暂不可用，请稍后重试', 502);
+      }
     }
 
     // ---- 账号管理：改密 / 改邮箱 / 改头像（均需 Bearer token，改密改邮箱需验证当前密码） ----

@@ -1,0 +1,1797 @@
+{
+  "languageDialog": {
+    "subtitle": "Escolha seu idioma",
+    "search": "Pesquisar idiomas",
+    "noResults": "Nenhum idioma correspondente",
+    "systemSuggestion": "O idioma do seu sistema é {{language}}. Deseja mudar para ele?",
+    "switch": "Mudar para {{language}}",
+    "later": "Agora não",
+    "close": "Fechar seletor de idioma",
+    "switchError": "Não foi possível mudar o idioma"
+  },
+  "usageMilestone": {
+    "title": "Marco de tokens alcançado",
+    "subtitle": "Seu uso acumulado de tokens no Tora atingiu um novo marco.",
+    "total": "{{count}} tokens usados no total",
+    "more": "Mais {{count}} marcos para mostrar",
+    "continue": "Continuar com o Tora",
+    "retry": "Não foi possível salvar este marco. Tente novamente.",
+    "levels": {
+      "100k": "100K",
+      "1m": "1M",
+      "10m": "10M",
+      "100m": "100M",
+      "500m": "500M",
+      "1b": "1B",
+      "2b": "2B",
+      "5b": "5B",
+      "10b": "10B"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "Abrir link externo?",
+    "externalLinkWarning": "Você está prestes a visitar um site externo.",
+    "copyLink": "Copiar link",
+    "copied": "Copiado",
+    "openLink": "Abrir link",
+    "close": "Fechar"
+  },
+  "inbox": {
+    "translateToLanguage": "Traduzir para {{language}}",
+    "detail": "Detalhes da mensagem",
+    "translateToChinese": "Traduzir para chinês",
+    "translateToEnglish": "Traduzir para inglês",
+    "translating": "Traduzindo…",
+    "showOriginal": "Mostrar original",
+    "showTranslation": "Mostrar tradução",
+    "noTranslationNeeded": "Nenhuma tradução necessária",
+    "translationError": "Falha na tradução. Clique no botão de tradução para tentar novamente.",
+    "translationRateLimit": "Muitas solicitações de tradução. Tente novamente mais tarde.",
+    "title": "Mensagens",
+    "newMessage": "Nova mensagem do Tora",
+    "empty": "Ainda não há mensagens",
+    "loading": "Carregando…",
+    "unread": "Não lida",
+    "more": "Carregar mais",
+    "back": "Voltar para mensagens",
+    "retry": "Tentar novamente",
+    "loadError": "Não foi possível carregar as mensagens",
+    "readError": "Não foi possível marcar a mensagem como lida. Tente novamente.",
+    "blocked": "Conta suspensa",
+    "blockedReason": "Esta conta não pode usar o Tora no momento.",
+    "unbanHint": "O acesso será retomado automaticamente quando um administrador remover a suspensão.",
+    "signOut": "Sair"
+  },
+  "requiredUpdate": {
+    "title": "Atualizar o Tora",
+    "description": "A versão {{version}} está disponível. Atualize para continuar.",
+    "download": "Abrir página oficial de download",
+    "macHint": "Se a atualização automática não estiver disponível, baixe o DMG mais recente do site oficial e substitua o aplicativo manualmente.",
+    "downloading": "Baixando atualização… {{percent}}%",
+    "install": "Reiniciar e instalar",
+    "retry": "Tentar baixar novamente",
+    "error": "Falha na atualização automática. Tente novamente ou baixe no site oficial.",
+    "quit": "Sair do Tora"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Animação de boas-vindas da primeira inicialização do Tora",
+      "welcome": "Bem-vindo ao Tora",
+      "headlineFirst": "Transforme ideias",
+      "headlineSecond": "em ação.",
+      "description": "Conecte seu modelo, abra um projeto e inicie uma conversa. O Tora ajuda você a ler e editar código e a realizar tarefas.",
+      "hint": "Um guia rápido mostrará o essencial",
+      "foot": "Seu espaço de trabalho está quase pronto.",
+      "logoAlt": "Logotipo do Tora",
+      "enter": "Começar",
+      "skip": "Pular animação"
+    },
+    "tour": {
+      "skip": "Pular guia",
+      "later": "Configurar depois",
+      "next": "Próximo",
+      "pauseSettings": "O gerenciamento de modelos está aberto. Feche as Configurações quando terminar e o guia continuará.",
+      "pauseFolder": "Escolha uma pasta de projeto ou feche o menu para continuar.",
+      "pausePermission": "Revise ou selecione um modo de aprovação e feche o menu para continuar.",
+      "demoSend": "Simular envio; nada será enviado",
+      "clickHint": "Clique no controle destacado para continuar",
+      "loading": "Localizando o controle…",
+      "demoTag": "Demonstração guiada · nenhum comando real será executado",
+      "demoMessage": "Verifique os scripts de build deste projeto e me dê um plano primeiro.",
+      "demoResponse": "O Tora primeiro entende a tarefa e depois solicita as permissões de ferramentas necessárias. Você pode revisar cada etapa e decidir se continua.",
+      "demoApprove": "Permitir desta vez (demonstração)",
+      "demoCheckpoint": "Ver checkpoint (demonstração)",
+      "completeTitle": "Você está pronto para criar.",
+      "completeBody": "Você pode alterar seu modelo, pasta e permissões a qualquer momento. Revise ações incertas antes de prosseguir.",
+      "startWorking": "Entrar no Tora",
+      "startAgain": "Assistir ao guia novamente",
+      "steps": [
+        {
+          "chapter": "Prepare-se",
+          "title": "Escolha seu próprio modelo",
+          "body": "O Tora usa os modelos que você adiciona. Clique no seletor de modelos para ver onde conectar seu provedor."
+        },
+        {
+          "chapter": "Prepare-se",
+          "title": "Adicione um provedor de modelo",
+          "body": "Clique em Adicionar modelo para abrir o gerenciamento de modelos. Escolha um provedor e insira os detalhes do seu modelo. O guia continua quando você concluir ou pular a configuração."
+        },
+        {
+          "chapter": "Prepare-se",
+          "title": "Defina o escopo do seu projeto",
+          "body": "Clique no controle de pasta para escolher um projeto. O Agente lê, edita e executa ferramentas no espaço de trabalho que você autorizar. Você pode fazer isso depois."
+        },
+        {
+          "chapter": "Prepare-se",
+          "title": "Mantenha o controle",
+          "body": "Clique no modo de permissão para ver suas opções. A aprovação manual é um bom ponto de partida; ações de maior risco aguardam sua decisão."
+        },
+        {
+          "chapter": "Inicie uma tarefa",
+          "title": "Descreva um objetivo claro",
+          "body": "Clique na caixa de mensagem. Diga o que alcançar, o que não modificar e como você saberá que foi concluído."
+        },
+        {
+          "chapter": "Inicie uma tarefa",
+          "title": "Inicie sua primeira tarefa",
+          "body": "Este é o botão de enviar. As próximas etapas apenas simulam a execução: nenhum crédito de modelo é usado e nenhuma mensagem real é enviada."
+        },
+        {
+          "chapter": "Revise e recupere",
+          "title": "Você aprova cada etapa importante",
+          "body": "Esta é uma demonstração de solicitação de permissão. Leia o que a ferramenta pretende fazer antes de permitir ou negar."
+        },
+        {
+          "chapter": "Revise e recupere",
+          "title": "Recupere-se de um erro",
+          "body": "Os checkpoints registram o estado antes das alterações. Revise quais arquivos seriam afetados antes de uma restauração real."
+        },
+        {
+          "chapter": "Estenda o Tora",
+          "title": "Reutilize fluxos de trabalho com habilidades",
+          "body": "Clique em Habilidades. Importe ou instale habilidades confiáveis para tornar fluxos de trabalho úteis repetíveis."
+        },
+        {
+          "chapter": "Estenda o Tora",
+          "title": "Verifique os resultados no navegador",
+          "body": "Clique no navegador integrado. Você e o Agente podem inspecionar, depurar e verificar um aplicativo web na mesma página."
+        },
+        {
+          "chapter": "Estenda o Tora",
+          "title": "Agende trabalhos repetitivos",
+          "body": "Clique em Automações para agendar verificações recorrentes ou tarefas organizacionais e revisar cada execução."
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "Antes de começar",
+    "description": "Revise e confirme separadamente os Termos de Serviço, a Política de Privacidade e o aviso de transferência transfronteiriça de dados. O Tora não abrirá o login nem seu espaço de trabalho até que os três sejam selecionados.",
+    "terms": "Li e concordo com os Termos de Serviço",
+    "readTerms": "Ler os Termos de Serviço",
+    "privacy": "Li e entendi a Política de Privacidade",
+    "readPrivacy": "Ler a Política de Privacidade",
+    "crossBorder": "Consinto separadamente com a transferência transfronteiriça das minhas informações pessoais",
+    "crossBorderHint": "Quando você usa uma conta ou recursos de nuvem, informações necessárias podem ser transferidas para fora da China continental. Revise o escopo e os detalhes de tratamento.",
+    "readCrossBorder": "Ler o aviso de transferência transfronteiriça",
+    "decline": "Recusar e sair",
+    "agree": "Confirmar e continuar"
+  },
+  "sponsors": {
+    "title": "Apoiadores deste mês",
+    "description": "Obrigado aos usuários que apoiam o Tora no Afdian neste mês. Apenas nomes de exibição são mostrados, não valores nem detalhes da conta.",
+    "source": "Dados do Afdian",
+    "total": "{{count}} apoiadores",
+    "loaded": "{{count}} apoiadores exibidos",
+    "empty": "Nenhum apoiador neste mês",
+    "emptyMore": "Nenhum apoiador deste mês nesta página. Carregue mais para continuar.",
+    "loading": "Carregando apoiadores…",
+    "loadError": "Apoiadores estão temporariamente indisponíveis. Tente novamente mais tarde.",
+    "retry": "Tentar novamente",
+    "more": "Carregar mais",
+    "donate": "Patrocinar",
+    "leaveTitle": "Abrir o Afdian para patrocinar?",
+    "leaveDescription": "Após a confirmação, o Tora abrirá este site externo no navegador do seu sistema.",
+    "confirmLeave": "Confirmar e abrir"
+  },
+  "polls": {
+    "title": "Enquetes",
+    "subtitle": "Vote e acompanhe os resultados",
+    "all": "Todas as enquetes",
+    "history": "Meu histórico de votos",
+    "search": "Pesquisar",
+    "loadMore": "Carregar mais",
+    "from": "De",
+    "to": "Até",
+    "starts": "Início",
+    "ends": "Término",
+    "forever": "Sem prazo",
+    "refresh": "Atualizar enquetes",
+    "startsIn": "Começa em {{time}}",
+    "startingSoon": "Começando em breve, verificando status…",
+    "dayUnit": "d",
+    "state": {
+      "draft": "Rascunho",
+      "scheduled": "Não iniciada",
+      "active": "Aberta",
+      "ended": "Encerrada",
+      "archived": "Arquivada"
+    },
+    "type": {
+      "single": "Escolha única",
+      "multiple": "Múltipla escolha",
+      "score": "Pontuação de 0 a 100"
+    },
+    "frequency": {
+      "once": "Uma vez por pessoa",
+      "daily": "Uma vez por dia (horário de Pequim)",
+      "unlimited": "Ilimitado"
+    },
+    "maxSelections": "Escolha até {{count}}",
+    "voted": "Votado",
+    "votedCount": "Enviado {{count}} vez(es)",
+    "available": "Aberta para votação",
+    "choose": "Escolha uma enquete à esquerda",
+    "empty": "Ainda não há enquetes",
+    "loading": "A carregar enquetes…",
+    "noHistory": "Sem histórico de votação",
+    "results": "Resultados",
+    "participants": "{{count}} votos",
+    "countHidden": "O número de votantes é privado",
+    "detailsHidden": "Os detalhes das opções são privados",
+    "resultsUnavailable": "Os resultados ainda não são públicos",
+    "autoRefresh": "Atualiza a cada 5 segundos",
+    "pieHint": "O anel mostra a percentagem de cada opção. As taxas de seleção de escolha múltipla podem somar mais de 100%.",
+    "submit": "Submeter voto",
+    "submitting": "A submeter…",
+    "confirmVote": "Submeter este voto? Não poderá ser editado depois.",
+    "submitted": "Voto submetido",
+    "queued": "Guardado offline. Será sincronizado quando houver ligação; não é contado até que o servidor o confirme.",
+    "pending": "Votos pendentes",
+    "waitingSync": "A aguardar confirmação do servidor",
+    "retry": "Tentar novamente",
+    "remove": "Remover",
+    "removePending": "Remover este voto pendente?",
+    "selectionRequired": "Escolha opções válidas",
+    "scoreRequired": "Introduza uma pontuação inteira de 0 a 100 para cada opção",
+    "submitError": "Não foi possível submeter o voto",
+    "loadError": "Não foi possível carregar as enquetes",
+    "disabled": "As enquetes foram desativadas pelo administrador."
+  },
+  "common": {
+    "toraModels": "Tora Models",
+    "add": "Adicionar",
+    "agent": "Agente",
+    "cancel": "Cancelar",
+    "channel": "Canais",
+    "chat": "Chat",
+    "new-task": "Nova tarefa",
+    "model-switch-warning": "Mudar de modelo a meio da tarefa perde o contexto da conversa, aumenta o uso de tokens e o histórico mais antigo pode ser compactado, degradando a qualidade da saída.",
+    "automation": "Automação",
+    "workflow": "Fluxo de trabalho",
+    "close": "Fechar",
+    "confirm": "Confirmar",
+    "create": "Criar",
+    "creating": "A criar…",
+    "credential": "Credenciais",
+    "date": "Data",
+    "delete": "Eliminar",
+    "disabled": "Desativado",
+    "edit": "Editar",
+    "error": "Algo correu mal",
+    "information": "Informação",
+    "knowledge": "Bases de conhecimento",
+    "loading": "A carregar...",
+    "shownCount": "{{count}} mostrados",
+    "selectedCount": "{{selected}} de {{total}} selecionados",
+    "model": "Modelo",
+    "name": "Nome",
+    "no": "Não",
+    "noData": "Sem dados",
+    "readOnly": "Só de leitura",
+    "readOnlyTooltip": "Partilhado consigo como só de leitura; a edição e a eliminação estão desativadas.",
+    "completed": "Concluído",
+    "failed": "Falhou",
+    "running": "Em execução",
+    "save": "Guardar",
+    "saving": "A guardar…",
+    "schedule": "Agendar",
+    "selectAgent": "Selecione um agente",
+    "settings": "Configurações",
+    "switchToZh": "Mudar para chinês",
+    "switchToZhHant": "Mudar para chinês tradicional",
+    "switchToEn": "Mudar para inglês",
+    "team": "Equipa",
+    "uploading": "A enviar",
+    "leader": "Líder",
+    "time": "Hora",
+    "yes": "Sim",
+    "deleteTitle": "Eliminar {{entity}} \"{{name}}\"?",
+    "deleteDescription": "Esta ação não pode ser anulada.",
+    "mcp-hub": "MCP Hub",
+    "mine": "Meus",
+    "my-mcp": "MCPs instalados",
+    "skill-hub": "Skill Hub",
+    "browser": "Navegador",
+    "polls": "Enquetes",
+    "my-skill": "Competências instaladas",
+    "message": "Mensagem",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "Embedding",
+    "select": "Selecionar"
+  },
+  "error": {
+    "description": "A página encontrou um erro inesperado. Pode tentar novamente ou voltar ao início.",
+    "retry": "Tentar novamente",
+    "home": "Voltar ao início"
+  },
+  "tool": {
+    "callGeneric": "Chamar ferramenta",
+    "read": {
+      "name": "Ler",
+      "fileCount_one": "{{count}} arquivo",
+      "fileCount_other": "{{count}} arquivos",
+      "lineCount_one": "Leu {{formatted}} linha",
+      "lineCount_other": "Leu {{formatted}} linhas"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} comandos",
+      "read": "{{count}} leituras",
+      "edit": "{{count}} edições",
+      "search": "{{count}} pesquisas",
+      "todo": "{{count}} tarefas",
+      "mcp": "{{count}} chamadas MCP",
+      "separator": ", ",
+      "fallback": "{{count}} chamadas de ferramenta"
+    }
+  },
+  "textInput": {
+    "toComplete": "para concluir",
+    "attach": "Anexar arquivo",
+    "attachNotSupported": "Este modelo não suporta anexos de arquivo",
+    "send": "Enviar",
+    "stop": "Interromper geração",
+    "stopping": "Interrompendo...",
+    "sendWithSkills": "Enviar com {{count}} habilidade(s)",
+    "selectedSkills": "Habilidades selecionadas",
+    "removeSkill": "Remover {{name}}",
+    "skillOnlyPrompt": "Use a(s) habilidade(s) que anexei.",
+    "selectedElements": "Elementos referenciados",
+    "removeElement": "Remover elemento {{tag}}",
+    "elementRefLine": "Operar no elemento da página `{{selector}}`",
+    "slashMenu": {
+      "selectedLabel": "Selecionado",
+      "hintSelect": "Enter para escolher, Espaço para selecionar vários",
+      "hintSend": "Pressione Enter para enviar",
+      "clear": "Limpar",
+      "close": "Fechar",
+      "empty": "Nenhuma habilidade instalada ainda — visite a Central de Habilidades",
+      "emptyQuery": "Nenhuma habilidade corresponde a \"{{query}}\"",
+      "moreMatches": "{{count}} correspondência(s) a mais — continue digitando para filtrar",
+      "selectedCount": "{{count}} habilidade(s) selecionada(s)",
+      "keyboardHighlight": "+ destaque de teclado",
+      "clickToMulti": "Clique em uma linha para selecionar várias; Esc para fechar"
+    },
+    "optimize": "Otimizar prompt",
+    "optimizing": "Otimizando…",
+    "optimizeTitle": "Prompt otimizado",
+    "optimizeFailed": "Falha na otimização",
+    "optimizeApply": "Aplicar",
+    "optimizeRetry": "Tentar novamente",
+    "optimizeDiscard": "Descartar",
+    "optimizeBy": "Otimizado por DeepSeek"
+  },
+  "browserPanel": {
+    "newTab": "Nova aba",
+    "createTab": "Nova aba",
+    "closeTab": "Fechar aba",
+    "back": "Voltar",
+    "forward": "Avançar",
+    "reload": "Recarregar",
+    "pickElement": "Escolher elemento",
+    "pickElementHint": "Escolha um elemento: passe o mouse para destacá-lo na página, clique para anexá-lo como um cartão na entrada do chat (Esc para cancelar)",
+    "openInBrowser": "Abrir no navegador",
+    "openInBrowserHint": "Abrir a página atual no navegador do sistema",
+    "urlPlaceholder": "Digite uma URL ou consulta de pesquisa e pressione Enter",
+    "noTabPick": "Nenhuma aba está aberta ainda. Digite uma URL ou consulta de pesquisa na barra de endereços e escolha um elemento.",
+    "noTabAction": "Nenhuma aba está aberta ainda. Clique em + no canto superior direito ou digite uma URL ou consulta de pesquisa na barra de endereços.",
+    "iframeFallbackHint": "O modo de fallback do navegador (<iframe>) está ativo: páginas de mesma origem funcionam, mas sites de origem cruzada podem rejeitar a incorporação via X-Frame-Options / CSP. O aplicativo de desktop usa um navegador integrado real (<webview>) sem esses limites."
+  },
+  "voice": {
+    "micTooltip": "Entrada de voz",
+    "listening": "Ouvindo — clique novamente para parar",
+    "transcribing": "Transcrevendo…",
+    "micDenied": "Acesso ao microfone negado — permita nas configurações do sistema",
+    "transcribeFailed": "Falha no reconhecimento de fala",
+    "emptyTranscript": "Nada reconhecido",
+    "keyMissing": "A chave de API do ASR não está configurada (voice-config.json)"
+  },
+  "confirmCard": {
+    "toConfirm": "para confirmar",
+    "yesWithRule": "Sim, e permitir que {{toolName}} execute {{ruleContent}} nesta sessão"
+  },
+  "messageBubble": {
+    "thinking": "Pensando",
+    "thinkingFor": "Pensando por {{duration}}",
+    "taskProcess": {
+      "title": "Processo da tarefa",
+      "running": "Tempo decorrido {{duration}}",
+      "finished": "Levou {{duration}}",
+      "hour": "h ",
+      "minute": "m ",
+      "second": "s",
+      "noConclusion": "Este turno terminou sem conclusão. Expanda o processo da tarefa para obter detalhes."
+    },
+    "audioGenerating": "Gerando áudio…",
+    "playAudio": "Reproduzir áudio",
+    "pauseAudio": "Pausar áudio",
+    "running": "Executando...",
+    "skillAttached": "Habilidade anexada {{name}}",
+    "changedFiles": {
+      "title": "{{count}} arquivos alterados",
+      "openPanel": "Ver todas as alterações no painel"
+    },
+    "processed": "Processado em {{duration}}",
+    "completed": "Concluído em {{duration}}",
+    "duration": {
+      "day": "d ",
+      "hour": "h ",
+      "minute": "m ",
+      "second": "s"
+    },
+    "hintSource": {
+      "tool_output": "Saída da ferramenta",
+      "team": "Equipe",
+      "team_message": "Equipe",
+      "schedule": "Agenda",
+      "system": "Sistema",
+      "channel": "Canal",
+      "runtime_state": "Estado de Execução"
+    },
+    "error": {
+      "title": "Falha na resposta",
+      "blockedTitle": "Bloqueado por uma regra",
+      "authentication": "Falha na autenticação — verifique a chave de API ou credencial do modelo.",
+      "permission": "Solicitação não permitida — a credencial não tem permissão para este modelo ou endpoint.",
+      "rate_limit": "Limite de taxa ou cota excedido — tente novamente mais tarde.",
+      "invalid_request": "A solicitação ao modelo foi rejeitada como inválida.",
+      "upstream": "O serviço de modelo upstream retornou um erro.",
+      "connection": "Não foi possível alcançar o serviço de modelo — erro de rede ou timeout.",
+      "internal": "Ocorreu um erro interno inesperado.",
+      "setup": "A sessão não pôde ser preparada — verifique o modelo, as ferramentas e as bases de conhecimento do agente.",
+      "unknown": "A resposta falhou com um erro desconhecido."
+    },
+    "copy": "Copiar"
+  },
+  "questionPanel": {
+    "supplementTitle": "Mais alguma coisa que você gostaria de adicionar?",
+    "supplementPlaceholder": "Adicionar informações complementares",
+    "optional": "opcional",
+    "of": "de",
+    "prev": "Voltar",
+    "next": "Próximo",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "other": "Outro",
+    "otherPlaceholder": "Digite aqui"
+  },
+  "chat": {
+    "inputPlaceholder": "Pergunte qualquer coisa",
+    "confirmToolCall": "Permitir esta ação?",
+    "subagentConfirmTitle": "{{name}} solicita confirmação",
+    "newSession": "Nova Sessão",
+    "newConversation": "Nova Conversa",
+    "greeting": "Trabalhe e Codifique com Tora",
+    "greetingProject": "O que devemos fazer em {{project}}?",
+    "thinking": "Pensando",
+    "project": {
+      "label": "Projetos",
+      "unassigned": "Não atribuído",
+      "rename": "Renomear projeto"
+    },
+    "maxItersExceeded": {
+      "title": "Limite de iterações atingido",
+      "description": "Envie uma nova mensagem para prosseguir, ou continue a tarefa atual.",
+      "continue": "Continuar"
+    },
+    "context": {
+      "compact": {
+        "title": "Contexto compactado automaticamente",
+        "evicted": "{{count}} saídas de ferramenta removidas",
+        "compacted": "Histórico mais antigo resumido",
+        "fallback": "compactado",
+        "description": "{{parts}} (aprox. {{before}} → {{after}} tokens, orçamento {{budget}})"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "Selecione um agente",
+      "emptyTitle": "Nenhum agente",
+      "emptyDescription": "Crie um agente para começar.",
+      "groupYours": "Seus",
+      "groupShared": "Compartilhado com você"
+    },
+    "session": {
+      "label": "Sessão",
+      "emptyTitle": "Nenhuma sessão",
+      "emptyNoAgent": "Selecione um agente primeiro.",
+      "emptyHasAgent": "Crie uma sessão para começar a conversar.",
+      "today": "Hoje",
+      "earlier": "Anterior"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "Criar agente",
+    "description": "Defina a identidade e o comportamento de um novo agente."
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "Identidade do Agente",
+      "description": "Nome e instruções que definem o comportamento deste agente.",
+      "name": {
+        "label": "Nome",
+        "placeholder": "Meu agente"
+      },
+      "system-prompt": {
+        "label": "Prompt do sistema"
+      }
+    },
+    "context-config": {
+      "legend": "Configuração de Contexto",
+      "description": "Controla como a janela de contexto é gerenciada e compactada.",
+      "trigger-ratio": {
+        "label": "Taxa de gatilho"
+      },
+      "reserve-ratio": {
+        "label": "Proporção de reserva"
+      },
+      "tool-result-limit": {
+        "label": "Limite de resultados de ferramenta"
+      },
+      "compression-prompt": {
+        "label": "Prompt de compressão"
+      },
+      "summary-template": {
+        "label": "Modelo de resumo"
+      },
+      "max-image-num": {
+        "label": "Máximo de imagens"
+      }
+    },
+    "react-config": {
+      "legend": "Configuração do ReAct",
+      "description": "Controla o comportamento do loop de raciocínio e ação.",
+      "max-iters": {
+        "label": "Máximo de iterações"
+      },
+      "stop-on-reject": {
+        "label": "Parar ao rejeitar"
+      },
+      "structured-output-grace-iters": {
+        "label": "Tolerância para saída estruturada",
+        "description": "Iterações extras permitidas além do máximo, para que uma execução que atinja o limite ainda possa produzir a saída estruturada solicitada."
+      },
+      "interruption-message": {
+        "label": "Resposta de interrupção",
+        "description": "Enviada como resposta do agente quando o usuário interrompe uma execução."
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "Lançar CancelledError",
+        "description": "Relançar asyncio.CancelledError após uma interrupção ser tratada, em vez de ignorá-la."
+      }
+    },
+    "invite-config": {
+      "legend": "Configuração de Convite",
+      "description": "Controla se outros agentes podem pegar emprestado este agente via AgentInvite.",
+      "invitable": {
+        "label": "Convidável"
+      },
+      "invite-description": {
+        "label": "Descrição do convite",
+        "placeholder": "Descreva brevemente a especialidade deste agente; obrigatório quando invitable estiver ativado."
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "Editar agente",
+    "description": "Atualize a configuração deste agente."
+  },
+  "dialog-agent-delete": {
+    "entity": "agente",
+    "confirm": "Excluir"
+  },
+  "dialog-session-delete": {
+    "entity": "sessão",
+    "confirm": "Excluir"
+  },
+  "dialog-session-rename": {
+    "title": "Renomear sessão",
+    "description": "Dê um novo nome a esta sessão.",
+    "label": "Nome",
+    "placeholder": "Nome da sessão"
+  },
+  "dialog-project-rename": {
+    "title": "Renomear projeto",
+    "description": "Altera apenas o rótulo do projeto na barra lateral e na mensagem de boas-vindas; pastas e títulos de sessão não são alterados.",
+    "label": "Nome do projeto",
+    "placeholder": "Nome do projeto"
+  },
+  "session-menu": {
+    "rename": "Renomear",
+    "delete": "Excluir"
+  },
+  "dialog-credential-create": {
+    "title": "Adicionar credencial",
+    "description": "Adicione credenciais para um provedor de modelo.",
+    "selectType": "Provedor",
+    "selectTypePlaceholder": "Selecione um provedor"
+  },
+  "dialog-credential-edit": {
+    "title": "Editar credencial",
+    "description": "Atualize a credencial salva para este provedor."
+  },
+  "dialog-knowledge-base-create": {
+    "title": "Criar base de conhecimento",
+    "description": "Crie uma nova base de conhecimento usando um modelo de embedding.",
+    "name": {
+      "label": "Nome",
+      "placeholder": "Minha base de conhecimento"
+    },
+    "descriptionField": {
+      "label": "Descrição",
+      "placeholder": "Descreva para que serve esta base de conhecimento."
+    },
+    "embeddingModel": {
+      "label": "Modelo de embedding"
+    },
+    "dimension": {
+      "label": "Dimensão"
+    },
+    "chunker": {
+      "label": "Chunker"
+    },
+    "policy": {
+      "lockedTitle": "Dimensão está fixada em {{dimension}}d",
+      "lockedDescription": "Este servidor já fixa todas as bases de conhecimento em embeddings com {{dimension}} dimensões. Apenas modelos compatíveis estão listados abaixo.",
+      "noCompatibleTitle": "Nenhum modelo de embedding compatível",
+      "noCompatibleAny": "Nenhum dos seus modelos expõe um modelo de embedding. Adicione um modelo nas Configurações primeiro.",
+      "noCompatibleLocked": "Nenhuma das suas credenciais expõe um modelo que possa produzir embeddings com {{dimension}} dimensões."
+    },
+    "errors": {
+      "nameRequired": "Dê um nome à base de conhecimento.",
+      "embeddingRequired": "Escolha um modelo de embedding.",
+      "dimensionRequired": "Escolha uma dimensão.",
+      "chunkerRequired": "Escolha uma estratégia de chunking."
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "Editar base de conhecimento",
+    "description": "Atualize o nome e a descrição da base de conhecimento.",
+    "name": {
+      "label": "Nome",
+      "placeholder": "Minha base de conhecimento"
+    },
+    "descriptionField": {
+      "label": "Descrição",
+      "placeholder": "Descreva para que serve esta base de conhecimento."
+    },
+    "embeddingModel": {
+      "label": "Modelo de embedding"
+    },
+    "chunker": {
+      "label": "Chunker"
+    },
+    "errors": {
+      "nameRequired": "Dê um nome à base de conhecimento."
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "Excluir base de conhecimento",
+    "description": "Isso excluirá permanentemente a base de conhecimento \"{{name}}\" e todos os seus documentos indexados. Esta ação não pode ser desfeita."
+  },
+  "credential": {
+    "noProviders": "Nenhum provedor disponível",
+    "selectHint": "Nenhuma credencial selecionada",
+    "selectHintDescription": "Selecione uma credencial na barra lateral para ver seus detalhes.",
+    "availableModels": "Modelos disponíveis",
+    "noModels": "Nenhum modelo disponível",
+    "noModelsDescription": "Este provedor não retornou modelos.",
+    "deleteEntity": "credencial",
+    "subtitle": "Configuração de credencial da API do modelo",
+    "configured": "Configurado",
+    "addProvider": "Adicionar credencial",
+    "reasoning": "Raciocínio",
+    "realtime": "Tempo real",
+    "table": {
+      "model": "Modelo",
+      "context": "Contexto",
+      "maxOutput": "Saída máxima",
+      "accepts": "Aceita",
+      "outputs": "Saídas",
+      "legend": "Contexto e saída máxima são contagens de tokens. RACIOCÍNIO marca modelos que suportam pensamento estendido.",
+      "dimensions": "Dimensões"
+    }
+  },
+  "knowledge": {
+    "subtitle": "Gerencie bases de conhecimento usadas pelos seus agentes",
+    "selectHint": "Nenhuma base de conhecimento selecionada",
+    "selectHintDescription": "Selecione uma base de conhecimento na barra lateral para ver seus detalhes.",
+    "list": {
+      "label": "Bases de conhecimento",
+      "emptyTitle": "Nenhuma base de conhecimento",
+      "emptyDescription": "Crie uma base de conhecimento para começar a indexar documentos.",
+      "createButton": "Criar base de conhecimento"
+    },
+    "document": {
+      "emptyTitle": "Nenhum documento",
+      "emptyDescription": "Envie um documento para indexá-lo nesta base de conhecimento.",
+      "uploadButton": "Enviar documento",
+      "uploadButtonShort": "Enviar",
+      "chunkCount_one": "{{count}} chunk",
+      "chunkCount_other": "{{count}} chunks",
+      "deleteConfirmTitle": "Excluir documento",
+      "deleteConfirmDescription": "Excluir \"{{name}}\"? Isso remove o documento e todos os chunks indexados. Esta ação não pode ser desfeita.",
+      "deleteError": "Não foi possível excluir o documento.",
+      "dropHintIdle": "ou solte arquivos aqui",
+      "unsupportedExtension": "\"{{name}}\" foi ignorado — tipo de arquivo não suportado.",
+      "status": {
+        "queued": "Na fila",
+        "uploading": "Carregando",
+        "pending": "Aguardando worker",
+        "parsing": "Analisando",
+        "chunking": "Divisão em chunks",
+        "indexing": "Indexando",
+        "ready": "Pronto",
+        "error": "Erro",
+        "cancelled": "Cancelado"
+      },
+      "actions": {
+        "cancel": "Cancelar",
+        "dismiss": "Dispensar",
+        "remove": "Remover",
+        "clearFinished": "Limpar concluídos"
+      },
+      "title": "Documentos",
+      "chunkCount": "{{count}} chunks"
+    },
+    "test": {
+      "button": "Testar",
+      "title": "Testar recuperação",
+      "description": "Sondar \"{{name}}\" com uma consulta ad-hoc.",
+      "queryLabel": "Consulta",
+      "queryPlaceholder": "Digite uma pergunta em linguagem natural…",
+      "topKLabel": "Top K",
+      "searchButton": "Pesquisar",
+      "score": "pontuação",
+      "chunkPosition": "Chunk {{index}} de {{total}}",
+      "emptyTitle": "Nenhuma correspondência",
+      "emptyDescription": "Nenhum chunk pontuou acima do limiar para esta consulta."
+    },
+    "config": {
+      "title": "Configuração",
+      "embeddingModel": "Modelo de embedding",
+      "dimensions": "Dimensões",
+      "credential": "Credencial",
+      "chunker": "Chunker",
+      "counts": "Conteúdo",
+      "countsValue": "{{documents}} documentos · {{chunks}} chunks",
+      "status": "Indexação",
+      "statusValue": "{{ready}} prontos · {{indexing}} em andamento · {{failed}} com falha",
+      "createdAt": "Criado"
+    },
+    "documentDetail": {
+      "description": "{{count}} chunks indexados",
+      "chunksTab": "Chunks",
+      "previewTab": "Pré-visualização",
+      "chunksEmptyTitle": "Nenhum chunk",
+      "chunksEmptyDescription": "Este documento ainda não tem chunks indexados.",
+      "chunksUnsupportedTitle": "Navegação por chunks indisponível",
+      "chunksUnsupportedDescription": "O armazenamento vetorial configurado não suporta listar chunks.",
+      "previousPage": "Anterior",
+      "nextPage": "Próximo",
+      "pageIndicator": "Página {{page}} de {{pageCount}}",
+      "previewUnavailableTitle": "Sem pré-visualização inline",
+      "previewUnavailableDescription": "Este tipo de arquivo não pode ser pré-visualizado no navegador.",
+      "previewTooLargeTitle": "Arquivo grande demais para pré-visualizar",
+      "previewTooLargeDescription": "Este arquivo excede o limite de pré-visualização inline. Baixe-o para ver o original.",
+      "downloadButton": "Baixar arquivo original"
+    }
+  },
+  "llm-select": {
+    "placeholder": "Selecione um modelo",
+    "loading": "Carregando…",
+    "empty": {
+      "title": "Nenhum modelo disponível",
+      "description": "Adicione um modelo nas Configurações para começar."
+    },
+    "addCredential": "Adicionar modelo",
+    "clear": "Limpar seleção",
+    "noFallback": "Sem fallback",
+    "pickForDetails": "Selecione um modelo para ver detalhes",
+    "vision": "Visão",
+    "contextBadge": "{{size}} contexto",
+    "thinking": "Raciocínio",
+    "contextWindow": "Janela de contexto",
+    "hintSmallContext": "Modelo de contexto pequeno — 1M não suportado",
+    "level": {
+      "off": "Desligado",
+      "low": "Baixo",
+      "high": "Alto",
+      "max": "Máx."
+    }
+  },
+  "embedding-select": {
+    "placeholder": "Selecione um modelo de embedding",
+    "loading": "Carregando…",
+    "empty": {
+      "title": "Nenhum modelo de embedding disponível",
+      "description": "Adicione um modelo compatível com embedding nas Configurações para começar."
+    },
+    "addCredential": "Adicionar modelo"
+  },
+  "chunker-select": {
+    "placeholder": "Selecione um chunker",
+    "loading": "Carregando…",
+    "empty": "Nenhum chunker disponível"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "Token aprox.",
+      "params": {
+        "chunk_size": {
+          "label": "Tamanho do chunk",
+          "description": "Número máximo de tokens aproximados por chunk."
+        },
+        "overlap": {
+          "label": "Sobreposição",
+          "description": "Número de tokens aproximados compartilhados entre chunks consecutivos."
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "Selecione uma dimensão",
+    "pickModelFirst": "Escolha um modelo primeiro"
+  },
+  "permission-mode": {
+    "placeholder": "Selecione o modo de permissão",
+    "trigger-tooltip": "Modo de permissão",
+    "panel-title": "Como o Agente deve pedir aprovação?",
+    "learn-more": "Saiba mais",
+    "default": "Aprovação manual",
+    "default-desc": "Você confirma operações importantes — a opção mais segura",
+    "accept_edits": "Aprovar edições automaticamente",
+    "accept_edits-desc": "Permitir automaticamente leitura/gravação de arquivos no workspace; o restante ainda pede sua aprovação",
+    "explore": "Somente leitura",
+    "explore-desc": "Apenas leitura e pesquisa — sem gravações ou execução de comandos",
+    "bypass": "Acesso total",
+    "bypass-desc": "Executar tudo localmente sem aprovação — apenas em ambientes confiáveis ou isolados",
+    "dont_ask": "Não supervisionado",
+    "dont_ask-desc": "Qualquer coisa que exigiria confirmação é negada — bom para tarefas agendadas"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "Configuração de MCP",
+    "keepAlive": "Manter ativo",
+    "keepAliveDesc": "Manter o estado entre interações. Ative para browser-use ou outros MCPs de longa duração.",
+    "parseError": "Configuração JSON inválida: {{message}}",
+    "missingMcpServers": "A configuração deve conter um objeto \"mcpServers\".",
+    "emptyMcpServers": "Nenhum servidor MCP encontrado na configuração."
+  },
+  "dialog-mcp-delete": {
+    "entity": "Servidor MCP",
+    "skillEntity": "habilidade",
+    "skillDescription": "Tem certeza de que deseja remover esta habilidade do workspace?"
+  },
+  "schedule": {
+    "subtitle": "Configure e gerencie tarefas automatizadas - o Tora executa fluxos de trabalho conforme o agendamento",
+    "calendar": "Calendário",
+    "createSchedule": {
+      "description": "Configure uma tarefa de automação recorrente ou única para um agente.",
+      "descriptionLabel": "Descrição",
+      "descriptionPlaceholder": "Descreva o que esta automação deve fazer...",
+      "namePlaceholder": "ex.: Relatório diário",
+      "title": "Criar tarefa de automação"
+    },
+    "deleteSchedule": {
+      "entity": "tarefa de automação"
+    },
+    "endAt": "Data de término",
+    "end_at": "Termina em",
+    "executionHistory": "Histórico de execução",
+    "freqDaily": "Diariamente",
+    "freqMonthly": "Mensalmente",
+    "freqOnce": "Uma vez",
+    "freqWeekly": "Semanalmente",
+    "frequency": "Frequência",
+    "friday": "Sex",
+    "list": "Lista",
+    "monday": "Seg",
+    "more": "mais",
+    "nextMonth": "Próximo mês",
+    "nextYear": "Próximo ano",
+    "noSchedules": "Nenhuma tarefa de automação",
+    "noSchedulesDescription": "Crie uma tarefa de automação para executar fluxos de trabalho conforme o agendamento.",
+    "pickDate": "Escolha uma data",
+    "permissionMode": "Modo de permissão",
+    "timezone": "Fuso horário",
+    "triggerTime": "Hora de disparo",
+    "createdAt": "Criado em",
+    "dayOfMonthSuffix": "",
+    "stateful": "Com estado",
+    "statefulDesc": "Reutilizar uma sessão em todos os disparos para acumular contexto. Desativado: cada disparo cria uma sessão nova.",
+    "previousMonth": "Mês anterior",
+    "previousYear": "Ano anterior",
+    "saturday": "Sáb",
+    "sunday": "Dom",
+    "thursday": "Qui",
+    "today": "Hoje",
+    "tuesday": "Ter",
+    "wednesday": "Qua"
+  },
+  "model-parameters": {
+    "title": "Parâmetros do modelo",
+    "description": "Ajuste os parâmetros de inferência do modelo selecionado.",
+    "empty": "Nenhum parâmetro configurável.",
+    "fallbackLabel": "Modelo alternativo",
+    "fallbackLabelWithModel": "Modelo alternativo ({{model}})",
+    "parametersLabel": "Parâmetros",
+    "ttsLabel": "TTS",
+    "ttsEmpty": "Nenhum modelo TTS disponível.",
+    "ttsParameters": "Parâmetros",
+    "ttsParametersDescription": "Ajuste os parâmetros do modelo TTS selecionado.",
+    "noTts": "Sem TTS"
+  },
+  "setup": {
+    "title": "Conectar ao serviço",
+    "description": "Insira a URL do servidor e o nome de usuário para começar.",
+    "serverUrl": "URL do servidor",
+    "serverUrlPlaceholder": "https://...",
+    "username": "Nome de usuário",
+    "usernamePlaceholder": "Seu nome de usuário",
+    "submit": "Começar",
+    "checking": "Conectando...",
+    "errorUnreachable": "Não foi possível alcançar este servidor. Verifique o endereço, confirme se o serviço está em execução e se permite requisições de origem cruzada.",
+    "errorTimeout": "O servidor aceitou a conexão, mas não respondeu a tempo. Ele pode estar sobrecarregado ou travado na inicialização.",
+    "errorNotAgentScope": "O endereço foi alcançado, mas não é um serviço AgentScope — verifique a URL ou atualize um backend antigo demais para expor um endpoint de integridade.",
+    "errorUnauthorized": "O servidor rejeitou este nome de usuário. Insira um válido.",
+    "errorNotReady": "O servidor está acessível, mas não está pronto. Estes subsistemas falharam ao iniciar:",
+    "hint": "Este é um aplicativo somente de frontend, e todos os dados são fornecidos a partir da URL do servidor acima. O nome de usuário é usado apenas para autenticação no lado do servidor."
+  },
+  "task-panel": {
+    "blockedBy": "bloqueado por"
+  },
+  "panel": {
+    "plan": {
+      "title": "Plano",
+      "completed": "Concluídos: {{count}}",
+      "total": "Total: {{count}}",
+      "emptyTitle": "Nenhuma tarefa ainda",
+      "emptyDescription": "As tarefas planejadas pelo agente aparecerão aqui."
+    },
+    "mcp": {
+      "description": "Os servidores MCP configurados no workspace.",
+      "searchPlaceholder": "Pesquisar MCP no workspace",
+      "add": "Adicionar MCP",
+      "addDescription": "Reutilize um que você já instalou ou cole uma configuração.",
+      "fromConfig": "Da configuração",
+      "tools": "{{count}} ferramentas",
+      "unhealthy": "Não foi possível contactar este MCP",
+      "healthy": "Ligado",
+      "emptyTitle": "Nenhum servidor MCP",
+      "emptyDescription": "Adicione um servidor MCP para equipar o workspace com ferramentas.",
+      "fromInstalled": "MCPs instalados",
+      "installedEmptyTitle": "Ainda não há nada instalado",
+      "installedEmptyDescription": "Instale um a partir do MCP Hub ou cole uma configuração."
+    },
+    "skill": {
+      "title": "Competências",
+      "description": "As competências equipadas no workspace.",
+      "searchPlaceholder": "Pesquisar competências no workspace",
+      "add": "Adicionar competência",
+      "emptyTitle": "Sem competências",
+      "emptyDescription": "Adicione uma competência para equipar o workspace.",
+      "addDescription": "Escolha entre as competências instaladas ou carregue uma pasta local.",
+      "fromInstalled": "Das instaladas",
+      "fromFolder": "Carregar uma pasta",
+      "installedEmptyTitle": "Ainda não há competências instaladas",
+      "installedEmptyDescription": "Instale uma do hub de competências e adicione-a aqui.",
+      "pickFolderTitle": "Escolha uma pasta de competência",
+      "pickFolderDescription": "A pasta deve conter um SKILL.md na raiz.",
+      "pickFolder": "Escolher pasta",
+      "importLocal": "Importar de pasta local",
+      "pickAnother": "Escolher outra",
+      "fileCount": "{{count}} ficheiros"
+    },
+    "workspace": {
+      "checkpoint": "Pontos de verificação",
+      "diff": "Alterações",
+      "browser": "Navegador",
+      "terminal": "Terminal",
+      "hooks": "Hooks"
+    },
+    "knowledge": {
+      "title": "Bases de conhecimento",
+      "description": "Bases de conhecimento das quais o agente pode obter informações.",
+      "searchPlaceholder": "Pesquisar bases de conhecimento",
+      "emptyTitle": "Sem bases de conhecimento",
+      "emptyDescription": "Crie uma primeiro na página Bases de conhecimento.",
+      "parametersTitle": "Definições de recuperação",
+      "parametersDescription": "Definições de recuperação das bases de conhecimento."
+    },
+    "permission": {
+      "title": "Permissões",
+      "description": "As permissões aplicadas nesta sessão.",
+      "mode": "Modo: {{mode}}",
+      "workingDirectories": "Diretórios de trabalho",
+      "noWorkingDirectories": "Sem diretórios de trabalho.",
+      "allow": "Permitir",
+      "deny": "Negar",
+      "ask": "Perguntar",
+      "anyInvocation": "qualquer invocação",
+      "rulesTitle": "Regras (aplicam-se a todas as sessões)",
+      "addButton": "Adicionar",
+      "contentPlaceholder": "Padrão a corresponder; vazio = qualquer invocação",
+      "deleteRule": "Eliminar esta regra",
+      "loadFailed": "Falha ao carregar as regras: {{detail}}",
+      "emptyTitle": "Sem regras configuradas",
+      "emptyDescription": "As regras de permitir / negar / perguntar aparecerão aqui à medida que forem adicionadas."
+    },
+    "search": {
+      "emptyTitle": "Sem resultados",
+      "emptyDescription": "Nada corresponde a “{{query}}”."
+    },
+    "loading": "A carregar…",
+    "team": {
+      "membersHeading": "Membros",
+      "noMembers": "Ainda não há membros — peça ao líder para criar um com AgentCreate.",
+      "emptyTitle": "Sem equipa",
+      "emptyDescription": "Esta sessão não faz parte de uma equipa. O agente forma uma com TeamCreate.",
+      "running": "Em execução",
+      "idle": "Inativo",
+      "missingSession": "(sem sessão)"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "Digitalizar código QR",
+      "manualTab": "Introduzir manualmente",
+      "scanHint": "Digitalize com a aplicação da plataforma e aprove para criar as credenciais.",
+      "authorized": "Aprovado. As credenciais estão prontas.",
+      "failed": "Não foi possível concluir a associação.",
+      "unsafeUrl": "A plataforma devolveu uma ligação que não pode ser mostrada em segurança.",
+      "retry": "Tentar novamente"
+    },
+    "title": "Canais",
+    "subtitle": "Ligue plataformas externas como Feishu e Discord para que os agentes funcionem em chats de grupo",
+    "status": "Estado",
+    "connected": "Ligado",
+    "enable": "Ativar",
+    "disable": "Desativar",
+    "deleteEntity": "canal",
+    "routing": "Encaminhamento",
+    "routingDesc": "Associe mensagens recebidas a um agente e a um âmbito de sessão. A última regra corresponde a todo o resto.",
+    "sectionActive": "Ligado",
+    "sectionAdd": "Adicionar canal",
+    "rules": "{{count}} regras",
+    "empty": {
+      "title": "Sem canais",
+      "description": "Crie um canal para ligar o seu agente a plataformas externas como Feishu, DingTalk, etc."
+    },
+    "create": {
+      "title": "Criar canal",
+      "titleFor": "Ligar {{name}}",
+      "description": "Ligue um agente a uma plataforma de mensagens externa.",
+      "channelType": "Plataforma",
+      "nameLabel": "Nome",
+      "namePlaceholder": "ex.: Suporte técnico",
+      "nameDesc": "Distingue canais na mesma plataforma",
+      "modelDesc": "Modelo inicial para uma nova sessão",
+      "permissionMode": "Modo de permissão",
+      "permissionModeDesc": "Modo de permissão inicial para uma nova sessão",
+      "showToolMessages": "Mostrar mensagens de ferramentas",
+      "showToolMessagesDesc": "Exibir mensagens de chamada/resultado de ferramentas no canal.",
+      "showThinking": "Mostrar raciocínio",
+      "showThinkingDesc": "Exibir o processo de raciocínio do modelo no canal."
+    },
+    "fields": {
+      "app_id": {
+        "title": "ID do aplicativo",
+        "description": "ID do aplicativo Feishu"
+      },
+      "app_secret": {
+        "title": "Segredo do aplicativo",
+        "description": "Segredo do aplicativo Feishu"
+      },
+      "bot_token": {
+        "title": "Token do bot"
+      },
+      "application_id": {
+        "title": "ID do aplicativo"
+      },
+      "only_at_reply": {
+        "title": "Responder apenas quando mencionado",
+        "description": "Em conversas de grupo, responder apenas quando o bot for @mencionado"
+      },
+      "show_tool_process": {
+        "title": "Mostrar processo das ferramentas",
+        "description": "Mostrar chamadas e resultados de ferramentas na própria resposta"
+      },
+      "show_thinking": {
+        "title": "Mostrar raciocínio",
+        "description": "Mostrar o raciocínio do modelo na própria resposta"
+      }
+    },
+    "edit": {
+      "title": "Editar canal",
+      "description": "Atualize as configurações de roteamento, modelo e resposta. A plataforma e as credenciais são imutáveis."
+    },
+    "sessionScope": {
+      "per_chat": "Por chat",
+      "per_chat_user": "Por usuário do chat"
+    },
+    "sessions": {
+      "title": "Sessões",
+      "empty": "Ainda não há sessões",
+      "openInChat": "Abrir no chat"
+    },
+    "detail": {
+      "config": "Configuração",
+      "configDesc": "Configuração inicial aplicada a novas sessões",
+      "configItem": "Item",
+      "configValue": "Valor",
+      "condition": "Condição",
+      "created": "Criado",
+      "deleteChannel": "Excluir canal",
+      "routingDesc": "Como as mensagens recebidas são mapeadas para um agente e escopo de sessão",
+      "sessionsDesc": "Sessões que este canal gerou",
+      "selectHint": "Selecione um canal para ver os detalhes"
+    },
+    "state": {
+      "stopped": "Parado",
+      "connecting": "Conectando",
+      "retrying": "Reconectando",
+      "connected": "Conectado",
+      "failed": "Falhou"
+    },
+    "binding": {
+      "rule": "Regra de correspondência",
+      "matchKey": "Campo de correspondência",
+      "matchValue": "Valor de correspondência",
+      "matchValuePlaceholder": "ex.: um chat_id",
+      "routeTo": "Encaminhar para",
+      "scope": "Escopo da sessão",
+      "fallback": "Regra de fallback",
+      "fallbackDesc": "As mensagens que não correspondem a nenhuma das regras acima são encaminhadas para aqui.",
+      "catchAll": "Todas as outras mensagens",
+      "addRule": "Adicionar regra"
+    }
+  },
+  "mcp": {
+    "subtitle": "Navegue e instale servidores MCP",
+    "hubsLabel": "Hubs",
+    "searchPlaceholder": "Pesquisar neste hub",
+    "mineSearchPlaceholder": "Pesquisar seus MCPs",
+    "noHubsTitle": "Nenhum hub disponível",
+    "noHubsDescription": "Peça ao seu administrador para adicionar um.",
+    "noCardsTitle": "Nada encontrado",
+    "noCardsDescription": "Tente uma palavra-chave diferente.",
+    "mineDescription": "Os servidores MCP que você instalou",
+    "mineEmptyTitle": "Ainda não há servidores MCP",
+    "mineEmptyDescription": "Instale um de um hub à esquerda.",
+    "needsConfig": "Precisa de configuração",
+    "stateful": "Com estado",
+    "configLabel": "Configuração",
+    "install": "Instalar",
+    "installed": "Instalado",
+    "installTitle": "Instalar {{name}}",
+    "installDescription": "Adiciona-o aos seus MCPs. Escolha uma sessão para usá-lo depois.",
+    "editTitle": "Editar {{name}}",
+    "editDescription": "Deixe um segredo em branco para manter o que já está armazenado.",
+    "nameLabel": "Nome",
+    "loadFailedTitle": "Não foi possível alcançar o servidor",
+    "loadFailedDescription": "Verifique a URL do servidor e se o serviço está em execução.",
+    "retry": "Tentar novamente"
+  },
+  "skill": {
+    "category": {
+      "testing": "Testes e depuração",
+      "security": "Segurança",
+      "devops": "Implantação e operações",
+      "writing": "Escrita",
+      "office-efficiency": "Eficiência de escritório",
+      "knowledge-management": "Gestão do conhecimento",
+      "content-creation": "Criação de conteúdo",
+      "ai-agent": "Agentes de IA",
+      "dev-programming": "Desenvolvimento",
+      "design-media": "Design e mídia",
+      "data-analysis": "Análise de dados",
+      "life-service": "Estilo de vida",
+      "professional": "Profissional",
+      "design-creative": "Design e Criatividade",
+      "coding-agents": "Agentes de Codificação",
+      "agent-skills": "Habilidades de Agente",
+      "development": "Engenharia",
+      "agent-frameworks": "Frameworks de Agentes",
+      "browser-automation": "Automação de Navegador",
+      "productivity": "Produtividade",
+      "rag-knowledge": "RAG e Conhecimento",
+      "automation": "Automação",
+      "document-processing": "Processamento de Documentos",
+      "education": "Educação",
+      "finance": "Finanças",
+      "legal-compliance": "Jurídico e Conformidade",
+      "media-automation": "Automação de Mídia",
+      "Personal AI": "IA Pessoal",
+      "research": "Pesquisa",
+      "web-automation": "Automação Web"
+    },
+    "allCategories": "Todos",
+    "matchButton": "Corresponder a uma tarefa",
+    "matchHint": "Descreva a tarefa na caixa de pesquisa primeiro",
+    "matchRecommends": "Recomendado para esta tarefa",
+    "matchAlternatives": "Alternativas",
+    "matchScore": "Correspondência {{score}}",
+    "matchSearched": "Pesquisadas {{count}} habilidades",
+    "matchFailed": "Não foi possível corresponder a uma habilidade",
+    "matchDismiss": "Dispensar",
+    "matchPolicy": "Política de origem: {{policy}}",
+    "subtitle": "Navegue e instale habilidades",
+    "hubsLabel": "Hubs",
+    "searchPlaceholder": "Pesquisar neste hub",
+    "mineSearchPlaceholder": "Pesquisar suas habilidades",
+    "noHubsTitle": "Nenhum hub disponível",
+    "noHubsDescription": "Peça ao seu administrador para adicionar um.",
+    "noCardsTitle": "Nada encontrado",
+    "noCardsDescription": "Tente uma palavra-chave diferente.",
+    "mineDescription": "As habilidades que você instalou",
+    "mineEmptyTitle": "Ainda não há habilidades",
+    "mineEmptyDescription": "Instale uma a partir de um hub à esquerda.",
+    "install": "Instalar",
+    "installed": "Instalada",
+    "versionLabel": "Versão",
+    "hubLabel": "Hub",
+    "updatedLabel": "Atualizado",
+    "updatedAgo": "Atualizado há {{ago}}",
+    "updatedRecently": "Atualizado agora",
+    "installsLabel": "Instalações",
+    "downloadsLabel": "Downloads",
+    "linkLabel": "Página",
+    "viewOnHub": "Ver no hub",
+    "noReadme": "Esta habilidade não inclui o corpo do SKILL.md.",
+    "loadFailedTitle": "Não foi possível contatar o servidor",
+    "loadFailedDescription": "Verifique a URL do servidor e se o serviço está em execução.",
+    "retry": "Tentar novamente"
+  },
+  "agent-menu": {
+    "settings": "Configurações",
+    "delete": "Excluir agente"
+  },
+  "workdir": {
+    "title": "Diretório de trabalho",
+    "description": "Escolha o diretório de trabalho do agente.",
+    "root": "Raiz do espaço de trabalho",
+    "parent": "Subir um nível",
+    "errorTitle": "Não foi possível listar esta pasta",
+    "pathPlaceholder": "Digite ou cole um caminho",
+    "empty": "Esta pasta está vazia",
+    "pressEnter": "Pressione Enter para verificar este caminho primeiro",
+    "pickerPlaceholder": "Selecione uma pasta para usar ferramentas",
+    "recent": "Recentes",
+    "recentEmpty": "Nenhuma pasta usada recentemente",
+    "browse": "Selecione uma pasta",
+    "gitTooltip": "{{staged}} preparados · {{unstaged}} modificados · {{untracked}} não rastreados\nA contagem de linhas exclui arquivos não rastreados"
+  },
+  "settings": {
+    "title": "Configurações",
+    "backToApp": "Voltar para Tora",
+    "close": "Fechar",
+    "loadFailed": "Falha ao carregar as configurações (o backend pode estar offline ou usando a porta errada): {{error}}",
+    "loadingRuntime": "Carregando configuração de runtime…",
+    "sections": {
+      "general": "Geral",
+      "theme": "Tema",
+      "agent": "Agente",
+      "model": "Modelos",
+      "memory": "Memória",
+      "data": "Dados",
+      "about": "Sobre",
+      "usage": "Uso",
+      "account": "Conta",
+      "developer": "Desenvolvedor e Depuração"
+    },
+    "memory": {
+      "title": "Memória",
+      "desc": "Memória de longo prazo entre sessões: entradas relevantes são injetadas no início da sessão, com destilação opcional após a sessão",
+      "inject": "Injeção na sessão",
+      "injectDesc": "Injetar memórias relevantes no prompt do sistema no início da sessão para o projeto atual",
+      "distill": "Destilação automática",
+      "distillDesc": "Após a conclusão de uma sessão, o modelo revisa a conversa e destila 0-3 entradas que vale a pena lembrar",
+      "searchPh": "Pesquisar memórias (Enter para pesquisar)",
+      "contentPh": "Conteúdo da memória, por exemplo: testes neste projeto sempre são executados com node --test",
+      "projectKeyPh": "Caminho absoluto do projeto (se vazio, usa o global)",
+      "scopeGlobal": "Global",
+      "scopeProject": "Projeto",
+      "add": "Adicionar memória",
+      "save": "Salvar",
+      "cancel": "Cancelar",
+      "edit": "Editar",
+      "delete": "Excluir",
+      "confirmDelete": "Confirmar exclusão?",
+      "pin": "Fixar",
+      "unpin": "Desafixar",
+      "dedupedToast": "Já existe uma memória semelhante; não foi salva novamente",
+      "projectGroup": "Memórias do projeto",
+      "globalGroup": "Memórias globais",
+      "empty": "Nenhuma memória ainda. Peça ao assistente para \"lembrar…\" em uma conversa, ou adicione uma aqui.",
+      "emptySearch": "Nenhuma memória correspondente",
+      "kinds": {
+        "preference": "Preferência",
+        "fact": "Fato",
+        "pitfall": "Armadilha",
+        "convention": "Convenção"
+      },
+      "sources": {
+        "manual": "Manual",
+        "tool": "Ferramenta",
+        "distill": "Destilado"
+      }
+    },
+    "theme": {
+      "title": "Tema",
+      "subtitle": "Escolha a aparência, o movimento e o plano de fundo do espaço de trabalho",
+      "modeTitle": "Aparência",
+      "modeDesc": "Claro, escuro ou seguir o sistema",
+      "light": "Claro",
+      "dark": "Escuro",
+      "system": "Sistema",
+      "motionTitle": "Movimento de interação",
+      "motionDesc": "Defina o ritmo do feedback de clique e das mudanças de página. A preferência Reduzir Movimento do seu sistema sempre tem prioridade.",
+      "motionModeTitle": "Ritmo do movimento",
+      "motion": {
+        "system": "Sistema",
+        "off": "Desativado",
+        "gentle": "Suave",
+        "standard": "Padrão",
+        "fast": "Rápido"
+      },
+      "motionReduced": "Reduzir Movimento está ativado no seu sistema, então as animações estão desativadas no momento.",
+      "motionClickTitle": "Feedback de clique",
+      "motionClickDesc": "Feedback breve de pressionamento para botões, links e itens de menu",
+      "motionPageTitle": "Transições de página",
+      "motionPageDesc": "Mudanças suaves entre páginas do espaço de trabalho",
+      "backgroundTitle": "Plano de fundo",
+      "backgroundDesc": "Compartilhado pelo espaço de trabalho, configurações e telas de login",
+      "lavender": "Lavanda suave",
+      "mist": "Névoa azul",
+      "stone": "Pedra quente",
+      "midnight": "Meia-noite",
+      "none": "Nenhum",
+      "custom": "Personalizado",
+      "import": "Importar imagem",
+      "replace": "Substituir imagem",
+      "remove": "Remover plano de fundo personalizado",
+      "localOnly": "Planos de fundo personalizados ficam neste dispositivo e nunca são enviados. PNG, JPEG e WebP de até 16 MB.",
+      "invalidType": "Escolha uma imagem PNG, JPEG ou WebP",
+      "tooLarge": "As imagens devem ter menos de 16 MB",
+      "processFailed": "Não foi possível ler esta imagem. Tente outro arquivo.",
+      "storageFailed": "Não foi possível salvar o plano de fundo. O armazenamento local pode estar cheio."
+    },
+    "general": {
+      "title": "Geral",
+      "common": "Comum",
+      "language": {
+        "title": "Idioma",
+        "desc": "Idioma da interface",
+        "zh": "Chinês simplificado",
+        "zhHant": "Chinês tradicional",
+        "en": "Inglês",
+        "ja": "Japonês",
+        "ko": "Coreano",
+        "fr": "Francês",
+        "de": "Alemão",
+        "it": "Italiano",
+        "ar": "Árabe",
+        "es": "Espanhol",
+        "pt": "Português",
+        "ru": "Russo",
+        "hi": "Híndi",
+        "lzh": "Chinês clássico"
+      },
+      "searchEngine": {
+        "title": "Mecanismo de busca",
+        "desc": "Usado quando a entrada da barra de endereços não é uma URL",
+        "engines": {
+          "360": "360 Search",
+          "baidu": "Baidu",
+          "google": "Google",
+          "sogou": "Sogou",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "Bing"
+        }
+      },
+      "systemNotifications": {
+        "title": "Notificações de mensagens do sistema",
+        "desc": "Use notificações do sistema para novas mensagens. O título e o corpo da mensagem permanecem ocultos; permita o Tora nas configurações de notificações do sistema.",
+        "test": "Notificação de teste",
+        "testing": "Testando…",
+        "shown": "O sistema aceitou a notificação. Se nenhum banner apareceu, verifique as configurações de notificação ou o modo Foco.",
+        "failed": "O sistema recusou a notificação. No macOS, teste em uma compilação assinada e verifique a permissão de notificação.",
+        "unsupported": "Notificações nativas não são suportadas neste sistema.",
+        "unconfirmed": "Uma notificação foi solicitada, mas a exibição não foi confirmada. Verifique as permissões de notificação."
+      },
+      "sound": {
+        "title": "Som da notificação",
+        "desc": "Alertas sonoros para eventos de tarefa",
+        "replyDoneTitle": "Resposta concluída",
+        "replyDoneDesc": "Reproduzir quando o agente termina uma resposta",
+        "needConfirmTitle": "Precisa de confirmação",
+        "needConfirmDesc": "Reproduzir quando uma confirmação ou pergunta precisar de você",
+        "kindTitle": "Som",
+        "kindDesc": "Escolha o som do alerta",
+        "kindDing": "Ding",
+        "kindCrisp": "Nítido",
+        "kindSoft": "Suave",
+        "kindCustom": "Personalizado",
+        "preview": "Prévia",
+        "customTitle": "Som personalizado",
+        "customDesc": "Usar um arquivo de áudio local (mp3 / wav / ogg, etc.)",
+        "customChoose": "Escolher arquivo",
+        "customClear": "Limpar",
+        "volumeTitle": "Volume",
+        "volumeDesc": "Volume de reprodução do som do alerta",
+        "tooLarge": "Arquivo muito grande (máx. 10MB)",
+        "saveFailed": "Falha ao salvar, tente novamente"
+      },
+      "behavior": "Comportamento"
+    },
+    "developer": {
+      "title": "Desenvolvedor e depuração",
+      "desc": "Comportamento de execução do agente, hooks, índice de código e servidores de linguagem. As alterações são aplicadas na próxima execução.",
+      "behavior": "Comportamento"
+    },
+    "behavior": {
+      "presets": {
+        "title": "Perfil de execução",
+        "desc": "Aplique um perfil de execução comprovado e depois ajuste os limites individuais abaixo, se necessário.",
+        "fast": {
+          "title": "Rápido",
+          "desc": "Tarefas curtas com menor custo"
+        },
+        "balanced": {
+          "title": "Equilibrado",
+          "desc": "Recomendado para o trabalho diário"
+        },
+        "deep": {
+          "title": "Minucioso",
+          "desc": "Tarefas complexas com mais espaço para iterar"
+        }
+      },
+      "context": {
+        "title": "Limite de tokens de contexto",
+        "desc": "Quando a conversa excede esse valor, o histórico anterior é compactado automaticamente (padrão 24000). Um valor menor economiza tokens, mas perde detalhes do histórico.",
+        "suffix": "tokens"
+      },
+      "toolOutput": {
+        "title": "Limite de saída de uma única ferramenta",
+        "desc": "Número máximo de caracteres retornados por uma única chamada de ferramenta (padrão 6000); saídas mais longas são truncadas.",
+        "suffix": "caracteres"
+      },
+      "maxTurns": {
+        "title": "Máximo de iterações do agente",
+        "desc": "Número máximo de turnos do loop do agente por tarefa (padrão 40); execuções que excederem isso são interrompidas à força.",
+        "suffix": "turnos"
+      },
+      "shellSandbox": {
+        "title": "Sandbox de processos de comando",
+        "desc": "Limita onde comandos Bash e Git do agente podem escrever. Desativá-lo concede aos comandos acesso aos arquivos da sua conta de usuário."
+      },
+      "shellNetwork": {
+        "title": "Permitir comandos em sandbox na rede",
+        "desc": "Desativado por padrão. Quando ativado, os comandos podem acessar a internet e serviços locais; ative somente quando necessário."
+      }
+    },
+    "data": {
+      "title": "Dados",
+      "subtitle": "Limpar dados de sessão locais e do lado do servidor",
+      "wipe": {
+        "title": "Limpar todas as sessões",
+        "desc": "Exclui todos os registros de sessão, agentes e credenciais. Isso não pode ser desfeito.",
+        "button": "Limpar",
+        "confirm": "Confirmar limpeza",
+        "cancel": "Cancelar",
+        "processing": "Processando…",
+        "error": "Falha ao limpar: {{error}}"
+      }
+    },
+    "about": {
+      "title": "Sobre",
+      "tora": "Espaço de trabalho do Agente local · v{{version}}",
+      "runtime": "Aplicativo desktop Electron · Serviço ASAPI local · Use seu próprio modelo",
+      "runtimeTitle": "Execução",
+      "update": {
+        "title": "Atualização de software",
+        "desc": "Verifique se há uma nova versão do Tora. No macOS e Windows, o download é feito em segundo plano e depois é solicitado que você reinicie e instale.",
+        "check": "Verificar atualizações",
+        "checking": "Verificando…",
+        "upToDate": "Você está atualizado.",
+        "available": "Tora {{version}} está disponível. Siga o aviso de atualização para continuar.",
+        "downloading": "Tora {{version}} está disponível e sendo baixado em segundo plano.",
+        "ready": "Tora {{version}} foi baixado e está pronto para instalar.",
+        "development": "Atualizações não estão disponíveis em builds de desenvolvimento.",
+        "unavailable": "Atualizações automáticas não estão disponíveis nesta plataforma.",
+        "desktopOnly": "Verifique atualizações no aplicativo desktop Tora.",
+        "failed": "Não foi possível verificar atualizações: {{error}}"
+      }
+    },
+    "errors": {
+      "backend": "O backend retornou {{status}}",
+      "runtimeSave": "Falha ao salvar ({{status}}): {{text}}",
+      "saveFailed": "Falha ao salvar: {{error}}",
+      "wipeFailed": "Falha ao limpar: {{error}}"
+    },
+    "advanced": {
+      "title": "Avançado",
+      "subtitle": "Hooks, índice de código e servidores de linguagem. As alterações são aplicadas na próxima execução.",
+      "hooks": {
+        "title": "Hooks de ciclo de vida",
+        "desc": "Execute seus próprios comandos em UserPromptSubmit / PreToolUse / PostToolUse / Stop. Desativado significa que nenhum hook é executado."
+      },
+      "changes": {
+        "title": "Contexto ciente de alterações",
+        "desc": "Injeta \"arquivos modificados recentemente + sujos do git\" no prompt do sistema para que o modelo saiba que o disco pode ter mudado."
+      },
+      "lsp": {
+        "title": "Servidores de linguagem (LSP)",
+        "desc": "Quando configurado, o Lsp recorre a um servidor real para definição / referências / diagnósticos e obtém informações de tipo; caso contrário, usa o índice de símbolos local.",
+        "none": "Nenhum servidor de linguagem detectado",
+        "enable": "Ativar",
+        "enabled": "Ativado",
+        "disable": "Desativar",
+        "probeFailed": "Falha no teste: {{error}}"
+      },
+      "index": {
+        "title": "Índice de código",
+        "desc": "Índice de símbolos e índice invertido semântico (usado pela Busca). Atualizado incrementalmente por mtime; raramente é necessário reconstruir manualmente.",
+        "rebuild": "Reconstruir índice",
+        "rebuilding": "Reconstruindo…",
+        "done": "Índice reconstruído: {{files}} arquivos / {{symbols}} símbolos / {{tokens}} termos",
+        "noWorkspace": "Escolha um diretório de trabalho em uma sessão primeiro",
+        "stats": "Agora: {{files}} arquivos / {{symbols}} símbolos"
+      },
+      "mcp": {
+        "title": "Servidores MCP",
+        "desc": "Servidores Model Context Protocol via stdio. Suas ferramentas entram nas sessões como mcp__server__tool. Alterações salvas são aplicadas na próxima execução.",
+        "add": "Adicionar",
+        "namePlaceholder": "nome (letras, dígitos, - _)",
+        "commandPlaceholder": "comando, ex.: npx",
+        "argsPlaceholder": "argumentos (separados por espaço, opcional)",
+        "probe": "Testar",
+        "probing": "Testando…",
+        "toolsCount": "{{count}} ferramentas",
+        "noServers": "Nenhum servidor MCP configurado",
+        "delete": "Excluir este servidor",
+        "probeFailed": "Falha no teste: {{error}}"
+      },
+      "trust": {
+        "title": "Confiar nos hooks do projeto",
+        "desc": "O .tora/hooks.json de um workspace vem do conteúdo do repositório. Confiar nele permite que esse repositório execute comandos — leia-o primeiro.",
+        "trusted": "Hooks do projeto confiados para este diretório",
+        "trust": "Confiar no diretório atual",
+        "revoke": "Revogar confiança",
+        "none": "Ainda não há diretório de trabalho"
+      },
+      "saveFailed": "Falha ao salvar: {{error}}"
+    },
+    "usage": {
+      "title": "Estatísticas de uso",
+      "desc": "Agregado de sessões e execuções locais (tokens, duração do chat, sequências, uso de ferramentas)",
+      "cards": {
+        "totalTokens": "Total de tokens",
+        "peakTokens": "Pico de tokens",
+        "longestChat": "Chat mais longo",
+        "currentStreak": "Sequência atual",
+        "longestStreak": "Sequência mais longa"
+      },
+      "activity": {
+        "title": "Atividade de tokens",
+        "daily": "Diário",
+        "weekly": "Semanal",
+        "cumulative": "Cumulativo",
+        "tipDaily": "usou {{tokens}} tokens",
+        "tipWeekly": "total da semana: {{tokens}} tokens",
+        "tipCumulative": "{{tokens}} tokens no total"
+      },
+      "insights": {
+        "title": "Insights",
+        "chats": "Total de chats",
+        "runs": "Total de execuções",
+        "activeDays": "Dias ativos",
+        "toolRuns": "Execuções de ferramentas",
+        "topModel": "Modelo principal"
+      },
+      "topTools": {
+        "title": "Ferramentas mais usadas",
+        "empty": "Nenhum uso de ferramenta ainda",
+        "runs": "{{count}} execuções"
+      },
+      "loading": "Carregando…",
+      "loadFailed": "Falha ao carregar estatísticas de uso: {{error}}",
+      "days": "{{count}} dias",
+      "refresh": "Atualizar"
+    },
+    "account": {
+      "title": "Conta",
+      "homeTitle": "Entrar no Tora",
+      "homeDesc": "Digite seu nome de usuário ou e-mail — encaminharemos você para entrar ou criar uma conta",
+      "continue": "Entrar / Criar conta",
+      "nextStep": "Continuar",
+      "otherWays": "Outras opções de entrada",
+      "register": "Criar conta",
+      "emailTitle": "Entrar ou criar conta",
+      "registerTitle": "Criar conta",
+      "emailDesc": "Obtenha respostas mais inteligentes e recursos de nuvem.",
+      "emailLabel": "Endereço de e-mail",
+      "emailPlaceholder": "Endereço de e-mail",
+      "passwordTitle": "Digite a senha",
+      "createPasswordTitle": "Criar senha",
+      "passwordLabel": "Senha (mín. 8 caracteres)",
+      "confirmLabel": "Confirmar senha",
+      "login": "Entrar",
+      "createAccount": "Criar conta",
+      "or": "ou",
+      "terms": "Ao continuar, você concorda com os Termos de Uso e a Política de Privacidade do Tora.",
+      "back": "Voltar",
+      "logout": "Sair",
+      "since": "Membro desde {{date}}",
+      "errors": {
+        "confirmMismatch": "As senhas não coincidem",
+        "shortPassword": "A senha deve ter pelo menos 8 caracteres",
+        "alreadyRegistered": "Este e-mail já está cadastrado — faça login",
+        "invalidEmail": "Endereço de e-mail inválido",
+        "longPassword": "A senha é muito longa",
+        "wrongCredentials": "Conta ou senha incorretas",
+        "wrongPassword": "A senha atual está incorreta",
+        "emailTaken": "Este e-mail já está em uso",
+        "avatarTooLarge": "O avatar é muito grande; escolha uma imagem menor",
+        "avatarInvalid": "Formato de avatar não suportado",
+        "invalidUsername": "O nome de usuário deve ter 2-32 letras, dígitos, sublinhados, hífens ou caracteres CJK",
+        "usernameTaken": "Este nome de usuário já está em uso",
+        "codeTooFrequent": "Muitas solicitações, tente novamente mais tarde",
+        "codeSendFailed": "Falha ao enviar o código, tente novamente mais tarde",
+        "codeInvalid": "O código de verificação é inválido ou expirou",
+        "turnstileFailed": "Falha na verificação humana, tente novamente"
+      },
+      "networkWarning": "Não foi possível acessar o serviço de autenticação. Verifique sua rede e tente novamente",
+      "networkRetryHint": "Seus dados de acesso foram preservados. Tente verificar novamente quando a conexão for restabelecida.",
+      "manager": {
+        "description": "Gerencie seu perfil e a segurança da sua conta.",
+        "profileTitle": "Perfil",
+        "securityTitle": "Segurança da conta",
+        "registeredAt": "Data de cadastro",
+        "passwordHint": "Atualize a senha usada para entrar no Tora",
+        "emailPasswordHint": "Digite sua senha atual para confirmar sua identidade",
+        "confirmNewPassword": "Confirmar nova senha",
+        "savePassword": "Salvar senha",
+        "saveEmail": "Salvar e-mail",
+        "logoutTitle": "Sair desta conta",
+        "logoutHint": "Você precisará entrar novamente na próxima vez.",
+        "logoutConfirmTitle": "Sair?",
+        "logoutConfirmDescription": "Você precisará entrar novamente para continuar usando o Tora.",
+        "changeAvatar": "Alterar avatar",
+        "avatarHint": "Clique no avatar para alterá-lo (PNG / JPG / WebP, recortado e comprimido automaticamente)",
+        "avatarSaved": "Avatar atualizado",
+        "changePassword": "Alterar senha",
+        "changeEmail": "Alterar e-mail",
+        "currentEmail": "E-mail atual: {{email}}",
+        "newEmail": "Novo endereço de e-mail",
+        "currentPassword": "Senha atual",
+        "newPassword": "Nova senha (pelo menos 8 caracteres)",
+        "save": "Salvar",
+        "passwordSaved": "Senha atualizada",
+        "emailSaved": "E-mail atualizado"
+      },
+      "accountLabel": "Nome de usuário ou e-mail",
+      "accountPlaceholder": "Nome de usuário ou e-mail",
+      "usernameLabel": "Nome de usuário (2-32 letras, dígitos ou CJK)",
+      "codeLabel": "Código de verificação de e-mail",
+      "captchaTitle": "Verificação de segurança",
+      "captchaLoginDesc": "Conclua a verificação humana para entrar",
+      "captchaRegisterDesc": "Conclua a verificação humana para criar sua conta",
+      "showPassword": "Mostrar senha",
+      "hidePassword": "Ocultar senha",
+      "sendCode": "Enviar código",
+      "codeCooldown": "Reenviar em {{s}}s"
+    }
+  },
+  "agentSection": {
+    "title": "Agente",
+    "desc": "Configure o nome padrão do agente e o prompt do sistema. Deixar o prompt do sistema vazio usa o prompt interno do Corey.",
+    "select": "Selecionar agente",
+    "name": "Nome",
+    "namePlaceholder": "Nome do agente",
+    "systemPrompt": "Prompt do sistema",
+    "systemPromptPlaceholder": "Deixe vazio para usar o prompt de sistema interno do Corey",
+    "save": "Salvar",
+    "saved": "Salvo",
+    "saveFailed": "Falha ao salvar: {{error}}"
+  },
+  "modelSection": {
+    "title": "Modelos",
+    "subtitle": "Gerenciamento de modelos",
+    "desc": "Configure chaves de API para adicionar mais modelos disponíveis. O primeiro modelo habilitado se torna o modelo de conversa padrão.",
+    "addModel": "Adicionar modelo",
+    "empty": "Nenhum modelo ainda — clique em \"Adicionar modelo\" para conectar seu primeiro modelo",
+    "loading": "Carregando…",
+    "tableHeaders": {
+      "model": "Modelo",
+      "provider": "Provedor",
+      "actions": "Ações"
+    },
+    "aria": {
+      "edit": "Editar",
+      "delete": "Excluir",
+      "close": "Fechar",
+      "back": "Voltar"
+    },
+    "errors": {
+      "noModels": "O provedor não retornou modelos",
+      "submitFailed": "Falha ao enviar: {{error}}",
+      "backend": "O backend retornou {{status}}",
+      "loginRequired": "Entre em \"Conta\" primeiro — os modelos são sincronizados com sua conta na nuvem"
+    },
+    "form": {
+      "titleEdit": "Editar modelo",
+      "titleAdd": "Adicionar via provedor",
+      "provider": "Provedor",
+      "apiKey": "Chave de API",
+      "apiKeyPlaceholder": "Insira a chave de API",
+      "apiKeyKeepEmpty": "Deixe vazio para manter a chave atual",
+      "getApiKey": "Obter chave de API",
+      "model": "Modelo",
+      "modelPlaceholder": "Selecionar modelo",
+      "modelInputPlaceholder": "Selecione ou insira o ID do modelo (ex.: glm-4.6)",
+      "fetchingModels": "Buscando modelos disponíveis…",
+      "fetchHint": "Os modelos são carregados automaticamente após inserir a chave de API; você também pode digitar um ID de modelo diretamente",
+      "advanced": "Avançado",
+      "vision": {
+        "title": "Entrada de visão",
+        "auto": "Automático",
+        "on": "Ativado",
+        "off": "Desativado",
+        "hint": "Detecta automaticamente pelo nome do modelo; modelos de visão como deepseek-flash, gpt-4o e qwen-vl aceitam imagens"
+      },
+      "baseUrl": "Endpoint (URL base)",
+      "saveHint": "A conectividade é verificada pelo endpoint de lista de modelos ao salvar; a chave é armazenada somente localmente",
+      "reset": "Redefinir",
+      "saveEdit": "Salvar alterações",
+      "saveAdd": "Adicionar modelo",
+      "selectedCount": "{{count}} selecionado(s)",
+      "selectAll": "Selecionar tudo",
+      "deselectAll": "Limpar",
+      "alreadyAdded": "adicionado",
+      "apiKeyReused": "Deixe vazio para reutilizar a chave existente",
+      "keyReusedHint": "Este provedor já tem uma chave de API configurada — deixe vazio para reutilizar, basta escolher os modelos e salvar."
+    },
+    "providers": {
+      "custom": "Modelo personalizado",
+      "volcengine": "Volcengine",
+      "dashscope": "Alibaba Cloud",
+      "siliconflow": "SiliconFlow",
+      "stepfun": "StepFun China",
+      "stepfunGlobal": "StepFun Global",
+      "hunyuan": "Tencent Cloud",
+      "ollama": "Ollama (Local)"
+    }
+  }
+}

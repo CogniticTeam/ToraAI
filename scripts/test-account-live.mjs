@@ -12,7 +12,7 @@ const id = randomUUID().replaceAll('-', '');
 const email = `tora-acceptance-${id}@example.invalid`;
 const token = randomBytes(48).toString('hex');
 let socket;
-const sql = statement => JSON.parse(execFileSync('npx', ['--yes', 'wrangler@4', 'd1', 'execute', 'tora-auth', '--remote', '--config', 'packages/auth-worker/wrangler.toml', '--json', '--command', statement], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
+const sql = statement => JSON.parse(execFileSync('npx', ['--yes', 'wrangler@4', 'd1', 'execute', 'DB', '--remote', '--config', 'packages/auth-worker/wrangler.toml', '--json', '--command', statement], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }));
 async function request(path, auth, body) {
   const r = await fetch(base + path, { method: body ? 'POST' : 'GET', headers: { authorization: 'Bearer ' + auth, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}), signal: AbortSignal.timeout(15000) });
   return { status: r.status, data: await r.json() };

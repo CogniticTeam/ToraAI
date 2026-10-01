@@ -1,5 +1,33 @@
 {
+  "languageDialog": {
+    "subtitle": "选择界面语言",
+    "search": "搜索语言",
+    "noResults": "没有匹配的语言",
+    "systemSuggestion": "当前系统语言为{{language}}，是否切换？",
+    "switch": "切换至{{language}}",
+    "later": "暂不切换",
+    "close": "关闭语言选择",
+    "switchError": "切换语言失败"
+  },
+  "usageMilestone": {
+    "title": "Token 里程碑达成",
+    "subtitle": "你在 Tora 的累计 Token 用量达到了新的里程碑。",
+    "total": "当前累计使用 {{count}} Token",
+    "more": "还有 {{count}} 个里程碑等待展示",
+    "continue": "继续使用 Tora",
+    "retry": "暂时无法保存里程碑，请重试。",
+    "levels": { "100k": "10万", "1m": "100万", "10m": "1000万", "100m": "1亿", "500m": "5亿", "1b": "10亿", "2b": "20亿", "5b": "50亿", "10b": "100亿" }
+  },
+  "markdown": {
+    "openExternalLink": "打开外部链接？",
+    "externalLinkWarning": "即将访问外部网站，请确认链接地址。",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "openLink": "打开链接",
+    "close": "关闭"
+  },
   "inbox": {
+    "translateToLanguage": "翻译为{{language}}",
     "detail": "消息详情",
     "translateToChinese": "翻译为中文", "translateToEnglish": "翻译为英文", "translating": "翻译中…",
     "showOriginal": "查看原文", "showTranslation": "查看译文", "noTranslationNeeded": "无需翻译",
@@ -18,12 +46,14 @@
   },
   "firstRun": {
     "intro": {
-      "aria": "Tora 首次启动欢迎动画", "tagline": "让想法，开始执行。",
-      "initializing": "正在准备你的工作区", "ready": "准备完成，可以开始",
-      "enter": "开启体验", "skip": "跳过动画"
+      "aria": "Tora 首次启动欢迎动画", "welcome": "欢迎使用 Tora",
+      "headlineFirst": "让想法，", "headlineSecond": "开始执行。",
+      "description": "接入你的模型，打开项目，开始对话。Tora 会陪你阅读、修改代码并完成任务。",
+      "hint": "下一步将带你熟悉主要功能", "foot": "你的工作区，即将就绪。",
+      "logoAlt": "Tora Logo", "enter": "开启体验", "skip": "跳过动画"
     },
     "tour": {
-      "replay": "重新查看新手引导", "skip": "跳过引导", "later": "稍后配置", "next": "下一步",
+      "skip": "跳过引导", "later": "稍后配置", "next": "下一步",
       "pauseSettings": "模型管理已打开。配置完成后关闭设置，引导会自动继续。", "pauseFolder": "请选择项目文件夹；选完或关闭菜单后继续。", "pausePermission": "查看或选择审批模式；关闭菜单后继续。",
       "demoSend": "演示发送，不会真正提交", "clickHint": "点击高亮控件继续", "loading": "正在定位界面…",
       "demoTag": "教学演示 · 不会执行真实命令", "demoMessage": "请检查这个项目的构建脚本，先给出计划。",
@@ -46,6 +76,27 @@
       ]
     }
   },
+  "firstUseConsent": {
+    "title": "开始使用前，请确认以下事项",
+    "description": "请分别阅读并确认用户协议、隐私政策及跨境传输说明。未勾选全部项目之前，Tora 不会进入登录或工作区。",
+    "terms": "我已阅读并同意用户协议",
+    "readTerms": "查看用户协议",
+    "privacy": "我已阅读并了解隐私政策",
+    "readPrivacy": "查看隐私政策",
+    "crossBorder": "我单独同意跨境传输个人信息",
+    "crossBorderHint": "使用账号和云端功能时，必要信息可能传输至中国大陆境外。请先阅读具体范围和处理方式。",
+    "readCrossBorder": "查看跨境传输说明",
+    "decline": "暂不接受并退出",
+    "agree": "确认并继续"
+  },
+  "sponsors": {
+    "title": "本月赞助者名单", "description": "感谢本月在爱发电支持 Tora 的用户。这里仅展示赞助者昵称，不展示金额或其他账户信息。",
+    "source": "数据来自爱发电", "total": "共 {{count}} 位赞助者", "loaded": "已显示 {{count}} 位赞助者", "empty": "本月暂无赞助者", "emptyMore": "当前页暂无本月赞助者，可继续加载更多。",
+    "loading": "正在加载赞助者…", "loadError": "赞助者名单暂不可用，请稍后重试。",
+    "retry": "重试", "more": "加载更多", "donate": "赞助",
+    "leaveTitle": "前往爱发电赞助？", "leaveDescription": "确认后将离开 Tora，在系统浏览器中打开以下外部网站。",
+    "confirmLeave": "确认并打开"
+  },
   "polls": {
     "title": "投票", "subtitle": "参与投票，查看活动与结果", "all": "全部活动", "history": "我的投票记录",
     "search": "搜索", "loadMore": "加载更多", "from": "开始日期", "to": "结束日期",
@@ -67,6 +118,7 @@
     "disabled": "投票功能已由管理员关闭。"
   },
   "common": {
+    "toraModels": "Tora 模型",
     "add": "添加",
     "agent": "智能体",
     "cancel": "取消",
@@ -230,6 +282,15 @@
   "messageBubble": {
     "thinking": "深度思考",
     "thinkingFor": "深度思考 {{duration}}",
+    "taskProcess": {
+      "title": "任务过程",
+      "running": "已用时 {{duration}}",
+      "finished": "用时 {{duration}}",
+      "hour": "小时",
+      "minute": "分钟",
+      "second": "秒",
+      "noConclusion": "本轮已结束，但模型未给出结语。可展开任务过程查看详情。"
+    },
     "audioGenerating": "正在生成音频…",
     "playAudio": "播放音频",
     "pauseAudio": "暂停音频",
@@ -258,6 +319,7 @@
     },
     "error": {
       "title": "回复失败",
+      "blockedTitle": "本轮被规则阻止",
       "authentication": "鉴权失败 —— 请检查模型的 API key 或凭证。",
       "permission": "请求被拒绝 —— 当前凭证没有访问该模型或端点的权限。",
       "rate_limit": "触发限流或额度用尽 —— 请稍后重试。",
@@ -1144,12 +1206,27 @@
     },
     "theme": {
       "title": "主题",
-      "subtitle": "选择外观和工作区背景",
+      "subtitle": "选择外观、动画和工作区背景",
       "modeTitle": "外观",
       "modeDesc": "浅色、深色或跟随系统",
       "light": "浅色",
       "dark": "深色",
       "system": "跟随系统",
+      "motionTitle": "交互动画",
+      "motionDesc": "设置点击反馈和页面切换的节奏。系统的“减少动态效果”设置始终优先。",
+      "motionModeTitle": "动画节奏",
+      "motion": {
+        "system": "跟随系统",
+        "off": "关闭",
+        "gentle": "柔和",
+        "standard": "标准",
+        "fast": "快速"
+      },
+      "motionReduced": "系统已启用减少动态效果，当前以无动画方式呈现。",
+      "motionClickTitle": "点击反馈",
+      "motionClickDesc": "按钮、链接和菜单项的短促按下反馈",
+      "motionPageTitle": "页面切换",
+      "motionPageDesc": "在工作区页面之间平滑过渡",
       "backgroundTitle": "背景",
       "backgroundDesc": "工作区、设置和登录界面共用背景",
       "lavender": "柔紫",
@@ -1175,7 +1252,18 @@
         "desc": "界面显示语言",
         "zh": "简体中文",
         "zhHant": "繁體中文",
-        "en": "English"
+        "en": "English",
+        "ja": "日语",
+        "ko": "韩语",
+        "fr": "法语",
+        "de": "德语",
+        "it": "意大利语",
+        "ar": "阿拉伯语",
+        "es": "西班牙语",
+        "pt": "葡萄牙语",
+        "ru": "俄语",
+        "hi": "印地语",
+        "lzh": "文言文"
       },
       "searchEngine": {
         "title": "搜索引擎",
@@ -1190,6 +1278,15 @@
           "ecosia": "Ecosia",
           "bing": "必应"
         }
+      },
+      "systemNotifications": {
+        "title": "系统消息通知",
+        "desc": "新消息使用系统通知提醒；锁屏通知不显示标题和正文。系统设置也需允许 Tora 通知。",
+        "test": "测试通知", "testing": "正在测试…",
+        "shown": "系统已接收通知；若没有横幅，请检查 macOS 通知设置或专注模式。",
+        "failed": "系统拒绝显示通知。macOS 请在正式签名版中测试，并检查通知权限。",
+        "unsupported": "当前系统不支持原生通知。",
+        "unconfirmed": "已请求系统通知，但未收到显示确认；请检查通知权限。"
       },
       "sound": {
         "title": "提示音",
@@ -1252,6 +1349,14 @@
         "title": "最大 Agent 迭代轮数",
         "desc": "单次任务最大 Agent 循环轮数（默认 40），超过会强制结束。",
         "suffix": "轮"
+      },
+      "shellSandbox": {
+        "title": "命令进程沙箱",
+        "desc": "限制 Agent 的 Bash 和 Git 命令写入工作目录；关闭后命令拥有当前用户的文件权限。"
+      },
+      "shellNetwork": {
+        "title": "允许沙箱命令联网",
+        "desc": "默认关闭。开启后命令可访问外网和本机服务；仅在需要联网安装等操作时开启。"
       }
     },
     "data": {
@@ -1426,7 +1531,21 @@
         "turnstileFailed": "人机验证失败，请重试"
       },
       "networkWarning": "认证服务暂时无法连接，请检查网络后重试",
+      "networkRetryHint": "登录信息已保留。请在网络恢复后重试验证。",
       "manager": {
+        "description": "管理你的个人资料与账户安全。",
+        "profileTitle": "个人资料",
+        "securityTitle": "账户安全",
+        "registeredAt": "注册时间",
+        "passwordHint": "更新用于登录 Tora 的密码",
+        "emailPasswordHint": "输入当前密码以确认是你本人操作",
+        "confirmNewPassword": "确认新密码",
+        "savePassword": "保存密码",
+        "saveEmail": "保存邮箱",
+        "logoutTitle": "退出当前账号",
+        "logoutHint": "下次使用时需要重新登录。",
+        "logoutConfirmTitle": "退出登录？",
+        "logoutConfirmDescription": "退出后，你需要重新登录才能继续使用 Tora。",
         "changeAvatar": "更换头像",
         "avatarHint": "点击头像更换（支持 PNG / JPG / WebP，自动裁剪压缩）",
         "avatarSaved": "头像已更新",
@@ -1508,7 +1627,7 @@
         "auto": "自动",
         "on": "支持",
         "off": "不支持",
-        "hint": "自动 = 按模型名判断；多模态模型（如 gpt-4o、qwen-vl）可上传图片，纯文本模型禁用上传"
+        "hint": "自动 = 按模型名判断；支持视觉输入的模型（如 deepseek-flash、gpt-4o、qwen-vl）可上传图片"
       },
       "baseUrl": "接口地址（Base URL）",
       "saveHint": "保存后会用模型列表接口验证连通性，密钥仅保存在本机",
@@ -1532,10 +1651,5 @@
       "hunyuan": "腾讯云",
       "ollama": "Ollama（本地）"
     }
-  },
-  "regionNotice": {
-    "title": "中国大陆用户特别提醒及境外传输许可",
-    "body": "Tora检测到你的位置位于中国大陆，请放心，我们并不会封禁来自中国大陆的用户的账号，依据中国大陆相关法律，我们需要您同意：您的数据将会被传输到Cloudflare境外服务器上，若您不同意我们向境外传输数据，可以立即停止使用并退出本软件。\n由于服务器位于中国大陆境外，您访问Tora的速度可能会慢，建议您开启VPN使用。",
-    "agree": "同意并继续使用"
   }
 }

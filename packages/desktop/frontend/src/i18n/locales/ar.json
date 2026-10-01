@@ -1,0 +1,1809 @@
+{
+  "languageDialog": {
+    "subtitle": "اختر لغتك",
+    "search": "ابحث عن اللغات",
+    "noResults": "لا توجد لغات مطابقة",
+    "systemSuggestion": "لغة نظامك هي {{language}}. هل تريد التبديل إليها؟",
+    "switch": "التبديل إلى {{language}}",
+    "later": "ليس الآن",
+    "close": "إغلاق محدد اللغة",
+    "switchError": "تعذّر تبديل اللغة"
+  },
+  "usageMilestone": {
+    "title": "تم بلوغ إنجاز الرموز",
+    "subtitle": "بلغ استخدامك التراكمي للرموز في Tora إنجازًا جديدًا.",
+    "total": "إجمالي الرموز المستخدمة: {{count}}",
+    "more": "يتبقى {{count}} من الإنجازات لعرضها",
+    "continue": "المتابعة باستخدام Tora",
+    "retry": "تعذّر حفظ هذا الإنجاز. حاول مرة أخرى.",
+    "levels": {
+      "100k": "100K",
+      "1m": "1M",
+      "10m": "10M",
+      "100m": "100M",
+      "500m": "500M",
+      "1b": "1B",
+      "2b": "2B",
+      "5b": "5B",
+      "10b": "10B"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "فتح رابط خارجي؟",
+    "externalLinkWarning": "أنت على وشك زيارة موقع خارجي.",
+    "copyLink": "نسخ الرابط",
+    "copied": "تم النسخ",
+    "openLink": "فتح الرابط",
+    "close": "إغلاق"
+  },
+  "inbox": {
+    "translateToLanguage": "ترجمة إلى {{language}}",
+    "detail": "تفاصيل الرسالة",
+    "translateToChinese": "ترجمة إلى الصينية",
+    "translateToEnglish": "ترجمة إلى الإنجليزية",
+    "translating": "جارٍ الترجمة…",
+    "showOriginal": "عرض الأصل",
+    "showTranslation": "عرض الترجمة",
+    "noTranslationNeeded": "لا حاجة للترجمة",
+    "translationError": "فشلت الترجمة. انقر زر الترجمة لإعادة المحاولة.",
+    "translationRateLimit": "طلبات ترجمة كثيرة جدًا. حاول مرة أخرى لاحقًا.",
+    "title": "الرسائل",
+    "newMessage": "رسالة جديدة من Tora",
+    "empty": "لا توجد رسائل بعد",
+    "loading": "جارٍ التحميل…",
+    "unread": "غير مقروءة",
+    "more": "تحميل المزيد",
+    "back": "العودة إلى الرسائل",
+    "retry": "إعادة المحاولة",
+    "loadError": "تعذّر تحميل الرسائل",
+    "readError": "تعذّر وضع علامة مقروءة على الرسالة. حاول مرة أخرى.",
+    "blocked": "الحساب موقوف",
+    "blockedReason": "لا يمكن لهذا الحساب استخدام Tora حاليًا.",
+    "unbanHint": "سيُستأنف الوصول تلقائيًا عندما يرفع المسؤول الإيقاف.",
+    "signOut": "تسجيل الخروج"
+  },
+  "requiredUpdate": {
+    "title": "تحديث Tora",
+    "description": "الإصدار {{version}} متاح. حدّث للمتابعة.",
+    "download": "فتح صفحة التنزيل الرسمية",
+    "macHint": "إذا كان التحديث التلقائي غير متاح، نزّل أحدث ملف DMG من الموقع الرسمي واستبدل التطبيق يدويًا.",
+    "downloading": "جارٍ تنزيل التحديث… {{percent}}%",
+    "install": "إعادة التشغيل والتثبيت",
+    "retry": "إعادة محاولة التنزيل",
+    "error": "فشل التحديث التلقائي. أعد المحاولة أو نزّل من الموقع الرسمي.",
+    "quit": "إنهاء Tora"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "حركة ترحيب Tora عند أول تشغيل",
+      "welcome": "مرحبًا بك في Tora",
+      "headlineFirst": "حوّل الأفكار",
+      "headlineSecond": "إلى أفعال.",
+      "description": "اربط نموذجك، وافتح مشروعًا، وابدأ محادثة. يساعدك Tora على قراءة الكود وتحريره وإنجاز العمل.",
+      "hint": "سيوضح لك دليل قصير الأساسيات",
+      "foot": "مساحة عملك شبه جاهزة.",
+      "logoAlt": "شعار Tora",
+      "enter": "ابدأ",
+      "skip": "تخطي الحركة"
+    },
+    "tour": {
+      "skip": "تخطي الدليل",
+      "later": "الإعداد لاحقًا",
+      "next": "التالي",
+      "pauseSettings": "إدارة النماذج مفتوحة. أغلق الإعدادات عند الانتهاء وسيتابع الدليل.",
+      "pauseFolder": "اختر مجلد مشروع، أو أغلق القائمة للمتابعة.",
+      "pausePermission": "راجع وضع الموافقة أو حدده، ثم أغلق القائمة للمتابعة.",
+      "demoSend": "محاكاة الإرسال؛ لن يُرسل أي شيء",
+      "clickHint": "انقر عنصر التحكم المميز للمتابعة",
+      "loading": "جارٍ البحث عن عنصر التحكم…",
+      "demoTag": "عرض موجه · لن يُنفذ أي أمر حقيقي",
+      "demoMessage": "تحقق من سكربتات البناء لهذا المشروع وأعطني خطة أولًا.",
+      "demoResponse": "يفهم Tora المهمة أولًا، ثم يطلب أي أذونات أدوات يحتاجها. يمكنك مراجعة كل خطوة وتقرير ما إذا كنت تريد المتابعة.",
+      "demoApprove": "السماح هذه المرة (عرض تجريبي)",
+      "demoCheckpoint": "عرض نقطة التحقق (عرض تجريبي)",
+      "completeTitle": "أنت جاهز للإنشاء.",
+      "completeBody": "يمكنك تغيير النموذج والمجلد والأذونات في أي وقت. راجع الإجراءات غير المؤكدة قبل المتابعة.",
+      "startWorking": "دخول Tora",
+      "startAgain": "مشاهدة الدليل مرة أخرى",
+      "steps": [
+        {
+          "chapter": "استعد",
+          "title": "اختر نموذجك الخاص",
+          "body": "يستخدم Tora النماذج التي تضيفها. انقر على منتقي النموذج لمعرفة مكان ربط مزوّدك."
+        },
+        {
+          "chapter": "استعد",
+          "title": "أضف مزوّد نموذج",
+          "body": "انقر على إضافة نموذج لفتح إدارة النماذج. اختر مزوّدًا وأدخل تفاصيل نموذجك. يستأنف الدليل عند الانتهاء أو تخطي الإعداد."
+        },
+        {
+          "chapter": "استعد",
+          "title": "حدّد نطاق مشروعك",
+          "body": "انقر على عنصر التحكم بالمجلد لاختيار مشروع. يقرأ الوكيل ويعدّل ويشغّل الأدوات ضمن مساحة العمل التي تأذن بها. يمكنك فعل ذلك لاحقًا."
+        },
+        {
+          "chapter": "استعد",
+          "title": "ابقَ مسيطرًا",
+          "body": "انقر على وضع الأذونات لعرض خياراتك. الموافقة اليدوية نقطة بداية جيدة؛ تنتظر الإجراءات عالية المخاطر قرارك."
+        },
+        {
+          "chapter": "ابدأ مهمة",
+          "title": "صف هدفًا واضحًا",
+          "body": "انقر على مربع الرسالة. حدّد ما تريد تحقيقه، وما لا يجب المساس به، وكيف ستعرف أن المهمة أُنجزت."
+        },
+        {
+          "chapter": "ابدأ مهمة",
+          "title": "ابدأ مهمتك الأولى",
+          "body": "هذا زر الإرسال. الخطوات التالية تحاكي التنفيذ فقط: لا تُستخدم أرصدة النموذج ولا تُرسَل أي رسالة حقيقية."
+        },
+        {
+          "chapter": "راجع واستعد",
+          "title": "أنت توافق على كل خطوة مهمة",
+          "body": "هذا عرض توضيحي لطلب إذن. اقرأ ما تعتزم الأداة فعله قبل السماح لها أو رفضها."
+        },
+        {
+          "chapter": "راجع واستعد",
+          "title": "استعد من مسار خاطئ",
+          "body": "تسجّل نقاط التحقق الحالة قبل التغييرات. راجع الملفات التي ستتأثر قبل الاستعادة الفعلية."
+        },
+        {
+          "chapter": "وسّع Tora",
+          "title": "أعد استخدام سير العمل عبر المهارات",
+          "body": "انقر على المهارات. استورد أو ثبّت مهارات موثوقة لجعل سير العمل المفيد قابلًا للتكرار."
+        },
+        {
+          "chapter": "وسّع Tora",
+          "title": "تحقق من النتائج في المتصفح",
+          "body": "انقر على المتصفح المدمج. يمكنك أنت والوكيل فحص تطبيق ويب وتصحيحه والتحقق منه في الصفحة نفسها."
+        },
+        {
+          "chapter": "وسّع Tora",
+          "title": "جدولة الأعمال المتكررة",
+          "body": "انقر على الأتمتة لجدولة فحوصات متكررة أو مهام تنظيمية ومراجعة كل تشغيل."
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "قبل أن تبدأ",
+    "description": "يرجى مراجعة شروط الخدمة وسياسة الخصوصية وإشعار نقل البيانات عبر الحدود وتأكيدها بشكل منفصل. لن يفتح Tora تسجيل الدخول أو مساحة عملك حتى يتم تحديد الثلاثة جميعًا.",
+    "terms": "لقد قرأت شروط الخدمة وأوافق عليها",
+    "readTerms": "اقرأ شروط الخدمة",
+    "privacy": "لقد قرأت سياسة الخصوصية وفهمتها",
+    "readPrivacy": "اقرأ سياسة الخصوصية",
+    "crossBorder": "أوافق بشكل منفصل على نقل معلوماتي الشخصية عبر الحدود",
+    "crossBorderHint": "عند استخدامك حسابًا أو ميزات سحابية، قد تُنقل معلومات ضرورية خارج البر الرئيسي للصين. يرجى مراجعة النطاق وتفاصيل المعالجة.",
+    "readCrossBorder": "اقرأ إشعار النقل عبر الحدود",
+    "decline": "ارفض واخرج",
+    "agree": "أكّد وتابع"
+  },
+  "sponsors": {
+    "title": "داعمو هذا الشهر",
+    "description": "شكرًا للمستخدمين الذين يدعمون Tora على Afdian هذا الشهر. تُعرض أسماء العرض فقط، وليس المبالغ أو تفاصيل الحساب.",
+    "source": "بيانات من Afdian",
+    "total": "{{count}} داعم",
+    "loaded": "{{count}} داعم معروض",
+    "empty": "لا يوجد داعمون هذا الشهر",
+    "emptyMore": "لا يوجد داعمون من هذا الشهر في هذه الصفحة. حمّل المزيد للمتابعة.",
+    "loading": "جارٍ تحميل الداعمين…",
+    "loadError": "الداعمون غير متاحين مؤقتًا. يرجى المحاولة لاحقًا.",
+    "retry": "إعادة المحاولة",
+    "more": "تحميل المزيد",
+    "donate": "رعاية",
+    "leaveTitle": "فتح Afdian للرعاية؟",
+    "leaveDescription": "بعد التأكيد، سيفتح Tora هذا الموقع الخارجي في متصفح نظامك.",
+    "confirmLeave": "أكّد وافتح"
+  },
+  "polls": {
+    "title": "استطلاعات الرأي",
+    "subtitle": "صوّت وتابع النتائج",
+    "all": "كل الاستطلاعات",
+    "history": "سجل تصويتي",
+    "search": "بحث",
+    "loadMore": "تحميل المزيد",
+    "from": "من",
+    "to": "إلى",
+    "starts": "يبدأ",
+    "ends": "ينتهي",
+    "forever": "لا موعد نهائي",
+    "refresh": "حدّث الاستطلاعات",
+    "startsIn": "يبدأ خلال {{time}}",
+    "startingSoon": "يبدأ قريبًا، جارٍ التحقق من الحالة…",
+    "dayUnit": "ي",
+    "state": {
+      "draft": "مسودة",
+      "scheduled": "لم يبدأ",
+      "active": "مفتوح",
+      "ended": "منتهي",
+      "archived": "مؤرشف"
+    },
+    "type": {
+      "single": "اختيار واحد",
+      "multiple": "اختيار متعدد",
+      "score": "تقييم من 100"
+    },
+    "frequency": {
+      "once": "مرة واحدة لكل شخص",
+      "daily": "مرة واحدة يوميًا (بتوقيت بكين)",
+      "unlimited": "غير محدود"
+    },
+    "maxSelections": "اختر حتى {{count}}",
+    "voted": "تم التصويت",
+    "votedCount": "أُرسل {{count}} مرة",
+    "available": "فتح للتصويت",
+    "choose": "اختر استطلاعًا من اليسار",
+    "empty": "لا توجد استطلاعات بعد",
+    "loading": "جارٍ تحميل الاستطلاعات…",
+    "noHistory": "لا يوجد سجل تصويت",
+    "results": "النتائج",
+    "participants": "{{count}} تصويت",
+    "countHidden": "عدد المصوّتين خاص",
+    "detailsHidden": "تفاصيل الخيار خاصة",
+    "resultsUnavailable": "النتائج غير عامة بعد",
+    "autoRefresh": "يتم التحديث كل 5 ثوانٍ",
+    "pieHint": "تُظهر الحلقة حصة كل خيار. قد يتجاوز مجموع معدلات الاختيار للأسئلة متعددة الخيارات 100%.",
+    "submit": "إرسال التصويت",
+    "submitting": "جارٍ الإرسال…",
+    "confirmVote": "إرسال هذا التصويت؟ لا يمكن تعديله بعد ذلك.",
+    "submitted": "تم إرسال التصويت",
+    "queued": "تم الحفظ دون اتصال. ستتم المزامنة عند الاتصال؛ ولن يُحتسب حتى يؤكده الخادم.",
+    "pending": "تصويتات معلّقة",
+    "waitingSync": "بانتظار تأكيد الخادم",
+    "retry": "إعادة المحاولة",
+    "remove": "إزالة",
+    "removePending": "إزالة هذا التصويت المعلّق؟",
+    "selectionRequired": "اختر خيارات صالحة",
+    "scoreRequired": "أدخل درجة برقم صحيح من 0 إلى 100 لكل خيار",
+    "submitError": "تعذّر إرسال التصويت",
+    "loadError": "تعذّر تحميل الاستطلاعات",
+    "disabled": "تم تعطيل الاستطلاعات بواسطة المسؤول."
+  },
+  "common": {
+    "toraModels": "نماذج Tora",
+    "add": "إضافة",
+    "agent": "الوكيل",
+    "cancel": "إلغاء",
+    "channel": "القنوات",
+    "chat": "الدردشة",
+    "new-task": "مهمة جديدة",
+    "model-switch-warning": "يؤدي تبديل النماذج أثناء المهمة إلى فقدان سياق المحادثة وزيادة استهلاك الرموز، وقد يتم ضغط السجل الأقدم، مما يخفض جودة المخرجات.",
+    "automation": "الأتمتة",
+    "workflow": "سير العمل",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "create": "إنشاء",
+    "creating": "جارٍ الإنشاء…",
+    "credential": "بيانات الاعتماد",
+    "date": "التاريخ",
+    "delete": "حذف",
+    "disabled": "معطّل",
+    "edit": "تعديل",
+    "error": "حدث خطأ ما",
+    "information": "معلومات",
+    "knowledge": "قواعد المعرفة",
+    "loading": "جارٍ التحميل...",
+    "shownCount": "{{count}} معروض",
+    "selectedCount": "تم تحديد {{selected}} من {{total}}",
+    "model": "النموذج",
+    "name": "الاسم",
+    "no": "لا",
+    "noData": "لا توجد بيانات",
+    "readOnly": "للقراءة فقط",
+    "readOnlyTooltip": "تمت مشاركته معك للقراءة فقط؛ التعديل والحذف معطّلان.",
+    "completed": "مكتمل",
+    "failed": "فشل",
+    "running": "قيد التشغيل",
+    "save": "حفظ",
+    "saving": "جارٍ الحفظ…",
+    "schedule": "الجدولة",
+    "selectAgent": "اختر وكيلاً",
+    "settings": "الإعدادات",
+    "switchToZh": "التبديل إلى الصينية",
+    "switchToZhHant": "التبديل إلى الصينية التقليدية",
+    "switchToEn": "التبديل إلى الإنجليزية",
+    "team": "الفريق",
+    "uploading": "جارٍ الرفع",
+    "leader": "القائد",
+    "time": "الوقت",
+    "yes": "نعم",
+    "deleteTitle": "حذف {{entity}} \"{{name}}\"؟",
+    "deleteDescription": "لا يمكن التراجع عن هذا الإجراء.",
+    "mcp-hub": "مركز MCP",
+    "mine": "الخاص بي",
+    "my-mcp": "خوادم MCP المثبّتة",
+    "skill-hub": "مركز المهارات",
+    "browser": "المتصفح",
+    "polls": "الاستطلاعات",
+    "my-skill": "المهارات المثبّتة",
+    "message": "رسالة",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "التضمين",
+    "select": "تحديد"
+  },
+  "error": {
+    "description": "واجهت الصفحة خطأً غير متوقع. يمكنك إعادة المحاولة أو العودة إلى الصفحة الرئيسية.",
+    "retry": "إعادة المحاولة",
+    "home": "العودة إلى الرئيسية"
+  },
+  "tool": {
+    "callGeneric": "استدعاء الأداة",
+    "read": {
+      "name": "قراءة",
+      "fileCount_one": "{{count}} ملف",
+      "fileCount_other": "{{count}} ملفات",
+      "lineCount_one": "قراءة {{formatted}} سطر",
+      "lineCount_other": "قراءة {{formatted}} أسطر",
+      "fileCount_zero": "{{count}} ملفات",
+      "fileCount_two": "{{count}} ملفان",
+      "fileCount_few": "{{count}} ملفات",
+      "fileCount_many": "{{count}} ملفًا",
+      "lineCount_zero": "قراءة {{formatted}} أسطر",
+      "lineCount_two": "قراءة {{formatted}} سطرين",
+      "lineCount_few": "قراءة {{formatted}} أسطر",
+      "lineCount_many": "قراءة {{formatted}} سطرًا"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} أوامر",
+      "read": "{{count}} قراءات",
+      "edit": "{{count}} تعديلات",
+      "search": "{{count}} عمليات بحث",
+      "todo": "{{count}} مهام",
+      "mcp": "{{count}} استدعاءات MCP",
+      "separator": "، ",
+      "fallback": "{{count}} استدعاءات أدوات"
+    }
+  },
+  "textInput": {
+    "toComplete": "لإكمال",
+    "attach": "إرفاق ملف",
+    "attachNotSupported": "لا يدعم هذا النموذج مرفقات الملفات",
+    "send": "إرسال",
+    "stop": "إيقاف التوليد",
+    "stopping": "جارٍ الإيقاف ...",
+    "sendWithSkills": "إرسال مع {{count}} مهارة",
+    "selectedSkills": "المهارات المحددة",
+    "removeSkill": "إزالة {{name}}",
+    "skillOnlyPrompt": "استخدم المهارات التي أرفقتها.",
+    "selectedElements": "العناصر المُشار إليها",
+    "removeElement": "إزالة العنصر {{tag}}",
+    "elementRefLine": "التعامل مع عنصر الصفحة `{{selector}}`",
+    "slashMenu": {
+      "selectedLabel": "محدد",
+      "hintSelect": "Enter للاختيار، Space للاختيار المتعدد",
+      "hintSend": "اضغط Enter للإرسال",
+      "clear": "مسح",
+      "close": "إغلاق",
+      "empty": "لم تُثبَّت أي مهارات بعد — تفضّل بزيارة مركز المهارات",
+      "emptyQuery": "لا توجد مهارات تطابق \"{{query}}\"",
+      "moreMatches": "{{count}} من النتائج الأخرى — تابع الكتابة للتصفية",
+      "selectedCount": "تم تحديد {{count}} مهارة",
+      "keyboardHighlight": "+ تمييز لوحة المفاتيح",
+      "clickToMulti": "انقر على صف لتحديد عدة؛ Esc للإغلاق"
+    },
+    "optimize": "تحسين المطالبة",
+    "optimizing": "جارٍ التحسين…",
+    "optimizeTitle": "المطالبة المحسّنة",
+    "optimizeFailed": "فشل التحسين",
+    "optimizeApply": "تطبيق",
+    "optimizeRetry": "إعادة المحاولة",
+    "optimizeDiscard": "تجاهل",
+    "optimizeBy": "محسّن بواسطة DeepSeek"
+  },
+  "browserPanel": {
+    "newTab": "علامة تبويب جديدة",
+    "createTab": "علامة تبويب جديدة",
+    "closeTab": "إغلاق علامة التبويب",
+    "back": "رجوع",
+    "forward": "تقدّم",
+    "reload": "إعادة تحميل",
+    "pickElement": "اختيار عنصر",
+    "pickElementHint": "اختر عنصرًا: مرّر المؤشر لإبرازه على الصفحة، وانقر لإرفاقه كبطاقة في مُدخل الدردشة (Esc للإلغاء)",
+    "openInBrowser": "فتح في المتصفح",
+    "openInBrowserHint": "فتح الصفحة الحالية في متصفح النظام",
+    "urlPlaceholder": "أدخل عنوان URL أو استعلام بحث واضغط Enter",
+    "noTabPick": "لم تُفتح أي علامة تبويب بعد. أدخل عنوان URL أو استعلام بحث في شريط العناوين، ثم اختر عنصرًا.",
+    "noTabAction": "لم تُفتح أي علامة تبويب بعد. انقر على + في الزاوية العلوية اليمنى، أو أدخل عنوان URL أو استعلام بحث في شريط العناوين.",
+    "iframeFallbackHint": "وضع المتصفح الاحتياطي (<iframe>) نشط: تعمل الصفحات من الأصل نفسه، لكن قد ترفض المواقع ذات الأصل المختلف التضمين عبر X-Frame-Options / CSP. يستخدم تطبيق سطح المكتب متصفحًا مدمجًا حقيقيًا (<webview>) دون هذه القيود."
+  },
+  "voice": {
+    "micTooltip": "إدخال صوتي",
+    "listening": "جارٍ الاستماع — انقر مرة أخرى للإيقاف",
+    "transcribing": "جارٍ تحويل الكلام إلى نص…",
+    "micDenied": "تم رفض الوصول إلى الميكروفون — يُرجى السماح به في إعدادات النظام",
+    "transcribeFailed": "فشل التعرف على الكلام",
+    "emptyTranscript": "لم يتم التعرف على أي شيء",
+    "keyMissing": "لم يتم تكوين مفتاح ASR API (voice-config.json)"
+  },
+  "confirmCard": {
+    "toConfirm": "للتأكيد",
+    "yesWithRule": "نعم، واسمح لـ {{toolName}} بتنفيذ {{ruleContent}} لهذه الجلسة"
+  },
+  "messageBubble": {
+    "thinking": "التفكير",
+    "thinkingFor": "التفكير لمدة {{duration}}",
+    "taskProcess": {
+      "title": "سير المهمة",
+      "running": "المدة المنقضية {{duration}}",
+      "finished": "استغرق {{duration}}",
+      "hour": "س ",
+      "minute": "د ",
+      "second": "ث",
+      "noConclusion": "انتهت هذه الجولة دون استنتاج. وسّع سير المهمة للتفاصيل."
+    },
+    "audioGenerating": "جارٍ توليد الصوت…",
+    "playAudio": "تشغيل الصوت",
+    "pauseAudio": "إيقاف الصوت مؤقتًا",
+    "running": "جارٍ التشغيل...",
+    "skillAttached": "المهارة المرفقة {{name}}",
+    "changedFiles": {
+      "title": "تم تغيير {{count}} ملف",
+      "openPanel": "عرض كل التغييرات في اللوحة"
+    },
+    "processed": "تمت المعالجة خلال {{duration}}",
+    "completed": "اكتمل خلال {{duration}}",
+    "duration": {
+      "day": "ي ",
+      "hour": "س ",
+      "minute": "د ",
+      "second": "ث"
+    },
+    "hintSource": {
+      "tool_output": "مخرجات الأداة",
+      "team": "فريق",
+      "team_message": "فريق",
+      "schedule": "الجدولة",
+      "system": "النظام",
+      "channel": "قناة",
+      "runtime_state": "حالة وقت التشغيل"
+    },
+    "error": {
+      "title": "فشل الرد",
+      "blockedTitle": "محظور بواسطة قاعدة",
+      "authentication": "فشلت المصادقة — تحقق من مفتاح API للنموذج أو بيانات الاعتماد.",
+      "permission": "الطلب غير مسموح — بيانات الاعتماد لا تملك إذنًا لهذا النموذج أو نقطة النهاية.",
+      "rate_limit": "تم تجاوز حد المعدل أو الحصة — يرجى المحاولة لاحقًا.",
+      "invalid_request": "تم رفض الطلب الموجه إلى النموذج باعتباره غير صالح.",
+      "upstream": "أعادت خدمة النموذج الأولية خطأ.",
+      "connection": "تعذّر الوصول إلى خدمة النموذج — خطأ في الشبكة أو انتهاء المهلة.",
+      "internal": "حدث خطأ داخلي غير متوقع.",
+      "setup": "تعذّر تحضير الجلسة — تحقق من نموذج الوكيل وأدواته وقواعد المعرفة.",
+      "unknown": "فشل الرد بخطأ غير معروف."
+    },
+    "copy": "نسخ"
+  },
+  "questionPanel": {
+    "supplementTitle": "هل هناك أي شيء آخر تود إضافته؟",
+    "supplementPlaceholder": "إضافة معلومات إضافية",
+    "optional": "اختياري",
+    "of": "من",
+    "prev": "رجوع",
+    "next": "التالي",
+    "submit": "إرسال",
+    "cancel": "إلغاء",
+    "other": "أخرى",
+    "otherPlaceholder": "اكتب هنا"
+  },
+  "chat": {
+    "inputPlaceholder": "اسأل أي شيء",
+    "confirmToolCall": "السماح بهذا الإجراء؟",
+    "subagentConfirmTitle": "{{name}} يطلب تأكيدًا",
+    "newSession": "جلسة جديدة",
+    "newConversation": "محادثة جديدة",
+    "greeting": "العمل والبرمجة مع Tora",
+    "greetingProject": "ماذا ينبغي أن نفعل في {{project}}؟",
+    "thinking": "جارٍ التفكير",
+    "project": {
+      "label": "المشاريع",
+      "unassigned": "غير مُعيَّن",
+      "rename": "إعادة تسمية المشروع"
+    },
+    "maxItersExceeded": {
+      "title": "تم بلوغ حد التكرارات",
+      "description": "أرسل رسالة جديدة للمتابعة، أو تابع المهمة الحالية.",
+      "continue": "متابعة"
+    },
+    "context": {
+      "compact": {
+        "title": "تم ضغط السياق تلقائيًا",
+        "evicted": "تم إخلاء {{count}} من مخرجات الأدوات",
+        "compacted": "تم تلخيص السجل الأقدم",
+        "fallback": "مضغوط",
+        "description": "{{parts}} (تقريبًا {{before}} → {{after}} رمزًا، الميزانية {{budget}})"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "اختر وكيلًا",
+      "emptyTitle": "لا يوجد وكلاء",
+      "emptyDescription": "أنشئ وكيلًا للبدء.",
+      "groupYours": "الخاصة بك",
+      "groupShared": "مشتركة معك"
+    },
+    "session": {
+      "label": "جلسة",
+      "emptyTitle": "لا توجد جلسات",
+      "emptyNoAgent": "اختر وكيلًا أولًا.",
+      "emptyHasAgent": "أنشئ جلسة لبدء الدردشة.",
+      "today": "اليوم",
+      "earlier": "سابقًا"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "إنشاء وكيل",
+    "description": "حدد هوية وكيل جديد وسلوكه."
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "هوية الوكيل",
+      "description": "الاسم والتعليمات التي تحدد سلوك هذا الوكيل.",
+      "name": {
+        "label": "الاسم",
+        "placeholder": "وكيلي"
+      },
+      "system-prompt": {
+        "label": "موجه النظام"
+      }
+    },
+    "context-config": {
+      "legend": "إعدادات السياق",
+      "description": "يتحكم في كيفية إدارة نافذة السياق وضغطها.",
+      "trigger-ratio": {
+        "label": "نسبة التفعيل"
+      },
+      "reserve-ratio": {
+        "label": "نسبة الاحتياط"
+      },
+      "tool-result-limit": {
+        "label": "حد نتائج الأدوات"
+      },
+      "compression-prompt": {
+        "label": "موجه الضغط"
+      },
+      "summary-template": {
+        "label": "قالب الملخص"
+      },
+      "max-image-num": {
+        "label": "الحد الأقصى للصور"
+      }
+    },
+    "react-config": {
+      "legend": "إعدادات ReAct",
+      "description": "يتحكم في سلوك حلقة الاستدلال والإجراء.",
+      "max-iters": {
+        "label": "الحد الأقصى للتكرارات"
+      },
+      "stop-on-reject": {
+        "label": "التوقف عند الرفض"
+      },
+      "structured-output-grace-iters": {
+        "label": "سماح المخرجات المهيكلة",
+        "description": "تكرارات إضافية مسموح بها بعد الحد الأقصى، بحيث يمكن للتشغيل الذي بلغ الحد أن ينتج المخرجات المهيكلة المطلوبة منه."
+      },
+      "interruption-message": {
+        "label": "رد المقاطعة",
+        "description": "يُرسل كرد الوكيل عندما يقاطع المستخدم التشغيل."
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "رفع CancelledError",
+        "description": "أعد رفع asyncio.CancelledError بعد معالجة المقاطعة، بدلًا من ابتلاعه."
+      }
+    },
+    "invite-config": {
+      "legend": "إعدادات الدعوة",
+      "description": "يتحكم فيما إذا كان بإمكان الوكلاء الآخرين استعارة هذا الوكيل عبر AgentInvite.",
+      "invitable": {
+        "label": "قابل للدعوة"
+      },
+      "invite-description": {
+        "label": "وصف الدعوة",
+        "placeholder": "صِف بإيجاز خبرة هذا الوكيل؛ مطلوب عند تفعيل invitable."
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "تعديل الوكيل",
+    "description": "حدِّث إعدادات هذا الوكيل."
+  },
+  "dialog-agent-delete": {
+    "entity": "وكيل",
+    "confirm": "حذف"
+  },
+  "dialog-session-delete": {
+    "entity": "جلسة",
+    "confirm": "حذف"
+  },
+  "dialog-session-rename": {
+    "title": "إعادة تسمية الجلسة",
+    "description": "أعطِ هذه الجلسة اسمًا جديدًا.",
+    "label": "الاسم",
+    "placeholder": "اسم الجلسة"
+  },
+  "dialog-project-rename": {
+    "title": "إعادة تسمية المشروع",
+    "description": "يغيّر تسمية المشروع في الشريط الجانبي ورسالة الترحيب فقط؛ لا تتغير المجلدات وعناوين الجلسات.",
+    "label": "اسم المشروع",
+    "placeholder": "اسم المشروع"
+  },
+  "session-menu": {
+    "rename": "إعادة تسمية",
+    "delete": "حذف"
+  },
+  "dialog-credential-create": {
+    "title": "إضافة بيانات اعتماد",
+    "description": "أضف بيانات اعتماد لمزوّد نموذج.",
+    "selectType": "المزوّد",
+    "selectTypePlaceholder": "اختر مزوّدًا"
+  },
+  "dialog-credential-edit": {
+    "title": "تعديل بيانات الاعتماد",
+    "description": "حدِّث بيانات الاعتماد المحفوظة لهذا المزوّد."
+  },
+  "dialog-knowledge-base-create": {
+    "title": "إنشاء قاعدة معرفة",
+    "description": "أنشئ قاعدة معرفة جديدة باستخدام نموذج تضمين.",
+    "name": {
+      "label": "الاسم",
+      "placeholder": "قاعدة معرفتي"
+    },
+    "descriptionField": {
+      "label": "الوصف",
+      "placeholder": "صِف الغرض من قاعدة المعرفة هذه."
+    },
+    "embeddingModel": {
+      "label": "نموذج التضمين"
+    },
+    "dimension": {
+      "label": "الأبعاد"
+    },
+    "chunker": {
+      "label": "المُجزِّئ"
+    },
+    "policy": {
+      "lockedTitle": "الأبعاد مثبّتة على {{dimension}}d",
+      "lockedDescription": "يثبّت هذا الخادم بالفعل جميع قواعد المعرفة على تضمينات بأبعاد {{dimension}}. تُدرَج أدناه النماذج المتوافقة فقط.",
+      "noCompatibleTitle": "لا توجد نماذج تضمين متوافقة",
+      "noCompatibleAny": "لا يوفّر أيٌّ من نماذجك نموذج تضمين. أضف نموذجًا في الإعدادات أولًا.",
+      "noCompatibleLocked": "لا توفّر أيٌّ من بيانات اعتمادك نموذجًا يمكنه إنتاج تضمينات بأبعاد {{dimension}}."
+    },
+    "errors": {
+      "nameRequired": "يرجى إعطاء قاعدة المعرفة اسمًا.",
+      "embeddingRequired": "يرجى اختيار نموذج تضمين.",
+      "dimensionRequired": "يرجى اختيار عدد الأبعاد.",
+      "chunkerRequired": "يرجى اختيار استراتيجية التجزئة."
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "تعديل قاعدة المعرفة",
+    "description": "حدِّث اسم قاعدة المعرفة ووصفها.",
+    "name": {
+      "label": "الاسم",
+      "placeholder": "قاعدة معرفتي"
+    },
+    "descriptionField": {
+      "label": "الوصف",
+      "placeholder": "صِف الغرض من قاعدة المعرفة هذه."
+    },
+    "embeddingModel": {
+      "label": "نموذج التضمين"
+    },
+    "chunker": {
+      "label": "المُجزِّئ"
+    },
+    "errors": {
+      "nameRequired": "يرجى إعطاء قاعدة المعرفة اسمًا."
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "حذف قاعدة المعرفة",
+    "description": "سيؤدي هذا إلى حذف قاعدة المعرفة \"{{name}}\" وجميع مستنداتها المفهرسة نهائيًا. لا يمكن التراجع عن هذا الإجراء."
+  },
+  "credential": {
+    "noProviders": "لا يوجد مزوّدون متاحون",
+    "selectHint": "لم يتم تحديد بيانات اعتماد",
+    "selectHintDescription": "اختر بيانات اعتماد من الشريط الجانبي لعرض تفاصيلها.",
+    "availableModels": "النماذج المتاحة",
+    "noModels": "لا توجد نماذج متاحة",
+    "noModelsDescription": "لم يُرجع هذا المزوّد أي نماذج.",
+    "deleteEntity": "بيانات اعتماد",
+    "subtitle": "إعدادات بيانات اعتماد واجهة برمجة تطبيقات النموذج",
+    "configured": "مُهيأ",
+    "addProvider": "إضافة بيانات اعتماد",
+    "reasoning": "الاستدلال",
+    "realtime": "الوقت الفعلي",
+    "table": {
+      "model": "النموذج",
+      "context": "السياق",
+      "maxOutput": "الحد الأقصى للإخراج",
+      "accepts": "يقبل",
+      "outputs": "المخرجات",
+      "legend": "السياق والحد الأقصى للإخراج هما عدد الرموز. تشير REASONING إلى النماذج التي تدعم التفكير الموسّع.",
+      "dimensions": "الأبعاد"
+    }
+  },
+  "knowledge": {
+    "subtitle": "إدارة قواعد المعرفة التي تستخدمها وكلاؤك",
+    "selectHint": "لم يتم تحديد قاعدة معرفة",
+    "selectHintDescription": "اختر قاعدة معرفة من الشريط الجانبي لعرض تفاصيلها.",
+    "list": {
+      "label": "قواعد المعرفة",
+      "emptyTitle": "لا توجد قواعد معرفة",
+      "emptyDescription": "أنشئ قاعدة معرفة لبدء فهرسة المستندات.",
+      "createButton": "إنشاء قاعدة معرفة"
+    },
+    "document": {
+      "emptyTitle": "لا توجد مستندات",
+      "emptyDescription": "ارفع مستندًا لفهرسته في قاعدة المعرفة هذه.",
+      "uploadButton": "رفع مستند",
+      "uploadButtonShort": "رفع",
+      "chunkCount_one": "{{count}} مقطع",
+      "chunkCount_other": "{{count}} مقاطع",
+      "deleteConfirmTitle": "حذف المستند",
+      "deleteConfirmDescription": "حذف \"{{name}}\"؟ سيؤدي هذا إلى إزالة المستند وكل مقطع مفهرس. لا يمكن التراجع عن هذا الإجراء.",
+      "deleteError": "تعذّر حذف المستند.",
+      "dropHintIdle": "أو أفلِت الملفات هنا",
+      "unsupportedExtension": "تم تخطي \"{{name}}\" — نوع الملف غير مدعوم.",
+      "status": {
+        "queued": "في قائمة الانتظار",
+        "uploading": "جارٍ الرفع",
+        "pending": "في انتظار العامل",
+        "parsing": "جارٍ التحليل",
+        "chunking": "جارٍ التقسيم",
+        "indexing": "جارٍ الفهرسة",
+        "ready": "جاهز",
+        "error": "خطأ",
+        "cancelled": "أُلغي"
+      },
+      "actions": {
+        "cancel": "إلغاء",
+        "dismiss": "تجاهل",
+        "remove": "إزالة",
+        "clearFinished": "مسح المكتمل"
+      },
+      "title": "المستندات",
+      "chunkCount": "{{count}} مقطع",
+      "chunkCount_zero": "{{count}} مقاطع",
+      "chunkCount_two": "{{count}} مقطعان",
+      "chunkCount_few": "{{count}} مقاطع",
+      "chunkCount_many": "{{count}} مقطعًا"
+    },
+    "test": {
+      "button": "اختبار",
+      "title": "اختبار الاسترجاع",
+      "description": "اختبر \"{{name}}\" باستعلام مخصص.",
+      "queryLabel": "استعلام",
+      "queryPlaceholder": "اكتب سؤالًا باللغة الطبيعية…",
+      "topKLabel": "أعلى K",
+      "searchButton": "بحث",
+      "score": "الدرجة",
+      "chunkPosition": "المقطع {{index}} من {{total}}",
+      "emptyTitle": "لا توجد نتائج مطابقة",
+      "emptyDescription": "لم يتجاوز أي مقطع العتبة في هذا الاستعلام."
+    },
+    "config": {
+      "title": "التكوين",
+      "embeddingModel": "نموذج التضمين",
+      "dimensions": "الأبعاد",
+      "credential": "بيانات الاعتماد",
+      "chunker": "المقسّم",
+      "counts": "المحتويات",
+      "countsValue": "{{documents}} مستندات · {{chunks}} مقاطع",
+      "status": "الفهرسة",
+      "statusValue": "{{ready}} جاهز · {{indexing}} قيد التقدم · {{failed}} فشل",
+      "createdAt": "أُنشئ"
+    },
+    "documentDetail": {
+      "description": "{{count}} مقطع مفهرس",
+      "chunksTab": "المقاطع",
+      "previewTab": "معاينة",
+      "chunksEmptyTitle": "لا توجد مقاطع",
+      "chunksEmptyDescription": "لا يحتوي هذا المستند على مقاطع مفهرسة بعد.",
+      "chunksUnsupportedTitle": "تصفح المقاطع غير متاح",
+      "chunksUnsupportedDescription": "مخزن المتجهات المُكوَّن لا يدعم سرد المقاطع.",
+      "previousPage": "السابق",
+      "nextPage": "التالي",
+      "pageIndicator": "الصفحة {{page}} من {{pageCount}}",
+      "previewUnavailableTitle": "لا تتوفر معاينة مضمّنة",
+      "previewUnavailableDescription": "لا يمكن معاينة هذا النوع من الملفات في المتصفح.",
+      "previewTooLargeTitle": "الملف كبير جدًا للمعاينة",
+      "previewTooLargeDescription": "يتجاوز هذا الملف حد المعاينة المضمّنة. نزّله لعرض الأصل.",
+      "downloadButton": "تنزيل الملف الأصلي"
+    }
+  },
+  "llm-select": {
+    "placeholder": "اختر نموذجًا",
+    "loading": "جارٍ التحميل…",
+    "empty": {
+      "title": "لا توجد نماذج متاحة",
+      "description": "أضف نموذجًا في الإعدادات للبدء."
+    },
+    "addCredential": "إضافة نموذج",
+    "clear": "مسح التحديد",
+    "noFallback": "لا يوجد بديل",
+    "pickForDetails": "اختر نموذجًا لعرض التفاصيل",
+    "vision": "الرؤية",
+    "contextBadge": "سياق {{size}}",
+    "thinking": "التفكير",
+    "contextWindow": "نافذة السياق",
+    "hintSmallContext": "نموذج بسياق صغير — لا يدعم 1M",
+    "level": {
+      "off": "إيقاف",
+      "low": "منخفض",
+      "high": "مرتفع",
+      "max": "أقصى"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "اختر نموذج تضمين",
+    "loading": "جارٍ التحميل…",
+    "empty": {
+      "title": "لا توجد نماذج تضمين متاحة",
+      "description": "أضف نموذجًا يدعم التضمين في الإعدادات للبدء."
+    },
+    "addCredential": "إضافة نموذج"
+  },
+  "chunker-select": {
+    "placeholder": "اختر مقسّمًا",
+    "loading": "جارٍ التحميل…",
+    "empty": "لا توجد مقسّمات متاحة"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "الرمز التقريبي",
+      "params": {
+        "chunk_size": {
+          "label": "حجم المقطع",
+          "description": "الحد الأقصى لعدد الرموز التقريبية لكل مقطع."
+        },
+        "overlap": {
+          "label": "التداخل",
+          "description": "عدد الرموز التقريبية المشتركة بين المقاطع المتتالية."
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "اختر بعدًا",
+    "pickModelFirst": "اختر نموذجًا أولًا"
+  },
+  "permission-mode": {
+    "placeholder": "اختر وضع الأذونات",
+    "trigger-tooltip": "وضع الأذونات",
+    "panel-title": "كيف يطلب الوكيل الموافقة؟",
+    "learn-more": "معرفة المزيد",
+    "default": "موافقة يدوية",
+    "default-desc": "أنت تؤكد العمليات المهمة — الخيار الأكثر أمانًا",
+    "accept_edits": "موافقة تلقائية على التعديلات",
+    "accept_edits-desc": "السماح تلقائيًا بقراءة/كتابة الملفات في مساحة العمل؛ وما عدا ذلك يظل يطلب موافقتك",
+    "explore": "للقراءة فقط",
+    "explore-desc": "القراءة والبحث فقط — دون كتابة أو تنفيذ أوامر",
+    "bypass": "وصول كامل",
+    "bypass-desc": "تشغيل كل شيء محليًا دون موافقة — للبيئات الموثوقة أو المعزولة فقط",
+    "dont_ask": "دون إشراف",
+    "dont_ask-desc": "يُرفض أي إجراء يتطلب طلب إذن — مناسب للمهام المجدولة"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "إعدادات MCP",
+    "keepAlive": "إبقاء الاتصال نشطًا",
+    "keepAliveDesc": "الحفاظ على الحالة عبر التفاعلات. فعّله لـ browser-use أو خدمات MCP الأخرى طويلة التشغيل.",
+    "parseError": "إعدادات JSON غير صالحة: {{message}}",
+    "missingMcpServers": "يجب أن يحتوي الإعداد على كائن \"mcpServers\".",
+    "emptyMcpServers": "لم يتم العثور على خوادم MCP في الإعداد."
+  },
+  "dialog-mcp-delete": {
+    "entity": "خادم MCP",
+    "skillEntity": "مهارة",
+    "skillDescription": "هل أنت متأكد من إزالة هذه المهارة من مساحة العمل؟"
+  },
+  "schedule": {
+    "subtitle": "تكوين المهام الآلية وإدارتها - يشغّل Tora سير العمل وفق جدول زمني",
+    "calendar": "التقويم",
+    "createSchedule": {
+      "description": "إعداد مهمة آلية متكررة أو لمرة واحدة لوكيل.",
+      "descriptionLabel": "الوصف",
+      "descriptionPlaceholder": "صِف ما ينبغي أن تفعله هذه الأتمتة...",
+      "namePlaceholder": "مثال: تقرير يومي",
+      "title": "إنشاء مهمة آلية"
+    },
+    "deleteSchedule": {
+      "entity": "مهمة آلية"
+    },
+    "endAt": "تاريخ الانتهاء",
+    "end_at": "ينتهي عند",
+    "executionHistory": "سجل التنفيذ",
+    "freqDaily": "يوميًا",
+    "freqMonthly": "شهريًا",
+    "freqOnce": "مرة واحدة",
+    "freqWeekly": "أسبوعيًا",
+    "frequency": "التكرار",
+    "friday": "الجمعة",
+    "list": "قائمة",
+    "monday": "الاثنين",
+    "more": "المزيد",
+    "nextMonth": "الشهر التالي",
+    "nextYear": "السنة التالية",
+    "noSchedules": "لا توجد مهام آلية",
+    "noSchedulesDescription": "أنشئ مهمة آلية لتشغيل سير العمل وفق جدول زمني.",
+    "pickDate": "اختر تاريخًا",
+    "permissionMode": "وضع الأذونات",
+    "timezone": "المنطقة الزمنية",
+    "triggerTime": "وقت التشغيل",
+    "createdAt": "تاريخ الإنشاء",
+    "dayOfMonthSuffix": "",
+    "stateful": "مع الحفاظ على الحالة",
+    "statefulDesc": "أعد استخدام جلسة واحدة في كل التشغيلات لتجميع السياق. عند التعطيل: ينشئ كل تشغيل جلسة جديدة.",
+    "previousMonth": "الشهر السابق",
+    "previousYear": "السنة السابقة",
+    "saturday": "السبت",
+    "sunday": "الأحد",
+    "thursday": "الخميس",
+    "today": "اليوم",
+    "tuesday": "الثلاثاء",
+    "wednesday": "الأربعاء"
+  },
+  "model-parameters": {
+    "title": "معلمات النموذج",
+    "description": "اضبط معلمات الاستدلال للنموذج المحدد.",
+    "empty": "لا توجد معلمات قابلة للضبط.",
+    "fallbackLabel": "النموذج الاحتياطي",
+    "fallbackLabelWithModel": "النموذج الاحتياطي ({{model}})",
+    "parametersLabel": "المعلمات",
+    "ttsLabel": "TTS",
+    "ttsEmpty": "لا توجد نماذج TTS متاحة.",
+    "ttsParameters": "المعلمات",
+    "ttsParametersDescription": "اضبط معلمات نموذج TTS المحدد.",
+    "noTts": "بدون TTS"
+  },
+  "setup": {
+    "title": "الاتصال بالخدمة",
+    "description": "أدخل عنوان URL للخادم واسم المستخدم للبدء.",
+    "serverUrl": "عنوان URL للخادم",
+    "serverUrlPlaceholder": "https://...",
+    "username": "اسم المستخدم",
+    "usernamePlaceholder": "اسم المستخدم الخاص بك",
+    "submit": "ابدأ الآن",
+    "checking": "جارٍ الاتصال...",
+    "errorUnreachable": "تعذّر الوصول إلى هذا الخادم. تحقق من العنوان، وتأكد من تشغيل الخدمة، ومن أنها تسمح بطلبات المصادر المتقاطعة.",
+    "errorTimeout": "قبِل الخادم الاتصال لكنه لم يستجب في الوقت المحدد. قد يكون محمّلًا بشكل زائد أو عالقًا في بدء التشغيل.",
+    "errorNotAgentScope": "تم الوصول إلى العنوان، لكنه ليس خدمة AgentScope — تحقق من URL، أو قم بترقية خادم أقدم من أن يعرض نقطة فحص الحالة.",
+    "errorUnauthorized": "رفض الخادم اسم المستخدم هذا. أدخل اسمًا صالحًا.",
+    "errorNotReady": "الخادم متاح لكنه غير جاهز. فشل تشغيل هذه الأنظمة الفرعية:",
+    "hint": "هذا تطبيق واجهة أمامية فقط، وجميع البيانات تُقدَّم من عنوان URL للخادم أعلاه. يُستخدم اسم المستخدم للمصادقة على جانب الخادم فقط."
+  },
+  "task-panel": {
+    "blockedBy": "محظور بواسطة"
+  },
+  "panel": {
+    "plan": {
+      "title": "الخطة",
+      "completed": "مكتمل: {{count}}",
+      "total": "الإجمالي: {{count}}",
+      "emptyTitle": "لا توجد مهام بعد",
+      "emptyDescription": "ستظهر هنا المهام التي يخطط لها الوكيل."
+    },
+    "mcp": {
+      "description": "خوادم MCP المجهزة في مساحة العمل.",
+      "searchPlaceholder": "ابحث عن MCP في مساحة العمل",
+      "add": "إضافة MCP",
+      "addDescription": "أعد استخدام واحد قمت بتثبيته مسبقًا، أو الصق إعدادًا.",
+      "fromConfig": "من التكوين",
+      "tools": "{{count}} أدوات",
+      "unhealthy": "تعذّر الوصول إلى خادم MCP هذا",
+      "healthy": "متصل",
+      "emptyTitle": "لا توجد خوادم MCP",
+      "emptyDescription": "أضف خادم MCP لتجهيز مساحة العمل بالأدوات.",
+      "fromInstalled": "خوادم MCP المثبَّتة",
+      "installedEmptyTitle": "لم يُثبَّت شيء بعد",
+      "installedEmptyDescription": "ثبّت واحدًا من MCP Hub، أو الصق تكوينًا."
+    },
+    "skill": {
+      "title": "المهارات",
+      "description": "المهارات المجهَّزة في مساحة العمل.",
+      "searchPlaceholder": "ابحث عن المهارات في مساحة العمل",
+      "add": "إضافة مهارة",
+      "emptyTitle": "لا توجد مهارات",
+      "emptyDescription": "أضف مهارة لتجهيز مساحة العمل.",
+      "addDescription": "اختر من مهاراتك المثبَّتة، أو ارفع مجلدًا محليًا.",
+      "fromInstalled": "من المثبَّتة",
+      "fromFolder": "رفع مجلد",
+      "installedEmptyTitle": "لا توجد مهارات مثبَّتة بعد",
+      "installedEmptyDescription": "ثبّت واحدة من مركز المهارات، ثم أضفها هنا.",
+      "pickFolderTitle": "اختر مجلد مهارة",
+      "pickFolderDescription": "يجب أن يحتوي المجلد على SKILL.md في جذره.",
+      "pickFolder": "اختيار مجلد",
+      "importLocal": "استيراد من مجلد محلي",
+      "pickAnother": "اختيار آخر",
+      "fileCount": "{{count}} ملفات"
+    },
+    "workspace": {
+      "checkpoint": "نقاط التحقق",
+      "diff": "التغييرات",
+      "browser": "المتصفح",
+      "terminal": "الطرفية",
+      "hooks": "الخطافات"
+    },
+    "knowledge": {
+      "title": "قواعد المعرفة",
+      "description": "قواعد المعرفة التي يمكن للوكيل الاسترجاع منها.",
+      "searchPlaceholder": "ابحث في قواعد المعرفة",
+      "emptyTitle": "لا توجد قواعد معرفة",
+      "emptyDescription": "أنشئ واحدة في صفحة قواعد المعرفة أولًا.",
+      "parametersTitle": "إعدادات الاسترجاع",
+      "parametersDescription": "إعدادات استرجاع قواعد المعرفة."
+    },
+    "permission": {
+      "title": "الأذونات",
+      "description": "الأذونات المطبَّقة في هذه الجلسة.",
+      "mode": "الوضع: {{mode}}",
+      "workingDirectories": "أدلة العمل",
+      "noWorkingDirectories": "لا توجد أدلة عمل.",
+      "allow": "السماح",
+      "deny": "الرفض",
+      "ask": "السؤال",
+      "anyInvocation": "أي استدعاء",
+      "rulesTitle": "القواعد (تُطبَّق على جميع الجلسات)",
+      "addButton": "إضافة",
+      "contentPlaceholder": "نمط للمطابقة؛ فارغ = أي استدعاء",
+      "deleteRule": "حذف هذه القاعدة",
+      "loadFailed": "تعذّر تحميل القواعد: {{detail}}",
+      "emptyTitle": "لا توجد قواعد مهيّأة",
+      "emptyDescription": "ستظهر قواعد السماح / الرفض / السؤال هنا عند إضافتها."
+    },
+    "search": {
+      "emptyTitle": "لا نتائج",
+      "emptyDescription": "لا شيء يطابق «{{query}}»."
+    },
+    "loading": "جارٍ التحميل…",
+    "team": {
+      "membersHeading": "الأعضاء",
+      "noMembers": "لا يوجد أعضاء بعد — اطلب من القائد إنشاء واحد باستخدام AgentCreate.",
+      "emptyTitle": "لا يوجد فريق",
+      "emptyDescription": "هذه الجلسة ليست جزءًا من فريق. يُنشئ الوكيل فريقًا باستخدام TeamCreate.",
+      "running": "قيد التشغيل",
+      "idle": "خامل",
+      "missingSession": "(لا جلسة)"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "مسح رمز QR",
+      "manualTab": "الإدخال يدويًا",
+      "scanHint": "امسح باستخدام تطبيق المنصة ووافق لإنشاء بيانات الاعتماد.",
+      "authorized": "تمت الموافقة. بيانات الاعتماد جاهزة.",
+      "failed": "تعذّر إكمال الربط.",
+      "unsafeUrl": "أعادت المنصة رابطًا لا يمكن عرضه بأمان.",
+      "retry": "إعادة المحاولة"
+    },
+    "title": "القنوات",
+    "subtitle": "اربط منصات خارجية مثل Feishu وDiscord ليعمل الوكلاء في المحادثات الجماعية",
+    "status": "الحالة",
+    "connected": "متصل",
+    "enable": "تمكين",
+    "disable": "تعطيل",
+    "deleteEntity": "قناة",
+    "routing": "التوجيه",
+    "routingDesc": "طابِق الرسائل الواردة بوكيل ونطاق جلسة. القاعدة الأخيرة تطابق كل ما تبقّى.",
+    "sectionActive": "متصل",
+    "sectionAdd": "إضافة قناة",
+    "rules": "{{count}} قواعد",
+    "empty": {
+      "title": "لا توجد قنوات",
+      "description": "أنشئ قناة لربط وكيلك بمنصات خارجية مثل Feishu وDingTalk وغيرها."
+    },
+    "create": {
+      "title": "إنشاء قناة",
+      "titleFor": "ربط {{name}}",
+      "description": "اربط وكيلًا بمنصة مراسلة خارجية.",
+      "channelType": "المنصة",
+      "nameLabel": "الاسم",
+      "namePlaceholder": "مثال: مكتب الدعم",
+      "nameDesc": "يميّز بين القنوات على المنصة نفسها",
+      "modelDesc": "النموذج الأولي لجلسة جديدة",
+      "permissionMode": "وضع الأذونات",
+      "permissionModeDesc": "وضع الأذونات الأولي لجلسة جديدة",
+      "showToolMessages": "إظهار رسائل الأدوات",
+      "showToolMessagesDesc": "عرض رسائل استدعاء/نتيجة الأدوات في القناة.",
+      "showThinking": "إظهار التفكير",
+      "showThinkingDesc": "عرض عملية استدلال النموذج في القناة."
+    },
+    "fields": {
+      "app_id": {
+        "title": "معرّف التطبيق",
+        "description": "معرّف تطبيق Feishu"
+      },
+      "app_secret": {
+        "title": "سر التطبيق",
+        "description": "سر تطبيق Feishu"
+      },
+      "bot_token": {
+        "title": "رمز الروبوت"
+      },
+      "application_id": {
+        "title": "معرّف التطبيق"
+      },
+      "only_at_reply": {
+        "title": "الرد فقط عند الإشارة",
+        "description": "في المحادثات الجماعية، لا ترد إلا عند الإشارة إلى الروبوت بـ @"
+      },
+      "show_tool_process": {
+        "title": "إظهار عملية الأدوات",
+        "description": "عرض استدعاءات الأدوات ونتائجها ضمن الرد"
+      },
+      "show_thinking": {
+        "title": "إظهار التفكير",
+        "description": "عرض استدلال النموذج ضمن الرد"
+      }
+    },
+    "edit": {
+      "title": "تعديل القناة",
+      "description": "حدّث إعدادات التوجيه والنموذج والرد. لا يمكن تغيير المنصة وبيانات الاعتماد."
+    },
+    "sessionScope": {
+      "per_chat": "لكل محادثة",
+      "per_chat_user": "لكل مستخدم محادثة"
+    },
+    "sessions": {
+      "title": "الجلسات",
+      "empty": "لا توجد جلسات بعد",
+      "openInChat": "فتح في المحادثة"
+    },
+    "detail": {
+      "config": "التكوين",
+      "configDesc": "التكوين الأولي المطبَّق على الجلسات الجديدة",
+      "configItem": "العنصر",
+      "configValue": "القيمة",
+      "condition": "الشرط",
+      "created": "أُنشئت",
+      "deleteChannel": "حذف القناة",
+      "routingDesc": "كيفية ربط الرسائل الواردة بوكيل ونطاق جلسة",
+      "sessionsDesc": "الجلسات التي أنشأتها هذه القناة",
+      "selectHint": "اختر قناة لعرض التفاصيل"
+    },
+    "state": {
+      "stopped": "متوقف",
+      "connecting": "جارٍ الاتصال",
+      "retrying": "إعادة الاتصال",
+      "connected": "متصل",
+      "failed": "فشل"
+    },
+    "binding": {
+      "rule": "قاعدة المطابقة",
+      "matchKey": "حقل المطابقة",
+      "matchValue": "قيمة المطابقة",
+      "matchValuePlaceholder": "مثال: chat_id",
+      "routeTo": "التوجيه إلى",
+      "scope": "نطاق الجلسة",
+      "fallback": "قاعدة احتياطية",
+      "fallbackDesc": "الرسائل غير المطابقة لأي قاعدة أعلاه تُوجَّه هنا",
+      "catchAll": "جميع الرسائل الأخرى",
+      "addRule": "إضافة قاعدة"
+    }
+  },
+  "mcp": {
+    "subtitle": "تصفّح خوادم MCP وثبّتها",
+    "hubsLabel": "المراكز",
+    "searchPlaceholder": "ابحث في هذا المركز",
+    "mineSearchPlaceholder": "ابحث في خوادم MCP لديك",
+    "noHubsTitle": "لا توجد مراكز متاحة",
+    "noHubsDescription": "اطلب من المسؤول إضافة واحد.",
+    "noCardsTitle": "لم يتم العثور على شيء",
+    "noCardsDescription": "جرّب كلمة مفتاحية مختلفة.",
+    "mineDescription": "خوادم MCP التي ثبّتها",
+    "mineEmptyTitle": "لا توجد خوادم MCP بعد",
+    "mineEmptyDescription": "ثبّت واحدًا من مركز على اليسار.",
+    "needsConfig": "يحتاج إلى تكوين",
+    "stateful": "ذو حالة",
+    "configLabel": "التكوين",
+    "install": "تثبيت",
+    "installed": "مثبَّت",
+    "installTitle": "تثبيت {{name}}",
+    "installDescription": "يضيفه إلى خوادم MCP لديك. اختر جلسة لاستخدامه فيها لاحقًا.",
+    "editTitle": "تعديل {{name}}",
+    "editDescription": "اترك الحقل السري فارغًا للإبقاء على القيمة المخزَّنة.",
+    "nameLabel": "الاسم",
+    "loadFailedTitle": "تعذّر الوصول إلى الخادم",
+    "loadFailedDescription": "تحقق من عنوان URL للخادم ومن أن الخدمة قيد التشغيل.",
+    "retry": "إعادة المحاولة"
+  },
+  "skill": {
+    "category": {
+      "testing": "الاختبار والتصحيح",
+      "security": "الأمان",
+      "devops": "النشر والعمليات",
+      "writing": "الكتابة",
+      "office-efficiency": "كفاءة العمل المكتبي",
+      "knowledge-management": "إدارة المعرفة",
+      "content-creation": "إنشاء المحتوى",
+      "ai-agent": "وكلاء الذكاء الاصطناعي",
+      "dev-programming": "التطوير",
+      "design-media": "التصميم والوسائط",
+      "data-analysis": "تحليل البيانات",
+      "life-service": "نمط الحياة",
+      "professional": "احترافي",
+      "design-creative": "التصميم والإبداع",
+      "coding-agents": "وكلاء البرمجة",
+      "agent-skills": "مهارات الوكلاء",
+      "development": "الهندسة",
+      "agent-frameworks": "أطر عمل الوكلاء",
+      "browser-automation": "أتمتة المتصفح",
+      "productivity": "الإنتاجية",
+      "rag-knowledge": "RAG والمعرفة",
+      "automation": "الأتمتة",
+      "document-processing": "معالجة المستندات",
+      "education": "التعليم",
+      "finance": "التمويل",
+      "legal-compliance": "القانون والامتثال",
+      "media-automation": "أتمتة الوسائط",
+      "Personal AI": "الذكاء الاصطناعي الشخصي",
+      "research": "البحث",
+      "web-automation": "أتمتة الويب"
+    },
+    "allCategories": "الكل",
+    "matchButton": "مطابقة مهمة",
+    "matchHint": "صِف المهمة في مربع البحث أولاً",
+    "matchRecommends": "مُوصى به لهذه المهمة",
+    "matchAlternatives": "بدائل",
+    "matchScore": "تطابق {{score}}",
+    "matchSearched": "تم البحث في {{count}} من المهارات",
+    "matchFailed": "تعذّر مطابقة مهارة",
+    "matchDismiss": "تجاهل",
+    "matchPolicy": "سياسة المصدر: {{policy}}",
+    "subtitle": "تصفّح المهارات وثبّتها",
+    "hubsLabel": "المراكز",
+    "searchPlaceholder": "ابحث في هذا المركز",
+    "mineSearchPlaceholder": "ابحث في مهاراتك",
+    "noHubsTitle": "لا توجد مراكز متاحة",
+    "noHubsDescription": "اطلب من المسؤول إضافة واحد.",
+    "noCardsTitle": "لم يُعثر على شيء",
+    "noCardsDescription": "جرّب كلمة مفتاحية مختلفة.",
+    "mineDescription": "المهارات التي ثبّتها",
+    "mineEmptyTitle": "لا مهارات بعد",
+    "mineEmptyDescription": "ثبّت واحدة من مركز على اليسار.",
+    "install": "تثبيت",
+    "installed": "مثبّت",
+    "versionLabel": "الإصدار",
+    "hubLabel": "المركز",
+    "updatedLabel": "آخر تحديث",
+    "updatedAgo": "آخر تحديث منذ {{ago}}",
+    "updatedRecently": "حُدِّث للتو",
+    "installsLabel": "التثبيتات",
+    "downloadsLabel": "التنزيلات",
+    "linkLabel": "الصفحة",
+    "viewOnHub": "عرض في المركز",
+    "noReadme": "هذه المهارة لا تتضمن محتوى SKILL.md.",
+    "loadFailedTitle": "تعذّر الوصول إلى الخادم",
+    "loadFailedDescription": "تحقق من عنوان URL للخادم ومن أن الخدمة قيد التشغيل.",
+    "retry": "إعادة المحاولة"
+  },
+  "agent-menu": {
+    "settings": "الإعدادات",
+    "delete": "حذف الوكيل"
+  },
+  "workdir": {
+    "title": "دليل العمل",
+    "description": "اختر دليل عمل الوكيل.",
+    "root": "جذر مساحة العمل",
+    "parent": "مستوى واحد للأعلى",
+    "errorTitle": "تعذّر سرد هذا المجلد",
+    "pathPlaceholder": "اكتب مسارًا أو الصقه",
+    "empty": "هذا المجلد فارغ",
+    "pressEnter": "اضغط Enter للتحقق من هذا المسار أولاً",
+    "pickerPlaceholder": "اختر مجلدًا لاستخدام الأدوات",
+    "recent": "الأخيرة",
+    "recentEmpty": "لا توجد مجلدات مستخدمة حديثًا",
+    "browse": "اختر مجلدًا",
+    "gitTooltip": "{{staged}} مجهّز · {{unstaged}} معدّل · {{untracked}} غير متتبع\nلا تشمل أعداد الأسطر الملفات غير المتتبعة"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "backToApp": "العودة إلى Tora",
+    "close": "إغلاق",
+    "loadFailed": "فشل تحميل الإعدادات (قد تكون الواجهة الخلفية غير متصلة أو تستخدم منفذًا خاطئًا): {{error}}",
+    "loadingRuntime": "جارٍ تحميل إعدادات التشغيل…",
+    "sections": {
+      "general": "عام",
+      "theme": "المظهر",
+      "agent": "الوكيل",
+      "model": "النماذج",
+      "memory": "الذاكرة",
+      "data": "البيانات",
+      "about": "حول",
+      "usage": "الاستخدام",
+      "account": "الحساب",
+      "developer": "المطور والتصحيح"
+    },
+    "memory": {
+      "title": "الذاكرة",
+      "desc": "ذاكرة طويلة المدى عبر الجلسات: تُحقن الإدخالات ذات الصلة عند بدء الجلسة، مع تقطير اختياري بعد الجلسة",
+      "inject": "حقن الجلسة",
+      "injectDesc": "حقن الذكريات ذات الصلة في موجه النظام عند بدء الجلسة للمشروع الحالي",
+      "distill": "التقطير التلقائي",
+      "distillDesc": "بعد اكتمال الجلسة، يراجع النموذج المحادثة ويستخلص من 0 إلى 3 إدخالات تستحق التذكر",
+      "searchPh": "ابحث في الذكريات (اضغط Enter للبحث)",
+      "contentPh": "محتوى الذاكرة، مثال: تُشغَّل الاختبارات في هذا المشروع دائمًا باستخدام node --test",
+      "projectKeyPh": "المسار المطلق للمشروع (إذا كان فارغًا يُستخدم النطاق العام)",
+      "scopeGlobal": "عام",
+      "scopeProject": "المشروع",
+      "add": "إضافة ذاكرة",
+      "save": "حفظ",
+      "cancel": "إلغاء",
+      "edit": "تعديل",
+      "delete": "حذف",
+      "confirmDelete": "تأكيد الحذف؟",
+      "pin": "تثبيت",
+      "unpin": "إلغاء التثبيت",
+      "dedupedToast": "توجد ذاكرة مشابهة بالفعل؛ لم تُحفظ مرة أخرى",
+      "projectGroup": "ذاكرات المشروع",
+      "globalGroup": "الذاكرات العامة",
+      "empty": "لا توجد ذاكرات بعد. اطلب من المساعد أن «يتذكر…» في المحادثة، أو أضف واحدة هنا.",
+      "emptySearch": "لا توجد ذاكرات مطابقة",
+      "kinds": {
+        "preference": "تفضيل",
+        "fact": "حقيقة",
+        "pitfall": "مأزق",
+        "convention": "اصطلاح"
+      },
+      "sources": {
+        "manual": "يدوي",
+        "tool": "أداة",
+        "distill": "مستخلص"
+      }
+    },
+    "theme": {
+      "title": "السمة",
+      "subtitle": "اختر المظهر والحركة وخلفية مساحة العمل",
+      "modeTitle": "المظهر",
+      "modeDesc": "فاتح أو داكن أو اتباع النظام",
+      "light": "فاتح",
+      "dark": "داكن",
+      "system": "النظام",
+      "motionTitle": "حركة التفاعل",
+      "motionDesc": "حدّد وتيرة استجابة النقر وتغيّر الصفحات. يحظى تفضيل «تقليل الحركة» في نظامك بالأولوية دائمًا.",
+      "motionModeTitle": "وتيرة الحركة",
+      "motion": {
+        "system": "النظام",
+        "off": "إيقاف",
+        "gentle": "لطيفة",
+        "standard": "قياسية",
+        "fast": "سريعة"
+      },
+      "motionReduced": "خيار «تقليل الحركة» مُفعَّل في نظامك، لذا الرسوم المتحركة معطّلة حاليًا.",
+      "motionClickTitle": "استجابة النقر",
+      "motionClickDesc": "استجابة ضغط موجزة للأزرار والروابط وعناصر القوائم",
+      "motionPageTitle": "انتقالات الصفحات",
+      "motionPageDesc": "تغيّرات سلسة بين صفحات مساحة العمل",
+      "backgroundTitle": "الخلفية",
+      "backgroundDesc": "مشتركة بين مساحة العمل والإعدادات وشاشات تسجيل الدخول",
+      "lavender": "خزامى ناعم",
+      "mist": "ضباب أزرق",
+      "stone": "حجر دافئ",
+      "midnight": "منتصف الليل",
+      "none": "بلا",
+      "custom": "مخصص",
+      "import": "استيراد صورة",
+      "replace": "استبدال الصورة",
+      "remove": "إزالة الخلفية المخصصة",
+      "localOnly": "تبقى الخلفيات المخصصة على هذا الجهاز ولا تُرفع أبدًا. PNG وJPEG وWebP بحجم يصل إلى 16 ميغابايت.",
+      "invalidType": "اختر صورة PNG أو JPEG أو WebP",
+      "tooLarge": "يجب أن يكون حجم الصور أقل من 16 ميغابايت",
+      "processFailed": "تعذّرت قراءة هذه الصورة. جرّب ملفًا آخر.",
+      "storageFailed": "تعذّر حفظ الخلفية. قد تكون مساحة التخزين المحلية ممتلئة."
+    },
+    "general": {
+      "title": "عام",
+      "common": "الشائع",
+      "language": {
+        "title": "اللغة",
+        "desc": "لغة الواجهة",
+        "zh": "الصينية المبسطة",
+        "zhHant": "الصينية التقليدية",
+        "en": "الإنجليزية",
+        "ja": "اليابانية",
+        "ko": "الكورية",
+        "fr": "الفرنسية",
+        "de": "الألمانية",
+        "it": "الإيطالية",
+        "ar": "العربية",
+        "es": "الإسبانية",
+        "pt": "البرتغالية",
+        "ru": "الروسية",
+        "hi": "الهندية",
+        "lzh": "الصينية الكلاسيكية"
+      },
+      "searchEngine": {
+        "title": "محرك البحث",
+        "desc": "يُستخدم عندما لا يكون المُدخل في شريط العنوان عنوان URL",
+        "engines": {
+          "360": "360 Search",
+          "baidu": "Baidu",
+          "google": "Google",
+          "sogou": "Sogou",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "Bing"
+        }
+      },
+      "systemNotifications": {
+        "title": "إشعارات رسائل النظام",
+        "desc": "استخدم إشعارات النظام للرسائل الجديدة. يبقى عنوان الرسالة ونصها مخفيين؛ اسمح لتطبيق Tora في إعدادات إشعارات النظام.",
+        "test": "إشعار تجريبي",
+        "testing": "جارٍ الاختبار…",
+        "shown": "قبل النظام الإشعار. إذا لم يظهر أي شريط، تحقق من إعدادات الإشعارات أو وضع التركيز.",
+        "failed": "رفض النظام الإشعار. على macOS، اختبر في إصدار موقّع وتحقق من إذن الإشعارات.",
+        "unsupported": "الإشعارات الأصلية غير مدعومة على هذا النظام.",
+        "unconfirmed": "تم طلب إشعار، ولكن لم يتم تأكيد العرض. تحقق من أذونات الإشعارات."
+      },
+      "sound": {
+        "title": "صوت الإشعار",
+        "desc": "تنبيهات صوتية لأحداث المهام",
+        "replyDoneTitle": "انتهى الرد",
+        "replyDoneDesc": "التشغيل عند انتهاء الوكيل من الرد",
+        "needConfirmTitle": "يحتاج تأكيدًا",
+        "needConfirmDesc": "التشغيل عندما يحتاجك تأكيد أو سؤال",
+        "kindTitle": "الصوت",
+        "kindDesc": "اختر صوت التنبيه",
+        "kindDing": "رنين",
+        "kindCrisp": "واضح",
+        "kindSoft": "ناعم",
+        "kindCustom": "مخصص",
+        "preview": "معاينة",
+        "customTitle": "صوت مخصص",
+        "customDesc": "استخدم ملف صوتي محلي (mp3 / wav / ogg، إلخ.)",
+        "customChoose": "اختر ملفًا",
+        "customClear": "مسح",
+        "volumeTitle": "مستوى الصوت",
+        "volumeDesc": "مستوى تشغيل صوت التنبيه",
+        "tooLarge": "الملف كبير جدًا (الحد الأقصى 10 ميجابايت)",
+        "saveFailed": "فشل الحفظ، يرجى إعادة المحاولة"
+      },
+      "behavior": "السلوك"
+    },
+    "developer": {
+      "title": "المطور والتصحيح",
+      "desc": "سلوك وقت تشغيل الوكيل، والخطافات، وفهرس الكود، وخوادم اللغات. تنطبق التغييرات على التشغيل التالي.",
+      "behavior": "السلوك"
+    },
+    "behavior": {
+      "presets": {
+        "title": "ملف تعريف التنفيذ",
+        "desc": "طبّق ملف تعريف وقت تشغيل مُجرّب، ثم اضبط الحدود الفردية أدناه إذا لزم الأمر.",
+        "fast": {
+          "title": "سريع",
+          "desc": "مهام قصيرة بتكلفة أقل"
+        },
+        "balanced": {
+          "title": "متوازن",
+          "desc": "موصى به للعمل اليومي"
+        },
+        "deep": {
+          "title": "شامل",
+          "desc": "مهام معقدة مع مجال أكبر للتكرار"
+        }
+      },
+      "context": {
+        "title": "حد رموز السياق",
+        "desc": "عندما تتجاوز المحادثة هذه القيمة، يتم ضغط السجل السابق تلقائيًا (الافتراضي 24000). القيمة الأقل توفر الرموز ولكنها تفقد تفاصيل السجل.",
+        "suffix": "رموز"
+      },
+      "toolOutput": {
+        "title": "حد مخرجات الأداة الواحدة",
+        "desc": "الحد الأقصى للأحرف التي ترجعها استدعاء أداة واحد (الافتراضي 6000)؛ يتم اقتطاع المخرجات الأطول.",
+        "suffix": "أحرف"
+      },
+      "maxTurns": {
+        "title": "الحد الأقصى لتكرارات الوكيل",
+        "desc": "الحد الأقصى لدورات حلقة الوكيل لكل مهمة (الافتراضي 40)؛ يتم إيقاف التشغيلات المتجاوزة قسريًا.",
+        "suffix": "دورات"
+      },
+      "shellSandbox": {
+        "title": "بيئة عزل عمليات الأوامر",
+        "desc": "يحدد أين يمكن لأوامر Bash و Git الخاصة بالوكيل الكتابة. يؤدي تعطيله إلى منح الأوامر حق الوصول إلى ملفات حساب المستخدم الخاص بك."
+      },
+      "shellNetwork": {
+        "title": "السماح للأوامر المعزولة بالوصول إلى الشبكة",
+        "desc": "معطل افتراضيًا. عند التمكين، يمكن للأوامر الوصول إلى الإنترنت والخدمات المحلية؛ مكّنه فقط عند الحاجة."
+      }
+    },
+    "data": {
+      "title": "البيانات",
+      "subtitle": "مسح بيانات الجلسة المحلية وعلى الخادم",
+      "wipe": {
+        "title": "مسح جميع الجلسات",
+        "desc": "يحذف جميع سجلات الجلسات والوكلاء وبيانات الاعتماد. لا يمكن التراجع عن هذا.",
+        "button": "مسح",
+        "confirm": "تأكيد المسح",
+        "cancel": "إلغاء",
+        "processing": "جارٍ المعالجة…",
+        "error": "فشل المسح: {{error}}"
+      }
+    },
+    "about": {
+      "title": "حول",
+      "tora": "مساحة عمل الوكيل المحلي · الإصدار {{version}}",
+      "runtime": "سطح مكتب Electron · خدمة ASAPI المحلية · أحضر نموذجك الخاص",
+      "runtimeTitle": "وقت التشغيل",
+      "update": {
+        "title": "تحديث البرنامج",
+        "desc": "تحقق من إصدار Tora جديد. يتم التنزيل على macOS و Windows في الخلفية، ثم يُطلب منك إعادة التشغيل والتثبيت.",
+        "check": "التحقق من التحديثات",
+        "checking": "جارٍ التحقق…",
+        "upToDate": "أنت تستخدم أحدث إصدار.",
+        "available": "Tora {{version}} متاح. اتبع مطالبة التحديث للمتابعة.",
+        "downloading": "Tora {{version}} متاح ويتم تنزيله في الخلفية.",
+        "ready": "تم تنزيل Tora {{version}} وهو جاهز للتثبيت.",
+        "development": "التحديثات غير متاحة في إصدارات التطوير.",
+        "unavailable": "التحديثات التلقائية غير متاحة على هذا النظام الأساسي.",
+        "desktopOnly": "التحقق من التحديثات من تطبيق Tora لسطح المكتب.",
+        "failed": "تعذر التحقق من التحديثات: {{error}}"
+      }
+    },
+    "errors": {
+      "backend": "أعاد الخادم الخلفي {{status}}",
+      "runtimeSave": "فشل الحفظ ({{status}}): {{text}}",
+      "saveFailed": "فشل الحفظ: {{error}}",
+      "wipeFailed": "فشل المسح: {{error}}"
+    },
+    "advanced": {
+      "title": "متقدم",
+      "subtitle": "الخطافات، وفهرس الكود، وخوادم اللغات. تنطبق التغييرات على التشغيل التالي.",
+      "hooks": {
+        "title": "خطافات دورة الحياة",
+        "desc": "شغّل أوامرك الخاصة عند UserPromptSubmit / PreToolUse / PostToolUse / Stop. إيقاف التشغيل يعني عدم تشغيل أي خطاف على الإطلاق."
+      },
+      "changes": {
+        "title": "سياق مدرك للتغييرات",
+        "desc": "أدخل \"الملفات المعدلة حديثًا + ملفات git غير النظيفة\" في موجه النظام حتى يعرف النموذج أن القرص ربما تغير."
+      },
+      "lsp": {
+        "title": "خوادم اللغة (LSP)",
+        "desc": "عند التكوين، يذهب Lsp إلى خادم حقيقي للحصول على التعريف / المراجع / التشخيصات ويحصل على معلومات النوع؛ وإلا فإنه يستخدم فهرس الرموز المحلي.",
+        "none": "لم يتم اكتشاف خادم لغة",
+        "enable": "تفعيل",
+        "enabled": "مُفعَّل",
+        "disable": "تعطيل",
+        "probeFailed": "فشل الفحص: {{error}}"
+      },
+      "index": {
+        "title": "فهرس الكود",
+        "desc": "فهرس الرموز والفهرس الدلالي المعكوس (يستخدمه البحث). يُحدَّث تزايديًا حسب وقت التعديل؛ نادرًا ما تكون هناك حاجة لإعادة البناء يدويًا.",
+        "rebuild": "إعادة بناء الفهرس",
+        "rebuilding": "جارٍ إعادة البناء…",
+        "done": "تمت إعادة بناء الفهرس: {{files}} ملفات / {{symbols}} رموز / {{tokens}} مصطلحات",
+        "noWorkspace": "اختر دليل عمل في جلسة أولاً",
+        "stats": "الآن: {{files}} ملفات / {{symbols}} رموز"
+      },
+      "mcp": {
+        "title": "خوادم MCP",
+        "desc": "خوادم بروتوكول سياق النموذج (MCP) عبر stdio. تنضم أدواتها إلى الجلسات باسم mcp__server__tool. تُطبَّق التغييرات المحفوظة في التشغيل التالي.",
+        "add": "إضافة",
+        "namePlaceholder": "الاسم (أحرف، أرقام، - _)",
+        "commandPlaceholder": "الأمر، مثل npx",
+        "argsPlaceholder": "الوسيطات (مفصولة بمسافات، اختيارية)",
+        "probe": "فحص",
+        "probing": "جارٍ الفحص…",
+        "toolsCount": "{{count}} أدوات",
+        "noServers": "لا توجد خوادم MCP مُهيأة",
+        "delete": "حذف هذا الخادم",
+        "probeFailed": "فشل الفحص: {{error}}"
+      },
+      "trust": {
+        "title": "الثقة بخطافات المشروع",
+        "desc": "ملف .tora/hooks.json الخاص بمساحة العمل يأتي من محتوى المستودع. الثقة به تتيح لهذا المستودع تشغيل الأوامر — اقرأه أولاً.",
+        "trusted": "خطافات المشروع موثوقة لهذا الدليل",
+        "trust": "الثقة بالدليل الحالي",
+        "revoke": "إلغاء الثقة",
+        "none": "لا يوجد دليل عمل بعد"
+      },
+      "saveFailed": "فشل الحفظ: {{error}}"
+    },
+    "usage": {
+      "title": "إحصاءات الاستخدام",
+      "desc": "مجمّعة من الجلسات والتشغيلات المحلية (الرموز، مدة الدردشة، السلاسل، استخدام الأدوات)",
+      "cards": {
+        "totalTokens": "إجمالي الرموز",
+        "peakTokens": "ذروة الرموز",
+        "longestChat": "أطول دردشة",
+        "currentStreak": "السلسلة الحالية",
+        "longestStreak": "أطول سلسلة"
+      },
+      "activity": {
+        "title": "نشاط الرموز",
+        "daily": "يومي",
+        "weekly": "أسبوعي",
+        "cumulative": "تراكمي",
+        "tipDaily": "استُخدم {{tokens}} رمزًا",
+        "tipWeekly": "إجمالي الأسبوع: {{tokens}} رمزًا",
+        "tipCumulative": "{{tokens}} رمزًا في الإجمالي"
+      },
+      "insights": {
+        "title": "رؤى",
+        "chats": "إجمالي الدردشات",
+        "runs": "إجمالي التشغيلات",
+        "activeDays": "الأيام النشطة",
+        "toolRuns": "تشغيلات الأدوات",
+        "topModel": "أفضل نموذج"
+      },
+      "topTools": {
+        "title": "الأدوات الأكثر استخدامًا",
+        "empty": "لا يوجد استخدام للأدوات بعد",
+        "runs": "{{count}} تشغيلات"
+      },
+      "loading": "جارٍ التحميل…",
+      "loadFailed": "فشل تحميل إحصاءات الاستخدام: {{error}}",
+      "days": "{{count}} أيام",
+      "refresh": "تحديث"
+    },
+    "account": {
+      "title": "الحساب",
+      "homeTitle": "تسجيل الدخول إلى Tora",
+      "homeDesc": "أدخل اسم المستخدم أو البريد الإلكتروني — سنوجّهك إلى تسجيل الدخول أو إنشاء حساب",
+      "continue": "تسجيل الدخول / إنشاء حساب",
+      "nextStep": "متابعة",
+      "otherWays": "خيارات تسجيل الدخول الأخرى",
+      "register": "إنشاء حساب",
+      "emailTitle": "تسجيل الدخول أو إنشاء حساب",
+      "registerTitle": "إنشاء حساب",
+      "emailDesc": "احصل على ردود أذكى وإمكانات سحابية.",
+      "emailLabel": "البريد الإلكتروني",
+      "emailPlaceholder": "البريد الإلكتروني",
+      "passwordTitle": "أدخل كلمة المرور",
+      "createPasswordTitle": "إنشاء كلمة مرور",
+      "passwordLabel": "كلمة المرور (8 أحرف على الأقل)",
+      "confirmLabel": "تأكيد كلمة المرور",
+      "login": "تسجيل الدخول",
+      "createAccount": "إنشاء حساب",
+      "or": "أو",
+      "terms": "بالمتابعة، فإنك توافق على شروط استخدام Tora وسياسة الخصوصية.",
+      "back": "رجوع",
+      "logout": "تسجيل الخروج",
+      "since": "عضو منذ {{date}}",
+      "errors": {
+        "confirmMismatch": "كلمتا المرور غير متطابقتين",
+        "shortPassword": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+        "alreadyRegistered": "هذا البريد الإلكتروني مسجل بالفعل — يرجى تسجيل الدخول",
+        "invalidEmail": "عنوان بريد إلكتروني غير صالح",
+        "longPassword": "كلمة المرور طويلة جدًا",
+        "wrongCredentials": "حساب أو كلمة مرور غير صحيحة",
+        "wrongPassword": "كلمة المرور الحالية غير صحيحة",
+        "emailTaken": "هذا البريد الإلكتروني قيد الاستخدام بالفعل",
+        "avatarTooLarge": "الصورة الرمزية كبيرة جدًا، يرجى اختيار صورة أصغر",
+        "avatarInvalid": "تنسيق الصورة الرمزية غير مدعوم",
+        "invalidUsername": "يجب أن يتكون اسم المستخدم من 2-32 حرفًا أو رقمًا أو شرطة سفلية أو شرطة أو أحرف CJK",
+        "usernameTaken": "اسم المستخدم هذا مستخدم بالفعل",
+        "codeTooFrequent": "طلبات كثيرة جدًا، يرجى المحاولة لاحقًا",
+        "codeSendFailed": "فشل إرسال الرمز، يرجى المحاولة لاحقًا",
+        "codeInvalid": "رمز التحقق غير صالح أو منتهي الصلاحية",
+        "turnstileFailed": "فشل التحقق البشري، يرجى المحاولة مرة أخرى"
+      },
+      "networkWarning": "تعذر الوصول إلى خدمة المصادقة. تحقق من شبكتك وحاول مرة أخرى",
+      "networkRetryHint": "تم الاحتفاظ ببيانات تسجيل الدخول. أعد التحقق بعد استعادة الاتصال.",
+      "manager": {
+        "description": "إدارة ملفك الشخصي وأمان حسابك.",
+        "profileTitle": "الملف الشخصي",
+        "securityTitle": "أمان الحساب",
+        "registeredAt": "تاريخ التسجيل",
+        "passwordHint": "تحديث كلمة المرور المستخدمة لتسجيل الدخول إلى Tora",
+        "emailPasswordHint": "أدخل كلمة المرور الحالية لتأكيد هويتك",
+        "confirmNewPassword": "تأكيد كلمة المرور الجديدة",
+        "savePassword": "حفظ كلمة المرور",
+        "saveEmail": "حفظ البريد الإلكتروني",
+        "logoutTitle": "تسجيل الخروج من هذا الحساب",
+        "logoutHint": "ستحتاج إلى تسجيل الدخول مرة أخرى في المرة القادمة.",
+        "logoutConfirmTitle": "تسجيل الخروج؟",
+        "logoutConfirmDescription": "ستحتاج إلى تسجيل الدخول مرة أخرى لمتابعة استخدام Tora.",
+        "changeAvatar": "تغيير الصورة الرمزية",
+        "avatarHint": "انقر على الصورة الرمزية لتغييرها (PNG / JPG / WebP، يتم قصها وضغطها تلقائيًا)",
+        "avatarSaved": "تم تحديث الصورة الرمزية",
+        "changePassword": "تغيير كلمة المرور",
+        "changeEmail": "تغيير البريد الإلكتروني",
+        "currentEmail": "البريد الإلكتروني الحالي: {{email}}",
+        "newEmail": "عنوان البريد الإلكتروني الجديد",
+        "currentPassword": "كلمة المرور الحالية",
+        "newPassword": "كلمة المرور الجديدة (8 أحرف على الأقل)",
+        "save": "حفظ",
+        "passwordSaved": "تم تحديث كلمة المرور",
+        "emailSaved": "تم تحديث البريد الإلكتروني"
+      },
+      "accountLabel": "اسم المستخدم أو البريد الإلكتروني",
+      "accountPlaceholder": "اسم المستخدم أو البريد الإلكتروني",
+      "usernameLabel": "اسم المستخدم (2-32 حرفًا أو رقمًا أو أحرف CJK)",
+      "codeLabel": "رمز التحقق من البريد الإلكتروني",
+      "captchaTitle": "التحقق الأمني",
+      "captchaLoginDesc": "أكمل التحقق البشري لتسجيل الدخول",
+      "captchaRegisterDesc": "أكمل التحقق البشري لإنشاء حسابك",
+      "showPassword": "إظهار كلمة المرور",
+      "hidePassword": "إخفاء كلمة المرور",
+      "sendCode": "إرسال الرمز",
+      "codeCooldown": "إعادة الإرسال خلال {{s}} ثانية"
+    }
+  },
+  "agentSection": {
+    "title": "الوكيل",
+    "desc": "قم بتكوين اسم الوكيل الافتراضي ومحث النظام. ترك محث النظام فارغًا يستخدم محث Corey المدمج.",
+    "select": "اختر الوكيل",
+    "name": "الاسم",
+    "namePlaceholder": "اسم الوكيل",
+    "systemPrompt": "محث النظام",
+    "systemPromptPlaceholder": "اتركه فارغًا لاستخدام محث نظام Corey المدمج",
+    "save": "حفظ",
+    "saved": "تم الحفظ",
+    "saveFailed": "فشل الحفظ: {{error}}"
+  },
+  "modelSection": {
+    "title": "النماذج",
+    "subtitle": "إدارة النماذج",
+    "desc": "قم بتكوين مفاتيح API لإضافة المزيد من النماذج المتاحة. يصبح أول نموذج ممكّن هو نموذج المحادثة الافتراضي.",
+    "addModel": "إضافة نموذج",
+    "empty": "لا توجد نماذج بعد — انقر على \"إضافة نموذج\" لتوصيل أول نموذج لك",
+    "loading": "جارٍ التحميل…",
+    "tableHeaders": {
+      "model": "النموذج",
+      "provider": "المزود",
+      "actions": "الإجراءات"
+    },
+    "aria": {
+      "edit": "تعديل",
+      "delete": "حذف",
+      "close": "إغلاق",
+      "back": "رجوع"
+    },
+    "errors": {
+      "noModels": "لم يُرجع المزود أي نماذج",
+      "submitFailed": "فشل الإرسال: {{error}}",
+      "backend": "أعاد الخادم {{status}}",
+      "loginRequired": "سجّل الدخول ضمن \"الحساب\" أولاً — تتم مزامنة النماذج مع حسابك في السحابة"
+    },
+    "form": {
+      "titleEdit": "تعديل النموذج",
+      "titleAdd": "إضافة عبر المزود",
+      "provider": "المزود",
+      "apiKey": "مفتاح API",
+      "apiKeyPlaceholder": "أدخل مفتاح API",
+      "apiKeyKeepEmpty": "اتركه فارغًا للاحتفاظ بالمفتاح الحالي",
+      "getApiKey": "الحصول على مفتاح API",
+      "model": "النموذج",
+      "modelPlaceholder": "اختر النموذج",
+      "modelInputPlaceholder": "اختر أو أدخل معرف النموذج (مثل glm-4.6)",
+      "fetchingModels": "جارٍ جلب النماذج المتاحة…",
+      "fetchHint": "يتم تحميل النماذج تلقائيًا بعد إدخال مفتاح API؛ يمكنك أيضًا كتابة معرف النموذج مباشرة",
+      "advanced": "متقدم",
+      "vision": {
+        "title": "إدخال الرؤية",
+        "auto": "تلقائي",
+        "on": "تشغيل",
+        "off": "إيقاف",
+        "hint": "يكتشف تلقائيًا حسب اسم النموذج؛ نماذج الرؤية مثل deepseek-flash و gpt-4o و qwen-vl تقبل الصور"
+      },
+      "baseUrl": "نقطة النهاية (عنوان URL الأساسي)",
+      "saveHint": "يتم التحقق من الاتصال عبر نقطة نهاية قائمة النماذج عند الحفظ؛ يتم تخزين المفتاح محليًا فقط",
+      "reset": "إعادة تعيين",
+      "saveEdit": "حفظ التغييرات",
+      "saveAdd": "إضافة نموذج",
+      "selectedCount": "تم تحديد {{count}}",
+      "selectAll": "تحديد الكل",
+      "deselectAll": "مسح",
+      "alreadyAdded": "أضيف",
+      "apiKeyReused": "اتركه فارغًا لإعادة استخدام المفتاح الموجود",
+      "keyReusedHint": "هذا المزود لديه بالفعل مفتاح API مُكوَّن — اتركه فارغًا لإعادة الاستخدام، ما عليك سوى اختيار النماذج والحفظ."
+    },
+    "providers": {
+      "custom": "نموذج مخصص",
+      "volcengine": "Volcengine",
+      "dashscope": "Alibaba Cloud",
+      "siliconflow": "SiliconFlow",
+      "stepfun": "StepFun الصين",
+      "stepfunGlobal": "StepFun العالمية",
+      "hunyuan": "Tencent Cloud",
+      "ollama": "Ollama (محلي)"
+    }
+  }
+}

@@ -30,6 +30,10 @@ export const DEFAULT_CONFIG = {
   defaultScopeFullDisk: false,
   // bash 是否使用长驻 shell（cd/export/source 会保留）。默认开；个别环境下可关。
   persistentShell: true,
+  // 默认用系统沙箱限制 Bash 写入工作目录及 allowedRoots；bypass 明确跳过。
+  shellSandbox: true,
+  // Bash 沙箱默认断网；联网安装等命令需用户显式开启或使用 bypass。
+  shellNetworkAccess: false,
   // ---- 项目上下文注入 ----
   injectProjectContext: true,  // 自动注入 TORA.md / AGENTS.md + git 状态
   instructionMaxChars: 6000,   // 单个约定文件注入上限

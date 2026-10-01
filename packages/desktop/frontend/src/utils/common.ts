@@ -1,7 +1,10 @@
 import type { CredentialView } from '@/api';
 
 /** Display label for a credential: its user-facing name, or a short id prefix. */
-export function credentialLabel(credential: CredentialView): string {
+export function credentialLabel(credential: CredentialView, builtInModelsLabel?: string): string {
+	if (credential.id === 'cocode-models' && credential.data.source === 'models-config' && builtInModelsLabel) {
+		return builtInModelsLabel;
+	}
 	return (credential.data.name as string) || credential.id.slice(0, 8);
 }
 

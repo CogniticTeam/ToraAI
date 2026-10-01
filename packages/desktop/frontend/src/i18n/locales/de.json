@@ -1,0 +1,1797 @@
+{
+  "languageDialog": {
+    "subtitle": "Sprache auswählen",
+    "search": "Sprachen suchen",
+    "noResults": "Keine passenden Sprachen",
+    "systemSuggestion": "Deine Systemsprache ist {{language}}. Möchtest du wechseln?",
+    "switch": "Zu {{language}} wechseln",
+    "later": "Nicht jetzt",
+    "close": "Sprachauswahl schließen",
+    "switchError": "Sprachwechsel nicht möglich"
+  },
+  "usageMilestone": {
+    "title": "Token-Meilenstein erreicht",
+    "subtitle": "Deine kumulierte Token-Nutzung in Tora hat einen neuen Meilenstein erreicht.",
+    "total": "{{count}} Tokens insgesamt verwendet",
+    "more": "Noch {{count}} Meilensteine anzuzeigen",
+    "continue": "Mit Tora fortfahren",
+    "retry": "Dieser Meilenstein konnte nicht gespeichert werden. Bitte versuche es erneut.",
+    "levels": {
+      "100k": "100K",
+      "1m": "1M",
+      "10m": "10M",
+      "100m": "100M",
+      "500m": "500M",
+      "1b": "1B",
+      "2b": "2B",
+      "5b": "5B",
+      "10b": "10B"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "Externen Link öffnen?",
+    "externalLinkWarning": "Du bist dabei, eine externe Website zu besuchen.",
+    "copyLink": "Link kopieren",
+    "copied": "Kopiert",
+    "openLink": "Link öffnen",
+    "close": "Schließen"
+  },
+  "inbox": {
+    "translateToLanguage": "Übersetzen in {{language}}",
+    "detail": "Nachrichtendetails",
+    "translateToChinese": "Ins Chinesische übersetzen",
+    "translateToEnglish": "Ins Englische übersetzen",
+    "translating": "Wird übersetzt…",
+    "showOriginal": "Original anzeigen",
+    "showTranslation": "Übersetzung anzeigen",
+    "noTranslationNeeded": "Keine Übersetzung erforderlich",
+    "translationError": "Übersetzung fehlgeschlagen. Klicke auf die Schaltfläche „Übersetzen“, um es erneut zu versuchen.",
+    "translationRateLimit": "Zu viele Übersetzungsanfragen. Bitte versuche es später erneut.",
+    "title": "Nachrichten",
+    "newMessage": "Neue Nachricht von Tora",
+    "empty": "Noch keine Nachrichten",
+    "loading": "Wird geladen…",
+    "unread": "Ungelesen",
+    "more": "Mehr laden",
+    "back": "Zurück zu den Nachrichten",
+    "retry": "Erneut versuchen",
+    "loadError": "Nachrichten können nicht geladen werden",
+    "readError": "Die Nachricht konnte nicht als gelesen markiert werden. Versuche es erneut.",
+    "blocked": "Konto gesperrt",
+    "blockedReason": "Dieses Konto kann Tora derzeit nicht verwenden.",
+    "unbanHint": "Der Zugriff wird automatisch wiederhergestellt, sobald ein Administrator die Sperre aufhebt.",
+    "signOut": "Abmelden"
+  },
+  "requiredUpdate": {
+    "title": "Tora aktualisieren",
+    "description": "Version {{version}} ist verfügbar. Aktualisiere, um fortzufahren.",
+    "download": "Offizielle Downloadseite öffnen",
+    "macHint": "Wenn die automatische Aktualisierung nicht verfügbar ist, lade das neueste DMG von der offiziellen Website herunter und ersetze die App manuell.",
+    "downloading": "Update wird heruntergeladen… {{percent}}%",
+    "install": "Neu starten und installieren",
+    "retry": "Download erneut versuchen",
+    "error": "Automatische Aktualisierung fehlgeschlagen. Versuche es erneut oder lade sie von der offiziellen Website herunter.",
+    "quit": "Tora beenden"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Tora-Willkommensanimation beim ersten Start",
+      "welcome": "Willkommen bei Tora",
+      "headlineFirst": "Ideen",
+      "headlineSecond": "in Taten umsetzen.",
+      "description": "Verbinde dein Modell, öffne ein Projekt und starte eine Unterhaltung. Tora hilft dir, Code zu lesen und zu bearbeiten und Arbeit zu erledigen.",
+      "hint": "Eine kurze Anleitung zeigt dir das Wichtigste",
+      "foot": "Dein Arbeitsbereich ist fast bereit.",
+      "logoAlt": "Tora-Logo",
+      "enter": "Loslegen",
+      "skip": "Animation überspringen"
+    },
+    "tour": {
+      "skip": "Anleitung überspringen",
+      "later": "Später einrichten",
+      "next": "Weiter",
+      "pauseSettings": "Die Modellverwaltung ist geöffnet. Schließe die Einstellungen, wenn du fertig bist, und die Anleitung wird fortgesetzt.",
+      "pauseFolder": "Wähle einen Projektordner oder schließe das Menü, um fortzufahren.",
+      "pausePermission": "Überprüfe oder wähle einen Genehmigungsmodus und schließe dann das Menü, um fortzufahren.",
+      "demoSend": "Senden simulieren; es wird nichts übermittelt",
+      "clickHint": "Klicke auf das hervorgehobene Steuerelement, um fortzufahren",
+      "loading": "Steuerelement wird gesucht…",
+      "demoTag": "Geführte Demo · es wird kein echter Befehl ausgeführt",
+      "demoMessage": "Prüfe die Build-Skripte dieses Projekts und gib mir zuerst einen Plan.",
+      "demoResponse": "Tora versteht zuerst die Aufgabe und fragt dann alle benötigten Tool-Berechtigungen ab. Du kannst jeden Schritt überprüfen und entscheiden, ob du fortfährst.",
+      "demoApprove": "Dieses Mal erlauben (Demo)",
+      "demoCheckpoint": "Checkpoint anzeigen (Demo)",
+      "completeTitle": "Du bist bereit zum Erstellen.",
+      "completeBody": "Du kannst dein Modell, deinen Ordner und deine Berechtigungen jederzeit ändern. Überprüfe unsichere Aktionen, bevor du fortfährst.",
+      "startWorking": "Tora starten",
+      "startAgain": "Anleitung erneut ansehen",
+      "steps": [
+        {
+          "chapter": "Mach dich bereit",
+          "title": "Wähle dein eigenes Modell",
+          "body": "Tora verwendet Modelle, die du hinzufügst. Klicke auf die Modellauswahl, um zu sehen, wo du deinen Anbieter verbindest."
+        },
+        {
+          "chapter": "Mach dich bereit",
+          "title": "Modellanbieter hinzufügen",
+          "body": "Klicke auf Modell hinzufügen, um die Modellverwaltung zu öffnen. Wähle einen Anbieter und gib deine Modelldetails ein. Die Anleitung wird fortgesetzt, wenn du die Einrichtung abschließt oder überspringst."
+        },
+        {
+          "chapter": "Mach dich bereit",
+          "title": "Projektumfang festlegen",
+          "body": "Klicke auf das Ordner-Steuerelement, um ein Projekt auszuwählen. Der Agent liest, bearbeitet und führt Tools innerhalb des von dir autorisierten Arbeitsbereichs aus. Du kannst das später tun."
+        },
+        {
+          "chapter": "Mach dich bereit",
+          "title": "Behalte die Kontrolle",
+          "body": "Klicke auf den Berechtigungsmodus, um deine Optionen zu sehen. Manuelle Genehmigung ist ein guter Ausgangspunkt; Aktionen mit höherem Risiko warten auf deine Entscheidung."
+        },
+        {
+          "chapter": "Aufgabe starten",
+          "title": "Beschreibe ein klares Ziel",
+          "body": "Klicke in das Nachrichtenfeld. Gib an, was erreicht werden soll, was nicht verändert werden darf und woran du erkennst, dass es erledigt ist."
+        },
+        {
+          "chapter": "Aufgabe starten",
+          "title": "Starte deine erste Aufgabe",
+          "body": "Das ist die Schaltfläche „Senden“. Die nächsten Schritte simulieren nur die Ausführung: Es werden keine Modellguthaben verbraucht und keine echte Nachricht gesendet."
+        },
+        {
+          "chapter": "Überprüfen und wiederherstellen",
+          "title": "Du genehmigst jeden wichtigen Schritt",
+          "body": "Dies ist eine Demo für Berechtigungsanfragen. Lies, was ein Tool tun möchte, bevor du es erlaubst oder ablehnst."
+        },
+        {
+          "chapter": "Überprüfen und wiederherstellen",
+          "title": "Nach einem Fehlgriff wiederherstellen",
+          "body": "Checkpoints zeichnen den Zustand vor Änderungen auf. Prüfe, welche Dateien betroffen wären, bevor du wirklich wiederherstellst."
+        },
+        {
+          "chapter": "Tora erweitern",
+          "title": "Workflows mit Skills wiederverwenden",
+          "body": "Klicke auf Skills. Importiere oder installiere vertrauenswürdige Skills, um nützliche Workflows wiederholbar zu machen."
+        },
+        {
+          "chapter": "Tora erweitern",
+          "title": "Ergebnisse im Browser überprüfen",
+          "body": "Klicke auf den integrierten Browser. Du und der Agent können eine Web-App auf derselben Seite untersuchen, debuggen und überprüfen."
+        },
+        {
+          "chapter": "Tora erweitern",
+          "title": "Wiederkehrende Arbeit planen",
+          "body": "Klicke auf Automatisierungen, um wiederkehrende Prüfungen oder Organisationsaufgaben zu planen und jeden Lauf zu überprüfen."
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "Bevor du beginnst",
+    "description": "Bitte prüfe und bestätige die Nutzungsbedingungen, die Datenschutzerklärung und den Hinweis zur grenzüberschreitenden Datenübermittlung separat. Tora öffnet weder die Anmeldung noch deinen Arbeitsbereich, bis alle drei ausgewählt sind.",
+    "terms": "Ich habe die Nutzungsbedingungen gelesen und stimme ihnen zu",
+    "readTerms": "Nutzungsbedingungen lesen",
+    "privacy": "Ich habe die Datenschutzerklärung gelesen und verstanden",
+    "readPrivacy": "Datenschutzerklärung lesen",
+    "crossBorder": "Ich stimme der grenzüberschreitenden Übermittlung meiner personenbezogenen Daten separat zu",
+    "crossBorderHint": "Wenn du ein Konto oder Cloud-Funktionen verwendest, können notwendige Informationen außerhalb des chinesischen Festlands übermittelt werden. Bitte prüfe den Umfang und die Details zur Verarbeitung.",
+    "readCrossBorder": "Hinweis zur grenzüberschreitenden Übermittlung lesen",
+    "decline": "Ablehnen und beenden",
+    "agree": "Bestätigen und fortfahren"
+  },
+  "sponsors": {
+    "title": "Unterstützer dieses Monats",
+    "description": "Danke an die Nutzer, die Tora diesen Monat auf Afdian unterstützen. Es werden nur Anzeigenamen angezeigt, keine Beträge oder Kontodetails.",
+    "source": "Daten von Afdian",
+    "total": "{{count}} Unterstützer",
+    "loaded": "{{count}} Unterstützer angezeigt",
+    "empty": "Diesen Monat keine Unterstützer",
+    "emptyMore": "Auf dieser Seite keine Unterstützer aus diesem Monat. Lade mehr, um fortzufahren.",
+    "loading": "Unterstützer werden geladen…",
+    "loadError": "Unterstützer sind vorübergehend nicht verfügbar. Bitte versuche es später erneut.",
+    "retry": "Erneut versuchen",
+    "more": "Mehr laden",
+    "donate": "Sponsern",
+    "leaveTitle": "Afdian zum Sponsern öffnen?",
+    "leaveDescription": "Nach der Bestätigung öffnet Tora diese externe Website in deinem Systembrowser.",
+    "confirmLeave": "Bestätigen und öffnen"
+  },
+  "polls": {
+    "title": "Umfragen",
+    "subtitle": "Abstimmen und Ergebnisse verfolgen",
+    "all": "Alle Umfragen",
+    "history": "Meine Abstimmungshistorie",
+    "search": "Suchen",
+    "loadMore": "Mehr laden",
+    "from": "Von",
+    "to": "Bis",
+    "starts": "Beginnt",
+    "ends": "Endet",
+    "forever": "Keine Frist",
+    "refresh": "Umfragen aktualisieren",
+    "startsIn": "Beginnt in {{time}}",
+    "startingSoon": "Beginnt bald, Status wird geprüft…",
+    "dayUnit": "T",
+    "state": {
+      "draft": "Entwurf",
+      "scheduled": "Nicht begonnen",
+      "active": "Offen",
+      "ended": "Beendet",
+      "archived": "Archiviert"
+    },
+    "type": {
+      "single": "Einfachauswahl",
+      "multiple": "Mehrfachauswahl",
+      "score": "Punktebewertung (max. 100)"
+    },
+    "frequency": {
+      "once": "Einmal pro Person",
+      "daily": "Einmal pro Tag (Pekinger Zeit)",
+      "unlimited": "Unbegrenzt"
+    },
+    "maxSelections": "Wähle bis zu {{count}}",
+    "voted": "Abgestimmt",
+    "votedCount": "{{count}} Mal abgegeben",
+    "available": "Zur Abstimmung geöffnet",
+    "choose": "Wähle links eine Umfrage",
+    "empty": "Noch keine Umfragen",
+    "loading": "Umfragen werden geladen…",
+    "noHistory": "Kein Abstimmungsverlauf",
+    "results": "Ergebnisse",
+    "participants": "{{count}} Stimmen",
+    "countHidden": "Anzahl der Wähler ist privat",
+    "detailsHidden": "Optionsdetails sind privat",
+    "resultsUnavailable": "Ergebnisse sind noch nicht öffentlich",
+    "autoRefresh": "Aktualisiert alle 5 Sekunden",
+    "pieHint": "Der Ring zeigt den Anteil jeder Option. Bei Mehrfachauswahl können die Auswahlraten zusammen mehr als 100 % ergeben.",
+    "submit": "Stimme abgeben",
+    "submitting": "Wird abgegeben…",
+    "confirmVote": "Diese Stimme abgeben? Sie kann danach nicht mehr bearbeitet werden.",
+    "submitted": "Stimme abgegeben",
+    "queued": "Offline gespeichert. Sie wird bei Verbindung synchronisiert; sie wird erst gezählt, wenn der Server sie bestätigt.",
+    "pending": "Ausstehende Stimmen",
+    "waitingSync": "Warten auf Serverbestätigung",
+    "retry": "Erneut versuchen",
+    "remove": "Entfernen",
+    "removePending": "Diese ausstehende Stimme entfernen?",
+    "selectionRequired": "Gültige Optionen auswählen",
+    "scoreRequired": "Geben Sie für jede Option eine ganzzahlige Punktzahl von 0 bis 100 ein",
+    "submitError": "Stimme konnte nicht abgegeben werden",
+    "loadError": "Umfragen konnten nicht geladen werden",
+    "disabled": "Umfragen wurden vom Administrator deaktiviert."
+  },
+  "common": {
+    "toraModels": "Tora Models",
+    "add": "Hinzufügen",
+    "agent": "Agent",
+    "cancel": "Abbrechen",
+    "channel": "Kanäle",
+    "chat": "Chat",
+    "new-task": "Neue Aufgabe",
+    "model-switch-warning": "Beim Modellwechsel während einer Aufgabe geht Gesprächskontext verloren, der Tokenverbrauch steigt und ältere Historie kann komprimiert werden, wodurch die Ausgabequalität sinkt.",
+    "automation": "Automatisierung",
+    "workflow": "Workflow",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "create": "Erstellen",
+    "creating": "Wird erstellt…",
+    "credential": "Anmeldedaten",
+    "date": "Datum",
+    "delete": "Löschen",
+    "disabled": "Deaktiviert",
+    "edit": "Bearbeiten",
+    "error": "Etwas ist schiefgelaufen",
+    "information": "Information",
+    "knowledge": "Wissensdatenbanken",
+    "loading": "Wird geladen...",
+    "shownCount": "{{count}} angezeigt",
+    "selectedCount": "{{selected}} von {{total}} ausgewählt",
+    "model": "Modell",
+    "name": "Name",
+    "no": "Nein",
+    "noData": "Keine Daten",
+    "readOnly": "Schreibgeschützt",
+    "readOnlyTooltip": "Für Sie schreibgeschützt freigegeben; Bearbeiten und Löschen sind deaktiviert.",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "running": "Läuft",
+    "save": "Speichern",
+    "saving": "Wird gespeichert…",
+    "schedule": "Zeitplan",
+    "selectAgent": "Agent auswählen",
+    "settings": "Einstellungen",
+    "switchToZh": "Zu Chinesisch wechseln",
+    "switchToZhHant": "Zu traditionellem Chinesisch wechseln",
+    "switchToEn": "Zu Englisch wechseln",
+    "team": "Team",
+    "uploading": "Wird hochgeladen",
+    "leader": "Leiter",
+    "time": "Zeit",
+    "yes": "Ja",
+    "deleteTitle": "{{entity}} \"{{name}}\" löschen?",
+    "deleteDescription": "Diese Aktion kann nicht rückgängig gemacht werden.",
+    "mcp-hub": "MCP Hub",
+    "mine": "Meine",
+    "my-mcp": "Installierte MCPs",
+    "skill-hub": "Skill Hub",
+    "browser": "Browser",
+    "polls": "Umfragen",
+    "my-skill": "Installierte Skills",
+    "message": "Nachricht",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "Embedding",
+    "select": "Auswählen"
+  },
+  "error": {
+    "description": "Auf der Seite ist ein unerwarteter Fehler aufgetreten. Sie können es erneut versuchen oder zur Startseite zurückkehren.",
+    "retry": "Erneut versuchen",
+    "home": "Zurück zur Startseite"
+  },
+  "tool": {
+    "callGeneric": "Tool aufrufen",
+    "read": {
+      "name": "Lesen",
+      "fileCount_one": "{{count}} Datei",
+      "fileCount_other": "{{count}} Dateien",
+      "lineCount_one": "{{formatted}} Zeile gelesen",
+      "lineCount_other": "{{formatted}} Zeilen gelesen"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} Befehle",
+      "read": "{{count}} Lesevorgänge",
+      "edit": "{{count}} Bearbeitungen",
+      "search": "{{count}} Suchvorgänge",
+      "todo": "{{count}} To-dos",
+      "mcp": "{{count}} MCP-Aufrufe",
+      "separator": ", ",
+      "fallback": "{{count}} Tool-Aufrufe"
+    }
+  },
+  "textInput": {
+    "toComplete": "zum Abschließen",
+    "attach": "Datei anhängen",
+    "attachNotSupported": "Dieses Modell unterstützt keine Dateianhänge",
+    "send": "Senden",
+    "stop": "Generierung stoppen",
+    "stopping": "Wird gestoppt ...",
+    "sendWithSkills": "Mit {{count}} Skill(s) senden",
+    "selectedSkills": "Ausgewählte Skills",
+    "removeSkill": "{{name}} entfernen",
+    "skillOnlyPrompt": "Verwende die angehängten Skill(s).",
+    "selectedElements": "Referenzierte Elemente",
+    "removeElement": "Element {{tag}} entfernen",
+    "elementRefLine": "Auf Seitenelement `{{selector}}` anwenden",
+    "slashMenu": {
+      "selectedLabel": "Ausgewählt",
+      "hintSelect": "Enter zum Auswählen, Leertaste für Mehrfachauswahl",
+      "hintSend": "Zum Senden Enter drücken",
+      "clear": "Leeren",
+      "close": "Schließen",
+      "empty": "Noch keine Skills installiert – besuche das Skill-Center",
+      "emptyQuery": "Keine Skills entsprechen \"{{query}}\"",
+      "moreMatches": "{{count}} weitere Treffer – weiter tippen zum Filtern",
+      "selectedCount": "{{count}} Skill(s) ausgewählt",
+      "keyboardHighlight": "+ Tastatur-Hervorhebung",
+      "clickToMulti": "Zeile anklicken für Mehrfachauswahl; Esc zum Schließen"
+    },
+    "optimize": "Prompt optimieren",
+    "optimizing": "Optimieren…",
+    "optimizeTitle": "Optimierter Prompt",
+    "optimizeFailed": "Optimierung fehlgeschlagen",
+    "optimizeApply": "Übernehmen",
+    "optimizeRetry": "Wiederholen",
+    "optimizeDiscard": "Verwerfen",
+    "optimizeBy": "Optimiert von DeepSeek"
+  },
+  "browserPanel": {
+    "newTab": "Neuer Tab",
+    "createTab": "Neuer Tab",
+    "closeTab": "Tab schließen",
+    "back": "Zurück",
+    "forward": "Vorwärts",
+    "reload": "Neu laden",
+    "pickElement": "Element auswählen",
+    "pickElementHint": "Element auswählen: Auf der Seite darüberfahren zum Hervorheben, klicken, um es als Karte in die Chat-Eingabe anzuhängen (Esc zum Abbrechen)",
+    "openInBrowser": "Im Browser öffnen",
+    "openInBrowserHint": "Aktuelle Seite im Systembrowser öffnen",
+    "urlPlaceholder": "URL oder Suchbegriff eingeben und Enter drücken",
+    "noTabPick": "Noch kein Tab geöffnet. URL oder Suchbegriff in die Adressleiste eingeben und dann ein Element auswählen.",
+    "noTabAction": "Noch kein Tab geöffnet. Klicke oben rechts auf + oder gib eine URL bzw. einen Suchbegriff in die Adressleiste ein.",
+    "iframeFallbackHint": "Browser-Fallback-Modus (<iframe>) ist aktiv: Same-Origin-Seiten funktionieren, aber Cross-Origin-Websites können das Einbetten über X-Frame-Options / CSP ablehnen. Die Desktop-App verwendet einen echten integrierten Browser (<webview>) ohne diese Einschränkungen."
+  },
+  "voice": {
+    "micTooltip": "Spracheingabe",
+    "listening": "Hört zu – erneut klicken zum Stoppen",
+    "transcribing": "Transkribieren…",
+    "micDenied": "Mikrofonzugriff verweigert – bitte in den Systemeinstellungen erlauben",
+    "transcribeFailed": "Spracherkennung fehlgeschlagen",
+    "emptyTranscript": "Nichts erkannt",
+    "keyMissing": "ASR-API-Schlüssel ist nicht konfiguriert (voice-config.json)"
+  },
+  "confirmCard": {
+    "toConfirm": "zum Bestätigen",
+    "yesWithRule": "Ja, und {{toolName}} erlauben, {{ruleContent}} für diese Sitzung auszuführen"
+  },
+  "messageBubble": {
+    "thinking": "Denkt nach",
+    "thinkingFor": "Denkt seit {{duration}}",
+    "taskProcess": {
+      "title": "Aufgabenprozess",
+      "running": "Verstrichen: {{duration}}",
+      "finished": "Dauerte {{duration}}",
+      "hour": "Std. ",
+      "minute": "Min. ",
+      "second": "s",
+      "noConclusion": "Dieser Durchlauf endete ohne Abschluss. Erweitere den Aufgabenprozess für Details."
+    },
+    "audioGenerating": "Audio wird generiert…",
+    "playAudio": "Audio abspielen",
+    "pauseAudio": "Audio pausieren",
+    "running": "Läuft...",
+    "skillAttached": "Skill {{name}} angehängt",
+    "changedFiles": {
+      "title": "{{count}} Dateien geändert",
+      "openPanel": "Alle Änderungen im Panel anzeigen"
+    },
+    "processed": "Verarbeitet {{duration}}",
+    "completed": "Abgeschlossen in {{duration}}",
+    "duration": {
+      "day": "Tg. ",
+      "hour": "Std. ",
+      "minute": "m ",
+      "second": "s"
+    },
+    "hintSource": {
+      "tool_output": "Tool-Ausgabe",
+      "team": "Team",
+      "team_message": "Team",
+      "schedule": "Zeitplan",
+      "system": "System",
+      "channel": "Kanal",
+      "runtime_state": "Laufzeitstatus"
+    },
+    "error": {
+      "title": "Antwort fehlgeschlagen",
+      "blockedTitle": "Durch eine Regel blockiert",
+      "authentication": "Authentifizierung fehlgeschlagen – prüfen Sie den API-Schlüssel oder die Anmeldedaten des Modells.",
+      "permission": "Anfrage nicht zulässig – die Anmeldedaten haben keine Berechtigung für dieses Modell oder diesen Endpunkt.",
+      "rate_limit": "Ratenlimit oder Kontingent überschritten – bitte später erneut versuchen.",
+      "invalid_request": "Die Anfrage an das Modell wurde als ungültig abgelehnt.",
+      "upstream": "Der vorgelagerte Modelldienst hat einen Fehler zurückgegeben.",
+      "connection": "Modelldienst nicht erreichbar – Netzwerkfehler oder Zeitüberschreitung.",
+      "internal": "Ein unerwarteter interner Fehler ist aufgetreten.",
+      "setup": "Die Sitzung konnte nicht vorbereitet werden – prüfen Sie Modell, Tools und Wissensdatenbanken des Agenten.",
+      "unknown": "Die Antwort ist mit einem unbekannten Fehler fehlgeschlagen."
+    },
+    "copy": "Kopieren"
+  },
+  "questionPanel": {
+    "supplementTitle": "Möchten Sie noch etwas hinzufügen?",
+    "supplementPlaceholder": "Ergänzende Infos hinzufügen",
+    "optional": "optional",
+    "of": "von",
+    "prev": "Zurück",
+    "next": "Weiter",
+    "submit": "Absenden",
+    "cancel": "Abbrechen",
+    "other": "Sonstiges",
+    "otherPlaceholder": "Hier eingeben"
+  },
+  "chat": {
+    "inputPlaceholder": "Fragen Sie alles",
+    "confirmToolCall": "Diese Aktion erlauben?",
+    "subagentConfirmTitle": "{{name}} bittet um Bestätigung",
+    "newSession": "Neue Sitzung",
+    "newConversation": "Neue Unterhaltung",
+    "greeting": "Arbeiten und programmieren mit Tora",
+    "greetingProject": "Was sollen wir in {{project}} tun?",
+    "thinking": "Denkt nach",
+    "project": {
+      "label": "Projekte",
+      "unassigned": "Nicht zugewiesen",
+      "rename": "Projekt umbenennen"
+    },
+    "maxItersExceeded": {
+      "title": "Iterationslimit erreicht",
+      "description": "Senden Sie eine neue Nachricht, um fortzufahren, oder setzen Sie die aktuelle Aufgabe fort.",
+      "continue": "Fortsetzen"
+    },
+    "context": {
+      "compact": {
+        "title": "Kontext automatisch komprimiert",
+        "evicted": "{{count}} Tool-Ausgaben verdrängt",
+        "compacted": "Ältere Historie zusammengefasst",
+        "fallback": "komprimiert",
+        "description": "{{parts}} (ca. {{before}} → {{after}} Tokens, Budget {{budget}})"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "Agenten auswählen",
+      "emptyTitle": "Keine Agenten",
+      "emptyDescription": "Erstellen Sie einen Agenten, um zu starten.",
+      "groupYours": "Eigene",
+      "groupShared": "Mit Ihnen geteilt"
+    },
+    "session": {
+      "label": "Sitzung",
+      "emptyTitle": "Keine Sitzungen",
+      "emptyNoAgent": "Wählen Sie zuerst einen Agenten aus.",
+      "emptyHasAgent": "Erstellen Sie eine Sitzung, um mit dem Chatten zu beginnen.",
+      "today": "Heute",
+      "earlier": "Früher"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "Agent erstellen",
+    "description": "Definieren Sie Identität und Verhalten eines neuen Agenten."
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "Agentenidentität",
+      "description": "Name und Anweisungen, die das Verhalten dieses Agenten definieren.",
+      "name": {
+        "label": "Name",
+        "placeholder": "Mein Agent"
+      },
+      "system-prompt": {
+        "label": "System-Prompt"
+      }
+    },
+    "context-config": {
+      "legend": "Kontextkonfiguration",
+      "description": "Steuert, wie das Kontextfenster verwaltet und komprimiert wird.",
+      "trigger-ratio": {
+        "label": "Trigger-Verhältnis"
+      },
+      "reserve-ratio": {
+        "label": "Reserveverhältnis"
+      },
+      "tool-result-limit": {
+        "label": "Tool-Ergebnislimit"
+      },
+      "compression-prompt": {
+        "label": "Komprimierungs-Prompt"
+      },
+      "summary-template": {
+        "label": "Zusammenfassungsvorlage"
+      },
+      "max-image-num": {
+        "label": "Max. Bilder"
+      }
+    },
+    "react-config": {
+      "legend": "ReAct-Konfiguration",
+      "description": "Steuert das Verhalten der Reasoning- und Aktionsschleife.",
+      "max-iters": {
+        "label": "Max. Iterationen"
+      },
+      "stop-on-reject": {
+        "label": "Bei Ablehnung stoppen"
+      },
+      "structured-output-grace-iters": {
+        "label": "Nachfrist für strukturierte Ausgabe",
+        "description": "Zusätzliche Iterationen über das Maximum hinaus, damit ein Lauf, der das Limit erreicht, die angeforderte strukturierte Ausgabe noch erzeugen kann."
+      },
+      "interruption-message": {
+        "label": "Unterbrechungsantwort",
+        "description": "Wird als Antwort des Agenten gesendet, wenn der Benutzer einen Lauf unterbricht."
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "CancelledError auslösen",
+        "description": "asyncio.CancelledError erneut auslösen, sobald eine Unterbrechung behandelt wurde, statt sie zu verschlucken."
+      }
+    },
+    "invite-config": {
+      "legend": "Einladungskonfiguration",
+      "description": "Steuert, ob andere Agenten diesen über AgentInvite ausleihen können.",
+      "invitable": {
+        "label": "Einladbar"
+      },
+      "invite-description": {
+        "label": "Einladungsbeschreibung",
+        "placeholder": "Beschreibe kurz die Expertise dieses Agenten; erforderlich, wenn invitable aktiviert ist."
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "Agent bearbeiten",
+    "description": "Konfiguration dieses Agenten aktualisieren."
+  },
+  "dialog-agent-delete": {
+    "entity": "Agent",
+    "confirm": "Löschen"
+  },
+  "dialog-session-delete": {
+    "entity": "Sitzung",
+    "confirm": "Löschen"
+  },
+  "dialog-session-rename": {
+    "title": "Sitzung umbenennen",
+    "description": "Gib dieser Sitzung einen neuen Namen.",
+    "label": "Name",
+    "placeholder": "Sitzungsname"
+  },
+  "dialog-project-rename": {
+    "title": "Projekt umbenennen",
+    "description": "Ändert nur die Projektbezeichnung in der Seitenleiste und der Willkommensnachricht; Ordner und Sitzungstitel bleiben unverändert.",
+    "label": "Projektname",
+    "placeholder": "Projektname"
+  },
+  "session-menu": {
+    "rename": "Umbenennen",
+    "delete": "Löschen"
+  },
+  "dialog-credential-create": {
+    "title": "Zugangsdaten hinzufügen",
+    "description": "Zugangsdaten für einen Modellanbieter hinzufügen.",
+    "selectType": "Anbieter",
+    "selectTypePlaceholder": "Anbieter auswählen"
+  },
+  "dialog-credential-edit": {
+    "title": "Zugangsdaten bearbeiten",
+    "description": "Die gespeicherten Zugangsdaten für diesen Anbieter aktualisieren."
+  },
+  "dialog-knowledge-base-create": {
+    "title": "Wissensdatenbank erstellen",
+    "description": "Erstelle eine neue Wissensdatenbank mit einem Embedding-Modell.",
+    "name": {
+      "label": "Name",
+      "placeholder": "Meine Wissensdatenbank"
+    },
+    "descriptionField": {
+      "label": "Beschreibung",
+      "placeholder": "Beschreibe, wofür diese Wissensdatenbank verwendet wird."
+    },
+    "embeddingModel": {
+      "label": "Embedding-Modell"
+    },
+    "dimension": {
+      "label": "Dimension"
+    },
+    "chunker": {
+      "label": "Chunker"
+    },
+    "policy": {
+      "lockedTitle": "Dimension ist auf {{dimension}}d festgelegt",
+      "lockedDescription": "Dieser Server bindet alle Wissensdatenbanken bereits an {{dimension}}-dim-Embeddings. Unten sind nur kompatible Modelle aufgeführt.",
+      "noCompatibleTitle": "Keine kompatiblen Embedding-Modelle",
+      "noCompatibleAny": "Keines deiner Modelle stellt ein Embedding-Modell bereit. Füge zuerst ein Modell in den Einstellungen hinzu.",
+      "noCompatibleLocked": "Keine deiner Zugangsdaten stellen ein Modell bereit, das {{dimension}}-dim-Embeddings erzeugen kann."
+    },
+    "errors": {
+      "nameRequired": "Bitte gib der Wissensdatenbank einen Namen.",
+      "embeddingRequired": "Bitte wähle ein Embedding-Modell aus.",
+      "dimensionRequired": "Bitte wähle eine Dimension aus.",
+      "chunkerRequired": "Bitte wähle eine Chunking-Strategie aus."
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "Wissensdatenbank bearbeiten",
+    "description": "Namen und Beschreibung der Wissensdatenbank aktualisieren.",
+    "name": {
+      "label": "Name",
+      "placeholder": "Meine Wissensdatenbank"
+    },
+    "descriptionField": {
+      "label": "Beschreibung",
+      "placeholder": "Beschreibe, wofür diese Wissensdatenbank verwendet wird."
+    },
+    "embeddingModel": {
+      "label": "Embedding-Modell"
+    },
+    "chunker": {
+      "label": "Chunker"
+    },
+    "errors": {
+      "nameRequired": "Bitte gib der Wissensdatenbank einen Namen."
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "Wissensdatenbank löschen",
+    "description": "Dadurch werden die Wissensdatenbank „{{name}}“ und alle zugehörigen indexierten Dokumente dauerhaft gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+  },
+  "credential": {
+    "noProviders": "Keine Anbieter verfügbar",
+    "selectHint": "Keine Zugangsdaten ausgewählt",
+    "selectHintDescription": "Wähle in der Seitenleiste Zugangsdaten aus, um deren Details anzuzeigen.",
+    "availableModels": "Verfügbare Modelle",
+    "noModels": "Keine Modelle verfügbar",
+    "noModelsDescription": "Dieser Anbieter hat keine Modelle zurückgegeben.",
+    "deleteEntity": "Zugangsdaten",
+    "subtitle": "Konfiguration der Modell-API-Zugangsdaten",
+    "configured": "Konfiguriert",
+    "addProvider": "Zugangsdaten hinzufügen",
+    "reasoning": "Reasoning",
+    "realtime": "Echtzeit",
+    "table": {
+      "model": "Modell",
+      "context": "Kontext",
+      "maxOutput": "Max. Ausgabe",
+      "accepts": "Akzeptiert",
+      "outputs": "Ausgaben",
+      "legend": "Kontext und max. Ausgabe sind Token-Anzahlen. REASONING kennzeichnet Modelle, die erweitertes Denken unterstützen.",
+      "dimensions": "Dimensionen"
+    }
+  },
+  "knowledge": {
+    "subtitle": "Verwalte die von deinen Agenten verwendeten Wissensdatenbanken",
+    "selectHint": "Keine Wissensdatenbank ausgewählt",
+    "selectHintDescription": "Wähle in der Seitenleiste eine Wissensdatenbank aus, um ihre Details anzuzeigen.",
+    "list": {
+      "label": "Wissensdatenbanken",
+      "emptyTitle": "Keine Wissensdatenbanken",
+      "emptyDescription": "Erstelle eine Wissensdatenbank, um mit der Indexierung von Dokumenten zu beginnen.",
+      "createButton": "Wissensdatenbank erstellen"
+    },
+    "document": {
+      "emptyTitle": "Keine Dokumente",
+      "emptyDescription": "Lade ein Dokument hoch, um es in diese Wissensdatenbank zu indexieren.",
+      "uploadButton": "Dokument hochladen",
+      "uploadButtonShort": "Hochladen",
+      "chunkCount_one": "{{count}} Chunk",
+      "chunkCount_other": "{{count}} Chunks",
+      "deleteConfirmTitle": "Dokument löschen",
+      "deleteConfirmDescription": "„{{name}}“ löschen? Dadurch werden das Dokument und jeder indexierte Chunk entfernt. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleteError": "Dokument konnte nicht gelöscht werden.",
+      "dropHintIdle": "oder Dateien hier ablegen",
+      "unsupportedExtension": "„{{name}}“ wurde übersprungen — Dateityp nicht unterstützt.",
+      "status": {
+        "queued": "In Warteschlange",
+        "uploading": "Wird hochgeladen",
+        "pending": "Wartet auf Worker",
+        "parsing": "Wird geparst",
+        "chunking": "Chunking",
+        "indexing": "Wird indexiert",
+        "ready": "Bereit",
+        "error": "Fehler",
+        "cancelled": "Abgebrochen"
+      },
+      "actions": {
+        "cancel": "Abbrechen",
+        "dismiss": "Ausblenden",
+        "remove": "Entfernen",
+        "clearFinished": "Abgeschlossene löschen"
+      },
+      "title": "Dokumente",
+      "chunkCount": "{{count}} Chunks"
+    },
+    "test": {
+      "button": "Test",
+      "title": "Abruf testen",
+      "description": "\"{{name}}\" mit einer Ad-hoc-Abfrage testen.",
+      "queryLabel": "Abfrage",
+      "queryPlaceholder": "Natürlichsprachige Frage eingeben…",
+      "topKLabel": "Top K",
+      "searchButton": "Suchen",
+      "score": "Score",
+      "chunkPosition": "Chunk {{index}} von {{total}}",
+      "emptyTitle": "Keine Treffer",
+      "emptyDescription": "Keine Chunks haben für diese Abfrage den Schwellenwert überschritten."
+    },
+    "config": {
+      "title": "Konfiguration",
+      "embeddingModel": "Embedding-Modell",
+      "dimensions": "Dimensionen",
+      "credential": "Zugangsdaten",
+      "chunker": "Chunker",
+      "counts": "Inhalt",
+      "countsValue": "{{documents}} Dokumente · {{chunks}} Chunks",
+      "status": "Wird indexiert",
+      "statusValue": "{{ready}} bereit · {{indexing}} in Bearbeitung · {{failed}} fehlgeschlagen",
+      "createdAt": "Erstellt"
+    },
+    "documentDetail": {
+      "description": "{{count}} indexierte Chunks",
+      "chunksTab": "Chunks",
+      "previewTab": "Vorschau",
+      "chunksEmptyTitle": "Keine Chunks",
+      "chunksEmptyDescription": "Dieses Dokument hat noch keine indexierten Chunks.",
+      "chunksUnsupportedTitle": "Chunk-Browsing nicht verfügbar",
+      "chunksUnsupportedDescription": "Der konfigurierte Vektorspeicher unterstützt das Auflisten von Chunks nicht.",
+      "previousPage": "Zurück",
+      "nextPage": "Weiter",
+      "pageIndicator": "Seite {{page}} von {{pageCount}}",
+      "previewUnavailableTitle": "Keine Inline-Vorschau",
+      "previewUnavailableDescription": "Dieser Dateityp kann im Browser nicht in der Vorschau angezeigt werden.",
+      "previewTooLargeTitle": "Datei zu groß für Vorschau",
+      "previewTooLargeDescription": "Diese Datei überschreitet das Limit für die Inline-Vorschau. Laden Sie sie herunter, um das Original anzuzeigen.",
+      "downloadButton": "Originaldatei herunterladen"
+    }
+  },
+  "llm-select": {
+    "placeholder": "Modell auswählen",
+    "loading": "Wird geladen…",
+    "empty": {
+      "title": "Keine Modelle verfügbar",
+      "description": "Um loszulegen, fügen Sie in den Einstellungen ein Modell hinzu."
+    },
+    "addCredential": "Modell hinzufügen",
+    "clear": "Auswahl löschen",
+    "noFallback": "Kein Fallback",
+    "pickForDetails": "Modell auswählen, um Details anzuzeigen",
+    "vision": "Vision",
+    "contextBadge": "{{size}} Kontext",
+    "thinking": "Denken",
+    "contextWindow": "Kontextfenster",
+    "hintSmallContext": "Modell mit kleinem Kontext – 1M wird nicht unterstützt",
+    "level": {
+      "off": "Aus",
+      "low": "Niedrig",
+      "high": "Hoch",
+      "max": "Max"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "Embedding-Modell auswählen",
+    "loading": "Wird geladen…",
+    "empty": {
+      "title": "Keine Embedding-Modelle verfügbar",
+      "description": "Um zu beginnen, fügen Sie in den Einstellungen ein Modell hinzu, das Embedding unterstützt."
+    },
+    "addCredential": "Modell hinzufügen"
+  },
+  "chunker-select": {
+    "placeholder": "Chunker auswählen",
+    "loading": "Wird geladen…",
+    "empty": "Keine Chunker verfügbar"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "Ungefähre Token",
+      "params": {
+        "chunk_size": {
+          "label": "Chunk-Größe",
+          "description": "Maximale Anzahl ungefährer Token pro Chunk."
+        },
+        "overlap": {
+          "label": "Überlappung",
+          "description": "Anzahl ungefährer Token, die aufeinanderfolgende Chunks gemeinsam nutzen."
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "Dimension auswählen",
+    "pickModelFirst": "Zuerst ein Modell auswählen"
+  },
+  "permission-mode": {
+    "placeholder": "Berechtigungsmodus auswählen",
+    "trigger-tooltip": "Berechtigungsmodus",
+    "panel-title": "Wie soll der Agent um Genehmigung bitten?",
+    "learn-more": "Mehr erfahren",
+    "default": "Manuelle Genehmigung",
+    "default-desc": "Sie bestätigen wichtige Vorgänge – die sicherste Option",
+    "accept_edits": "Bearbeitungen automatisch genehmigen",
+    "accept_edits-desc": "Datei-Lese-/Schreibvorgänge im Arbeitsbereich automatisch zulassen; für den Rest werden Sie weiterhin gefragt",
+    "explore": "Nur Lesen",
+    "explore-desc": "Nur Lesen und Suchen — keine Schreibzugriffe oder Befehlsausführung",
+    "bypass": "Vollzugriff",
+    "bypass-desc": "Alles lokal ohne Genehmigung ausführen — nur für vertrauenswürdige oder Sandbox-Umgebungen",
+    "dont_ask": "Unbeaufsichtigt",
+    "dont_ask-desc": "Alles, was nachfragen würde, wird abgelehnt — gut für geplante Aufgaben"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "MCP-Konfiguration",
+    "keepAlive": "Keep-Alive",
+    "keepAliveDesc": "Zustand über Interaktionen hinweg beibehalten. Für Browser-Nutzung oder andere lang laufende MCPs aktivieren.",
+    "parseError": "Ungültige JSON-Konfiguration: {{message}}",
+    "missingMcpServers": "Konfiguration muss ein \"mcpServers\"-Objekt enthalten.",
+    "emptyMcpServers": "Keine MCP-Server in der Konfiguration gefunden."
+  },
+  "dialog-mcp-delete": {
+    "entity": "MCP-Server",
+    "skillEntity": "Skill",
+    "skillDescription": "Möchten Sie diesen Skill wirklich aus dem Workspace entfernen?"
+  },
+  "schedule": {
+    "subtitle": "Automatisierte Aufgaben konfigurieren und verwalten – Tora führt Workflows nach Zeitplan aus",
+    "calendar": "Kalender",
+    "createSchedule": {
+      "description": "Richten Sie eine wiederkehrende oder einmalige Automatisierungsaufgabe für einen Agenten ein.",
+      "descriptionLabel": "Beschreibung",
+      "descriptionPlaceholder": "Beschreiben Sie, was diese Automatisierung tun soll...",
+      "namePlaceholder": "z. B. Täglicher Bericht",
+      "title": "Automatisierungsaufgabe erstellen"
+    },
+    "deleteSchedule": {
+      "entity": "Automatisierungsaufgabe"
+    },
+    "endAt": "Enddatum",
+    "end_at": "Endet um",
+    "executionHistory": "Ausführungsverlauf",
+    "freqDaily": "Täglich",
+    "freqMonthly": "Monatlich",
+    "freqOnce": "Einmalig",
+    "freqWeekly": "Wöchentlich",
+    "frequency": "Häufigkeit",
+    "friday": "Fr",
+    "list": "Liste",
+    "monday": "Mo",
+    "more": "mehr",
+    "nextMonth": "Nächster Monat",
+    "nextYear": "Nächstes Jahr",
+    "noSchedules": "Keine Automatisierungsaufgaben",
+    "noSchedulesDescription": "Erstellen Sie eine Automatisierungsaufgabe, um Workflows nach Zeitplan auszuführen.",
+    "pickDate": "Datum auswählen",
+    "permissionMode": "Berechtigungsmodus",
+    "timezone": "Zeitzone",
+    "triggerTime": "Auslösezeit",
+    "createdAt": "Erstellt am",
+    "dayOfMonthSuffix": "",
+    "stateful": "Zustandsbehaftet",
+    "statefulDesc": "Eine Sitzung für alle Auslösungen wiederverwenden, um Kontext zu sammeln. Deaktiviert: Jede Auslösung erstellt eine neue Sitzung.",
+    "previousMonth": "Vorheriger Monat",
+    "previousYear": "Vorheriges Jahr",
+    "saturday": "Sa",
+    "sunday": "So",
+    "thursday": "Do",
+    "today": "Heute",
+    "tuesday": "Di",
+    "wednesday": "Mi"
+  },
+  "model-parameters": {
+    "title": "Modellparameter",
+    "description": "Inferenzparameter für das ausgewählte Modell anpassen.",
+    "empty": "Keine konfigurierbaren Parameter.",
+    "fallbackLabel": "Fallback-Modell",
+    "fallbackLabelWithModel": "Fallback-Modell ({{model}})",
+    "parametersLabel": "Parameter",
+    "ttsLabel": "TTS",
+    "ttsEmpty": "Keine TTS-Modelle verfügbar.",
+    "ttsParameters": "Parameter",
+    "ttsParametersDescription": "Parameter für das ausgewählte TTS-Modell anpassen.",
+    "noTts": "Kein TTS"
+  },
+  "setup": {
+    "title": "Mit Dienst verbinden",
+    "description": "Geben Sie Ihre Server-URL und Ihren Benutzernamen ein, um zu starten.",
+    "serverUrl": "Server-URL",
+    "serverUrlPlaceholder": "https://...",
+    "username": "Benutzername",
+    "usernamePlaceholder": "Ihr Benutzername",
+    "submit": "Loslegen",
+    "checking": "Verbindung wird hergestellt...",
+    "errorUnreachable": "Dieser Server ist nicht erreichbar. Prüfen Sie die Adresse, stellen Sie sicher, dass der Dienst läuft und Cross-Origin-Anfragen zulässt.",
+    "errorTimeout": "Der Server hat die Verbindung angenommen, aber nicht rechtzeitig geantwortet. Er ist möglicherweise überlastet oder beim Start hängen geblieben.",
+    "errorNotAgentScope": "Die Adresse wurde erreicht, aber es ist kein AgentScope-Dienst – prüfen Sie die URL oder aktualisieren Sie ein Backend, das zu alt ist, um einen Health-Endpunkt bereitzustellen.",
+    "errorUnauthorized": "Der Server hat diesen Benutzernamen abgelehnt. Geben Sie einen gültigen ein.",
+    "errorNotReady": "Der Server ist erreichbar, aber nicht bereit. Diese Subsysteme konnten nicht starten:",
+    "hint": "Dies ist eine reine Frontend-Anwendung, und alle Daten werden von der oben genannten Server-URL bereitgestellt. Der Benutzername wird ausschließlich für die serverseitige Authentifizierung verwendet."
+  },
+  "task-panel": {
+    "blockedBy": "blockiert von"
+  },
+  "panel": {
+    "plan": {
+      "title": "Plan",
+      "completed": "Abgeschlossen: {{count}}",
+      "total": "Gesamt: {{count}}",
+      "emptyTitle": "Noch keine Aufgaben",
+      "emptyDescription": "Aufgaben, die der Agent plant, werden hier angezeigt."
+    },
+    "mcp": {
+      "description": "Die im Workspace eingerichteten MCP-Server.",
+      "searchPlaceholder": "MCP im Workspace suchen",
+      "add": "MCP hinzufügen",
+      "addDescription": "Verwenden Sie einen bereits installierten erneut oder fügen Sie eine Konfiguration ein.",
+      "fromConfig": "Aus Konfiguration",
+      "tools": "{{count}} Tools",
+      "unhealthy": "Dieses MCP konnte nicht erreicht werden",
+      "healthy": "Verbunden",
+      "emptyTitle": "Keine MCP-Server",
+      "emptyDescription": "Füge einen MCP-Server hinzu, um den Arbeitsbereich mit Tools auszustatten.",
+      "fromInstalled": "Installierte MCPs",
+      "installedEmptyTitle": "Noch nichts installiert",
+      "installedEmptyDescription": "Installiere eines aus dem MCP Hub oder füge eine Konfiguration ein."
+    },
+    "skill": {
+      "title": "Skills",
+      "description": "Die im Arbeitsbereich ausgestatteten Skills.",
+      "searchPlaceholder": "Skills im Arbeitsbereich suchen",
+      "add": "Skill hinzufügen",
+      "emptyTitle": "Keine Skills",
+      "emptyDescription": "Füge einen Skill hinzu, um den Arbeitsbereich auszustatten.",
+      "addDescription": "Wähle aus deinen installierten Skills oder lade einen lokalen Ordner hoch.",
+      "fromInstalled": "Aus installierten",
+      "fromFolder": "Ordner hochladen",
+      "installedEmptyTitle": "Noch keine installierten Skills",
+      "installedEmptyDescription": "Installiere einen aus dem Skill-Hub und füge ihn hier hinzu.",
+      "pickFolderTitle": "Einen Skill-Ordner auswählen",
+      "pickFolderDescription": "Der Ordner muss eine SKILL.md im Stammverzeichnis enthalten.",
+      "pickFolder": "Ordner auswählen",
+      "importLocal": "Aus lokalem Ordner importieren",
+      "pickAnother": "Anderen auswählen",
+      "fileCount": "{{count}} Dateien"
+    },
+    "workspace": {
+      "checkpoint": "Checkpoints",
+      "diff": "Änderungen",
+      "browser": "Browser",
+      "terminal": "Terminal",
+      "hooks": "Hooks"
+    },
+    "knowledge": {
+      "title": "Wissensdatenbanken",
+      "description": "Wissensdatenbanken, aus denen der Agent abrufen kann.",
+      "searchPlaceholder": "Wissensdatenbanken suchen",
+      "emptyTitle": "Keine Wissensdatenbanken",
+      "emptyDescription": "Erstelle zuerst eine auf der Seite „Wissensdatenbanken“.",
+      "parametersTitle": "Abrufeinstellungen",
+      "parametersDescription": "Abrufeinstellungen für Wissensdatenbanken."
+    },
+    "permission": {
+      "title": "Berechtigungen",
+      "description": "Die in dieser Sitzung angewendeten Berechtigungen.",
+      "mode": "Modus: {{mode}}",
+      "workingDirectories": "Arbeitsverzeichnisse",
+      "noWorkingDirectories": "Keine Arbeitsverzeichnisse.",
+      "allow": "Zulassen",
+      "deny": "Verweigern",
+      "ask": "Nachfragen",
+      "anyInvocation": "jeder Aufruf",
+      "rulesTitle": "Regeln (gelten für alle Sitzungen)",
+      "addButton": "Hinzufügen",
+      "contentPlaceholder": "Muster für den Abgleich; leer = jeder Aufruf",
+      "deleteRule": "Diese Regel löschen",
+      "loadFailed": "Regeln konnten nicht geladen werden: {{detail}}",
+      "emptyTitle": "Keine Regeln konfiguriert",
+      "emptyDescription": "Regeln zum Zulassen/Verweigern/Nachfragen werden hier angezeigt, sobald sie hinzugefügt werden."
+    },
+    "search": {
+      "emptyTitle": "Keine Ergebnisse",
+      "emptyDescription": "Nichts entspricht „{{query}}“."
+    },
+    "loading": "Lädt…",
+    "team": {
+      "membersHeading": "Mitglieder",
+      "noMembers": "Noch keine Mitglieder — bitte den Teamleiter, eines mit AgentCreate zu erzeugen.",
+      "emptyTitle": "Kein Team",
+      "emptyDescription": "Diese Sitzung gehört zu keinem Team. Der Agent bildet mit TeamCreate eines.",
+      "running": "Läuft",
+      "idle": "Inaktiv",
+      "missingSession": "(keine Sitzung)"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "QR-Code scannen",
+      "manualTab": "Manuell eingeben",
+      "scanHint": "Mit der Plattform-App scannen und bestätigen, um die Anmeldedaten zu erstellen.",
+      "authorized": "Bestätigt. Die Anmeldedaten sind bereit.",
+      "failed": "Die Verknüpfung konnte nicht abgeschlossen werden.",
+      "unsafeUrl": "Die Plattform hat einen Link zurückgegeben, der nicht sicher angezeigt werden kann.",
+      "retry": "Erneut versuchen"
+    },
+    "title": "Kanäle",
+    "subtitle": "Externe Plattformen wie Feishu und Discord verbinden, damit Agenten in Gruppenchats arbeiten",
+    "status": "Status",
+    "connected": "Verbunden",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "deleteEntity": "Kanal",
+    "routing": "Routing",
+    "routingDesc": "Eingehende Nachrichten einem Agenten und einem Sitzungsbereich zuordnen. Die letzte Regel trifft auf alles andere zu.",
+    "sectionActive": "Verbunden",
+    "sectionAdd": "Kanal hinzufügen",
+    "rules": "{{count}} Regeln",
+    "empty": {
+      "title": "Keine Kanäle",
+      "description": "Erstelle einen Kanal, um deinen Agenten mit externen Plattformen wie Feishu, DingTalk usw. zu verbinden."
+    },
+    "create": {
+      "title": "Kanal erstellen",
+      "titleFor": "{{name}} verbinden",
+      "description": "Einen Agenten mit einer externen Messaging-Plattform verbinden.",
+      "channelType": "Plattform",
+      "nameLabel": "Name",
+      "namePlaceholder": "z. B. Support-Desk",
+      "nameDesc": "Unterscheidet Kanäle auf derselben Plattform",
+      "modelDesc": "Anfangsmodell für eine neue Sitzung",
+      "permissionMode": "Berechtigungsmodus",
+      "permissionModeDesc": "Anfänglicher Berechtigungsmodus für eine neue Sitzung",
+      "showToolMessages": "Tool-Nachrichten anzeigen",
+      "showToolMessagesDesc": "Zeigt Tool-Aufruf-/Ergebnisnachrichten im Kanal an.",
+      "showThinking": "Denkprozess anzeigen",
+      "showThinkingDesc": "Zeigt den Denkprozess des Modells im Kanal an."
+    },
+    "fields": {
+      "app_id": {
+        "title": "App-ID",
+        "description": "Feishu-App-ID"
+      },
+      "app_secret": {
+        "title": "App-Secret",
+        "description": "Feishu-App-Secret"
+      },
+      "bot_token": {
+        "title": "Bot-Token"
+      },
+      "application_id": {
+        "title": "Anwendungs-ID"
+      },
+      "only_at_reply": {
+        "title": "Nur bei Erwähnung antworten",
+        "description": "In Gruppenchats nur antworten, wenn der Bot mit @ erwähnt wird"
+      },
+      "show_tool_process": {
+        "title": "Tool-Prozess anzeigen",
+        "description": "Tool-Aufrufe und Ergebnisse inline in der Antwort anzeigen"
+      },
+      "show_thinking": {
+        "title": "Denkprozess anzeigen",
+        "description": "Den Denkprozess des Modells inline in der Antwort anzeigen"
+      }
+    },
+    "edit": {
+      "title": "Kanal bearbeiten",
+      "description": "Routing-, Modell- und Antworteinstellungen aktualisieren. Plattform und Zugangsdaten sind unveränderlich."
+    },
+    "sessionScope": {
+      "per_chat": "Pro Chat",
+      "per_chat_user": "Pro Chat-Benutzer"
+    },
+    "sessions": {
+      "title": "Sitzungen",
+      "empty": "Noch keine Sitzungen",
+      "openInChat": "Im Chat öffnen"
+    },
+    "detail": {
+      "config": "Konfiguration",
+      "configDesc": "Anfangskonfiguration für neue Sitzungen",
+      "configItem": "Element",
+      "configValue": "Wert",
+      "condition": "Bedingung",
+      "created": "Erstellt",
+      "deleteChannel": "Kanal löschen",
+      "routingDesc": "Wie eingehende Nachrichten einem Agenten und Sitzungsbereich zugeordnet werden",
+      "sessionsDesc": "Von diesem Kanal erzeugte Sitzungen",
+      "selectHint": "Kanal auswählen, um Details anzuzeigen"
+    },
+    "state": {
+      "stopped": "Gestoppt",
+      "connecting": "Verbindung wird hergestellt",
+      "retrying": "Verbindung wird wiederhergestellt",
+      "connected": "Verbunden",
+      "failed": "Fehlgeschlagen"
+    },
+    "binding": {
+      "rule": "Abgleichsregel",
+      "matchKey": "Abgleichsfeld",
+      "matchValue": "Abgleichswert",
+      "matchValuePlaceholder": "z. B. eine chat_id",
+      "routeTo": "Weiterleiten an",
+      "scope": "Sitzungsbereich",
+      "fallback": "Fallback-Regel",
+      "fallbackDesc": "Nachrichten, die auf keine der obigen Regeln passen, werden hierhin weitergeleitet",
+      "catchAll": "Alle anderen Nachrichten",
+      "addRule": "Regel hinzufügen"
+    }
+  },
+  "mcp": {
+    "subtitle": "MCP-Server durchsuchen und installieren",
+    "hubsLabel": "Hubs",
+    "searchPlaceholder": "Diesen Hub durchsuchen",
+    "mineSearchPlaceholder": "Ihre MCPs durchsuchen",
+    "noHubsTitle": "Keine Hubs verfügbar",
+    "noHubsDescription": "Bitten Sie Ihren Administrator, einen hinzuzufügen.",
+    "noCardsTitle": "Nichts gefunden",
+    "noCardsDescription": "Versuchen Sie ein anderes Suchwort.",
+    "mineDescription": "Die von Ihnen installierten MCP-Server",
+    "mineEmptyTitle": "Noch keine MCP-Server",
+    "mineEmptyDescription": "Installieren Sie einen aus einem Hub auf der linken Seite.",
+    "needsConfig": "Konfiguration erforderlich",
+    "stateful": "Zustandsbehaftet",
+    "configLabel": "Konfiguration",
+    "install": "Installieren",
+    "installed": "Installiert",
+    "installTitle": "{{name}} installieren",
+    "installDescription": "Fügt ihn zu Ihren MCPs hinzu. Wählen Sie anschließend eine Sitzung zur Verwendung aus.",
+    "editTitle": "{{name}} bearbeiten",
+    "editDescription": "Lassen Sie ein Secret leer, um das bereits gespeicherte beizubehalten.",
+    "nameLabel": "Name",
+    "loadFailedTitle": "Server nicht erreichbar",
+    "loadFailedDescription": "Prüfen Sie die Server-URL und ob der Dienst läuft.",
+    "retry": "Erneut versuchen"
+  },
+  "skill": {
+    "category": {
+      "testing": "Testen & Debuggen",
+      "security": "Sicherheit",
+      "devops": "Bereitstellung & Betrieb",
+      "writing": "Schreiben",
+      "office-efficiency": "Büroeffizienz",
+      "knowledge-management": "Wissensmanagement",
+      "content-creation": "Content-Erstellung",
+      "ai-agent": "KI-Agenten",
+      "dev-programming": "Entwicklung",
+      "design-media": "Design & Medien",
+      "data-analysis": "Datenanalyse",
+      "life-service": "Lifestyle",
+      "professional": "Professionell",
+      "design-creative": "Design & Kreativität",
+      "coding-agents": "Programmier-Agents",
+      "agent-skills": "Agent-Skills",
+      "development": "Engineering",
+      "agent-frameworks": "Agent-Frameworks",
+      "browser-automation": "Browser-Automatisierung",
+      "productivity": "Produktivität",
+      "rag-knowledge": "RAG & Wissen",
+      "automation": "Automatisierung",
+      "document-processing": "Dokumentenverarbeitung",
+      "education": "Bildung",
+      "finance": "Finanzen",
+      "legal-compliance": "Recht & Compliance",
+      "media-automation": "Medienautomatisierung",
+      "Personal AI": "Persönliche KI",
+      "research": "Forschung",
+      "web-automation": "Web-Automatisierung"
+    },
+    "allCategories": "Alle",
+    "matchButton": "Aufgabe zuordnen",
+    "matchHint": "Beschreiben Sie die Aufgabe zuerst im Suchfeld",
+    "matchRecommends": "Für diese Aufgabe empfohlen",
+    "matchAlternatives": "Alternativen",
+    "matchScore": "Übereinstimmung {{score}}",
+    "matchSearched": "{{count}} Skills durchsucht",
+    "matchFailed": "Kein passender Skill gefunden",
+    "matchDismiss": "Ausblenden",
+    "matchPolicy": "Quellenrichtlinie: {{policy}}",
+    "subtitle": "Skills durchsuchen und installieren",
+    "hubsLabel": "Hubs",
+    "searchPlaceholder": "Diesen Hub durchsuchen",
+    "mineSearchPlaceholder": "Ihre Skills durchsuchen",
+    "noHubsTitle": "Keine Hubs verfügbar",
+    "noHubsDescription": "Bitten Sie Ihren Administrator, einen hinzuzufügen.",
+    "noCardsTitle": "Nichts gefunden",
+    "noCardsDescription": "Versuchen Sie ein anderes Stichwort.",
+    "mineDescription": "Ihre installierten Skills",
+    "mineEmptyTitle": "Noch keine Skills",
+    "mineEmptyDescription": "Installieren Sie einen aus einem Hub auf der linken Seite.",
+    "install": "Installieren",
+    "installed": "Installiert",
+    "versionLabel": "Version",
+    "hubLabel": "Hub",
+    "updatedLabel": "Aktualisiert",
+    "updatedAgo": "Vor {{ago}} aktualisiert",
+    "updatedRecently": "Gerade aktualisiert",
+    "installsLabel": "Installationen",
+    "downloadsLabel": "Downloads",
+    "linkLabel": "Seite",
+    "viewOnHub": "Im Hub ansehen",
+    "noReadme": "Dieser Skill enthält keinen SKILL.md-Inhalt.",
+    "loadFailedTitle": "Server nicht erreichbar",
+    "loadFailedDescription": "Prüfen Sie die Server-URL und ob der Dienst ausgeführt wird.",
+    "retry": "Wiederholen"
+  },
+  "agent-menu": {
+    "settings": "Einstellungen",
+    "delete": "Agent löschen"
+  },
+  "workdir": {
+    "title": "Arbeitsverzeichnis",
+    "description": "Wählen Sie das Arbeitsverzeichnis des Agents.",
+    "root": "Workspace-Stammverzeichnis",
+    "parent": "Eine Ebene nach oben",
+    "errorTitle": "Dieser Ordner konnte nicht aufgelistet werden",
+    "pathPlaceholder": "Pfad eingeben oder einfügen",
+    "empty": "Dieser Ordner ist leer",
+    "pressEnter": "Drücken Sie die Eingabetaste, um diesen Pfad zuerst zu prüfen",
+    "pickerPlaceholder": "Wählen Sie einen Ordner aus, um Tools zu verwenden",
+    "recent": "Zuletzt",
+    "recentEmpty": "Keine zuletzt verwendeten Ordner",
+    "browse": "Ordner auswählen",
+    "gitTooltip": "{{staged}} vorgemerkt · {{unstaged}} geändert · {{untracked}} nicht verfolgt\nDie Zeilenzählung schließt nicht verfolgte Dateien aus"
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "backToApp": "Zurück zu Tora",
+    "close": "Schließen",
+    "loadFailed": "Einstellungen konnten nicht geladen werden (das Backend ist möglicherweise offline oder verwendet den falschen Port): {{error}}",
+    "loadingRuntime": "Laufzeitkonfiguration wird geladen…",
+    "sections": {
+      "general": "Allgemein",
+      "theme": "Design",
+      "agent": "Agent",
+      "model": "Modelle",
+      "memory": "Gedächtnis",
+      "data": "Daten",
+      "about": "Über",
+      "usage": "Nutzung",
+      "account": "Konto",
+      "developer": "Entwickler & Debug"
+    },
+    "memory": {
+      "title": "Gedächtnis",
+      "desc": "Langzeitgedächtnis über Sitzungen hinweg: Relevante Einträge werden zu Beginn einer Sitzung eingefügt, mit optionaler Destillation nach der Sitzung",
+      "inject": "Sitzungsinjektion",
+      "injectDesc": "Relevante Erinnerungen zu Beginn der Sitzung für das aktuelle Projekt in den System-Prompt einfügen",
+      "distill": "Automatische Destillation",
+      "distillDesc": "Nach Abschluss einer Sitzung überprüft das Modell die Konversation und destilliert 0-3 erinnerungswürdige Einträge",
+      "searchPh": "Erinnerungen durchsuchen (Eingabetaste zum Suchen)",
+      "contentPh": "Erinnerungsinhalt, z. B. Tests in diesem Projekt laufen immer mit node --test",
+      "projectKeyPh": "Absoluter Projektpfad (leer greift auf global zurück)",
+      "scopeGlobal": "Global",
+      "scopeProject": "Projekt",
+      "add": "Erinnerung hinzufügen",
+      "save": "Speichern",
+      "cancel": "Abbrechen",
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "confirmDelete": "Löschen bestätigen?",
+      "pin": "Anheften",
+      "unpin": "Lösen",
+      "dedupedToast": "Eine ähnliche Erinnerung existiert bereits; nicht erneut gespeichert",
+      "projectGroup": "Projekterinnerungen",
+      "globalGroup": "Globale Erinnerungen",
+      "empty": "Noch keine Erinnerungen. Bitte den Assistenten, sich in einer Unterhaltung etwas zu \"merken…\", oder füge hier eine hinzu.",
+      "emptySearch": "Keine passenden Erinnerungen",
+      "kinds": {
+        "preference": "Präferenz",
+        "fact": "Fakt",
+        "pitfall": "Fallstrick",
+        "convention": "Konvention"
+      },
+      "sources": {
+        "manual": "Manuell",
+        "tool": "Werkzeug",
+        "distill": "Verdichtet"
+      }
+    },
+    "theme": {
+      "title": "Design",
+      "subtitle": "Wähle Erscheinungsbild, Bewegung und Arbeitsbereichshintergrund",
+      "modeTitle": "Erscheinungsbild",
+      "modeDesc": "Hell, dunkel oder dem System folgen",
+      "light": "Hell",
+      "dark": "Dunkel",
+      "system": "System",
+      "motionTitle": "Interaktionsanimation",
+      "motionDesc": "Lege das Tempo für Klick-Feedback und Seitenwechsel fest. Die Einstellung \"Bewegung reduzieren\" deines Systems hat immer Vorrang.",
+      "motionModeTitle": "Bewegungstempo",
+      "motion": {
+        "system": "System",
+        "off": "Aus",
+        "gentle": "Sanft",
+        "standard": "Standard",
+        "fast": "Schnell"
+      },
+      "motionReduced": "Die Einstellung \"Bewegung reduzieren\" ist in deinem System aktiviert, daher sind Animationen derzeit deaktiviert.",
+      "motionClickTitle": "Klick-Feedback",
+      "motionClickDesc": "Kurzes Druck-Feedback für Schaltflächen, Links und Menüeinträge",
+      "motionPageTitle": "Seitenübergänge",
+      "motionPageDesc": "Sanfte Wechsel zwischen Arbeitsbereichsseiten",
+      "backgroundTitle": "Hintergrund",
+      "backgroundDesc": "Wird von Arbeitsbereich, Einstellungen und Anmeldebildschirmen gemeinsam genutzt",
+      "lavender": "Sanftes Lavendel",
+      "mist": "Blauer Nebel",
+      "stone": "Warmer Stein",
+      "midnight": "Mitternacht",
+      "none": "Keine",
+      "custom": "Benutzerdefiniert",
+      "import": "Bild importieren",
+      "replace": "Bild ersetzen",
+      "remove": "Benutzerdefinierten Hintergrund entfernen",
+      "localOnly": "Benutzerdefinierte Hintergründe verbleiben auf diesem Gerät und werden niemals hochgeladen. PNG, JPEG und WebP bis zu 16 MB.",
+      "invalidType": "Wähle ein PNG-, JPEG- oder WebP-Bild",
+      "tooLarge": "Bilder müssen unter 16 MB groß sein",
+      "processFailed": "Dieses Bild konnte nicht gelesen werden. Versuche es mit einer anderen Datei.",
+      "storageFailed": "Der Hintergrund konnte nicht gespeichert werden. Der lokale Speicher ist möglicherweise voll."
+    },
+    "general": {
+      "title": "Allgemein",
+      "common": "Häufig",
+      "language": {
+        "title": "Sprache",
+        "desc": "Oberflächensprache",
+        "zh": "Vereinfachtes Chinesisch",
+        "zhHant": "Traditionelles Chinesisch",
+        "en": "Englisch",
+        "ja": "Japanisch",
+        "ko": "Koreanisch",
+        "fr": "Französisch",
+        "de": "Deutsch",
+        "it": "Italienisch",
+        "ar": "Arabisch",
+        "es": "Spanisch",
+        "pt": "Portugiesisch",
+        "ru": "Russisch",
+        "hi": "Hindi",
+        "lzh": "Klassisches Chinesisch"
+      },
+      "searchEngine": {
+        "title": "Suchmaschine",
+        "desc": "Wird verwendet, wenn die Eingabe in der Adressleiste keine URL ist",
+        "engines": {
+          "360": "360 Search",
+          "baidu": "Baidu",
+          "google": "Google",
+          "sogou": "Sogou",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "Bing"
+        }
+      },
+      "systemNotifications": {
+        "title": "Benachrichtigungen für Systemnachrichten",
+        "desc": "Verwende Systembenachrichtigungen für neue Nachrichten. Titel und Text der Nachricht bleiben ausgeblendet; erlaube Tora in den Systembenachrichtigungseinstellungen.",
+        "test": "Testbenachrichtigung",
+        "testing": "Wird getestet…",
+        "shown": "Das System hat die Benachrichtigung akzeptiert. Wenn kein Banner angezeigt wurde, prüfe die Benachrichtigungseinstellungen oder den Fokusmodus.",
+        "failed": "Das System hat die Benachrichtigung abgelehnt. Teste unter macOS in einem signierten Build und prüfe die Benachrichtigungsberechtigung.",
+        "unsupported": "Native Benachrichtigungen werden auf diesem System nicht unterstützt.",
+        "unconfirmed": "Eine Benachrichtigung wurde angefordert, aber die Anzeige wurde nicht bestätigt. Prüfe die Benachrichtigungsberechtigungen."
+      },
+      "sound": {
+        "title": "Benachrichtigungston",
+        "desc": "Tonwarnungen für Aufgabenereignisse",
+        "replyDoneTitle": "Antwort beendet",
+        "replyDoneDesc": "Wiedergeben, wenn der Agent eine Antwort beendet",
+        "needConfirmTitle": "Bestätigung erforderlich",
+        "needConfirmDesc": "Wiedergeben, wenn eine Bestätigung oder Frage deine Aufmerksamkeit erfordert",
+        "kindTitle": "Ton",
+        "kindDesc": "Wähle den Hinweiston",
+        "kindDing": "Ding",
+        "kindCrisp": "Klar",
+        "kindSoft": "Sanft",
+        "kindCustom": "Benutzerdefiniert",
+        "preview": "Vorschau",
+        "customTitle": "Benutzerdefinierter Ton",
+        "customDesc": "Verwende eine lokale Audiodatei (mp3 / wav / ogg usw.)",
+        "customChoose": "Datei auswählen",
+        "customClear": "Entfernen",
+        "volumeTitle": "Lautstärke",
+        "volumeDesc": "Wiedergabelautstärke des Hinweistons",
+        "tooLarge": "Datei zu groß (max. 10 MB)",
+        "saveFailed": "Speichern fehlgeschlagen, bitte erneut versuchen"
+      },
+      "behavior": "Verhalten"
+    },
+    "developer": {
+      "title": "Entwickler & Debug",
+      "desc": "Laufzeitverhalten des Agenten, Hooks, Codeindex und Sprachserver. Änderungen werden beim nächsten Lauf wirksam.",
+      "behavior": "Verhalten"
+    },
+    "behavior": {
+      "presets": {
+        "title": "Ausführungsprofil",
+        "desc": "Wende ein bewährtes Laufzeitprofil an und passe bei Bedarf die einzelnen Limits unten fein an.",
+        "fast": {
+          "title": "Schnell",
+          "desc": "Kurze Aufgaben mit geringeren Kosten"
+        },
+        "balanced": {
+          "title": "Ausgewogen",
+          "desc": "Empfohlen für die tägliche Arbeit"
+        },
+        "deep": {
+          "title": "Gründlich",
+          "desc": "Komplexe Aufgaben mit mehr Spielraum für Iterationen"
+        }
+      },
+      "context": {
+        "title": "Kontext-Token-Limit",
+        "desc": "Wenn die Unterhaltung diesen Wert überschreitet, wird der frühere Verlauf automatisch komprimiert (Standard: 24000). Ein niedrigerer Wert spart Tokens, verliert aber Verlaufsdetails.",
+        "suffix": "Tokens"
+      },
+      "toolOutput": {
+        "title": "Limit für einzelne Tool-Ausgaben",
+        "desc": "Maximale Anzahl Zeichen, die ein einzelner Tool-Aufruf zurückgibt (Standard: 6000); längere Ausgaben werden abgeschnitten.",
+        "suffix": "Zeichen"
+      },
+      "maxTurns": {
+        "title": "Max. Agent-Iterationen",
+        "desc": "Maximale Agent-Schleifendurchläufe pro Aufgabe (Standard: 40); überschrittene Läufe werden zwangsweise gestoppt.",
+        "suffix": "Durchläufe"
+      },
+      "shellSandbox": {
+        "title": "Sandbox für Befehlsprozesse",
+        "desc": "Begrenzt, wohin Agent-Bash- und Git-Befehle schreiben können. Wenn deaktiviert, erhalten Befehle Dateizugriff mit den Rechten deines Benutzerkontos."
+      },
+      "shellNetwork": {
+        "title": "Netzwerkzugriff für Sandbox-Befehle erlauben",
+        "desc": "Standardmäßig aus. Wenn aktiviert, können Befehle das Internet und lokale Dienste erreichen; nur bei Bedarf aktivieren."
+      }
+    },
+    "data": {
+      "title": "Daten",
+      "subtitle": "Lokale und serverseitige Sitzungsdaten löschen",
+      "wipe": {
+        "title": "Alle Sitzungen löschen",
+        "desc": "Löscht alle Sitzungsdatensätze, Agenten und Anmeldedaten. Dies kann nicht rückgängig gemacht werden.",
+        "button": "Löschen",
+        "confirm": "Löschen bestätigen",
+        "cancel": "Abbrechen",
+        "processing": "Wird verarbeitet…",
+        "error": "Löschen fehlgeschlagen: {{error}}"
+      }
+    },
+    "about": {
+      "title": "Über",
+      "tora": "Lokaler Agent-Arbeitsbereich · v{{version}}",
+      "runtime": "Electron-Desktop · Lokaler ASAPI-Dienst · Eigenes Modell verwenden",
+      "runtimeTitle": "Laufzeit",
+      "update": {
+        "title": "Software-Update",
+        "desc": "Nach einer neuen Tora-Version suchen. macOS und Windows laden im Hintergrund herunter und fordern dich dann zum Neustart und Installieren auf.",
+        "check": "Nach Updates suchen",
+        "checking": "Suche…",
+        "upToDate": "Du bist auf dem neuesten Stand.",
+        "available": "Tora {{version}} ist verfügbar. Folge der Update-Aufforderung, um fortzufahren.",
+        "downloading": "Tora {{version}} ist verfügbar und wird im Hintergrund heruntergeladen.",
+        "ready": "Tora {{version}} wurde heruntergeladen und ist bereit zur Installation.",
+        "development": "Updates sind in Entwicklungs-Builds nicht verfügbar.",
+        "unavailable": "Automatische Updates sind auf dieser Plattform nicht verfügbar.",
+        "desktopOnly": "Suche in der Tora-Desktop-App nach Updates.",
+        "failed": "Updates konnten nicht geprüft werden: {{error}}"
+      }
+    },
+    "errors": {
+      "backend": "Backend hat {{status}} zurückgegeben",
+      "runtimeSave": "Speichern fehlgeschlagen ({{status}}): {{text}}",
+      "saveFailed": "Speichern fehlgeschlagen: {{error}}",
+      "wipeFailed": "Löschen fehlgeschlagen: {{error}}"
+    },
+    "advanced": {
+      "title": "Erweitert",
+      "subtitle": "Hooks, Codeindex und Sprachserver. Änderungen werden beim nächsten Lauf wirksam.",
+      "hooks": {
+        "title": "Lebenszyklus-Hooks",
+        "desc": "Führe deine eigenen Befehle bei UserPromptSubmit / PreToolUse / PostToolUse / Stop aus. Aus bedeutet, dass überhaupt kein Hook ausgeführt wird."
+      },
+      "changes": {
+        "title": "Änderungsbewusster Kontext",
+        "desc": "Fügt \"kürzlich geänderte + git-dirty Dateien\" in den System-Prompt ein, damit das Modell weiß, dass der Datenträger sich geändert haben kann."
+      },
+      "lsp": {
+        "title": "Sprachserver (LSP)",
+        "desc": "Wenn konfiguriert, nutzt Lsp einen echten Server für Definition / Referenzen / Diagnosen und bezieht Typinformationen; andernfalls wird der lokale Symbolindex verwendet.",
+        "none": "Kein Sprachserver erkannt",
+        "enable": "Aktivieren",
+        "enabled": "Aktiviert",
+        "disable": "Deaktivieren",
+        "probeFailed": "Test fehlgeschlagen: {{error}}"
+      },
+      "index": {
+        "title": "Code-Index",
+        "desc": "Symbolindex und semantischer invertierter Index (von der Suche verwendet). Wird inkrementell per mtime aktualisiert; ein manueller Neuaufbau ist selten nötig.",
+        "rebuild": "Index neu aufbauen",
+        "rebuilding": "Baue neu auf…",
+        "done": "Index neu aufgebaut: {{files}} Dateien / {{symbols}} Symbole / {{tokens}} Terme",
+        "noWorkspace": "Wähle zuerst ein Arbeitsverzeichnis in einer Sitzung aus",
+        "stats": "Aktuell: {{files}} Dateien / {{symbols}} Symbole"
+      },
+      "mcp": {
+        "title": "MCP-Server",
+        "desc": "Model Context Protocol-Server über stdio. Ihre Tools werden in Sitzungen als mcp__server__tool eingebunden. Gespeicherte Änderungen werden beim nächsten Lauf übernommen.",
+        "add": "Hinzufügen",
+        "namePlaceholder": "Name (Buchstaben, Ziffern, - _)",
+        "commandPlaceholder": "Befehl, z. B. npx",
+        "argsPlaceholder": "Argumente (durch Leerzeichen getrennt, optional)",
+        "probe": "Testen",
+        "probing": "Teste…",
+        "toolsCount": "{{count}} Tools",
+        "noServers": "Keine MCP-Server konfiguriert",
+        "delete": "Diesen Server löschen",
+        "probeFailed": "Test fehlgeschlagen: {{error}}"
+      },
+      "trust": {
+        "title": "Projekt-Hooks vertrauen",
+        "desc": "Die .tora/hooks.json eines Arbeitsbereichs stammt aus dem Repository-Inhalt. Wenn du ihr vertraust, darf dieses Repository Befehle ausführen – lies sie zuerst.",
+        "trusted": "Projekt-Hooks für dieses Verzeichnis sind vertrauenswürdig",
+        "trust": "Aktuellem Verzeichnis vertrauen",
+        "revoke": "Vertrauen entziehen",
+        "none": "Noch kein Arbeitsverzeichnis"
+      },
+      "saveFailed": "Speichern fehlgeschlagen: {{error}}"
+    },
+    "usage": {
+      "title": "Nutzungsstatistiken",
+      "desc": "Aggregiert aus lokalen Sitzungen und Läufen (Tokens, Chat-Dauer, Serien, Tool-Nutzung)",
+      "cards": {
+        "totalTokens": "Tokens insgesamt",
+        "peakTokens": "Token-Spitzenwert",
+        "longestChat": "Längster Chat",
+        "currentStreak": "Aktuelle Serie",
+        "longestStreak": "Längste Serie"
+      },
+      "activity": {
+        "title": "Token-Aktivität",
+        "daily": "Täglich",
+        "weekly": "Wöchentlich",
+        "cumulative": "Kumulativ",
+        "tipDaily": "{{tokens}} Tokens verwendet",
+        "tipWeekly": "Wochensumme: {{tokens}} Tokens",
+        "tipCumulative": "{{tokens}} Tokens insgesamt"
+      },
+      "insights": {
+        "title": "Einblicke",
+        "chats": "Chats insgesamt",
+        "runs": "Läufe insgesamt",
+        "activeDays": "Aktive Tage",
+        "toolRuns": "Tool-Ausführungen",
+        "topModel": "Top-Modell"
+      },
+      "topTools": {
+        "title": "Meistgenutzte Tools",
+        "empty": "Noch keine Tool-Nutzung",
+        "runs": "{{count}} Läufe"
+      },
+      "loading": "Wird geladen…",
+      "loadFailed": "Nutzungsstatistiken konnten nicht geladen werden: {{error}}",
+      "days": "{{count}} Tage",
+      "refresh": "Aktualisieren"
+    },
+    "account": {
+      "title": "Konto",
+      "homeTitle": "Bei Tora anmelden",
+      "homeDesc": "Gib deinen Benutzernamen oder deine E-Mail-Adresse ein — wir leiten dich zur Anmeldung oder Registrierung weiter",
+      "continue": "Anmelden / Registrieren",
+      "nextStep": "Weiter",
+      "otherWays": "Andere Anmeldeoptionen",
+      "register": "Registrieren",
+      "emailTitle": "Anmelden oder registrieren",
+      "registerTitle": "Konto erstellen",
+      "emailDesc": "Erhalte intelligentere Antworten und Cloud-Funktionen.",
+      "emailLabel": "E-Mail-Adresse",
+      "emailPlaceholder": "E-Mail-Adresse",
+      "passwordTitle": "Passwort eingeben",
+      "createPasswordTitle": "Passwort erstellen",
+      "passwordLabel": "Passwort (mind. 8 Zeichen)",
+      "confirmLabel": "Passwort bestätigen",
+      "login": "Anmelden",
+      "createAccount": "Konto erstellen",
+      "or": "oder",
+      "terms": "Indem du fortfährst, stimmst du den Tora-Nutzungsbedingungen und der Datenschutzrichtlinie zu.",
+      "back": "Zurück",
+      "logout": "Abmelden",
+      "since": "Mitglied seit {{date}}",
+      "errors": {
+        "confirmMismatch": "Passwörter stimmen nicht überein",
+        "shortPassword": "Passwort muss mindestens 8 Zeichen lang sein",
+        "alreadyRegistered": "Diese E-Mail-Adresse ist bereits registriert — bitte melde dich an",
+        "invalidEmail": "Ungültige E-Mail-Adresse",
+        "longPassword": "Passwort ist zu lang",
+        "wrongCredentials": "Falsches Konto oder Passwort",
+        "wrongPassword": "Aktuelles Passwort ist falsch",
+        "emailTaken": "Diese E-Mail-Adresse wird bereits verwendet",
+        "avatarTooLarge": "Avatar ist zu groß, bitte wähle ein kleineres Bild",
+        "avatarInvalid": "Avatar-Format wird nicht unterstützt",
+        "invalidUsername": "Der Benutzername muss 2-32 Buchstaben, Ziffern, Unterstriche, Bindestriche oder CJK-Zeichen enthalten",
+        "usernameTaken": "Dieser Benutzername ist bereits vergeben",
+        "codeTooFrequent": "Zu viele Anfragen, bitte versuchen Sie es später erneut",
+        "codeSendFailed": "Code konnte nicht gesendet werden, bitte versuchen Sie es später erneut",
+        "codeInvalid": "Der Bestätigungscode ist ungültig oder abgelaufen",
+        "turnstileFailed": "Menschliche Verifizierung fehlgeschlagen, bitte versuchen Sie es erneut"
+      },
+      "networkWarning": "Der Authentifizierungsdienst konnte nicht erreicht werden. Überprüfen Sie Ihr Netzwerk und versuchen Sie es erneut",
+      "networkRetryHint": "Deine Anmeldedaten bleiben erhalten. Versuche die Prüfung erneut, wenn die Verbindung wiederhergestellt ist.",
+      "manager": {
+        "description": "Verwalte dein Profil und die Sicherheit deines Kontos.",
+        "profileTitle": "Profil",
+        "securityTitle": "Kontosicherheit",
+        "registeredAt": "Registriert am",
+        "passwordHint": "Ändere dein Passwort für die Anmeldung bei Tora",
+        "emailPasswordHint": "Gib dein aktuelles Passwort ein, um deine Identität zu bestätigen",
+        "confirmNewPassword": "Neues Passwort bestätigen",
+        "savePassword": "Passwort speichern",
+        "saveEmail": "E-Mail speichern",
+        "logoutTitle": "Von diesem Konto abmelden",
+        "logoutHint": "Beim nächsten Mal musst du dich erneut anmelden.",
+        "logoutConfirmTitle": "Abmelden?",
+        "logoutConfirmDescription": "Um Tora weiter zu nutzen, musst du dich erneut anmelden.",
+        "changeAvatar": "Avatar ändern",
+        "avatarHint": "Klicken Sie auf den Avatar, um ihn zu ändern (PNG / JPG / WebP, automatisch zugeschnitten und komprimiert)",
+        "avatarSaved": "Avatar aktualisiert",
+        "changePassword": "Passwort ändern",
+        "changeEmail": "E-Mail ändern",
+        "currentEmail": "Aktuelle E-Mail: {{email}}",
+        "newEmail": "Neue E-Mail-Adresse",
+        "currentPassword": "Aktuelles Passwort",
+        "newPassword": "Neues Passwort (mindestens 8 Zeichen)",
+        "save": "Speichern",
+        "passwordSaved": "Passwort aktualisiert",
+        "emailSaved": "E-Mail aktualisiert"
+      },
+      "accountLabel": "Benutzername oder E-Mail",
+      "accountPlaceholder": "Benutzername oder E-Mail",
+      "usernameLabel": "Benutzername (2-32 Buchstaben, Ziffern oder CJK)",
+      "codeLabel": "E-Mail-Bestätigungscode",
+      "captchaTitle": "Sicherheitsüberprüfung",
+      "captchaLoginDesc": "Schließen Sie die menschliche Überprüfung ab, um sich anzumelden",
+      "captchaRegisterDesc": "Schließen Sie die menschliche Überprüfung ab, um Ihr Konto zu erstellen",
+      "showPassword": "Passwort anzeigen",
+      "hidePassword": "Passwort verbergen",
+      "sendCode": "Code senden",
+      "codeCooldown": "Erneut senden in {{s}}s"
+    }
+  },
+  "agentSection": {
+    "title": "Agent",
+    "desc": "Konfigurieren Sie den Standard-Agentennamen und den System-Prompt. Wenn Sie den System-Prompt leer lassen, wird der integrierte Corey-Prompt verwendet.",
+    "select": "Agent auswählen",
+    "name": "Name",
+    "namePlaceholder": "Agentenname",
+    "systemPrompt": "System-Prompt",
+    "systemPromptPlaceholder": "Leer lassen, um den integrierten Corey-System-Prompt zu verwenden",
+    "save": "Speichern",
+    "saved": "Gespeichert",
+    "saveFailed": "Speichern fehlgeschlagen: {{error}}"
+  },
+  "modelSection": {
+    "title": "Modelle",
+    "subtitle": "Modellverwaltung",
+    "desc": "Konfigurieren Sie API-Schlüssel, um weitere verfügbare Modelle hinzuzufügen. Das erste aktivierte Modell wird zum Standard-Konversationsmodell.",
+    "addModel": "Modell hinzufügen",
+    "empty": "Noch keine Modelle — klicken Sie auf \"Modell hinzufügen\", um Ihr erstes Modell zu verbinden",
+    "loading": "Laden…",
+    "tableHeaders": {
+      "model": "Modell",
+      "provider": "Anbieter",
+      "actions": "Aktionen"
+    },
+    "aria": {
+      "edit": "Bearbeiten",
+      "delete": "Löschen",
+      "close": "Schließen",
+      "back": "Zurück"
+    },
+    "errors": {
+      "noModels": "Anbieter hat keine Modelle zurückgegeben",
+      "submitFailed": "Übermittlung fehlgeschlagen: {{error}}",
+      "backend": "Backend hat {{status}} zurückgegeben",
+      "loginRequired": "Melden Sie sich zuerst unter \"Konto\" an — Modelle werden mit Ihrem Konto in der Cloud synchronisiert"
+    },
+    "form": {
+      "titleEdit": "Modell bearbeiten",
+      "titleAdd": "Über Anbieter hinzufügen",
+      "provider": "Anbieter",
+      "apiKey": "API-Schlüssel",
+      "apiKeyPlaceholder": "API-Schlüssel eingeben",
+      "apiKeyKeepEmpty": "Leer lassen, um den aktuellen Schlüssel beizubehalten",
+      "getApiKey": "API-Schlüssel abrufen",
+      "model": "Modell",
+      "modelPlaceholder": "Modell auswählen",
+      "modelInputPlaceholder": "Modell-ID auswählen oder eingeben (z. B. glm-4.6)",
+      "fetchingModels": "Verfügbare Modelle werden abgerufen…",
+      "fetchHint": "Modelle werden nach Eingabe des API-Schlüssels automatisch geladen; Sie können auch eine Modell-ID direkt eingeben",
+      "advanced": "Erweitert",
+      "vision": {
+        "title": "Vision-Eingabe",
+        "auto": "Automatisch",
+        "on": "Ein",
+        "off": "Aus",
+        "hint": "Automatische Erkennung anhand des Modellnamens; Vision-Modelle wie deepseek-flash, gpt-4o und qwen-vl akzeptieren Bilder"
+      },
+      "baseUrl": "Endpunkt (Basis-URL)",
+      "saveHint": "Die Konnektivität wird beim Speichern über den Modelllisten-Endpunkt überprüft; der Schlüssel wird nur lokal gespeichert",
+      "reset": "Zurücksetzen",
+      "saveEdit": "Änderungen speichern",
+      "saveAdd": "Modell hinzufügen",
+      "selectedCount": "{{count}} ausgewählt",
+      "selectAll": "Alle auswählen",
+      "deselectAll": "Leeren",
+      "alreadyAdded": "hinzugefügt",
+      "apiKeyReused": "Leer lassen, um vorhandenen Schlüssel wiederzuverwenden",
+      "keyReusedHint": "Für diesen Anbieter ist bereits ein API-Schlüssel konfiguriert — leer lassen, um ihn wiederzuverwenden, wählen Sie einfach Modelle aus und speichern Sie."
+    },
+    "providers": {
+      "custom": "Benutzerdefiniertes Modell",
+      "volcengine": "Volcengine",
+      "dashscope": "Alibaba Cloud",
+      "siliconflow": "SiliconFlow",
+      "stepfun": "StepFun China",
+      "stepfunGlobal": "StepFun Global",
+      "hunyuan": "Tencent Cloud",
+      "ollama": "Ollama (Lokal)"
+    }
+  }
+}

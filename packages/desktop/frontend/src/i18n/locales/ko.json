@@ -1,0 +1,1797 @@
+{
+  "languageDialog": {
+    "subtitle": "언어를 선택하세요",
+    "search": "언어 검색",
+    "noResults": "일치하는 언어가 없습니다",
+    "systemSuggestion": "시스템 언어는 {{language}}입니다. 해당 언어로 전환하시겠습니까?",
+    "switch": "{{language}}(으)로 전환",
+    "later": "나중에",
+    "close": "언어 선택기 닫기",
+    "switchError": "언어를 전환할 수 없습니다"
+  },
+  "usageMilestone": {
+    "title": "토큰 마일스톤 달성",
+    "subtitle": "Tora에서 누적 토큰 사용량이 새로운 마일스톤에 도달했습니다.",
+    "total": "총 {{count}}개 토큰 사용됨",
+    "more": "표시할 마일스톤 {{count}}개 남음",
+    "continue": "Tora로 계속하기",
+    "retry": "이 마일스톤을 저장할 수 없습니다. 다시 시도해 주세요.",
+    "levels": {
+      "100k": "100K",
+      "1m": "1M",
+      "10m": "10M",
+      "100m": "100M",
+      "500m": "500M",
+      "1b": "1B",
+      "2b": "2B",
+      "5b": "5B",
+      "10b": "10B"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "외부 링크를 여시겠습니까?",
+    "externalLinkWarning": "외부 웹사이트를 방문하려고 합니다.",
+    "copyLink": "링크 복사",
+    "copied": "복사됨",
+    "openLink": "링크 열기",
+    "close": "닫기"
+  },
+  "inbox": {
+    "translateToLanguage": "{{language}}로 번역",
+    "detail": "메시지 세부정보",
+    "translateToChinese": "중국어로 번역",
+    "translateToEnglish": "영어로 번역",
+    "translating": "번역 중…",
+    "showOriginal": "원문 보기",
+    "showTranslation": "번역 보기",
+    "noTranslationNeeded": "번역이 필요하지 않음",
+    "translationError": "번역에 실패했습니다. 번역 버튼을 클릭하여 다시 시도하세요.",
+    "translationRateLimit": "번역 요청이 너무 많습니다. 나중에 다시 시도해 주세요.",
+    "title": "메시지",
+    "newMessage": "Tora의 새 메시지",
+    "empty": "아직 메시지가 없습니다",
+    "loading": "로딩 중…",
+    "unread": "읽지 않음",
+    "more": "더 보기",
+    "back": "메시지로 돌아가기",
+    "retry": "다시 시도",
+    "loadError": "메시지를 로드할 수 없습니다",
+    "readError": "메시지를 읽음으로 표시할 수 없습니다. 다시 시도하세요.",
+    "blocked": "계정 정지됨",
+    "blockedReason": "이 계정은 현재 Tora를 사용할 수 없습니다.",
+    "unbanHint": "관리자가 정지를 해제하면 액세스가 자동으로 재개됩니다.",
+    "signOut": "로그아웃"
+  },
+  "requiredUpdate": {
+    "title": "Tora 업데이트",
+    "description": "버전 {{version}}을(를) 사용할 수 있습니다. 계속하려면 업데이트하세요.",
+    "download": "공식 다운로드 페이지 열기",
+    "macHint": "자동 업데이트를 사용할 수 없는 경우 공식 사이트에서 최신 DMG를 다운로드하여 앱을 수동으로 교체하세요.",
+    "downloading": "업데이트 다운로드 중… {{percent}}%",
+    "install": "재시작 및 설치",
+    "retry": "다운로드 다시 시도",
+    "error": "자동 업데이트에 실패했습니다. 다시 시도하거나 공식 웹사이트에서 다운로드하세요.",
+    "quit": "Tora 종료"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Tora 첫 실행 환영 애니메이션",
+      "welcome": "Tora에 오신 것을 환영합니다",
+      "headlineFirst": "아이디어를",
+      "headlineSecond": "행동으로.",
+      "description": "모델을 연결하고, 프로젝트를 열고, 대화를 시작하세요. Tora는 코드를 읽고 편집하고 작업을 완료하는 데 도움을 줍니다.",
+      "hint": "짧은 가이드에서 필수 사항을 보여드립니다",
+      "foot": "워크스페이스가 거의 준비되었습니다.",
+      "logoAlt": "Tora 로고",
+      "enter": "시작하기",
+      "skip": "애니메이션 건너뛰기"
+    },
+    "tour": {
+      "skip": "가이드 건너뛰기",
+      "later": "나중에 설정",
+      "next": "다음",
+      "pauseSettings": "모델 관리가 열려 있습니다. 완료되면 설정을 닫으면 가이드가 계속됩니다.",
+      "pauseFolder": "프로젝트 폴더를 선택하거나 계속하려면 메뉴를 닫으세요.",
+      "pausePermission": "승인 모드를 검토하거나 선택한 후 계속하려면 메뉴를 닫으세요.",
+      "demoSend": "전송 시뮬레이션; 아무것도 제출되지 않습니다",
+      "clickHint": "계속하려면 강조 표시된 컨트롤을 클릭하세요",
+      "loading": "컨트롤을 찾는 중…",
+      "demoTag": "가이드 데모 · 실제 명령은 실행되지 않습니다",
+      "demoMessage": "이 프로젝트의 빌드 스크립트를 확인하고 먼저 계획을 알려주세요.",
+      "demoResponse": "Tora는 먼저 작업을 이해한 다음 필요한 도구 권한을 요청합니다. 각 단계를 검토하고 계속할지 결정할 수 있습니다.",
+      "demoApprove": "이번만 허용 (데모)",
+      "demoCheckpoint": "체크포인트 보기 (데모)",
+      "completeTitle": "이제 만들 준비가 되었습니다.",
+      "completeBody": "모델, 폴더 및 권한은 언제든지 변경할 수 있습니다. 불확실한 작업은 진행하기 전에 검토하세요.",
+      "startWorking": "Tora 시작",
+      "startAgain": "가이드 다시 보기",
+      "steps": [
+        {
+          "chapter": "준비하세요",
+          "title": "원하는 모델 선택",
+          "body": "Tora는 직접 추가한 모델을 사용합니다. 모델 선택기를 클릭해 공급자 연결 위치를 확인하세요."
+        },
+        {
+          "chapter": "준비하기",
+          "title": "모델 공급자 추가",
+          "body": "모델 추가를 클릭해 모델 관리를 여세요. 공급자를 선택하고 모델 정보를 입력하세요. 설정을 마치거나 건너뛰면 가이드가 다시 시작됩니다."
+        },
+        {
+          "chapter": "준비하기",
+          "title": "프로젝트 범위 설정",
+          "body": "폴더 컨트롤을 클릭해 프로젝트를 선택하세요. Agent는 권한을 부여한 워크스페이스 내에서 읽기, 편집, 도구 실행을 수행합니다. 나중에 해도 됩니다."
+        },
+        {
+          "chapter": "준비하기",
+          "title": "제어권 유지",
+          "body": "권한 모드를 클릭해 옵션을 확인하세요. 수동 승인은 좋은 시작점이며, 위험도가 높은 작업은 결정을 기다립니다."
+        },
+        {
+          "chapter": "작업 시작",
+          "title": "명확한 목표 설명",
+          "body": "메시지 상자를 클릭하세요. 달성할 것, 건드리지 말아야 할 것, 완료 여부를 확인할 방법을 명시하세요."
+        },
+        {
+          "chapter": "작업 시작",
+          "title": "첫 작업 시작",
+          "body": "이것은 전송 버튼입니다. 다음 단계는 실행을 시뮬레이션할 뿐이며, 모델 크레딧이 사용되지 않고 실제 메시지도 전송되지 않습니다."
+        },
+        {
+          "chapter": "검토 및 복구",
+          "title": "중요한 각 단계를 직접 승인",
+          "body": "권한 요청 데모입니다. 허용하거나 거부하기 전에 도구가 하려는 작업을 읽어 보세요."
+        },
+        {
+          "chapter": "검토 및 복구",
+          "title": "잘못된 방향에서 복구",
+          "body": "체크포인트는 변경 전 상태를 기록합니다. 실제 복원 전에 영향을 받을 파일을 검토하세요."
+        },
+        {
+          "chapter": "Tora 확장",
+          "title": "스킬로 워크플로 재사용",
+          "body": "스킬을 클릭하세요. 신뢰할 수 있는 스킬을 가져오거나 설치해 유용한 워크플로를 반복 가능하게 만드세요."
+        },
+        {
+          "chapter": "Tora 확장",
+          "title": "브라우저에서 결과 검증",
+          "body": "내장 브라우저를 클릭하세요. 사용자와 Agent가 같은 페이지에서 웹 앱을 검사, 디버그, 검증할 수 있습니다."
+        },
+        {
+          "chapter": "Tora 확장",
+          "title": "반복 작업 예약",
+          "body": "자동화를 클릭해 반복 점검이나 정리 작업을 예약하고 각 실행을 검토하세요."
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "시작하기 전에",
+    "description": "서비스 약관, 개인정보 처리방침, 국외 데이터 이전 고지를 각각 검토하고 확인해 주세요. 세 항목이 모두 선택되기 전까지 Tora는 로그인이나 워크스페이스를 열지 않습니다.",
+    "terms": "서비스 약관을 읽었으며 동의합니다",
+    "readTerms": "서비스 약관 읽기",
+    "privacy": "개인정보 처리방침을 읽고 이해했습니다",
+    "readPrivacy": "개인정보 처리방침 읽기",
+    "crossBorder": "개인정보의 국외 이전에 별도로 동의합니다",
+    "crossBorderHint": "계정이나 클라우드 기능을 사용하면 필요한 정보가 중국 본토 외부로 이전될 수 있습니다. 범위와 처리 세부사항을 검토해 주세요.",
+    "readCrossBorder": "국외 이전 고지 읽기",
+    "decline": "거부하고 종료",
+    "agree": "확인하고 계속"
+  },
+  "sponsors": {
+    "title": "이달의 후원자",
+    "description": "이달 Afdian에서 Tora를 후원해 주신 사용자분들께 감사드립니다. 금액이나 계정 세부정보는 표시되지 않고 표시 이름만 표시됩니다.",
+    "source": "Afdian 제공 데이터",
+    "total": "후원자 {{count}}명",
+    "loaded": "후원자 {{count}}명 표시됨",
+    "empty": "이달의 후원자가 없습니다",
+    "emptyMore": "이 페이지에는 이달의 후원자가 없습니다. 계속하려면 더 불러오세요.",
+    "loading": "후원자 불러오는 중…",
+    "loadError": "후원자 정보를 일시적으로 사용할 수 없습니다. 나중에 다시 시도해 주세요.",
+    "retry": "다시 시도",
+    "more": "더 불러오기",
+    "donate": "후원하기",
+    "leaveTitle": "후원하려면 Afdian을 여시겠습니까?",
+    "leaveDescription": "확인하면 Tora가 시스템 브라우저에서 이 외부 웹사이트를 엽니다.",
+    "confirmLeave": "확인하고 열기"
+  },
+  "polls": {
+    "title": "투표",
+    "subtitle": "투표하고 결과 확인",
+    "all": "모든 투표",
+    "history": "내 투표 기록",
+    "search": "검색",
+    "loadMore": "더 불러오기",
+    "from": "시작",
+    "to": "종료",
+    "starts": "시작",
+    "ends": "종료",
+    "forever": "마감 없음",
+    "refresh": "투표 새로고침",
+    "startsIn": "{{time}} 후 시작",
+    "startingSoon": "곧 시작, 상태 확인 중…",
+    "dayUnit": "일",
+    "state": {
+      "draft": "초안",
+      "scheduled": "시작 전",
+      "active": "진행 중",
+      "ended": "종료됨",
+      "archived": "보관됨"
+    },
+    "type": {
+      "single": "단일 선택",
+      "multiple": "복수 선택",
+      "score": "100점 만점"
+    },
+    "frequency": {
+      "once": "1인 1회",
+      "daily": "1일 1회 (베이징 시간)",
+      "unlimited": "무제한"
+    },
+    "maxSelections": "최대 {{count}}개 선택",
+    "voted": "투표함",
+    "votedCount": "{{count}}회 제출함",
+    "available": "투표 가능",
+    "choose": "왼쪽에서 투표를 선택하세요",
+    "empty": "아직 투표가 없습니다",
+    "loading": "투표 불러오는 중…",
+    "noHistory": "투표 기록 없음",
+    "results": "결과",
+    "participants": "{{count}}표",
+    "countHidden": "투표자 수는 비공개입니다",
+    "detailsHidden": "옵션 세부 정보는 비공개입니다",
+    "resultsUnavailable": "결과는 아직 공개되지 않았습니다",
+    "autoRefresh": "5초마다 새로 고침",
+    "pieHint": "링은 각 옵션의 비율을 보여줍니다. 복수 선택률은 합계가 100%를 넘을 수 있습니다.",
+    "submit": "투표 제출",
+    "submitting": "제출 중…",
+    "confirmVote": "이 투표를 제출할까요? 이후에는 수정할 수 없습니다.",
+    "submitted": "투표가 제출되었습니다",
+    "queued": "오프라인으로 저장되었습니다. 연결되면 동기화되며, 서버가 확인할 때까지 집계되지 않습니다.",
+    "pending": "대기 중인 투표",
+    "waitingSync": "서버 확인 대기 중",
+    "retry": "재시도",
+    "remove": "제거",
+    "removePending": "이 대기 중인 투표를 제거할까요?",
+    "selectionRequired": "유효한 옵션을 선택하세요",
+    "scoreRequired": "각 옵션에 0에서 100 사이의 정수 점수를 입력하세요",
+    "submitError": "투표를 제출하지 못했습니다",
+    "loadError": "투표를 불러오지 못했습니다",
+    "disabled": "관리자가 투표를 비활성화했습니다."
+  },
+  "common": {
+    "toraModels": "Tora 모델",
+    "add": "추가",
+    "agent": "에이전트",
+    "cancel": "취소",
+    "channel": "채널",
+    "chat": "채팅",
+    "new-task": "새 작업",
+    "model-switch-warning": "작업 도중 모델을 전환하면 대화 맥락이 손실되고 토큰 사용량이 늘어나며, 이전 기록이 압축되어 출력 품질이 저하될 수 있습니다.",
+    "automation": "자동화",
+    "workflow": "워크플로",
+    "close": "닫기",
+    "confirm": "확인",
+    "create": "생성",
+    "creating": "생성 중…",
+    "credential": "자격 증명",
+    "date": "날짜",
+    "delete": "삭제",
+    "disabled": "비활성화됨",
+    "edit": "편집",
+    "error": "문제가 발생했습니다",
+    "information": "정보",
+    "knowledge": "지식 베이스",
+    "loading": "로딩 중...",
+    "shownCount": "{{count}}개 표시됨",
+    "selectedCount": "{{total}}개 중 {{selected}}개 선택됨",
+    "model": "모델",
+    "name": "이름",
+    "no": "아니요",
+    "noData": "데이터 없음",
+    "readOnly": "읽기 전용",
+    "readOnlyTooltip": "읽기 전용으로 공유되었으며, 편집 및 삭제가 비활성화됩니다.",
+    "completed": "완료됨",
+    "failed": "실패함",
+    "running": "실행 중",
+    "save": "저장",
+    "saving": "저장 중…",
+    "schedule": "일정",
+    "selectAgent": "에이전트 선택",
+    "settings": "설정",
+    "switchToZh": "중국어로 전환",
+    "switchToZhHant": "번체 중국어로 전환",
+    "switchToEn": "영어로 전환",
+    "team": "팀",
+    "uploading": "업로드 중",
+    "leader": "리더",
+    "time": "시간",
+    "yes": "예",
+    "deleteTitle": "{{entity}} \"{{name}}\"을(를) 삭제할까요?",
+    "deleteDescription": "이 작업은 취소할 수 없습니다.",
+    "mcp-hub": "MCP 허브",
+    "mine": "내 것",
+    "my-mcp": "설치된 MCP",
+    "skill-hub": "스킬 허브",
+    "browser": "브라우저",
+    "polls": "투표",
+    "my-skill": "설치된 스킬",
+    "message": "메시지",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "임베딩",
+    "select": "선택"
+  },
+  "error": {
+    "description": "페이지에 예기치 않은 오류가 발생했습니다. 재시도하거나 홈으로 돌아갈 수 있습니다.",
+    "retry": "재시도",
+    "home": "홈으로 돌아가기"
+  },
+  "tool": {
+    "callGeneric": "도구 호출",
+    "read": {
+      "name": "읽기",
+      "fileCount_one": "{{count}}개 파일",
+      "fileCount_other": "{{count}}개 파일",
+      "lineCount_one": "{{formatted}}줄 읽음",
+      "lineCount_other": "{{formatted}}줄 읽음"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}}개 명령",
+      "read": "{{count}}회 읽기",
+      "edit": "{{count}}회 편집",
+      "search": "{{count}}회 검색",
+      "todo": "{{count}}개 할 일",
+      "mcp": "{{count}}회 MCP 호출",
+      "separator": ", ",
+      "fallback": "{{count}}회 도구 호출"
+    }
+  },
+  "textInput": {
+    "toComplete": "완료하려면",
+    "attach": "파일 첨부",
+    "attachNotSupported": "이 모델은 파일 첨부를 지원하지 않습니다",
+    "send": "보내기",
+    "stop": "생성 중지",
+    "stopping": "중지 중 ...",
+    "sendWithSkills": "스킬 {{count}}개와 함께 보내기",
+    "selectedSkills": "선택한 스킬",
+    "removeSkill": "{{name}} 제거",
+    "skillOnlyPrompt": "첨부한 스킬을 사용하세요.",
+    "selectedElements": "참조된 요소",
+    "removeElement": "{{tag}} 요소 제거",
+    "elementRefLine": "페이지 요소 `{{selector}}` 조작",
+    "slashMenu": {
+      "selectedLabel": "선택됨",
+      "hintSelect": "Enter로 선택, Space로 다중 선택",
+      "hintSend": "전송하려면 Enter를 누르세요",
+      "clear": "지우기",
+      "close": "닫기",
+      "empty": "아직 설치된 스킬이 없습니다 — 스킬 센터를 방문하세요",
+      "emptyQuery": "\"{{query}}\"와 일치하는 스킬이 없습니다",
+      "moreMatches": "{{count}}개 더 일치 — 필터링하려면 계속 입력하세요",
+      "selectedCount": "스킬 {{count}}개 선택됨",
+      "keyboardHighlight": "+ 키보드 하이라이트",
+      "clickToMulti": "행을 클릭하여 다중 선택; Esc로 닫기"
+    },
+    "optimize": "프롬프트 최적화",
+    "optimizing": "최적화 중…",
+    "optimizeTitle": "최적화된 프롬프트",
+    "optimizeFailed": "최적화 실패",
+    "optimizeApply": "적용",
+    "optimizeRetry": "다시 시도",
+    "optimizeDiscard": "버리기",
+    "optimizeBy": "DeepSeek로 최적화됨"
+  },
+  "browserPanel": {
+    "newTab": "새 탭",
+    "createTab": "새 탭",
+    "closeTab": "탭 닫기",
+    "back": "뒤로",
+    "forward": "앞으로",
+    "reload": "새로고침",
+    "pickElement": "요소 선택",
+    "pickElementHint": "요소 선택: 페이지에서 강조하려면 마우스를 올리고, 채팅 입력창에 카드로 첨부하려면 클릭하세요 (취소하려면 Esc)",
+    "openInBrowser": "브라우저에서 열기",
+    "openInBrowserHint": "시스템 브라우저에서 현재 페이지 열기",
+    "urlPlaceholder": "URL 또는 검색어를 입력하고 Enter를 누르세요",
+    "noTabPick": "아직 열린 탭이 없습니다. 주소 표시줄에 URL 또는 검색어를 입력한 다음 요소를 선택하세요.",
+    "noTabAction": "아직 열린 탭이 없습니다. 오른쪽 위 모서리의 +를 클릭하거나 주소 표시줄에 URL 또는 검색어를 입력하세요.",
+    "iframeFallbackHint": "브라우저 폴백 모드(<iframe>)가 활성화되었습니다: 동일 출처 페이지는 작동하지만, 교차 출처 사이트는 X-Frame-Options / CSP로 인해 임베딩을 거부할 수 있습니다. 데스크톱 앱은 이러한 제한이 없는 실제 내장 브라우저(<webview>)를 사용합니다."
+  },
+  "voice": {
+    "micTooltip": "음성 입력",
+    "listening": "듣는 중 — 중지하려면 다시 클릭하세요",
+    "transcribing": "변환 중…",
+    "micDenied": "마이크 접근이 거부되었습니다 — 시스템 설정에서 허용해 주세요",
+    "transcribeFailed": "음성 인식 실패",
+    "emptyTranscript": "인식된 내용이 없습니다",
+    "keyMissing": "ASR API 키가 구성되지 않았습니다 (voice-config.json)"
+  },
+  "confirmCard": {
+    "toConfirm": "확인하려면",
+    "yesWithRule": "예, 이 세션에서 {{toolName}}이(가) {{ruleContent}}을(를) 실행하도록 허용합니다"
+  },
+  "messageBubble": {
+    "thinking": "생각 중",
+    "thinkingFor": "{{duration}} 동안 생각 중",
+    "taskProcess": {
+      "title": "작업 과정",
+      "running": "경과 {{duration}}",
+      "finished": "{{duration}} 소요",
+      "hour": "시간 ",
+      "minute": "분 ",
+      "second": "초",
+      "noConclusion": "이번 턴은 결론 없이 종료되었습니다. 자세한 내용은 작업 과정을 펼쳐 확인하세요."
+    },
+    "audioGenerating": "오디오 생성 중…",
+    "playAudio": "오디오 재생",
+    "pauseAudio": "오디오 일시정지",
+    "running": "실행 중...",
+    "skillAttached": "스킬 {{name}} 첨부됨",
+    "changedFiles": {
+      "title": "{{count}}개 파일 변경됨",
+      "openPanel": "패널에서 모든 변경 사항 보기"
+    },
+    "processed": "{{duration}} 처리됨",
+    "completed": "{{duration}} 후 완료",
+    "duration": {
+      "day": "일 ",
+      "hour": "시간 ",
+      "minute": "분 ",
+      "second": "초"
+    },
+    "hintSource": {
+      "tool_output": "도구 출력",
+      "team": "팀",
+      "team_message": "팀",
+      "schedule": "일정",
+      "system": "시스템",
+      "channel": "채널",
+      "runtime_state": "런타임 상태"
+    },
+    "error": {
+      "title": "응답 실패",
+      "blockedTitle": "규칙에 의해 차단됨",
+      "authentication": "인증 실패 — 모델의 API 키 또는 자격 증명을 확인하세요.",
+      "permission": "요청이 허용되지 않음 — 자격 증명에 이 모델 또는 엔드포인트에 대한 권한이 없습니다.",
+      "rate_limit": "속도 제한 또는 할당량 초과 — 나중에 다시 시도하세요.",
+      "invalid_request": "모델에 대한 요청이 유효하지 않아 거부되었습니다.",
+      "upstream": "업스트림 모델 서비스에서 오류가 반환되었습니다.",
+      "connection": "모델 서비스에 연결할 수 없습니다 — 네트워크 오류 또는 시간 초과.",
+      "internal": "예기치 않은 내부 오류가 발생했습니다.",
+      "setup": "세션을 준비할 수 없습니다 — 에이전트의 모델, 도구 및 지식 기반을 확인하세요.",
+      "unknown": "알 수 없는 오류로 응답에 실패했습니다."
+    },
+    "copy": "복사"
+  },
+  "questionPanel": {
+    "supplementTitle": "추가로 하고 싶은 말이 있나요?",
+    "supplementPlaceholder": "추가 정보 추가",
+    "optional": "선택 사항",
+    "of": "중",
+    "prev": "뒤로",
+    "next": "다음",
+    "submit": "제출",
+    "cancel": "취소",
+    "other": "기타",
+    "otherPlaceholder": "여기에 입력"
+  },
+  "chat": {
+    "inputPlaceholder": "무엇이든 물어보세요",
+    "confirmToolCall": "이 작업을 허용하시겠습니까?",
+    "subagentConfirmTitle": "{{name}}님이 확인을 요청합니다",
+    "newSession": "새 세션",
+    "newConversation": "새 대화",
+    "greeting": "Tora와 함께 작업 및 코딩",
+    "greetingProject": "{{project}}에서 무엇을 할까요?",
+    "thinking": "생각 중",
+    "project": {
+      "label": "프로젝트",
+      "unassigned": "할당되지 않음",
+      "rename": "프로젝트 이름 바꾸기"
+    },
+    "maxItersExceeded": {
+      "title": "반복 한도에 도달했습니다",
+      "description": "계속하려면 새 메시지를 보내거나 현재 작업을 계속하세요.",
+      "continue": "계속"
+    },
+    "context": {
+      "compact": {
+        "title": "컨텍스트 자동 압축됨",
+        "evicted": "{{count}}개의 도구 출력을 제거했습니다",
+        "compacted": "이전 기록 요약됨",
+        "fallback": "압축됨",
+        "description": "{{parts}} (대략 {{before}} → {{after}} 토큰, 예산 {{budget}})"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "에이전트 선택",
+      "emptyTitle": "에이전트 없음",
+      "emptyDescription": "시작하려면 에이전트를 만드세요.",
+      "groupYours": "내 것",
+      "groupShared": "나와 공유됨"
+    },
+    "session": {
+      "label": "세션",
+      "emptyTitle": "세션 없음",
+      "emptyNoAgent": "먼저 에이전트를 선택하세요.",
+      "emptyHasAgent": "채팅을 시작하려면 세션을 만드세요.",
+      "today": "오늘",
+      "earlier": "이전"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "에이전트 만들기",
+    "description": "새 에이전트의 정체성과 행동을 정의하세요."
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "에이전트 정체성",
+      "description": "이 에이전트의 행동을 정의하는 이름과 지침입니다.",
+      "name": {
+        "label": "이름",
+        "placeholder": "내 에이전트"
+      },
+      "system-prompt": {
+        "label": "시스템 프롬프트"
+      }
+    },
+    "context-config": {
+      "legend": "컨텍스트 구성",
+      "description": "컨텍스트 창이 관리되고 압축되는 방식을 제어합니다.",
+      "trigger-ratio": {
+        "label": "트리거 비율"
+      },
+      "reserve-ratio": {
+        "label": "예약 비율"
+      },
+      "tool-result-limit": {
+        "label": "도구 결과 제한"
+      },
+      "compression-prompt": {
+        "label": "압축 프롬프트"
+      },
+      "summary-template": {
+        "label": "요약 템플릿"
+      },
+      "max-image-num": {
+        "label": "최대 이미지 수"
+      }
+    },
+    "react-config": {
+      "legend": "ReAct 구성",
+      "description": "추론 및 행동 루프 동작을 제어합니다.",
+      "max-iters": {
+        "label": "최대 반복 횟수"
+      },
+      "stop-on-reject": {
+        "label": "거부 시 중지"
+      },
+      "structured-output-grace-iters": {
+        "label": "구조화된 출력 유예",
+        "description": "최대치를 초과하여 추가 반복이 허용되므로 한도에 도달한 실행도 요청된 구조화된 출력을 생성할 수 있습니다."
+      },
+      "interruption-message": {
+        "label": "중단 응답",
+        "description": "사용자가 실행을 중단할 때 에이전트의 응답으로 전송됩니다."
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "CancelledError 발생시키기",
+        "description": "중단이 처리된 후 asyncio.CancelledError를 삼키는 대신 다시 발생시킵니다."
+      }
+    },
+    "invite-config": {
+      "legend": "초대 구성",
+      "description": "다른 에이전트가 AgentInvite를 통해 이 에이전트를 빌릴 수 있는지 여부를 제어합니다.",
+      "invitable": {
+        "label": "초대 가능"
+      },
+      "invite-description": {
+        "label": "초대 설명",
+        "placeholder": "이 에이전트의 전문 분야를 간단히 설명하세요. invitable이 켜져 있을 때 필요합니다."
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "에이전트 편집",
+    "description": "이 에이전트의 구성을 업데이트합니다."
+  },
+  "dialog-agent-delete": {
+    "entity": "에이전트",
+    "confirm": "삭제"
+  },
+  "dialog-session-delete": {
+    "entity": "세션",
+    "confirm": "삭제"
+  },
+  "dialog-session-rename": {
+    "title": "세션 이름 변경",
+    "description": "이 세션에 새 이름을 지정합니다.",
+    "label": "이름",
+    "placeholder": "세션 이름"
+  },
+  "dialog-project-rename": {
+    "title": "프로젝트 이름 변경",
+    "description": "사이드바와 환영 메시지의 프로젝트 레이블만 변경합니다. 폴더와 세션 제목은 변경되지 않습니다.",
+    "label": "프로젝트 이름",
+    "placeholder": "프로젝트 이름"
+  },
+  "session-menu": {
+    "rename": "이름 변경",
+    "delete": "삭제"
+  },
+  "dialog-credential-create": {
+    "title": "자격 증명 추가",
+    "description": "모델 제공자에 대한 자격 증명을 추가합니다.",
+    "selectType": "제공자",
+    "selectTypePlaceholder": "제공자 선택"
+  },
+  "dialog-credential-edit": {
+    "title": "자격 증명 편집",
+    "description": "이 제공자에 저장된 자격 증명을 업데이트합니다."
+  },
+  "dialog-knowledge-base-create": {
+    "title": "지식 베이스 만들기",
+    "description": "임베딩 모델을 사용하여 새 지식 베이스를 만듭니다.",
+    "name": {
+      "label": "이름",
+      "placeholder": "내 지식 베이스"
+    },
+    "descriptionField": {
+      "label": "설명",
+      "placeholder": "이 지식 베이스의 용도를 설명하세요."
+    },
+    "embeddingModel": {
+      "label": "임베딩 모델"
+    },
+    "dimension": {
+      "label": "차원"
+    },
+    "chunker": {
+      "label": "청커"
+    },
+    "policy": {
+      "lockedTitle": "차원이 {{dimension}}d로 고정되어 있습니다",
+      "lockedDescription": "이 서버는 이미 모든 지식 베이스를 {{dimension}}차원 임베딩으로 고정합니다. 아래에는 호환되는 모델만 나열됩니다.",
+      "noCompatibleTitle": "호환되는 임베딩 모델 없음",
+      "noCompatibleAny": "모델 중 임베딩 모델을 제공하는 것이 없습니다. 먼저 설정에서 모델을 추가하세요.",
+      "noCompatibleLocked": "자격 증명 중 {{dimension}}차원 임베딩을 생성할 수 있는 모델을 제공하는 것이 없습니다."
+    },
+    "errors": {
+      "nameRequired": "지식 베이스 이름을 입력하세요.",
+      "embeddingRequired": "임베딩 모델을 선택하세요.",
+      "dimensionRequired": "차원을 선택하세요.",
+      "chunkerRequired": "청킹 전략을 선택하세요."
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "지식 베이스 편집",
+    "description": "지식 베이스 이름과 설명을 업데이트합니다.",
+    "name": {
+      "label": "이름",
+      "placeholder": "내 지식 베이스"
+    },
+    "descriptionField": {
+      "label": "설명",
+      "placeholder": "이 지식 베이스의 용도를 설명하세요."
+    },
+    "embeddingModel": {
+      "label": "임베딩 모델"
+    },
+    "chunker": {
+      "label": "청커"
+    },
+    "errors": {
+      "nameRequired": "지식 베이스 이름을 입력하세요."
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "지식 베이스 삭제",
+    "description": "지식 베이스 \"{{name}}\" 및 색인된 모든 문서를 영구적으로 삭제합니다. 이 작업은 되돌릴 수 없습니다."
+  },
+  "credential": {
+    "noProviders": "사용 가능한 제공자 없음",
+    "selectHint": "선택된 자격 증명 없음",
+    "selectHintDescription": "사이드바에서 자격 증명을 선택하여 세부 정보를 확인하세요.",
+    "availableModels": "사용 가능한 모델",
+    "noModels": "사용 가능한 모델 없음",
+    "noModelsDescription": "이 제공자는 모델을 반환하지 않았습니다.",
+    "deleteEntity": "자격 증명",
+    "subtitle": "모델 API 자격 증명 구성",
+    "configured": "구성됨",
+    "addProvider": "자격 증명 추가",
+    "reasoning": "추론",
+    "realtime": "실시간",
+    "table": {
+      "model": "모델",
+      "context": "컨텍스트",
+      "maxOutput": "최대 출력",
+      "accepts": "입력",
+      "outputs": "출력",
+      "legend": "컨텍스트와 최대 출력은 토큰 수입니다. REASONING은 확장 사고를 지원하는 모델을 표시합니다.",
+      "dimensions": "차원"
+    }
+  },
+  "knowledge": {
+    "subtitle": "에이전트가 사용하는 지식 베이스를 관리합니다",
+    "selectHint": "선택된 지식 베이스 없음",
+    "selectHintDescription": "사이드바에서 지식 베이스를 선택하여 세부 정보를 확인하세요.",
+    "list": {
+      "label": "지식 베이스",
+      "emptyTitle": "지식 베이스 없음",
+      "emptyDescription": "문서 색인을 시작하려면 지식 베이스를 만드세요.",
+      "createButton": "지식 베이스 만들기"
+    },
+    "document": {
+      "emptyTitle": "문서 없음",
+      "emptyDescription": "이 지식 베이스에 색인할 문서를 업로드하세요.",
+      "uploadButton": "문서 업로드",
+      "uploadButtonShort": "업로드",
+      "chunkCount_one": "{{count}}개 청크",
+      "chunkCount_other": "{{count}}개 청크",
+      "deleteConfirmTitle": "문서 삭제",
+      "deleteConfirmDescription": "\"{{name}}\"을(를) 삭제하시겠습니까? 문서와 색인된 모든 청크가 제거됩니다. 이 작업은 되돌릴 수 없습니다.",
+      "deleteError": "문서를 삭제할 수 없습니다.",
+      "dropHintIdle": "또는 여기에 파일을 끌어다 놓으세요",
+      "unsupportedExtension": "\"{{name}}\"을(를) 건너뛰었습니다 — 지원되지 않는 파일 형식입니다.",
+      "status": {
+        "queued": "대기 중",
+        "uploading": "업로드 중",
+        "pending": "워커 대기 중",
+        "parsing": "파싱 중",
+        "chunking": "청킹 중",
+        "indexing": "인덱싱 중",
+        "ready": "준비됨",
+        "error": "오류",
+        "cancelled": "취소됨"
+      },
+      "actions": {
+        "cancel": "취소",
+        "dismiss": "닫기",
+        "remove": "제거",
+        "clearFinished": "완료된 항목 지우기"
+      },
+      "title": "문서",
+      "chunkCount": "{{count}}개 청크"
+    },
+    "test": {
+      "button": "테스트",
+      "title": "검색 테스트",
+      "description": "임시 쿼리로 \"{{name}}\"을(를) 테스트합니다.",
+      "queryLabel": "쿼리",
+      "queryPlaceholder": "자연어 질문을 입력하세요…",
+      "topKLabel": "상위 K",
+      "searchButton": "검색",
+      "score": "점수",
+      "chunkPosition": "{{total}}개 중 {{index}}번째 청크",
+      "emptyTitle": "일치 항목 없음",
+      "emptyDescription": "이 쿼리에 대해 임계값을 초과한 청크가 없습니다."
+    },
+    "config": {
+      "title": "구성",
+      "embeddingModel": "임베딩 모델",
+      "dimensions": "차원",
+      "credential": "자격 증명",
+      "chunker": "청커",
+      "counts": "내용",
+      "countsValue": "문서 {{documents}}개 · 청크 {{chunks}}개",
+      "status": "인덱싱",
+      "statusValue": "{{ready}}개 준비됨 · {{indexing}}개 진행 중 · {{failed}}개 실패",
+      "createdAt": "생성됨"
+    },
+    "documentDetail": {
+      "description": "인덱싱된 청크 {{count}}개",
+      "chunksTab": "청크",
+      "previewTab": "미리보기",
+      "chunksEmptyTitle": "청크 없음",
+      "chunksEmptyDescription": "이 문서에는 아직 인덱싱된 청크가 없습니다.",
+      "chunksUnsupportedTitle": "청크 탐색을 사용할 수 없음",
+      "chunksUnsupportedDescription": "구성된 벡터 저장소는 청크 목록을 지원하지 않습니다.",
+      "previousPage": "이전",
+      "nextPage": "다음",
+      "pageIndicator": "{{page}} / {{pageCount}} 페이지",
+      "previewUnavailableTitle": "인라인 미리보기 없음",
+      "previewUnavailableDescription": "이 파일 형식은 브라우저에서 미리 볼 수 없습니다.",
+      "previewTooLargeTitle": "파일이 너무 커서 미리 볼 수 없음",
+      "previewTooLargeDescription": "이 파일은 인라인 미리보기 제한을 초과합니다. 원본을 보려면 다운로드하세요.",
+      "downloadButton": "원본 파일 다운로드"
+    }
+  },
+  "llm-select": {
+    "placeholder": "모델 선택",
+    "loading": "로딩 중…",
+    "empty": {
+      "title": "사용 가능한 모델 없음",
+      "description": "시작하려면 설정에서 모델을 추가하세요."
+    },
+    "addCredential": "모델 추가",
+    "clear": "선택 지우기",
+    "noFallback": "폴백 없음",
+    "pickForDetails": "세부 정보를 보려면 모델을 선택하세요",
+    "vision": "비전",
+    "contextBadge": "{{size}} 컨텍스트",
+    "thinking": "사고",
+    "contextWindow": "컨텍스트 창",
+    "hintSmallContext": "소형 컨텍스트 모델 — 1M 미지원",
+    "level": {
+      "off": "끔",
+      "low": "낮음",
+      "high": "높음",
+      "max": "최대"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "임베딩 모델 선택",
+    "loading": "로딩 중…",
+    "empty": {
+      "title": "사용 가능한 임베딩 모델 없음",
+      "description": "시작하려면 설정에서 임베딩을 지원하는 모델을 추가하세요."
+    },
+    "addCredential": "모델 추가"
+  },
+  "chunker-select": {
+    "placeholder": "청커 선택",
+    "loading": "로딩 중…",
+    "empty": "사용 가능한 청커 없음"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "대략적 토큰",
+      "params": {
+        "chunk_size": {
+          "label": "청크 크기",
+          "description": "청크당 최대 대략적 토큰 수입니다."
+        },
+        "overlap": {
+          "label": "겹침",
+          "description": "연속된 청크 간에 공유되는 대략적 토큰 수입니다."
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "차원 선택",
+    "pickModelFirst": "먼저 모델을 선택하세요"
+  },
+  "permission-mode": {
+    "placeholder": "권한 모드 선택",
+    "trigger-tooltip": "권한 모드",
+    "panel-title": "에이전트가 승인을 어떻게 요청해야 하나요?",
+    "learn-more": "자세히 알아보기",
+    "default": "수동 승인",
+    "default-desc": "중요한 작업을 직접 확인합니다 — 가장 안전한 옵션",
+    "accept_edits": "편집 자동 승인",
+    "accept_edits-desc": "워크스페이스의 파일 읽기/쓰기를 자동 허용하며, 나머지는 계속 확인합니다",
+    "explore": "읽기 전용",
+    "explore-desc": "읽기 및 검색만 — 쓰기나 명령 실행 없음",
+    "bypass": "전체 액세스",
+    "bypass-desc": "모든 것을 로컬에서 승인 없이 실행 — 신뢰할 수 있거나 샌드박스 환경에서만",
+    "dont_ask": "무인",
+    "dont_ask-desc": "권한을 요청하는 모든 작업은 거부됨 — 예약된 작업에 적합"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "MCP 구성",
+    "keepAlive": "연결 유지",
+    "keepAliveDesc": "상호 작용 간 상태를 유지합니다. 브라우저 사용이나 장기 실행 MCP에 사용하세요.",
+    "parseError": "잘못된 JSON 구성: {{message}}",
+    "missingMcpServers": "구성에는 \"mcpServers\" 개체가 포함되어야 합니다.",
+    "emptyMcpServers": "구성에서 MCP 서버를 찾을 수 없습니다."
+  },
+  "dialog-mcp-delete": {
+    "entity": "MCP 서버",
+    "skillEntity": "스킬",
+    "skillDescription": "이 스킬을 작업 공간에서 제거하시겠습니까?"
+  },
+  "schedule": {
+    "subtitle": "자동화된 작업 구성 및 관리 - Tora가 일정에 따라 워크플로를 실행합니다",
+    "calendar": "캘린더",
+    "createSchedule": {
+      "description": "에이전트에 대한 반복 또는 일회성 자동화 작업을 설정합니다.",
+      "descriptionLabel": "설명",
+      "descriptionPlaceholder": "이 자동화가 수행할 작업을 설명하세요...",
+      "namePlaceholder": "예: 일일 보고서",
+      "title": "자동화 작업 생성"
+    },
+    "deleteSchedule": {
+      "entity": "자동화 작업"
+    },
+    "endAt": "종료 날짜",
+    "end_at": "종료 시간",
+    "executionHistory": "실행 기록",
+    "freqDaily": "매일",
+    "freqMonthly": "매월",
+    "freqOnce": "한 번",
+    "freqWeekly": "매주",
+    "frequency": "빈도",
+    "friday": "금",
+    "list": "목록",
+    "monday": "월",
+    "more": "더 보기",
+    "nextMonth": "다음 달",
+    "nextYear": "다음 해",
+    "noSchedules": "자동화 작업 없음",
+    "noSchedulesDescription": "일정에 따라 워크플로를 실행할 자동화 작업을 만드세요.",
+    "pickDate": "날짜 선택",
+    "permissionMode": "권한 모드",
+    "timezone": "시간대",
+    "triggerTime": "트리거 시간",
+    "createdAt": "생성일",
+    "dayOfMonthSuffix": "",
+    "stateful": "상태 유지",
+    "statefulDesc": "모든 실행에서 하나의 세션을 재사용하여 컨텍스트를 누적합니다. 비활성화하면 매 실행마다 새 세션이 생성됩니다.",
+    "previousMonth": "이전 달",
+    "previousYear": "이전 해",
+    "saturday": "토",
+    "sunday": "일",
+    "thursday": "목",
+    "today": "오늘",
+    "tuesday": "화",
+    "wednesday": "수"
+  },
+  "model-parameters": {
+    "title": "모델 매개변수",
+    "description": "선택한 모델의 추론 매개변수를 조정합니다.",
+    "empty": "구성 가능한 매개변수가 없습니다.",
+    "fallbackLabel": "대체 모델",
+    "fallbackLabelWithModel": "대체 모델 ({{model}})",
+    "parametersLabel": "매개변수",
+    "ttsLabel": "TTS",
+    "ttsEmpty": "사용 가능한 TTS 모델이 없습니다.",
+    "ttsParameters": "매개변수",
+    "ttsParametersDescription": "선택한 TTS 모델의 매개변수를 조정합니다.",
+    "noTts": "TTS 없음"
+  },
+  "setup": {
+    "title": "서비스에 연결",
+    "description": "시작하려면 서버 URL과 사용자 이름을 입력하세요.",
+    "serverUrl": "서버 URL",
+    "serverUrlPlaceholder": "https://...",
+    "username": "사용자 이름",
+    "usernamePlaceholder": "사용자 이름",
+    "submit": "시작하기",
+    "checking": "연결 중...",
+    "errorUnreachable": "이 서버에 연결할 수 없습니다. 주소를 확인하고 서비스가 실행 중이며 교차 출처 요청을 허용하는지 확인하세요.",
+    "errorTimeout": "서버가 연결을 수락했지만 제때 응답하지 않았습니다. 과부하 상태이거나 시작 중에 멈춰 있을 수 있습니다.",
+    "errorNotAgentScope": "주소에 연결되었지만 AgentScope 서비스가 아닙니다. URL을 확인하거나 상태 확인 엔드포인트를 제공할 수 없을 정도로 오래된 백엔드를 업그레이드하세요.",
+    "errorUnauthorized": "서버가 이 사용자 이름을 거부했습니다. 유효한 이름을 입력하세요.",
+    "errorNotReady": "서버에 연결할 수 있지만 준비되지 않았습니다. 다음 하위 시스템이 시작하지 못했습니다:",
+    "hint": "이것은 프론트엔드 전용 애플리케이션이며 모든 데이터는 위의 서버 URL에서 제공됩니다. 사용자 이름은 서버 측 인증에만 사용됩니다."
+  },
+  "task-panel": {
+    "blockedBy": "차단자"
+  },
+  "panel": {
+    "plan": {
+      "title": "계획",
+      "completed": "완료: {{count}}",
+      "total": "전체: {{count}}",
+      "emptyTitle": "아직 작업 없음",
+      "emptyDescription": "에이전트가 계획한 작업이 여기에 표시됩니다."
+    },
+    "mcp": {
+      "description": "작업 공간에 장착된 MCP 서버입니다.",
+      "searchPlaceholder": "작업 공간에서 MCP 검색",
+      "add": "MCP 추가",
+      "addDescription": "이미 설치한 것을 재사용하거나 구성을 붙여넣으세요.",
+      "fromConfig": "구성에서",
+      "tools": "도구 {{count}}개",
+      "unhealthy": "이 MCP에 연결할 수 없습니다",
+      "healthy": "연결됨",
+      "emptyTitle": "MCP 서버 없음",
+      "emptyDescription": "워크스페이스에 도구를 추가하려면 MCP 서버를 추가하세요.",
+      "fromInstalled": "설치된 MCP",
+      "installedEmptyTitle": "아직 설치된 항목이 없습니다",
+      "installedEmptyDescription": "MCP Hub에서 설치하거나 구성을 붙여넣으세요."
+    },
+    "skill": {
+      "title": "스킬",
+      "description": "워크스페이스에 장착된 스킬입니다.",
+      "searchPlaceholder": "워크스페이스에서 스킬 검색",
+      "add": "스킬 추가",
+      "emptyTitle": "스킬 없음",
+      "emptyDescription": "워크스페이스에 스킬을 추가하세요.",
+      "addDescription": "설치된 스킬에서 선택하거나 로컬 폴더를 업로드하세요.",
+      "fromInstalled": "설치된 항목에서",
+      "fromFolder": "폴더 업로드",
+      "installedEmptyTitle": "아직 설치된 스킬이 없습니다",
+      "installedEmptyDescription": "스킬 허브에서 설치한 후 여기에 추가하세요.",
+      "pickFolderTitle": "스킬 폴더 선택",
+      "pickFolderDescription": "폴더 루트에 SKILL.md가 있어야 합니다.",
+      "pickFolder": "폴더 선택",
+      "importLocal": "로컬 폴더에서 가져오기",
+      "pickAnother": "다른 항목 선택",
+      "fileCount": "파일 {{count}}개"
+    },
+    "workspace": {
+      "checkpoint": "체크포인트",
+      "diff": "변경 사항",
+      "browser": "브라우저",
+      "terminal": "터미널",
+      "hooks": "훅"
+    },
+    "knowledge": {
+      "title": "지식 베이스",
+      "description": "에이전트가 검색할 수 있는 지식 베이스입니다.",
+      "searchPlaceholder": "지식 베이스 검색",
+      "emptyTitle": "지식 베이스 없음",
+      "emptyDescription": "먼저 지식 베이스 페이지에서 생성하세요.",
+      "parametersTitle": "검색 설정",
+      "parametersDescription": "지식 베이스 검색 설정입니다."
+    },
+    "permission": {
+      "title": "권한",
+      "description": "이 세션에 적용된 권한입니다.",
+      "mode": "모드: {{mode}}",
+      "workingDirectories": "작업 디렉터리",
+      "noWorkingDirectories": "작업 디렉터리가 없습니다.",
+      "allow": "허용",
+      "deny": "거부",
+      "ask": "묻기",
+      "anyInvocation": "모든 호출",
+      "rulesTitle": "규칙(모든 세션에 적용)",
+      "addButton": "추가",
+      "contentPlaceholder": "일치시킬 패턴, 비워 두면 모든 호출",
+      "deleteRule": "이 규칙 삭제",
+      "loadFailed": "규칙을 불러오지 못했습니다: {{detail}}",
+      "emptyTitle": "구성된 규칙 없음",
+      "emptyDescription": "허용/거부/묻기 규칙이 추가되면 여기에 표시됩니다."
+    },
+    "search": {
+      "emptyTitle": "결과 없음",
+      "emptyDescription": "“{{query}}”와 일치하는 항목이 없습니다."
+    },
+    "loading": "로드 중…",
+    "team": {
+      "membersHeading": "멤버",
+      "noMembers": "아직 멤버가 없습니다 — 리더에게 AgentCreate로 멤버를 생성하도록 요청하세요.",
+      "emptyTitle": "팀 없음",
+      "emptyDescription": "이 세션은 팀에 속해 있지 않습니다. 에이전트가 TeamCreate로 팀을 구성합니다.",
+      "running": "실행 중",
+      "idle": "대기 중",
+      "missingSession": "(세션 없음)"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "QR 코드 스캔",
+      "manualTab": "수동 입력",
+      "scanHint": "플랫폼 앱으로 스캔하고 승인하여 자격 증명을 생성하세요.",
+      "authorized": "승인되었습니다. 자격 증명이 준비되었습니다.",
+      "failed": "바인딩을 완료할 수 없습니다.",
+      "unsafeUrl": "플랫폼에서 안전하게 표시할 수 없는 링크를 반환했습니다.",
+      "retry": "다시 시도"
+    },
+    "title": "채널",
+    "subtitle": "에이전트가 그룹 채팅에서 작동하도록 Feishu, Discord 같은 외부 플랫폼을 연결하세요",
+    "status": "상태",
+    "connected": "연결됨",
+    "enable": "활성화",
+    "disable": "비활성화",
+    "deleteEntity": "채널",
+    "routing": "라우팅",
+    "routingDesc": "수신 메시지를 에이전트 및 세션 범위에 맞춥니다. 마지막 규칙은 나머지 모든 메시지와 일치합니다.",
+    "sectionActive": "연결됨",
+    "sectionAdd": "채널 추가",
+    "rules": "규칙 {{count}}개",
+    "empty": {
+      "title": "채널 없음",
+      "description": "Feishu, DingTalk 등의 외부 플랫폼에 에이전트를 연결하려면 채널을 생성하세요."
+    },
+    "create": {
+      "title": "채널 생성",
+      "titleFor": "{{name}} 연결",
+      "description": "에이전트를 외부 메시징 플랫폼에 연결합니다.",
+      "channelType": "플랫폼",
+      "nameLabel": "이름",
+      "namePlaceholder": "예: 지원 데스크",
+      "nameDesc": "같은 플랫폼의 채널을 구분합니다",
+      "modelDesc": "새 세션의 초기 모델",
+      "permissionMode": "권한 모드",
+      "permissionModeDesc": "새 세션의 초기 권한 모드",
+      "showToolMessages": "도구 메시지 표시",
+      "showToolMessagesDesc": "채널에 도구 호출/결과 메시지를 표시합니다.",
+      "showThinking": "사고 과정 표시",
+      "showThinkingDesc": "채널에 모델의 추론 과정을 표시합니다."
+    },
+    "fields": {
+      "app_id": {
+        "title": "앱 ID",
+        "description": "Feishu 앱 ID"
+      },
+      "app_secret": {
+        "title": "앱 시크릿",
+        "description": "Feishu 앱 시크릿"
+      },
+      "bot_token": {
+        "title": "봇 토큰"
+      },
+      "application_id": {
+        "title": "애플리케이션 ID"
+      },
+      "only_at_reply": {
+        "title": "멘션된 경우에만 답장",
+        "description": "그룹 채팅에서 봇이 @멘션된 경우에만 답장합니다"
+      },
+      "show_tool_process": {
+        "title": "도구 과정 표시",
+        "description": "답장에 도구 호출 및 결과를 인라인으로 표시"
+      },
+      "show_thinking": {
+        "title": "사고 과정 표시",
+        "description": "답장에 모델의 추론을 인라인으로 표시"
+      }
+    },
+    "edit": {
+      "title": "채널 편집",
+      "description": "라우팅, 모델 및 답장 설정을 업데이트합니다. 플랫폼과 자격 증명은 변경할 수 없습니다."
+    },
+    "sessionScope": {
+      "per_chat": "채팅별",
+      "per_chat_user": "채팅 사용자별"
+    },
+    "sessions": {
+      "title": "세션",
+      "empty": "아직 세션이 없습니다",
+      "openInChat": "채팅에서 열기"
+    },
+    "detail": {
+      "config": "구성",
+      "configDesc": "새 세션에 적용되는 초기 구성",
+      "configItem": "항목",
+      "configValue": "값",
+      "condition": "조건",
+      "created": "생성됨",
+      "deleteChannel": "채널 삭제",
+      "routingDesc": "수신 메시지가 에이전트 및 세션 범위에 매핑되는 방법",
+      "sessionsDesc": "이 채널에서 생성된 세션",
+      "selectHint": "세부 정보를 보려면 채널을 선택하세요"
+    },
+    "state": {
+      "stopped": "중지됨",
+      "connecting": "연결 중",
+      "retrying": "다시 연결 중",
+      "connected": "연결됨",
+      "failed": "실패"
+    },
+    "binding": {
+      "rule": "일치 규칙",
+      "matchKey": "일치 필드",
+      "matchValue": "일치 값",
+      "matchValuePlaceholder": "예: chat_id",
+      "routeTo": "라우팅 대상",
+      "scope": "세션 범위",
+      "fallback": "대체 규칙",
+      "fallbackDesc": "위 규칙에 일치하지 않는 메시지는 여기로 라우팅됩니다",
+      "catchAll": "기타 모든 메시지",
+      "addRule": "규칙 추가"
+    }
+  },
+  "mcp": {
+    "subtitle": "MCP 서버 검색 및 설치",
+    "hubsLabel": "허브",
+    "searchPlaceholder": "이 허브 검색",
+    "mineSearchPlaceholder": "내 MCP 검색",
+    "noHubsTitle": "사용 가능한 허브 없음",
+    "noHubsDescription": "관리자에게 추가를 요청하세요.",
+    "noCardsTitle": "검색 결과 없음",
+    "noCardsDescription": "다른 키워드를 시도하세요.",
+    "mineDescription": "설치된 MCP 서버",
+    "mineEmptyTitle": "아직 MCP 서버가 없습니다",
+    "mineEmptyDescription": "왼쪽 허브에서 하나를 설치하세요.",
+    "needsConfig": "구성 필요",
+    "stateful": "상태 유지",
+    "configLabel": "구성",
+    "install": "설치",
+    "installed": "설치됨",
+    "installTitle": "{{name}} 설치",
+    "installDescription": "내 MCP에 추가합니다. 이후 사용할 세션을 선택하세요.",
+    "editTitle": "{{name}} 편집",
+    "editDescription": "시크릿을 비워 두면 이미 저장된 값을 유지합니다.",
+    "nameLabel": "이름",
+    "loadFailedTitle": "서버에 연결할 수 없습니다",
+    "loadFailedDescription": "서버 URL과 서비스 실행 여부를 확인하세요.",
+    "retry": "재시도"
+  },
+  "skill": {
+    "category": {
+      "testing": "테스트 및 디버깅",
+      "security": "보안",
+      "devops": "배포 및 운영",
+      "writing": "글쓰기",
+      "office-efficiency": "사무 효율성",
+      "knowledge-management": "지식 관리",
+      "content-creation": "콘텐츠 제작",
+      "ai-agent": "AI 에이전트",
+      "dev-programming": "개발",
+      "design-media": "디자인 및 미디어",
+      "data-analysis": "데이터 분석",
+      "life-service": "라이프스타일",
+      "professional": "전문가",
+      "design-creative": "디자인 및 크리에이티브",
+      "coding-agents": "코딩 에이전트",
+      "agent-skills": "에이전트 스킬",
+      "development": "엔지니어링",
+      "agent-frameworks": "에이전트 프레임워크",
+      "browser-automation": "브라우저 자동화",
+      "productivity": "생산성",
+      "rag-knowledge": "RAG 및 지식",
+      "automation": "자동화",
+      "document-processing": "문서 처리",
+      "education": "교육",
+      "finance": "금융",
+      "legal-compliance": "법률 및 규정 준수",
+      "media-automation": "미디어 자동화",
+      "Personal AI": "개인 AI",
+      "research": "연구",
+      "web-automation": "웹 자동화"
+    },
+    "allCategories": "전체",
+    "matchButton": "작업 매칭",
+    "matchHint": "검색 상자에 작업을 먼저 설명하세요",
+    "matchRecommends": "이 작업에 추천됨",
+    "matchAlternatives": "대안",
+    "matchScore": "매칭 {{score}}",
+    "matchSearched": "{{count}}개의 스킬 검색됨",
+    "matchFailed": "스킬을 매칭할 수 없습니다",
+    "matchDismiss": "닫기",
+    "matchPolicy": "소스 정책: {{policy}}",
+    "subtitle": "스킬 탐색 및 설치",
+    "hubsLabel": "허브",
+    "searchPlaceholder": "이 허브 검색",
+    "mineSearchPlaceholder": "내 스킬 검색",
+    "noHubsTitle": "사용 가능한 허브 없음",
+    "noHubsDescription": "관리자에게 추가를 요청하세요.",
+    "noCardsTitle": "검색 결과 없음",
+    "noCardsDescription": "다른 키워드를 시도해 보세요.",
+    "mineDescription": "설치한 스킬",
+    "mineEmptyTitle": "아직 스킬 없음",
+    "mineEmptyDescription": "왼쪽 허브에서 설치하세요.",
+    "install": "설치",
+    "installed": "설치됨",
+    "versionLabel": "버전",
+    "hubLabel": "허브",
+    "updatedLabel": "업데이트됨",
+    "updatedAgo": "{{ago}} 전에 업데이트됨",
+    "updatedRecently": "방금 업데이트됨",
+    "installsLabel": "설치 수",
+    "downloadsLabel": "다운로드",
+    "linkLabel": "페이지",
+    "viewOnHub": "허브에서 보기",
+    "noReadme": "이 스킬은 SKILL.md 본문을 포함하지 않습니다.",
+    "loadFailedTitle": "서버에 연결할 수 없습니다",
+    "loadFailedDescription": "서버 URL과 서비스 실행 여부를 확인하세요.",
+    "retry": "다시 시도"
+  },
+  "agent-menu": {
+    "settings": "설정",
+    "delete": "에이전트 삭제"
+  },
+  "workdir": {
+    "title": "작업 디렉터리",
+    "description": "에이전트의 작업 디렉터리를 선택하세요.",
+    "root": "워크스페이스 루트",
+    "parent": "한 단계 위로",
+    "errorTitle": "이 폴더를 나열할 수 없습니다",
+    "pathPlaceholder": "경로를 입력하거나 붙여넣으세요",
+    "empty": "이 폴더는 비어 있습니다",
+    "pressEnter": "이 경로를 먼저 확인하려면 Enter를 누르세요",
+    "pickerPlaceholder": "도구를 사용할 폴더 선택",
+    "recent": "최근",
+    "recentEmpty": "최근 사용한 폴더 없음",
+    "browse": "폴더 선택",
+    "gitTooltip": "{{staged}} 스테이징됨 · {{unstaged}} 수정됨 · {{untracked}} 추적되지 않음\n줄 수는 추적되지 않은 파일을 제외합니다"
+  },
+  "settings": {
+    "title": "설정",
+    "backToApp": "Tora로 돌아가기",
+    "close": "닫기",
+    "loadFailed": "설정을 불러오지 못했습니다 (백엔드가 오프라인이거나 잘못된 포트를 사용 중일 수 있습니다): {{error}}",
+    "loadingRuntime": "런타임 구성 불러오는 중…",
+    "sections": {
+      "general": "일반",
+      "theme": "테마",
+      "agent": "에이전트",
+      "model": "모델",
+      "memory": "메모리",
+      "data": "데이터",
+      "about": "정보",
+      "usage": "사용량",
+      "account": "계정",
+      "developer": "개발자 및 디버그"
+    },
+    "memory": {
+      "title": "메모리",
+      "desc": "세션 간 장기 메모리: 관련 항목이 세션 시작 시 주입되며, 선택적으로 세션 후 추출이 가능합니다",
+      "inject": "세션 주입",
+      "injectDesc": "현재 프로젝트의 세션 시작 시 시스템 프롬프트에 관련 메모리를 주입합니다",
+      "distill": "자동 추출",
+      "distillDesc": "세션이 완료된 후 모델이 대화를 검토하고 기억할 가치가 있는 항목을 0-3개 추출합니다",
+      "searchPh": "메모리 검색 (검색하려면 Enter)",
+      "contentPh": "메모리 내용, 예: 이 프로젝트의 테스트는 항상 node --test로 실행",
+      "projectKeyPh": "프로젝트 절대 경로 (비워 두면 전역으로 대체)",
+      "scopeGlobal": "전역",
+      "scopeProject": "프로젝트",
+      "add": "메모리 추가",
+      "save": "저장",
+      "cancel": "취소",
+      "edit": "편집",
+      "delete": "삭제",
+      "confirmDelete": "삭제하시겠습니까?",
+      "pin": "고정",
+      "unpin": "고정 해제",
+      "dedupedToast": "유사한 메모리가 이미 있어 다시 저장하지 않았습니다",
+      "projectGroup": "프로젝트 메모리",
+      "globalGroup": "전역 메모리",
+      "empty": "아직 메모리가 없습니다. 대화에서 어시스턴트에게 \"기억해…\"라고 요청하거나 여기에서 추가하세요.",
+      "emptySearch": "일치하는 메모리 없음",
+      "kinds": {
+        "preference": "선호",
+        "fact": "사실",
+        "pitfall": "주의점",
+        "convention": "컨벤션"
+      },
+      "sources": {
+        "manual": "수동",
+        "tool": "도구",
+        "distill": "정제"
+      }
+    },
+    "theme": {
+      "title": "테마",
+      "subtitle": "모양, 모션, 워크스페이스 배경을 선택하세요",
+      "modeTitle": "모양",
+      "modeDesc": "라이트, 다크 또는 시스템 설정 따르기",
+      "light": "라이트",
+      "dark": "다크",
+      "system": "시스템",
+      "motionTitle": "상호작용 모션",
+      "motionDesc": "클릭 피드백과 페이지 전환 속도를 설정합니다. 시스템의 '동작 줄이기' 설정이 항상 우선합니다.",
+      "motionModeTitle": "모션 속도",
+      "motion": {
+        "system": "시스템",
+        "off": "끔",
+        "gentle": "부드럽게",
+        "standard": "표준",
+        "fast": "빠르게"
+      },
+      "motionReduced": "시스템에서 '동작 줄이기'가 활성화되어 현재 애니메이션이 꺼져 있습니다.",
+      "motionClickTitle": "클릭 피드백",
+      "motionClickDesc": "버튼, 링크, 메뉴 항목에 대한 짧은 누름 피드백",
+      "motionPageTitle": "페이지 전환",
+      "motionPageDesc": "워크스페이스 페이지 간 부드러운 전환",
+      "backgroundTitle": "배경",
+      "backgroundDesc": "워크스페이스, 설정 및 로그인 화면에서 공유됩니다",
+      "lavender": "부드러운 라벤더",
+      "mist": "푸른 안개",
+      "stone": "따뜻한 돌",
+      "midnight": "미드나이트",
+      "none": "없음",
+      "custom": "사용자 지정",
+      "import": "이미지 가져오기",
+      "replace": "이미지 교체",
+      "remove": "사용자 지정 배경 제거",
+      "localOnly": "사용자 지정 배경은 이 기기에만 저장되며 업로드되지 않습니다. PNG, JPEG, WebP, 최대 16 MB.",
+      "invalidType": "PNG, JPEG 또는 WebP 이미지를 선택하세요",
+      "tooLarge": "이미지는 16 MB 미만이어야 합니다",
+      "processFailed": "이 이미지를 읽을 수 없습니다. 다른 파일을 시도하세요.",
+      "storageFailed": "배경을 저장할 수 없습니다. 로컬 저장 공간이 가득 찼을 수 있습니다."
+    },
+    "general": {
+      "title": "일반",
+      "common": "공통",
+      "language": {
+        "title": "언어",
+        "desc": "인터페이스 언어",
+        "zh": "중국어 간체",
+        "zhHant": "중국어 번체",
+        "en": "영어",
+        "ja": "일본어",
+        "ko": "한국어",
+        "fr": "프랑스어",
+        "de": "독일어",
+        "it": "이탈리아어",
+        "ar": "아랍어",
+        "es": "스페인어",
+        "pt": "포르투갈어",
+        "ru": "러시아어",
+        "hi": "힌디어",
+        "lzh": "한문"
+      },
+      "searchEngine": {
+        "title": "검색 엔진",
+        "desc": "주소 표시줄 입력이 URL이 아닐 때 사용됩니다",
+        "engines": {
+          "360": "360 검색",
+          "baidu": "바이두",
+          "google": "구글",
+          "sogou": "소고우",
+          "yahoo": "야후",
+          "duckduckgo": "덕덕고",
+          "ecosia": "에코시아",
+          "bing": "빙"
+        }
+      },
+      "systemNotifications": {
+        "title": "시스템 메시지 알림",
+        "desc": "새 메시지에 시스템 알림을 사용합니다. 메시지 제목과 본문은 숨겨집니다. 시스템 알림 설정에서 Tora를 허용하세요.",
+        "test": "알림 테스트",
+        "testing": "테스트 중…",
+        "shown": "시스템이 알림을 수락했습니다. 배너가 표시되지 않으면 알림 설정이나 집중 모드를 확인하세요.",
+        "failed": "시스템이 알림을 거부했습니다. macOS에서는 서명된 빌드에서 테스트하고 알림 권한을 확인하세요.",
+        "unsupported": "이 시스템에서는 기본 알림이 지원되지 않습니다.",
+        "unconfirmed": "알림이 요청되었지만 표시 여부가 확인되지 않았습니다. 알림 권한을 확인하세요."
+      },
+      "sound": {
+        "title": "알림음",
+        "desc": "작업 이벤트에 대한 소리 알림",
+        "replyDoneTitle": "응답 완료",
+        "replyDoneDesc": "에이전트가 응답을 완료하면 재생",
+        "needConfirmTitle": "확인 필요",
+        "needConfirmDesc": "확인이나 질문이 있을 때 재생",
+        "kindTitle": "소리",
+        "kindDesc": "알림음을 선택하세요",
+        "kindDing": "딩",
+        "kindCrisp": "선명하게",
+        "kindSoft": "부드럽게",
+        "kindCustom": "사용자 지정",
+        "preview": "미리 듣기",
+        "customTitle": "사용자 지정 소리",
+        "customDesc": "로컬 오디오 파일 사용 (mp3 / wav / ogg 등)",
+        "customChoose": "파일 선택",
+        "customClear": "지우기",
+        "volumeTitle": "볼륨",
+        "volumeDesc": "알림음의 재생 볼륨",
+        "tooLarge": "파일이 너무 큽니다 (최대 10MB)",
+        "saveFailed": "저장하지 못했습니다. 다시 시도하세요."
+      },
+      "behavior": "동작"
+    },
+    "developer": {
+      "title": "개발자 및 디버그",
+      "desc": "에이전트 런타임 동작, 후크, 코드 인덱스 및 언어 서버입니다. 변경 사항은 다음 실행에 적용됩니다.",
+      "behavior": "동작"
+    },
+    "behavior": {
+      "presets": {
+        "title": "실행 프로필",
+        "desc": "검증된 런타임 프로필을 적용한 다음 필요하면 아래에서 개별 제한을 미세 조정하세요.",
+        "fast": {
+          "title": "빠름",
+          "desc": "비용이 낮은 짧은 작업"
+        },
+        "balanced": {
+          "title": "균형",
+          "desc": "일상 작업에 권장"
+        },
+        "deep": {
+          "title": "철저",
+          "desc": "반복할 여지가 더 많은 복잡한 작업"
+        }
+      },
+      "context": {
+        "title": "컨텍스트 토큰 제한",
+        "desc": "대화가 이 값을 초과하면 이전 기록이 자동 압축됩니다(기본 24000). 낮추면 토큰은 절약되지만 기록 세부 정보가 손실됩니다.",
+        "suffix": "토큰"
+      },
+      "toolOutput": {
+        "title": "단일 도구 출력 제한",
+        "desc": "단일 도구 호출에서 반환되는 최대 문자 수(기본 6000)이며, 더 긴 출력은 잘립니다.",
+        "suffix": "문자"
+      },
+      "maxTurns": {
+        "title": "최대 에이전트 반복",
+        "desc": "작업당 최대 에이전트 루프 턴 수(기본 40)이며, 초과된 실행은 강제 중지됩니다.",
+        "suffix": "턴"
+      },
+      "shellSandbox": {
+        "title": "명령 프로세스 샌드박스",
+        "desc": "에이전트 Bash 및 Git 명령이 쓸 수 있는 위치를 제한합니다. 비활성화하면 명령에 사용자 계정의 파일 접근 권한이 부여됩니다."
+      },
+      "shellNetwork": {
+        "title": "샌드박스 명령의 네트워크 사용 허용",
+        "desc": "기본적으로 꺼져 있습니다. 활성화하면 명령이 인터넷 및 로컬 서비스에 접근할 수 있으므로 필요할 때만 활성화하세요."
+      }
+    },
+    "data": {
+      "title": "데이터",
+      "subtitle": "로컬 및 서버 측 세션 데이터 지우기",
+      "wipe": {
+        "title": "모든 세션 지우기",
+        "desc": "모든 세션 기록, 에이전트 및 자격 증명을 삭제합니다. 이 작업은 되돌릴 수 없습니다.",
+        "button": "지우기",
+        "confirm": "지우기 확인",
+        "cancel": "취소",
+        "processing": "처리 중…",
+        "error": "지우기 실패: {{error}}"
+      }
+    },
+    "about": {
+      "title": "정보",
+      "tora": "로컬 에이전트 작업 공간 · v{{version}}",
+      "runtime": "Electron 데스크톱 · 로컬 ASAPI 서비스 · 자체 모델 사용",
+      "runtimeTitle": "런타임",
+      "update": {
+        "title": "소프트웨어 업데이트",
+        "desc": "새 Tora 릴리스를 확인합니다. macOS 및 Windows에서는 백그라운드에서 다운로드한 후 다시 시작하여 설치하라는 메시지가 표시됩니다.",
+        "check": "업데이트 확인",
+        "checking": "확인 중…",
+        "upToDate": "최신 상태입니다.",
+        "available": "Tora {{version}}을(를) 사용할 수 있습니다. 계속하려면 업데이트 안내를 따르세요.",
+        "downloading": "Tora {{version}}을(를) 사용할 수 있으며 백그라운드에서 다운로드 중입니다.",
+        "ready": "Tora {{version}} 다운로드가 완료되어 설치할 준비가 되었습니다.",
+        "development": "개발 빌드에서는 업데이트를 사용할 수 없습니다.",
+        "unavailable": "이 플랫폼에서는 자동 업데이트를 사용할 수 없습니다.",
+        "desktopOnly": "Tora 데스크톱 앱에서 업데이트를 확인하세요.",
+        "failed": "업데이트를 확인할 수 없습니다: {{error}}"
+      }
+    },
+    "errors": {
+      "backend": "백엔드가 {{status}}을(를) 반환했습니다",
+      "runtimeSave": "저장 실패 ({{status}}): {{text}}",
+      "saveFailed": "저장 실패: {{error}}",
+      "wipeFailed": "지우기 실패: {{error}}"
+    },
+    "advanced": {
+      "title": "고급",
+      "subtitle": "후크, 코드 인덱스 및 언어 서버입니다. 변경 사항은 다음 실행에 적용됩니다.",
+      "hooks": {
+        "title": "수명 주기 후크",
+        "desc": "UserPromptSubmit / PreToolUse / PostToolUse / Stop에서 자체 명령을 실행합니다. 끄면 후크가 전혀 실행되지 않습니다."
+      },
+      "changes": {
+        "title": "변경 인식 컨텍스트",
+        "desc": "시스템 프롬프트에 \"최근 수정됨 + git-dirty 파일\"을 주입하여 모델이 디스크가 변경되었을 수 있음을 알 수 있게 합니다."
+      },
+      "lsp": {
+        "title": "언어 서버 (LSP)",
+        "desc": "구성되면 Lsp는 정의 / 참조 / 진단을 위해 실제 서버로 가서 타입 정보를 가져오고, 그렇지 않으면 로컬 기호 인덱스를 사용합니다.",
+        "none": "감지된 언어 서버 없음",
+        "enable": "활성화",
+        "enabled": "활성화됨",
+        "disable": "비활성화",
+        "probeFailed": "프로브 실패: {{error}}"
+      },
+      "index": {
+        "title": "코드 인덱스",
+        "desc": "심볼 인덱스 및 시맨틱 역색인(검색에서 사용). mtime에 따라 증분 업데이트되며, 수동 재구축은 거의 필요하지 않습니다.",
+        "rebuild": "인덱스 재구축",
+        "rebuilding": "재구축 중…",
+        "done": "인덱스 재구축 완료: {{files}}개 파일 / {{symbols}}개 심볼 / {{tokens}}개 용어",
+        "noWorkspace": "먼저 세션에서 작업 디렉터리를 선택하세요",
+        "stats": "현재: {{files}}개 파일 / {{symbols}}개 심볼"
+      },
+      "mcp": {
+        "title": "MCP 서버",
+        "desc": "stdio를 통한 Model Context Protocol 서버. 해당 도구는 mcp__server__tool로 세션에 참여합니다. 저장된 변경 사항은 다음 실행 시 적용됩니다.",
+        "add": "추가",
+        "namePlaceholder": "이름 (영문자, 숫자, - _)",
+        "commandPlaceholder": "명령어, 예: npx",
+        "argsPlaceholder": "인수 (공백으로 구분, 선택 사항)",
+        "probe": "프로브",
+        "probing": "프로브 중…",
+        "toolsCount": "{{count}}개 도구",
+        "noServers": "구성된 MCP 서버 없음",
+        "delete": "이 서버 삭제",
+        "probeFailed": "프로브 실패: {{error}}"
+      },
+      "trust": {
+        "title": "프로젝트 훅 신뢰",
+        "desc": "워크스페이스의 .tora/hooks.json은 저장소 콘텐츠에서 가져옵니다. 신뢰하면 해당 저장소가 명령을 실행할 수 있으므로 먼저 내용을 확인하세요.",
+        "trusted": "이 디렉터리에 대해 프로젝트 훅이 신뢰됨",
+        "trust": "현재 디렉터리 신뢰",
+        "revoke": "신뢰 철회",
+        "none": "아직 작업 디렉터리가 없습니다"
+      },
+      "saveFailed": "저장 실패: {{error}}"
+    },
+    "usage": {
+      "title": "사용 통계",
+      "desc": "로컬 세션 및 실행에서 집계됨 (토큰, 채팅 시간, 연속 일수, 도구 사용)",
+      "cards": {
+        "totalTokens": "총 토큰",
+        "peakTokens": "최대 토큰",
+        "longestChat": "최장 채팅",
+        "currentStreak": "현재 연속 일수",
+        "longestStreak": "최장 연속 일수"
+      },
+      "activity": {
+        "title": "토큰 활동",
+        "daily": "일별",
+        "weekly": "주별",
+        "cumulative": "누적",
+        "tipDaily": "{{tokens}}개 토큰 사용",
+        "tipWeekly": "주간 합계: {{tokens}}개 토큰",
+        "tipCumulative": "총 {{tokens}}개 토큰"
+      },
+      "insights": {
+        "title": "인사이트",
+        "chats": "총 채팅",
+        "runs": "총 실행",
+        "activeDays": "활동 일수",
+        "toolRuns": "도구 실행",
+        "topModel": "최다 사용 모델"
+      },
+      "topTools": {
+        "title": "가장 많이 사용한 도구",
+        "empty": "아직 도구 사용 없음",
+        "runs": "{{count}}회 실행"
+      },
+      "loading": "로딩 중…",
+      "loadFailed": "사용 통계를 불러오지 못했습니다: {{error}}",
+      "days": "{{count}}일",
+      "refresh": "새로고침"
+    },
+    "account": {
+      "title": "계정",
+      "homeTitle": "Tora에 로그인",
+      "homeDesc": "사용자 이름 또는 이메일을 입력하세요 — 로그인 또는 가입으로 안내해 드립니다",
+      "continue": "로그인 / 가입",
+      "nextStep": "계속",
+      "otherWays": "다른 로그인 옵션",
+      "register": "가입",
+      "emailTitle": "로그인 또는 가입",
+      "registerTitle": "계정 만들기",
+      "emailDesc": "더 스마트한 답변과 클라우드 기능을 이용하세요.",
+      "emailLabel": "이메일 주소",
+      "emailPlaceholder": "이메일 주소",
+      "passwordTitle": "비밀번호 입력",
+      "createPasswordTitle": "비밀번호 생성",
+      "passwordLabel": "비밀번호 (최소 8자)",
+      "confirmLabel": "비밀번호 확인",
+      "login": "로그인",
+      "createAccount": "계정 만들기",
+      "or": "또는",
+      "terms": "계속하면 Tora 이용 약관 및 개인정보 처리방침에 동의하게 됩니다.",
+      "back": "뒤로",
+      "logout": "로그아웃",
+      "since": "가입일 {{date}}",
+      "errors": {
+        "confirmMismatch": "비밀번호가 일치하지 않습니다",
+        "shortPassword": "비밀번호는 8자 이상이어야 합니다",
+        "alreadyRegistered": "이미 등록된 이메일입니다 — 로그인해 주세요",
+        "invalidEmail": "잘못된 이메일 주소",
+        "longPassword": "비밀번호가 너무 깁니다",
+        "wrongCredentials": "계정 또는 비밀번호가 잘못되었습니다",
+        "wrongPassword": "현재 비밀번호가 올바르지 않습니다",
+        "emailTaken": "이미 사용 중인 이메일입니다",
+        "avatarTooLarge": "아바타가 너무 큽니다. 더 작은 이미지를 선택하세요",
+        "avatarInvalid": "지원되지 않는 아바타 형식입니다",
+        "invalidUsername": "사용자 이름은 2~32자의 문자, 숫자, 밑줄, 하이픈 또는 CJK 문자여야 합니다",
+        "usernameTaken": "이미 사용 중인 사용자 이름입니다",
+        "codeTooFrequent": "요청이 너무 많습니다. 나중에 다시 시도하세요",
+        "codeSendFailed": "코드 전송에 실패했습니다. 나중에 다시 시도하세요",
+        "codeInvalid": "인증 코드가 유효하지 않거나 만료되었습니다",
+        "turnstileFailed": "사람 확인에 실패했습니다. 다시 시도하세요"
+      },
+      "networkWarning": "인증 서비스에 연결할 수 없습니다. 네트워크를 확인하고 다시 시도하세요",
+      "networkRetryHint": "로그인 정보가 유지됩니다. 연결이 복구되면 인증을 다시 시도하세요.",
+      "manager": {
+        "description": "프로필과 계정 보안을 관리하세요.",
+        "profileTitle": "프로필",
+        "securityTitle": "계정 보안",
+        "registeredAt": "가입일",
+        "passwordHint": "Tora 로그인에 사용하는 비밀번호를 변경하세요",
+        "emailPasswordHint": "본인 확인을 위해 현재 비밀번호를 입력하세요",
+        "confirmNewPassword": "새 비밀번호 확인",
+        "savePassword": "비밀번호 저장",
+        "saveEmail": "이메일 저장",
+        "logoutTitle": "현재 계정에서 로그아웃",
+        "logoutHint": "다음에 사용하려면 다시 로그인해야 합니다.",
+        "logoutConfirmTitle": "로그아웃할까요?",
+        "logoutConfirmDescription": "Tora를 계속 사용하려면 다시 로그인해야 합니다.",
+        "changeAvatar": "아바타 변경",
+        "avatarHint": "아바타를 클릭하여 변경하세요 (PNG / JPG / WebP, 자동 자르기 및 압축)",
+        "avatarSaved": "아바타가 업데이트되었습니다",
+        "changePassword": "비밀번호 변경",
+        "changeEmail": "이메일 변경",
+        "currentEmail": "현재 이메일: {{email}}",
+        "newEmail": "새 이메일 주소",
+        "currentPassword": "현재 비밀번호",
+        "newPassword": "새 비밀번호 (8자 이상)",
+        "save": "저장",
+        "passwordSaved": "비밀번호가 업데이트되었습니다",
+        "emailSaved": "이메일이 업데이트되었습니다"
+      },
+      "accountLabel": "사용자 이름 또는 이메일",
+      "accountPlaceholder": "사용자 이름 또는 이메일",
+      "usernameLabel": "사용자 이름 (2-32자 영문자, 숫자 또는 CJK)",
+      "codeLabel": "이메일 인증 코드",
+      "captchaTitle": "보안 확인",
+      "captchaLoginDesc": "로그인하려면 사람 확인을 완료하세요",
+      "captchaRegisterDesc": "계정을 만들려면 사람 확인을 완료하세요",
+      "showPassword": "비밀번호 표시",
+      "hidePassword": "비밀번호 숨기기",
+      "sendCode": "코드 전송",
+      "codeCooldown": "{{s}}초 후 재전송"
+    }
+  },
+  "agentSection": {
+    "title": "에이전트",
+    "desc": "기본 에이전트 이름과 시스템 프롬프트를 구성하세요. 시스템 프롬프트를 비워 두면 내장 Corey 프롬프트가 사용됩니다.",
+    "select": "에이전트 선택",
+    "name": "이름",
+    "namePlaceholder": "에이전트 이름",
+    "systemPrompt": "시스템 프롬프트",
+    "systemPromptPlaceholder": "비워 두면 내장 Corey 시스템 프롬프트가 사용됩니다",
+    "save": "저장",
+    "saved": "저장됨",
+    "saveFailed": "저장 실패: {{error}}"
+  },
+  "modelSection": {
+    "title": "모델",
+    "subtitle": "모델 관리",
+    "desc": "더 많은 사용 가능한 모델을 추가하려면 API 키를 구성하세요. 첫 번째로 활성화된 모델이 기본 대화 모델이 됩니다.",
+    "addModel": "모델 추가",
+    "empty": "아직 모델이 없습니다 — \"모델 추가\"를 클릭하여 첫 모델을 연결하세요",
+    "loading": "로딩 중…",
+    "tableHeaders": {
+      "model": "모델",
+      "provider": "제공자",
+      "actions": "작업"
+    },
+    "aria": {
+      "edit": "편집",
+      "delete": "삭제",
+      "close": "닫기",
+      "back": "뒤로"
+    },
+    "errors": {
+      "noModels": "제공자가 모델을 반환하지 않았습니다",
+      "submitFailed": "제출 실패: {{error}}",
+      "backend": "백엔드가 {{status}}을(를) 반환했습니다",
+      "loginRequired": "먼저 \"계정\"에서 로그인하세요 — 모델은 클라우드의 계정과 동기화됩니다"
+    },
+    "form": {
+      "titleEdit": "모델 편집",
+      "titleAdd": "제공자를 통해 추가",
+      "provider": "제공자",
+      "apiKey": "API 키",
+      "apiKeyPlaceholder": "API 키 입력",
+      "apiKeyKeepEmpty": "비워 두면 현재 키가 유지됩니다",
+      "getApiKey": "API 키 받기",
+      "model": "모델",
+      "modelPlaceholder": "모델 선택",
+      "modelInputPlaceholder": "모델 ID를 선택하거나 입력하세요 (예: glm-4.6)",
+      "fetchingModels": "사용 가능한 모델을 가져오는 중…",
+      "fetchHint": "API 키를 입력하면 모델이 자동으로 로드됩니다. 모델 ID를 직접 입력할 수도 있습니다",
+      "advanced": "고급",
+      "vision": {
+        "title": "비전 입력",
+        "auto": "자동",
+        "on": "켜기",
+        "off": "끄기",
+        "hint": "모델 이름으로 자동 감지합니다. deepseek-flash, gpt-4o, qwen-vl 같은 비전 모델은 이미지를 받을 수 있습니다"
+      },
+      "baseUrl": "엔드포인트 (기본 URL)",
+      "saveHint": "저장 시 모델 목록 엔드포인트를 통해 연결이 확인됩니다. 키는 로컬에만 저장됩니다",
+      "reset": "초기화",
+      "saveEdit": "변경 사항 저장",
+      "saveAdd": "모델 추가",
+      "selectedCount": "{{count}}개 선택됨",
+      "selectAll": "모두 선택",
+      "deselectAll": "지우기",
+      "alreadyAdded": "추가됨",
+      "apiKeyReused": "비워 두면 기존 키를 재사용합니다",
+      "keyReusedHint": "이 제공자에는 이미 API 키가 구성되어 있습니다 — 비워 두면 재사용됩니다. 모델을 선택하고 저장하세요."
+    },
+    "providers": {
+      "custom": "사용자 지정 모델",
+      "volcengine": "Volcengine",
+      "dashscope": "Alibaba Cloud",
+      "siliconflow": "SiliconFlow",
+      "stepfun": "StepFun 중국",
+      "stepfunGlobal": "StepFun 글로벌",
+      "hunyuan": "텐센트 클라우드",
+      "ollama": "Ollama (로컬)"
+    }
+  }
+}

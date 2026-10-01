@@ -2,18 +2,57 @@ name: Release desktop app
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  macos:
-    # v1.0.0 与 v1.0.1 由本机签名、公证、附票据后手动上传，避免 CI 覆盖最终 DMG 元数据。
+  windows:
     if: github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1'
-    name: Publish macOS installer
+    name: Build and verify Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Verify release version
+        shell: pwsh
+        run: |
+          node -e "const p=require('./packages/desktop/package.json'); if (process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_REF_NAME !== 'v' + p.version) throw new Error('Tag/version mismatch')"
+          $version = node -p "require('./packages/desktop/package.json').version"
+          "TORA_RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - run: npm ci
+      - run: npm ci --prefix packages/desktop/frontend
+      - name: Verify Windows shell and desktop security
+        run: node --test packages/core/test/shell-protocol.js scripts/test-brand-migration.mjs scripts/test-desktop-security.mjs scripts/test-multilingual.mjs
+      - name: Build NSIS installer and update metadata
+        run: npm run dist:win -w @tora/desktop
+      - name: Install, launch and verify packaged Windows application
+        run: node scripts/test-windows-release.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tora-windows-${{ env.TORA_RELEASE_VERSION }}
+          path: |
+            packages/desktop/release/*.exe
+            packages/desktop/release/*.exe.blockmap
+            packages/desktop/release/latest.yml
+          if-no-files-found: error
+          retention-days: 30
+
+  macos:
+    # These versions are notarized locally and published only after both platforms pass.
+    if: github.event_name == 'push' && github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2'
+    needs: windows
+    name: Publish signed macOS and verified Windows installers
     runs-on: macos-latest
+    timeout-minutes: 45
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
@@ -27,8 +66,6 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - name: Verify tag matches app version
-        run: node -e "const p=require('./packages/desktop/package.json'); if (process.env.GITHUB_REF_NAME !== 'v' + p.version) throw new Error('Tag must equal v' + p.version)"
       - name: Require macOS signing and notarization credentials
         run: |
           for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
@@ -39,22 +76,11 @@ jobs:
           done
       - run: npm ci
       - run: npm ci --prefix packages/desktop/frontend
-      - run: npm run release:mac
-
-  windows:
-    if: github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1'
-    name: Publish Windows installer
-    needs: macos
-    runs-on: windows-latest
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - run: npm run release:mac -w @tora/desktop
+      - uses: actions/download-artifact@v4
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm ci --prefix packages/desktop/frontend
-      # NSIS + latest.yml 会上传到同一 GitHub Release，供 electron-updater 自动下载。
-      - run: npm run release:win
+          pattern: tora-windows-*
+          path: windows-release
+          merge-multiple: true
+      - name: Publish verified Windows files to the same release
+        run: gh release upload "$GITHUB_REF_NAME" windows-release/* --repo "$GITHUB_REPOSITORY"

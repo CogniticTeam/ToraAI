@@ -7,12 +7,11 @@
 // 连同 Git 状态与仓库骨架一起拼进系统提示词。系统提示词是稳定前缀，
 // 对支持上下文缓存的厂商（DeepSeek / 智谱等）是缓存友好的位置。
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import { buildRepoMap, walkCodeFiles } from './tools/repomap.js';
 import { readGitInfo } from './tools/git.js';
-import { relative, sep } from 'node:path';
 
-/** 约定文件的查找顺序（先找到先用，不合并，避免提示词膨胀） */
+/** 同一目录中的约定文件优先级；不同层级从仓库根目录到 cwd 叠加。 */
 export const INSTRUCTION_FILES = [
   'TORA.md',
   'COCODE.md', // 已有项目约定保持可读。
@@ -28,30 +27,61 @@ export const DEFAULT_INSTRUCTION_MAX_CHARS = 6000;
 
 const cache = new Map(); // path -> { mtime, text }
 
+function instructionDirectories(cwd) {
+  const current = resolve(cwd);
+  let root = current;
+  for (let dir = current; ; dir = dirname(dir)) {
+    if (existsSync(join(dir, '.git'))) { root = dir; break; }
+    if (dirname(dir) === dir) break;
+  }
+  const dirs = [];
+  for (let dir = current; ; dir = dirname(dir)) {
+    dirs.push(dir);
+    if (dir === root) break;
+  }
+  return dirs.reverse();
+}
+
 /**
  * 读取项目约定文件。
- * @returns {{file:string, text:string, truncated:boolean}|null}
+ * @returns {{file:string, text:string, truncated:boolean, sources:Array}|null}
  */
-export function loadProjectInstructions(cwd, { maxChars = DEFAULT_INSTRUCTION_MAX_CHARS } = {}) {
+export function loadProjectInstructions(cwd, { maxChars = DEFAULT_INSTRUCTION_MAX_CHARS, maxTotalChars = 12000 } = {}) {
   if (!cwd) return null;
-  for (const name of INSTRUCTION_FILES) {
-    const full = join(cwd, name);
-    if (!existsSync(full)) continue;
-    let st;
-    try { st = statSync(full); } catch { continue; }
-    if (!st.isFile() || st.size === 0) continue;
-    let text;
-    const hit = cache.get(full);
-    if (hit && hit.mtime === st.mtimeMs) {
-      text = hit.text;
-    } else {
-      try { text = readFileSync(full, 'utf8'); } catch { continue; }
-      cache.set(full, { mtime: st.mtimeMs, text });
+  const sources = [];
+  for (const dir of instructionDirectories(cwd)) {
+    for (const name of INSTRUCTION_FILES) {
+      const full = join(dir, name);
+      if (!existsSync(full)) continue;
+      let st;
+      try { st = statSync(full); } catch { continue; }
+      if (!st.isFile() || st.size === 0) continue;
+      let text;
+      const hit = cache.get(full);
+      if (hit && hit.mtime === st.mtimeMs) {
+        text = hit.text;
+      } else {
+        try { text = readFileSync(full, 'utf8'); } catch { continue; }
+        cache.set(full, { mtime: st.mtimeMs, text });
+      }
+      sources.push({ file: relative(resolve(cwd), full) || name, text: text.slice(0, maxChars), truncated: text.length > maxChars });
+      break;
     }
-    const truncated = text.length > maxChars;
-    return { file: name, text: truncated ? text.slice(0, maxChars) : text, truncated };
   }
-  return null;
+  if (!sources.length) return null;
+  // 预算不足时优先保留更靠近当前目录的约定，最后仍按根到子目录排列。
+  let remaining = Math.max(1, maxTotalChars);
+  const kept = sources.slice().reverse().map((source) => {
+    const text = source.text.slice(0, remaining);
+    remaining -= text.length;
+    return { ...source, text, truncated: source.truncated || text.length < source.text.length };
+  }).reverse().filter((source) => source.text);
+  return {
+    file: kept.map((source) => source.file).join(' → '),
+    text: kept.map((source) => `## ${source.file}${source.truncated ? '（已截断）' : ''}\n${source.text}`).join('\n\n'),
+    truncated: kept.some((source) => source.truncated),
+    sources: kept
+  };
 }
 
 /**
@@ -96,7 +126,7 @@ export function renderProjectContext({ instructions, git, repoMap, changes }) {
   const parts = [];
   if (instructions) {
     parts.push(
-      `# 项目约定（来自工作目录的 ${instructions.file}${instructions.truncated ? '，已截断' : ''}）\n` +
+      `# 项目约定（来源：${instructions.file}${instructions.truncated ? '；部分已截断' : ''}）\n` +
       `以下内容由仓库作者维护，优先级高于你的默认习惯，请严格遵守：\n\n${instructions.text.trim()}`
     );
   }

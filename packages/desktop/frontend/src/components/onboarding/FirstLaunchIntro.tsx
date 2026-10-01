@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
-import { FIRST_RUN_INTRO_KEY, FIRST_RUN_REPLAY_EVENT, FIRST_RUN_STEP_KEY, FIRST_RUN_TOUR_KEY } from './constants';
+import { FIRST_RUN_INTRO_KEY } from './constants';
 import { useTranslation } from '@/i18n/useI18n';
 
 function isDesktop(): boolean {
@@ -17,29 +17,6 @@ function shouldShowIntro(): boolean {
 export function FirstLaunchIntro({ children }: { children: React.ReactNode }) {
 	const { t } = useTranslation();
 	const [active, setActive] = useState(shouldShowIntro);
-	const [ready, setReady] = useState(false);
-
-	useEffect(() => {
-		if (!active) return;
-		setReady(false);
-		const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 2900;
-		const timer = window.setTimeout(() => setReady(true), delay);
-		return () => window.clearTimeout(timer);
-	}, [active]);
-
-	useEffect(() => {
-		const replay = () => {
-			if (!isDesktop()) return;
-			try {
-				localStorage.removeItem(FIRST_RUN_INTRO_KEY);
-				localStorage.removeItem(FIRST_RUN_TOUR_KEY);
-				localStorage.removeItem(FIRST_RUN_STEP_KEY);
-			} catch { /* 私密模式仍可在本次会话中重播。 */ }
-			setActive(true);
-		};
-		window.addEventListener(FIRST_RUN_REPLAY_EVENT, replay);
-		return () => window.removeEventListener(FIRST_RUN_REPLAY_EVENT, replay);
-	}, []);
 
 	const enter = () => {
 		try { localStorage.setItem(FIRST_RUN_INTRO_KEY, '1'); }
@@ -50,23 +27,23 @@ export function FirstLaunchIntro({ children }: { children: React.ReactNode }) {
 	if (!active) return <>{children}</>;
 
 	return (
-		<div className={`first-launch-root${ready ? ' first-launch-ready' : ''}`} role="dialog" aria-modal="true" aria-label={t('firstRun.intro.aria')}>
-			<div className="first-launch-grid" aria-hidden="true" />
-			<div className="first-launch-beam first-launch-beam-a" aria-hidden="true" />
-			<div className="first-launch-beam first-launch-beam-b" aria-hidden="true" />
-			<div className="first-launch-orbit first-launch-orbit-a" aria-hidden="true" />
-			<div className="first-launch-orbit first-launch-orbit-b" aria-hidden="true" />
-			<div className="first-launch-orbit first-launch-orbit-c" aria-hidden="true" />
-			<div className="first-launch-center">
-				<div className="first-launch-mark" aria-hidden="true">‹_</div>
-				<h1>Tora</h1>
-				<p>{t('firstRun.intro.tagline')}</p>
-				<div className="first-launch-progress" aria-hidden="true"><span /></div>
-				<div className="first-launch-status" role="status">{ready ? t('firstRun.intro.ready') : t('firstRun.intro.initializing')}</div>
-				<button type="button" className="first-launch-enter" onClick={enter} autoFocus>{t('firstRun.intro.enter')} <span aria-hidden="true">↗</span></button>
+		<div className="first-launch-root" role="dialog" aria-modal="true" aria-label={t('firstRun.intro.aria')}>
+			<button type="button" className="first-launch-skip" onClick={enter}>{t('firstRun.intro.skip')}</button>
+			<div className="first-launch-frame">
+				<section className="first-launch-story">
+					<div className="first-launch-eyebrow">{t('firstRun.intro.welcome')}</div>
+					<h1><span>{t('firstRun.intro.headlineFirst')}</span><span>{t('firstRun.intro.headlineSecond')}</span></h1>
+					<p className="first-launch-description">{t('firstRun.intro.description')}</p>
+					<div className="first-launch-actions">
+						<button type="button" className="first-launch-enter" onClick={enter} autoFocus>{t('firstRun.intro.enter')} <span aria-hidden="true">↗</span></button>
+						<span className="first-launch-hint">{t('firstRun.intro.hint')}</span>
+					</div>
+				</section>
+				<div className="first-launch-art">
+					<div className="first-launch-logo"><img src="/icon.png" width="512" height="512" alt={t('firstRun.intro.logoAlt')} /></div>
+				</div>
 			</div>
-			<button type="button" className="first-launch-skip" onClick={enter}>{t('firstRun.intro.skip')} <span aria-hidden="true">↗</span></button>
-			<span className="first-launch-corner" aria-hidden="true">FIRST LAUNCH · 001</span>
+			<div className="first-launch-foot">{t('firstRun.intro.foot')}</div>
 		</div>
 	);
 }

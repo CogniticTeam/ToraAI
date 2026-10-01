@@ -16,6 +16,9 @@ minimind/
 minimind_cloud.zip
 *.zip
 
+# 独立的开源代码副本，避免被主仓库重复提交
+Github/
+
 # Cloudflare / D1 本地状态（含用户数据与会话）
 .wrangler/
 

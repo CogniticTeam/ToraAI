@@ -48,10 +48,38 @@ try {
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.locator('.first-launch-root').waitFor({ state: 'visible' });
+	await page.waitForFunction(() => document.querySelector('.first-launch-logo img')?.naturalWidth > 0);
+	assert.equal(await page.locator('.first-launch-logo img').getAttribute('src'), '/icon.png', '欢迎页应使用 Tora Logo 资源');
+	await page.waitForTimeout(1250);
 	await page.screenshot({ path: '/tmp/tora-first-run-actual-intro.png' });
-	await page.locator('.first-launch-status').filter({ hasText: /准备完成/ }).waitFor({ state: 'visible', timeout: 5000 });
-	await page.screenshot({ path: '/tmp/tora-first-run-actual-ready.png' });
+	assert.equal(await page.locator('.first-launch-status').count(), 0, '欢迎页不应保留旧的假加载状态');
+	assert.equal(await page.locator('.first-launch-root').evaluate(element => element.scrollWidth <= element.clientWidth), true, '欢迎页不能横向溢出');
+	await page.evaluate(() => document.documentElement.classList.add('dark'));
+	await page.screenshot({ path: '/tmp/tora-first-run-actual-dark.png' });
+	await page.evaluate(() => document.documentElement.classList.remove('dark'));
+	await page.setViewportSize({ width: 390, height: 760 });
+	assert.equal(await page.locator('.first-launch-root').evaluate(element => element.scrollWidth <= element.clientWidth), true, '窄窗口下欢迎页不能横向溢出');
+	assert.ok(await page.getByRole('button', { name: /开启体验/ }).isVisible(), '窄窗口下开始按钮必须可见');
+	await page.screenshot({ path: '/tmp/tora-first-run-actual-mobile.png' });
+	await page.setViewportSize({ width: 1360, height: 850 });
 	await page.getByRole('button', { name: /开启体验/ }).click();
+	const consent = page.getByRole('dialog', { name: /开始使用前/ });
+	await consent.waitFor({ state: 'visible' });
+	await page.screenshot({ path: '/tmp/tora-first-use-consent-light.png' });
+	await page.evaluate(() => document.documentElement.classList.add('dark'));
+	await page.screenshot({ path: '/tmp/tora-first-use-consent-dark.png' });
+	await page.evaluate(() => document.documentElement.classList.remove('dark'));
+	assert.equal(await consent.getByRole('button', { name: /确认并继续/ }).isDisabled(), true, '三项确认前不能进入登录或工作区');
+	for (const [name, url] of [
+		[/用户协议/, 'https://ohfun.online/#terms'],
+		[/隐私政策/, 'https://ohfun.online/#privacy'],
+		[/跨境传输个人信息/, 'https://ohfun.online/#cross-border'],
+	]) {
+		await consent.getByRole('checkbox', { name }).check();
+		assert.ok(await consent.locator(`a[href="${url}"]`).count(), `应提供 ${url} 的正式链接`);
+	}
+	await consent.getByRole('button', { name: /确认并继续/ }).click();
+	assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem('tora:first-use-consent:v1'))).crossBorder, true, '跨境同意须单独记录');
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
 	const greeting = page.getByRole('heading', { name: '与Tora工作和编程' }).first();
 	await greeting.waitFor({ state: 'visible' });
@@ -64,7 +92,7 @@ try {
 	await page.locator('.first-run-coach').waitFor({ state: 'visible' });
 	const spotlight = page.locator('.first-run-focus');
 	await spotlight.waitFor({ state: 'visible' });
-	const targetBox = await page.locator('#tour-llm-select').boundingBox();
+	const targetBox = await page.locator('#tour-llm-select').first().boundingBox();
 	const focusBox = await spotlight.boundingBox();
 	assert.ok(targetBox && focusBox, '模型按钮和聚光框应同时可见');
 	assert.ok(Math.abs(focusBox.x - targetBox.x + 3) < 1 && Math.abs(focusBox.y - targetBox.y + 3) < 1, '聚光框应贴合目标位置');
@@ -77,7 +105,7 @@ try {
 	assert.notEqual(shadeStyle.transform, 'none', '遮罩应由合成层缩放定位');
 	assert.equal(shadeStyle.width, '1px', '遮罩应从轻量 1px 实色层缩放，避免全屏阴影绘制');
 	await page.screenshot({ path: '/tmp/tora-first-run-spotlight-model.png' });
-	await page.locator('#tour-llm-select').click();
+	await page.locator('#tour-llm-select').first().click();
 	await page.getByRole('heading', { name: '添加模型服务' }).waitFor({ state: 'visible' });
 	await page.locator('#tour-add-model').click();
 	await page.getByText('返回 Tora').waitFor({ state: 'visible' });
@@ -128,25 +156,59 @@ try {
 	assert.ok(await page.locator('h1[aria-label="与Tora工作和编程"] .chat-greeting-character').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1')), '逐字动画结束后不得缺字');
 	await page.screenshot({ path: '/tmp/tora-greeting-typewriter-complete.png' });
 	assert.equal(await page.evaluate(() => localStorage.getItem('tora:first-run:tour:v1')), '1');
+	await page.route('https://tora.ohfun.online/supporters?page=*', route => {
+		const pageNumber = Number(new URL(route.request().url()).searchParams.get('page'));
+		return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(pageNumber === 1
+			? { page: 1, month: '2026-09', hasMore: true, supporters: [] }
+			: { page: 2, month: '2026-09', hasMore: false, supporters: [{ name: '赞助者甲' }, { name: '赞助者乙' }] }) });
+	});
+	await page.evaluate(() => {
+		window.__sponsorOpens = [];
+		window.open = url => { window.__sponsorOpens.push(url); return null; };
+	});
+	await page.getByRole('button', { name: /first-run-test/i }).first().click();
+	await page.getByRole('menuitem', { name: '本月赞助者名单' }).click();
+	await page.getByRole('dialog', { name: '本月赞助者名单' }).waitFor({ state: 'visible' });
+	await page.getByText('当前页暂无本月赞助者，可继续加载更多。').waitFor({ state: 'visible' });
+	await page.getByRole('button', { name: '加载更多' }).click();
+	await page.getByText('赞助者甲').waitFor({ state: 'visible' });
+	await page.getByText('赞助者乙').waitFor({ state: 'visible' });
+	await page.getByText('共 2 位赞助者').waitFor({ state: 'visible' });
+	await page.getByRole('button', { name: '赞助', exact: true }).click();
+	assert.deepEqual(await page.evaluate(() => window.__sponsorOpens), [], '确认之前不能打开赞助外链');
+	await page.getByRole('button', { name: '确认并打开' }).click();
+	assert.deepEqual(await page.evaluate(() => window.__sponsorOpens), ['https://ifdian.net/a/zhenxun111']);
+	await page.getByRole('button', { name: /first-run-test/i }).first().click();
+	await page.getByRole('menuitem', { name: '赞助', exact: true }).click();
+	await page.getByRole('dialog', { name: /前往爱发电赞助/ }).waitFor({ state: 'visible' });
+	await page.getByRole('button', { name: '取消' }).click();
+	assert.equal((await page.evaluate(() => window.__sponsorOpens)).length, 1, '取消时不得打开外链');
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
 	assert.equal(await page.locator('.first-launch-root').count(), 0, '再次启动不应重复播放开场');
 	assert.equal(await page.locator('.first-run-coach').count(), 0, '再次启动不应重复引导');
 	await page.getByRole('button', { name: /first-run-test/i }).first().click();
-	await page.getByRole('menuitem', { name: 'Language' }).click();
-	await page.getByRole('dialog', { name: 'Language' }).getByRole('button', { name: 'English / 英语' }).click();
-	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.getByRole('menuitem', { name: /^(语言|Language)$/ }).click();
+	await page.getByRole('dialog', { name: /^(语言|Language)$/ }).getByRole('button', { name: 'English / 英语' }).click();
 	await page.getByRole('button', { name: /first-run-test/i }).first().click();
-	await page.getByText('Replay the getting-started guide').click();
+	assert.equal(await page.getByRole('menuitem', { name: 'Replay the getting-started guide' }).count(), 0, '账号菜单不应再显示重新查看新手引导');
+	await page.keyboard.press('Escape');
+	await page.emulateMedia({ reducedMotion: 'reduce' });
+	await page.evaluate(() => {
+		localStorage.removeItem('tora:first-run:intro:v1');
+		localStorage.removeItem('tora:first-run:tour:v1');
+		localStorage.removeItem('tora:first-run:step:v1');
+	});
+	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.getByRole('dialog', { name: /first-launch welcome animation/i }).waitFor({ state: 'visible' });
-	assert.equal(await page.locator('.first-launch-mark').evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时不应播放入场动画');
+	assert.equal(await page.locator('.first-launch-logo').evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时不应播放入场动画');
 	await page.getByRole('button', { name: /Skip animation/ }).click();
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
 	const englishGreeting = page.getByRole('heading', { name: 'Work and Code with Tora' }).first();
 	await englishGreeting.waitFor({ state: 'visible' });
 	assert.equal(await englishGreeting.locator('.chat-greeting-character').first().evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时标题应直接完整显示');
 	await page.getByRole('heading', { name: 'Choose your own model' }).waitFor({ state: 'visible' });
-	await page.locator('#tour-llm-select').click();
+	await page.locator('#tour-llm-select').first().click();
 	await page.getByRole('button', { name: 'Set up later' }).click();
 	await page.getByRole('heading', { name: 'Set your project scope' }).waitFor({ state: 'visible' });
 	await page.locator('#tour-workspace-picker').click();
@@ -160,15 +222,23 @@ try {
 
 	// 未登录的新安装用户先看开场，再进入登录页；教学不得压在认证表单之上。
 	const unsigned = await browser.newPage({ viewport: { width: 1024, height: 760 }, locale: 'zh-CN' });
-	await unsigned.addInitScript(() => { window.toraWindow = { isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN', getRequiredUpdate: () => null, onRequiredUpdate: () => () => {} }; });
+	await unsigned.addInitScript(() => { window.quitRequested = false; window.toraWindow = { isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN', getRequiredUpdate: () => null, onRequiredUpdate: () => () => {}, quitApp: () => { window.quitRequested = true; } }; });
 	await unsigned.goto(base + '/', { waitUntil: 'domcontentloaded' });
 	await unsigned.locator('.first-launch-root').waitFor({ state: 'visible' });
 	await unsigned.getByRole('button', { name: /开启体验/ }).click();
+	await unsigned.getByRole('dialog', { name: /开始使用前/ }).waitFor({ state: 'visible' });
+	await unsigned.getByRole('button', { name: /暂不接受并退出/ }).click();
+	assert.equal(await unsigned.evaluate(() => window.quitRequested), true, '拒绝协议应请求退出应用');
+	assert.equal(await unsigned.evaluate(() => localStorage.getItem('tora:first-use-consent:v1')), null, '拒绝时不得保存同意记录');
+	await unsigned.locator('#consent-terms').check();
+	await unsigned.locator('#consent-privacy').check();
+	await unsigned.locator('#consent-cross-border').check();
+	await unsigned.getByRole('button', { name: /确认并继续/ }).click();
 	await unsigned.locator('input[autocomplete="username"]').waitFor({ state: 'visible' });
 	assert.equal(await unsigned.locator('.first-run-coach').count(), 0, '未登录时不得显示主界面引导');
 	await unsigned.close();
 	assert.deepEqual(errors, [], `浏览器出现脚本错误：${errors.join(' | ')}`);
-	console.log('首次动画、11 步真实入口与安全演示、完成后不重复展示、英文重播与减少动态效果：通过');
+	console.log('首次动画、11 步真实入口与安全演示、完成后不重复展示、移除重播入口与减少动态效果：通过');
 } finally {
 	await browser.close();
 	server.closeAllConnections?.();

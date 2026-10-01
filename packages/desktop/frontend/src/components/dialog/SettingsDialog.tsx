@@ -21,7 +21,7 @@ import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { AVAILABLE_MODELS_KEY } from '@/hooks/useAvailableModels';
-import i18n, { setAppLanguage } from '@/i18n';
+import i18n, { LANGUAGE_OPTIONS, normalizeLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { PROVIDER_ICONS } from '@/lib/providerIcons';
 import { queryClient } from '@/lib/query-client';
@@ -42,6 +42,7 @@ import {
 	type SoundKind,
 	type SoundSettings,
 } from '@/lib/sound';
+import { setSystemMessageNotificationsEnabled, systemMessageNotificationsEnabled } from '@/lib/systemNotifications';
 import { getToken } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
 
@@ -61,6 +62,8 @@ type RuntimeBehavior = {
 	maxTokensBudget: number;
 	toolOutputLimit: number;
 	maxTurns: number;
+	shellSandbox?: boolean;
+	shellNetworkAccess?: boolean;
 };
 
 type UpdateResult = {
@@ -780,6 +783,34 @@ export function ModelSection() {
 
 /** 自定义音效文件大小上限：音效不需要高保真，10MB 足够宽松。 */
 const SOUND_FILE_MAX_BYTES = 10 * 1024 * 1024;
+
+function SystemNotificationSection() {
+	const { t } = useTranslation();
+	const [enabled, setEnabled] = useState(systemMessageNotificationsEnabled);
+	const [testing, setTesting] = useState(false);
+	const [testStatus, setTestStatus] = useState('');
+	const nativeBridge = (window as { toraWindow?: { notifyNewMessage?: () => Promise<{ status: string }>; testMessageNotification?: () => Promise<{ status: string }> } }).toraWindow;
+	if (!nativeBridge?.notifyNewMessage) return null;
+	const testNotification = async () => {
+		if (!nativeBridge.testMessageNotification || testing) return;
+		setTesting(true);
+		setTestStatus('');
+		try {
+			const result = await nativeBridge.testMessageNotification();
+			setTestStatus(t(`settings.general.systemNotifications.${['shown', 'unsupported', 'unconfirmed'].includes(result?.status) ? result.status : 'failed'}`));
+		} catch { setTestStatus(t('settings.general.systemNotifications.failed')); }
+		finally { setTesting(false); }
+	};
+	return <>
+		<Row title={t('settings.general.systemNotifications.title')} description={t('settings.general.systemNotifications.desc')}>
+			<div className="flex items-center gap-2">
+				{nativeBridge.testMessageNotification && <Button variant="outline" size="sm" disabled={!enabled || testing} onClick={() => void testNotification()}>{t(testing ? 'settings.general.systemNotifications.testing' : 'settings.general.systemNotifications.test')}</Button>}
+				<Switch size="sm" checked={enabled} onCheckedChange={(value) => { setEnabled(value); setSystemMessageNotificationsEnabled(value); setTestStatus(''); }} />
+			</div>
+		</Row>
+		{testStatus && <p role="status" className="px-5 text-xs text-muted-foreground">{testStatus}</p>}
+	</>;
+}
 
 /**
  * 提示音设置（自包含：配置写 localStorage、自定义音频写 IndexedDB，
@@ -1754,8 +1785,8 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 				{/* 右侧内容 */}
 				<div className="relative flex min-w-0 flex-1 flex-col">
 					{/* key={section} 让板块切换时重挂载触发入场动画 */}
-					<div key={section} className="min-h-0 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-250">
-						<div className="mx-auto w-full max-w-4xl px-8 py-14 sm:px-12 lg:py-16">
+					<div key={section} className="settings-section-transition min-h-0 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-250">
+						<div className={`mx-auto w-full px-8 py-14 sm:px-12 lg:py-16 ${section === 'account' ? 'max-w-[856px]' : 'max-w-4xl'}`}>
 						{section === 'general' && (
 							<>
 								<h3 className="text-lg font-semibold">{t('settings.general.title')}</h3>
@@ -1764,13 +1795,12 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 							<Row title={t('settings.general.language.title')} description={t('settings.general.language.desc')}>
 										<DropdownSelect
 											className="w-36"
-											value={lang === 'zh-Hant' ? 'zh-Hant' : lang.startsWith('zh') ? 'zh' : 'en'}
+											value={normalizeLanguage(lang) ?? 'en'}
 											onChange={handleLang}
-											options={[
-												{ value: 'zh', label: t('settings.general.language.zh') },
-												{ value: 'zh-Hant', label: t('settings.general.language.zhHant') },
-												{ value: 'en', label: t('settings.general.language.en') },
-											]}
+											options={LANGUAGE_OPTIONS.map((option) => ({
+												value: option.value,
+												label: t(`settings.general.language.${option.key}`, { defaultValue: option.nativeName }),
+											}))}
 										/>
 									</Row>
 									<Row title={t('settings.general.searchEngine.title')} description={t('settings.general.searchEngine.desc')}>
@@ -1784,6 +1814,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 											}))}
 										/>
 									</Row>
+									<SystemNotificationSection />
 									<SoundSection />
 								</div>
 
@@ -1803,8 +1834,9 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 
 						{section === 'account' && (
 							<>
-								<h3 className="text-lg font-semibold">{t('settings.account.title')}</h3>
-								<div className="mt-5">
+								<h3 className="text-[25px] font-semibold tracking-tight leading-tight">{t('settings.account.title')}</h3>
+								<p className="mt-2.5 text-[13px] text-muted-foreground">{t('settings.account.manager.description')}</p>
+								<div className="mt-8">
 									<AccountSection />
 								</div>
 							</>
@@ -1959,6 +1991,30 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 													suffix={t('settings.behavior.maxTurns.suffix')}
 													disabled={runtimeBusy}
 													onCommit={(n) => handleRuntimeSave({ maxTurns: n })}
+												/>
+											</Row>
+											<Row
+												title={t('settings.behavior.shellSandbox.title')}
+												description={t('settings.behavior.shellSandbox.desc')}
+											>
+												<Switch
+													size="sm"
+													checked={runtime.shellSandbox !== false}
+													disabled={runtimeBusy}
+													aria-label={t('settings.behavior.shellSandbox.title')}
+													onCheckedChange={(value) => void handleRuntimeSave({ shellSandbox: value })}
+												/>
+											</Row>
+											<Row
+												title={t('settings.behavior.shellNetwork.title')}
+												description={t('settings.behavior.shellNetwork.desc')}
+											>
+												<Switch
+													size="sm"
+													checked={runtime.shellNetworkAccess === true}
+													disabled={runtimeBusy || runtime.shellSandbox === false}
+													aria-label={t('settings.behavior.shellNetwork.title')}
+													onCheckedChange={(value) => void handleRuntimeSave({ shellNetworkAccess: value })}
 												/>
 											</Row>
 										</>

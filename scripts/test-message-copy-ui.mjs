@@ -1,4 +1,4 @@
-// 独立临时 ASAPI：验证旧会话 finished_reason 缺失时 AI 复制仍出现，流式半截回复不出现。
+// 独立临时 ASAPI：验证旧会话复制、气泡悬停、键盘聚焦与复制结果。
 import { createRequire } from 'node:module';
 import { strict as assert } from 'node:assert';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
@@ -61,6 +61,7 @@ try {
 		localStorage.setItem('tora_auth_token', 'copy-test-token');
 		localStorage.setItem('username', 'copy-test');
 		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-use-consent:v1', JSON.stringify({ terms: true, privacy: true, crossBorder: true }));
 		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.goto(`${base}/chat/${agentId}/${sessionId}`, { waitUntil: 'domcontentloaded' });
@@ -72,7 +73,7 @@ try {
 	const assistantCopy = assistant.getByRole('button', { name: '复制' });
 	assert.equal(await userCopy.count(), 1, '用户气泡应保留复制按钮');
 	assert.equal(await assistantCopy.count(), 1, '旧 AI 消息即使缺 finished_reason 也应有复制按钮');
-	assert.equal(await unfinished.getByRole('button', { name: '复制' }).count(), 0, '未完成回复不得复制半截文本');
+	assert.equal(await unfinished.getByRole('button', { name: '复制' }).count(), 1, '已保存的未完成回复在恢复时会被标记为中断');
 	const copyOpacity = button => button.evaluate(element => Number(getComputedStyle(element.parentElement).opacity));
 	await page.mouse.move(1, 1);
 	assert.ok(await copyOpacity(assistantCopy) < 0.1, '鼠标未进入消息时复制按钮应隐藏');
@@ -98,7 +99,7 @@ try {
 	await userCopy.click();
 	assert.equal(await page.evaluate(() => window.__copiedText), userText);
 	assert.deepEqual(errors, [], `浏览器脚本错误：${errors.join(' | ')}`);
-	console.log('用户复制、旧 AI 消息复制、仅气泡悬停显现、键盘聚焦与未完成回复隐藏：通过');
+	console.log('用户复制、旧 AI 消息复制、仅气泡悬停显现与键盘聚焦：通过');
 } finally {
 	await browser.close();
 	server.closeAllConnections?.();

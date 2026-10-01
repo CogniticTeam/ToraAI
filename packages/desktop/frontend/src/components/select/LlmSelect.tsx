@@ -328,7 +328,7 @@ export function LlmSelect({
 									<div key={`${credential.id}:${model.name}`}>
 										{showHeader && (
 											<div className="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground first:pt-1">
-												{credentialLabel(credential)}
+												{credentialLabel(credential, t('common.toraModels'))}
 											</div>
 										)}
 										<button

@@ -12,7 +12,10 @@
 // 保证 Bash 工具在任何环境下都可用。
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
+import { win32 } from 'node:path';
 import { buildChildEnv } from '../security.js';
+import { prepareShellSandbox, shellSandboxKey } from './shell-sandbox.js';
 
 const DEFAULT_TIMEOUT = 120000;
 const MAX_BUFFER = 200000; // 单次命令的缓冲上限（与旧实现保持一致）
@@ -20,18 +23,30 @@ const MAX_BUFFER = 200000; // 单次命令的缓冲上限（与旧实现保持�
 /** 常驻 shell 实例（按 cwd 维度复用） */
 const shells = new Map();
 
-function shellPath() {
-  return process.env.SHELL || (process.platform === 'win32' ? 'cmd.exe' : '/bin/zsh');
+export function shellPath(platform = process.platform, env = process.env, exists = existsSync) {
+  if (platform !== 'win32') return env.SHELL || (platform === 'darwin' ? '/bin/zsh' : '/bin/bash');
+  // Bash 的持久会话协议不能发给 cmd.exe。Windows 使用 Git for Windows 的
+  // Bash；找不到时明确报错，原生 cmd 仍可在内置终端使用。
+  const candidates = [env.SHELL, ...[env.ProgramW6432, env.ProgramFiles, env['ProgramFiles(x86)'], 'C:\\Program Files'].filter(Boolean).map(root => win32.join(root, 'Git', 'bin', 'bash.exe')),
+    env.LOCALAPPDATA && win32.join(env.LOCALAPPDATA, 'Programs', 'Git', 'bin', 'bash.exe')];
+  const executable = candidates.find(path => path && /[\\/]bash\.exe$/i.test(path) && exists(path));
+  if (!executable) throw new Error('Windows 的 Bash 工具需要 Git for Windows（包含 Bash）；请安装 Git，或通过 SHELL 配置 bash.exe 的完整路径。内置终端仍可运行 cmd.exe。');
+  return executable;
 }
 
-function spawnOptions(cwd) {
+export function normalizeShellCwd(cwd, platform = process.platform) {
+  if (platform === 'win32' && /^\/[a-z](?:\/|$)/i.test(cwd)) return win32.normalize(`${cwd[1].toUpperCase()}:/${cwd.slice(3)}`);
+  return cwd;
+}
+
+function spawnOptions(cwd, extraEnv = {}) {
   return {
     cwd,
     env: buildChildEnv(process.env, {
       // 让交互式 shell 别打提示符、别写历史、别用花哨的 zle 渲染，
       // 否则输出里会混进一堆控制字符。
       PS1: '', PS2: '', PROMPT: '', PROMPT2: '', RPROMPT: '',
-      TERM: 'dumb', PROMPT_EOL_MARK: '', TORA_SHELL: '1'
+      TERM: 'dumb', PROMPT_EOL_MARK: '', TORA_SHELL: '1', ...extraEnv
     }),
     stdio: ['pipe', 'pipe', 'pipe']
   };
@@ -58,17 +73,26 @@ const QUIET_PREAMBLE =
   'unsetopt PROMPT_SP PROMPT_CR PROMPT_SUBST 2>/dev/null; unset HISTFILE\n';
 
 class PersistentShell {
-  constructor(cwd) {
+  constructor(cwd, sandbox = {}) {
     this.cwd = cwd;
     this.buf = '';
     this.pending = null; // { marker, resolve, timer, chunks, truncated }
     this.dead = false;
     this.cold = true;    // 首条命令用短超时探测：起不来就立刻回退一次性执行
-    this.proc = spawn(shellPath(), ['-i'], spawnOptions(cwd));
+    const launch = prepareShellSandbox(cwd, sandbox);
+    this.cleanupSandbox = launch.cleanup;
+    try {
+      this.proc = spawn(
+        launch.executable || shellPath(),
+        launch.executable ? [...launch.args, shellPath(), '-i'] : ['-i'],
+        spawnOptions(cwd, launch.env)
+      );
+    } catch (error) { launch.cleanup(); throw error; }
     this.proc.stdout.setEncoding('utf8');
     this.proc.stderr.setEncoding('utf8');
     this.proc.stdout.on('data', (d) => this._onData(d));
     this.proc.stderr.on('data', (d) => this._onData(d));
+    this.proc.stdin.on('error', () => this._die());
     this.proc.on('error', () => this._die());
     this.proc.on('exit', () => this._die());
     // 静音 rc 输出（含主题的 precmd 钩子）+ 固定提示符；同时把 cwd 拉到期望值
@@ -82,6 +106,7 @@ class PersistentShell {
 
   _die() {
     this.dead = true;
+    this.cleanupSandbox?.();
     if (this.pending) {
       clearTimeout(this.pending.timer);
       this.pending.resolve({
@@ -184,7 +209,7 @@ class PersistentShell {
 
     const sep = meta.indexOf('|');
     const exitCode = Number(sep >= 0 ? meta.slice(0, sep) : meta);
-    const pwd = sep >= 0 ? meta.slice(sep + 1).trim() : this.cwd;
+    const pwd = normalizeShellCwd(sep >= 0 ? meta.slice(sep + 1).trim() : this.cwd);
     if (pwd) this.cwd = pwd;
     this.cold = false; // 握手成功：后续命令用完整超时
     resolve({
@@ -199,29 +224,33 @@ class PersistentShell {
     this.dead = true;
     try { this.proc.stdin.end(); } catch { /* ignore */ }
     try { this.proc.kill('SIGTERM'); } catch { /* ignore */ }
+    this.cleanupSandbox?.();
   }
 }
 
 /** 拿到（或创建）cwd 对应的常驻 shell */
-export function acquireShell(cwd) {
-  let sh = shells.get(cwd);
+export function acquireShell(cwd, sandbox = {}) {
+  const key = shellSandboxKey(cwd, sandbox);
+  let sh = shells.get(key);
   if (sh && !sh.dead) return sh;
-  if (sh) shells.delete(cwd);
+  if (sh) shells.delete(key);
   try {
-    sh = new PersistentShell(cwd);
+    sh = new PersistentShell(cwd, sandbox);
   } catch {
     return null;
   }
-  shells.set(cwd, sh);
+  shells.set(key, sh);
   return sh;
 }
 
 /** 用后即弃的 shell（持久模式不可用时回退） */
-export function runOnce(command, cwd, timeoutMs, signal) {
+export function runOnce(command, cwd, timeoutMs, signal, sandbox = {}) {
+  const launch = prepareShellSandbox(cwd, sandbox);
   return new Promise((resolve) => {
-    const proc = spawn(shellPath(), ['-c', command], {
+    const proc = spawn(launch.executable || shellPath(), launch.executable
+      ? [...launch.args, shellPath(), '-c', command] : ['-c', command], {
       cwd,
-      env: buildChildEnv(process.env),
+      env: buildChildEnv(process.env, launch.env),
       timeout: timeoutMs
     });
     let out = '';
@@ -237,8 +266,9 @@ export function runOnce(command, cwd, timeoutMs, signal) {
     }
     proc.stdout.on('data', onData);
     proc.stderr.on('data', onData);
-    proc.on('error', (e) => resolve({ exitCode: -1, output: `执行失败: ${e.message}` }));
+    proc.on('error', (e) => { launch.cleanup(); resolve({ exitCode: -1, output: `执行失败: ${e.message}` }); });
     proc.on('close', (code, csig) => {
+      launch.cleanup();
       // spawn 的 timeout 选项到点会 SIGTERM，退出码是 null —— 说清楚原因，
       // 否则模型看到 `exit_code: null` 会以为命令"成功但没有输出"。
       const timedOut = !aborted && code === null && (csig === 'SIGTERM' || csig === 'SIGKILL');
@@ -255,8 +285,9 @@ export function runOnce(command, cwd, timeoutMs, signal) {
 
 /** 关掉某目录的常驻 shell（工作目录变更 / 运行结束时调用） */
 export function releaseShell(cwd) {
-  const sh = shells.get(cwd);
-  if (sh) { sh.dispose(); shells.delete(cwd); }
+  for (const [key, sh] of shells) {
+    if (key.startsWith(`${cwd}\0`)) { sh.dispose(); shells.delete(key); }
+  }
 }
 
 /** 关掉所有常驻 shell（进程退出保护） */

@@ -11,6 +11,7 @@ import { readFileSync, writeFileSync, statSync, readdirSync, mkdirSync } from 'n
 import { relative, dirname } from 'node:path';
 import { redact, resolveInRoots, cachedRoots } from '../security.js';
 import { acquireShell, installShellExitHook, runOnce, releaseShell } from './shell.js';
+import { sandboxOptionsForContext } from './shell-sandbox.js';
 import { gitIsWrite } from './git.js';
 import { gitTools } from './git.js';
 import { repoMapTools } from './repomap.js';
@@ -243,23 +244,24 @@ export const bashTool = {
     if (!ctx?.cwd) return '工具不可用：未选择工作目录。';
     const limit = ctx.toolOutputLimit ?? 6000;
     if (reset) releaseShell(ctx.cwd);
+    const sandbox = sandboxOptionsForContext(ctx);
 
     const persistent = ctx.persistentShell !== false;
     let res;
     if (persistent) {
-      const sh = acquireShell(ctx.cwd);
+      const sh = acquireShell(ctx.cwd, sandbox);
       if (sh) {
         res = await sh.run(command, timeout, ctx.signal);
         if (res.broken) {
           // shell 会话挂了 → 回退一次性执行，并让上层不再复用这条 shell
           releaseShell(ctx.cwd);
-          res = await runOnce(command, ctx.cwd, timeout, ctx.signal);
+          res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
         }
       } else {
-        res = await runOnce(command, ctx.cwd, timeout, ctx.signal);
+        res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
       }
     } else {
-      res = await runOnce(command, ctx.cwd, timeout, ctx.signal);
+      res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
     }
 
     // cd 会改变后续所有工具的工作目录（这是持久 shell 的核心价值）

@@ -16,6 +16,10 @@ export interface MessagesResponse {
 	has_more: boolean;
 }
 
+export type SessionStreamFrame =
+	| { kind: 'status'; mode: 'initial' | 'resume' | 'reset'; streamId: string }
+	| { kind: 'event'; cursor: string | null; event: AgentEvent };
+
 /**
  * Sessions this tab created and has not opened yet.
  *
@@ -106,7 +110,7 @@ export const sessionApi = {
 	 * Subscribe to a session's live event stream via SSE.
 	 *
 	 * Opens a long-lived ``GET /sessions/{sid}/stream`` connection and
-	 * yields each ``AgentEvent`` as it arrives. The connection stays
+	 * yields status and sequenced AgentEvent frames as they arrive. The connection stays
 	 * open until the caller aborts via the ``signal`` or closes the
 	 * generator.
 	 *
@@ -122,11 +126,13 @@ export const sessionApi = {
 		sessionId: string,
 		agentId: string,
 		signal?: AbortSignal,
-	): AsyncGenerator<AgentEvent> {
+		afterCursor?: string | null,
+	): AsyncGenerator<SessionStreamFrame> {
 		const res = await client.stream(`/sessions/${sessionId}/stream`, {
 			method: 'GET',
-			params: { agent_id: agentId },
+			params: { agent_id: agentId, ...(afterCursor ? { after_cursor: afterCursor } : {}) },
 			signal,
+			silent: true,
 		});
 
 		const reader = res.body!.getReader();
@@ -139,24 +145,29 @@ export const sessionApi = {
 				if (done) break;
 
 				buffer += decoder.decode(value, { stream: true });
-				const lines = buffer.split('\n');
-				buffer = lines.pop() ?? '';
-
-				for (const line of lines) {
-					if (line.startsWith('data: ')) {
-						const json = line.slice(6).trim();
-						if (!json) continue;
-						// 单帧解析失败（残缺 / 代理注入 / 编码坏）只跳过这一帧，
-						// 不能让整个 SSE read loop 抛出、把这条会话的事件流从此断掉。
+				let boundary: number;
+				while ((boundary = buffer.indexOf('\n\n')) >= 0) {
+					const lines = buffer.slice(0, boundary).split('\n');
+					buffer = buffer.slice(boundary + 2);
+					const status = lines.find((line) => line.startsWith(': stream-status '));
+					if (status) {
 						try {
-							yield JSON.parse(json) as AgentEvent;
-						} catch { /* ignore malformed frame */ }
+							const value = JSON.parse(status.slice(16)) as { mode: 'initial' | 'resume' | 'reset'; streamId: string };
+							if (value.mode === 'initial' || value.mode === 'resume' || value.mode === 'reset') {
+								yield { kind: 'status', mode: value.mode, streamId: value.streamId };
+							}
+						} catch { /* malformed status: next reconnect will refresh history */ }
+						continue;
 					}
-					// SSE comment frames (`:...\n`) are silently skipped
-					// (used for heartbeats).
+					const data = lines.filter((line) => line.startsWith('data: ')).map((line) => line.slice(6));
+					if (!data.length) continue;
+					const cursor = lines.find((line) => line.startsWith('id: '))?.slice(4) ?? null;
+					try { yield { kind: 'event', cursor, event: JSON.parse(data.join('\n')) as AgentEvent }; }
+					catch { /* malformed frame is isolated from the rest of the stream */ }
 				}
 			}
 		} finally {
+			try { await reader.cancel(); } catch { /* stream may already be closed */ }
 			reader.releaseLock();
 		}
 	},

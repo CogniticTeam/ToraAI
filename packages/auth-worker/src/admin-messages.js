@@ -54,6 +54,34 @@ export async function listSentMessages(env, offset) {
   return { messages: results, nextOffset: results.length === 50 ? offset + 50 : null };
 }
 
+export async function editMessage(env, dispatchId, title, body) {
+  const campaign = await env.DB.prepare('SELECT id, target_user_id, recalled_at FROM message_campaigns WHERE id = ?').bind(dispatchId).first();
+  const existing = await env.DB.prepare(`SELECT count(*) AS total, min(user_id) AS user_id,
+    sum(CASE WHEN recalled_at IS NULL THEN 1 ELSE 0 END) AS active
+    FROM account_messages WHERE coalesce(batch_id, id) = ?`).bind(dispatchId).first();
+  if (!campaign && !existing?.total) return { status: 404, data: { detail: '消息不存在' } };
+  if (campaign?.recalled_at || (existing?.total && !existing.active)) return { status: 409, data: { detail: '已撤回的消息不能编辑' } };
+
+  const userId = campaign ? campaign.target_user_id : existing.total === 1 ? existing.user_id : null;
+  const now = new Date().toISOString();
+  const results = await env.DB.batch([
+    env.DB.prepare('UPDATE message_campaigns SET title = ?, body = ? WHERE id = ? AND recalled_at IS NULL').bind(title, body, dispatchId),
+    env.DB.prepare(`UPDATE account_messages SET title = ?, body = ?
+      WHERE coalesce(batch_id, id) = ? AND recalled_at IS NULL
+        AND (batch_id IS NULL OR EXISTS (SELECT 1 FROM message_campaigns c WHERE c.id = account_messages.batch_id AND c.recalled_at IS NULL))`).bind(title, body, dispatchId),
+    env.DB.prepare(`DELETE FROM message_translations WHERE message_id IN
+      (SELECT id FROM account_messages WHERE coalesce(batch_id, id) = ? AND recalled_at IS NULL)`).bind(dispatchId),
+    env.DB.prepare(`INSERT INTO admin_audit (action, user_id, detail, created_at)
+      SELECT 'message-edit', ?, ?, ? WHERE EXISTS
+        (SELECT 1 FROM message_campaigns WHERE id = ? AND recalled_at IS NULL)
+        OR EXISTS (SELECT 1 FROM account_messages WHERE coalesce(batch_id, id) = ? AND recalled_at IS NULL)`)
+      .bind(userId, dispatchId, now, dispatchId, dispatchId),
+  ]);
+  if (!results[0].meta.changes && !results[1].meta.changes) return { status: 409, data: { detail: '消息已撤回，请刷新列表' } };
+  const push = await publishAccountEvent(env, userId, { type: 'messages-changed' });
+  return { status: 200, data: { ok: true, updated: results[1].meta.changes, ...push } };
+}
+
 export async function recallMessage(env, dispatchId) {
   const existing = await env.DB.prepare('SELECT count(*) AS total, min(user_id) AS user_id FROM account_messages WHERE coalesce(batch_id, id) = ?').bind(dispatchId).first();
   const campaign = await env.DB.prepare('SELECT id, target_user_id FROM message_campaigns WHERE id = ?').bind(dispatchId).first();

@@ -5,10 +5,11 @@ import {
 	CalendarClock,
 	Globe,
 	ChevronUp,
+	Heart,
 	Languages,
 	Mail,
-	RotateCcw,
 	Settings,
+	UsersRound,
 	Vote,
 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
@@ -17,7 +18,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { agentApi, sessionApi } from '@/api';
 import { useAccountPresence } from '@/components/auth/AccountPresence';
 import { SessionListSection } from '@/components/layout/SessionListSection';
-import { FIRST_RUN_CLOSE_SETTINGS_EVENT, FIRST_RUN_REPLAY_EVENT, FIRST_RUN_SETTINGS_CLOSED_EVENT } from '@/components/onboarding/constants';
+import { FIRST_RUN_CLOSE_SETTINGS_EVENT, FIRST_RUN_SETTINGS_CLOSED_EVENT } from '@/components/onboarding/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
 	DropdownMenu,
@@ -36,19 +37,25 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useMacFullscreen } from '@/hooks/useMacFullscreen';
 import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
+const SponsorsDialog = lazy(async () => ({ default: (await import('@/components/dialog/SponsorsDialog')).SponsorsDialog }));
 const LanguageDialog = lazy(async () => ({ default: (await import('@/components/dialog/LanguageDialog')).LanguageDialog }));
 
 // 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
 const NAV_INDICATOR_LAYOUT_ID = 'tora-sidebar-nav-indicator';
 
 interface ToraWindowBridge {
+	platform?: string;
+	hasNativeTitlebar?: boolean;
 	isMaximized(): boolean;
-	onMaximizeChange(cb: (maximized: boolean) => void): void;
+	isFullScreen?(): boolean;
+	onMaximizeChange(cb: (expanded: boolean) => void): (() => void) | void;
+	onOpenMessagesFromNotification?: (cb: () => void) => () => void;
 }
 
 function getWindowBridge(): ToraWindowBridge | undefined {
@@ -60,24 +67,34 @@ const SettingsDialog = lazy(async () => ({
 	default: (await import('@/components/dialog/SettingsDialog')).SettingsDialog,
 }));
 
-function NavIndicator({ visible }: { visible: boolean }) {
+type NavigationMotion = 'off' | 'gentle' | 'standard' | 'fast';
+const NAV_TRANSITIONS = {
+	off: { duration: 0 },
+	gentle: { type: 'spring' as const, stiffness: 250, damping: 30, mass: 0.7 },
+	standard: { type: 'spring' as const, stiffness: 380, damping: 30, mass: 0.6 },
+	fast: { type: 'spring' as const, stiffness: 620, damping: 42, mass: 0.5 },
+};
+
+function NavIndicator({ visible, motionMode }: { visible: boolean; motionMode: NavigationMotion }) {
 	if (!visible) return null;
 	return (
 		<motion.span
-			layoutId={NAV_INDICATOR_LAYOUT_ID}
+			layoutId={motionMode === 'off' ? undefined : NAV_INDICATOR_LAYOUT_ID}
 			className="pointer-events-none absolute inset-y-1.5 left-0 w-[3px] rounded-[1px] bg-primary"
-			transition={{ type: 'spring', stiffness: 380, damping: 30, mass: 0.6 }}
+			transition={NAV_TRANSITIONS[motionMode]}
 		/>
 	);
 }
 
-export function AppSidebar() {
+export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationMotion }) {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const { t } = useTranslation();
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [messagesOpen, setMessagesOpen] = useState(false);
 	const [languageOpen, setLanguageOpen] = useState(false);
+	useEffect(() => getWindowBridge()?.onOpenMessagesFromNotification?.(() => setMessagesOpen(true)), []);
+	const [sponsorsMode, setSponsorsMode] = useState<'list' | 'donate' | null>(null);
 	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
 	const handleSettingsOpenChange = useCallback((open: boolean) => {
@@ -193,15 +210,9 @@ export function AppSidebar() {
 		}
 	}, [location.pathname, navigate]);
 
-	// 无边框窗口：最大化/全屏时 macOS 红绿灯自动隐藏，Tora 靠左；普通窗口让位红绿灯。
-	// Electron 由 preload 桥（window.toraWindow）提供状态；浏览器环境无红绿灯，直接靠左。
-	const [lightedPinned, setLightedPinned] = useState(!!getWindowBridge());
-	useEffect(() => {
-		const bridge = getWindowBridge();
-		if (!bridge) return;
-		setLightedPinned(!bridge.isMaximized());
-		bridge.onMaximizeChange((maxed: boolean) => setLightedPinned(!maxed));
-	}, []);
+	// Logo 在全屏中仍显示；只有普通 macOS 窗口需要给原生按钮让位。
+	const fullscreen = useMacFullscreen();
+	const nativeTitlebar = getWindowBridge()?.hasNativeTitlebar === true;
 
 	useEffect(() => {
 		const bridge = (window as unknown as { toraWindow?: { onMenuCommand?: (cb: (action: string) => void) => () => void } }).toraWindow;
@@ -232,19 +243,19 @@ export function AppSidebar() {
 		// SidebarContent 还带 overflow-auto，Chromium 不支持滚动区当拖拽区），
 		// 会表现为侧栏按钮点不动。窗口拖动有标题条 + 主内容区顶栏两处足够。
 		<Sidebar collapsible="none" className="w-72! border-r border-sidebar-border bg-sidebar">
-			<SidebarHeader>
-				{/* 无边框窗口：此条为窗口拖拽区。普通窗口 pl-20 让位悬浮红绿灯；最大化（红绿灯隐藏）或浏览器 pl-4 靠左 */}
-				<div className={`app-drag flex h-11 items-center gap-2 transition-[padding] ${lightedPinned ? 'pl-20' : 'pl-4'}`}>
+			{!nativeTitlebar && <SidebarHeader className="h-12 shrink-0 p-0">
+				<div data-testid="sidebar-brand" className={`app-drag flex h-12 items-center gap-2 pe-4 ${getWindowBridge()?.platform === 'darwin' && !fullscreen ? 'ps-24' : 'ps-4'}`}>
 					<img src="/icon.png" alt="" width={20} height={20} draggable={false} className="size-5 shrink-0 rounded-[5px] grayscale" />
 					<span className="text-base font-semibold tracking-tight text-foreground">Tora</span>
 				</div>
-			</SidebarHeader>
+			</SidebarHeader>}
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem key={'chat'}>
 								<NavIndicator
+									motionMode={navigationMotion}
 									visible={
 										location.pathname === '/chat' ||
 										location.pathname.startsWith('/chat/')
@@ -263,7 +274,7 @@ export function AppSidebar() {
 							</SidebarMenuItem>
 							{/* 自动化：复用已有的 /schedule 路由（定时任务），置于 新任务 与 技能中心 之间 */}
 							<SidebarMenuItem key={'automation'}>
-								<NavIndicator visible={location.pathname.startsWith('/schedule')} />
+								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/schedule')} />
 								<SidebarMenuButton
 									id="tour-automation-nav"
 									isActive={location.pathname.startsWith('/schedule')}
@@ -274,7 +285,7 @@ export function AppSidebar() {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							<SidebarMenuItem>
-								<NavIndicator visible={location.pathname.startsWith('/skill')} />
+								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/skill')} />
 								<SidebarMenuButton
 									id="tour-skills-nav"
 									isActive={location.pathname.startsWith('/skill')}
@@ -286,7 +297,7 @@ export function AppSidebar() {
 							</SidebarMenuItem>
 							{/* 浏览器：全屏内置浏览器，置于 技能中心 之下 */}
 							<SidebarMenuItem key={'browser'}>
-								<NavIndicator visible={location.pathname.startsWith('/browser')} />
+								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/browser')} />
 								<SidebarMenuButton
 									id="tour-browser-nav"
 									isActive={location.pathname.startsWith('/browser')}
@@ -297,7 +308,7 @@ export function AppSidebar() {
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							{pollsEnabled && pollEntryVisible && <SidebarMenuItem key={'polls'}>
-								<NavIndicator visible={location.pathname.startsWith('/polls')} />
+								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/polls')} />
 								<SidebarMenuButton isActive={location.pathname.startsWith('/polls')} onClick={() => navigate('/polls')}>
 									<Vote />
 									<span>{t('common.polls')}</span>
@@ -328,6 +339,12 @@ export function AppSidebar() {
 							<Mail /><span className="flex-1">{t('inbox.title')}</span>
 							{unread > 0 && <span className="text-xs text-muted-foreground">{unread}</span>}
 						</DropdownMenuItem>
+						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setSponsorsMode('list')}>
+							<UsersRound /><span>{t('sponsors.title')}</span>
+						</DropdownMenuItem>
+						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setSponsorsMode('donate')}>
+							<Heart /><span>{t('sponsors.donate')}</span>
+						</DropdownMenuItem>
 						<DropdownMenuItem
 							className="py-1 text-[13px]"
 							onClick={() => {
@@ -340,18 +357,15 @@ export function AppSidebar() {
 						</DropdownMenuItem>
 						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setLanguageOpen(true)}>
 							<Languages />
-							<span>Language</span>
+							<span>{t('settings.general.language.title')}</span>
 						</DropdownMenuItem>
-						{getWindowBridge() && <DropdownMenuItem className="py-1 text-[13px]" onClick={() => window.dispatchEvent(new Event(FIRST_RUN_REPLAY_EVENT))}>
-							<RotateCcw />
-							<span>{t('firstRun.tour.replay')}</span>
-						</DropdownMenuItem>}
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarFooter>
 			{/* key=settingsTab：同一 tab 重开时靠 open effect 复位；不同 tab 重挂载强制切换 */}
 			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
 			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
+			{sponsorsMode && <Suspense fallback={null}><SponsorsDialog mode={sponsorsMode} onClose={() => setSponsorsMode(null)} /></Suspense>}
 			{settingsOpen && (
 				<Suspense fallback={null}>
 					<SettingsDialog

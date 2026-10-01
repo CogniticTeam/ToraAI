@@ -1,0 +1,1797 @@
+{
+  "languageDialog": {
+    "subtitle": "擇界面之語",
+    "search": "搜語言",
+    "noResults": "無相合之語",
+    "systemSuggestion": "今系統語為{{language}}，可易之乎？",
+    "switch": "易為{{language}}",
+    "later": "暫不易",
+    "close": "閉語言擇",
+    "switchError": "易語不成"
+  },
+  "usageMilestone": {
+    "title": "Token 里程已達",
+    "subtitle": "汝於 Tora 累用 Token，已達新里程。",
+    "total": "今累用 {{count}} Token",
+    "more": "尚有 {{count}} 里程待示",
+    "continue": "續用 Tora",
+    "retry": "暫不能存里程，請復試。",
+    "levels": {
+      "100k": "十萬",
+      "1m": "百萬",
+      "10m": "千萬",
+      "100m": "一億",
+      "500m": "五億",
+      "1b": "十億",
+      "2b": "二十億",
+      "5b": "五十億",
+      "10b": "百億"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "啟外鏈乎？",
+    "externalLinkWarning": "將訪外站，請核鏈址。",
+    "copyLink": "複鏈",
+    "copied": "已複",
+    "openLink": "啟鏈",
+    "close": "閉"
+  },
+  "inbox": {
+    "translateToLanguage": "譯為{{language}}",
+    "detail": "訊息詳情",
+    "translateToChinese": "譯為中文",
+    "translateToEnglish": "譯為英文",
+    "translating": "譯中…",
+    "showOriginal": "觀原文",
+    "showTranslation": "觀譯文",
+    "noTranslationNeeded": "無須譯",
+    "translationError": "譯不成，請按譯鈕復試。",
+    "translationRateLimit": "譯求過頻，請少待復試。",
+    "title": "訊息",
+    "newMessage": "得 Tora 一訊",
+    "empty": "尚無訊息",
+    "loading": "載中…",
+    "unread": "未閱",
+    "more": "載更多",
+    "back": "返訊息列",
+    "retry": "復試",
+    "loadError": "訊息載敗",
+    "readError": "標為已閱不成，請復試",
+    "blocked": "帳戶已封",
+    "blockedReason": "此帳暫不能用 Tora。",
+    "unbanHint": "管理解封，自復，無須復登。",
+    "signOut": "登出"
+  },
+  "requiredUpdate": {
+    "title": "請更新 Tora",
+    "description": "新版 {{version}} 已出，更新則可續用。",
+    "download": "啟官網下載頁",
+    "macHint": "自更暫不可用時，可由官網下載新版 DMG 手動代之。",
+    "downloading": "下載更新中… {{percent}}%",
+    "install": "重啟並裝",
+    "retry": "復試下載",
+    "error": "自更不成，請復試或往官網下載。",
+    "quit": "離 Tora"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Tora 初啟迎動畫",
+      "welcome": "迎用 Tora",
+      "headlineFirst": "令所思，",
+      "headlineSecond": "始行之。",
+      "description": "接汝模型，啟專案，始對話。Tora 伴汝閱、改碼、成務。",
+      "hint": "次步將導汝習要能。",
+      "foot": "汝之工區，將就緒。",
+      "logoAlt": "Tora 標誌",
+      "enter": "啟試",
+      "skip": "略動畫"
+    },
+    "tour": {
+      "skip": "略引導",
+      "later": "緩配",
+      "next": "次步",
+      "pauseSettings": "模型管理已啟。配畢而閉設置，引導自續。",
+      "pauseFolder": "請擇專案文件夾；擇畢或閉選單則續。",
+      "pausePermission": "觀或擇審批模式；閉選單則續。",
+      "demoSend": "演示發送，不實提交。",
+      "clickHint": "按所亮控件以續。",
+      "loading": "正定位界面…",
+      "demoTag": "教演 · 不行真令。",
+      "demoMessage": "請檢此專案之構建腳本，先示計畫。",
+      "demoResponse": "Tora 先明其務，後求必需工具之權。汝可觀每步而定續否。",
+      "demoApprove": "許此回（演示）",
+      "demoCheckpoint": "觀檢查點（演示）",
+      "completeTitle": "備矣，始創乎。",
+      "completeBody": "模型、文件夾與權限皆可隨時調。遇未定之行，先觀其程，再決續否。",
+      "startWorking": "入 Tora",
+      "startAgain": "復觀引導",
+      "steps": [
+        {
+          "chapter": "預備之事",
+          "title": "先择己之模型",
+          "body": "Tora 唯用君所增之模型。点模型选择器，观自何处接入己之服务。"
+        },
+        {
+          "chapter": "预备",
+          "title": "增模型服务",
+          "body": "点「添加模型」入模型管理，择服务商并填模型信息。配置既成或暂跳，导引续行。"
+        },
+        {
+          "chapter": "预备",
+          "title": "划定项目之界",
+          "body": "点文件夹按钮择项目。Agent 将围绕君所授权之工作区读文件、改代码、行工具；亦可稍后择之。"
+        },
+        {
+          "chapter": "预备",
+          "title": "使任务可控",
+          "body": "点权限模式观选项。初用宜留手动审批，高风险之操作将止以待君确认。"
+        },
+        {
+          "chapter": "始事",
+          "title": "述目标须详",
+          "body": "点输入框。写明欲成何事、不可触何物、何以谓之成，胜于「为我优化」一语。"
+        },
+        {
+          "chapter": "始事",
+          "title": "发首项任务",
+          "body": "此乃发送按钮。此后唯演示执行之流，不耗模型额度，亦不发真实消息。"
+        },
+        {
+          "chapter": "审察与回退",
+          "title": "每一步皆由君察",
+          "body": "此乃权限确认之演示。先审工具将为何，再决允否。"
+        },
+        {
+          "chapter": "审察与回退",
+          "title": "改误亦可复",
+          "body": "检查点记修改前之状。真回退前，请先核将受影响之文件。"
+        },
+        {
+          "chapter": "拓展其能",
+          "title": "存善法为技能",
+          "body": "点技能中心。可导入或安装可信技能，使重复之法化为可复用之流程。"
+        },
+        {
+          "chapter": "拓展其能",
+          "title": "于浏览器验其成",
+          "body": "点内置浏览器。君与 Agent 可于同页查看、调试并验证 Web 应用。"
+        },
+        {
+          "chapter": "拓展其能",
+          "title": "使重复之务按时而行",
+          "body": "点自动化入口，为定期检查与整理之务设计划，并观每次运行之果。"
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "始用之前，请确认下列事项",
+    "description": "请分别阅读并确认用户协议、隐私政策及跨境传输说明。未悉勾选之前，Tora 不入登录或工作区。",
+    "terms": "吾已阅读并同意用户协议",
+    "readTerms": "观用户协议",
+    "privacy": "吾已阅读并了解隐私政策",
+    "readPrivacy": "观隐私政策",
+    "crossBorder": "吾单独同意跨境传输个人信息",
+    "crossBorderHint": "用账号与云端功能时，必要信息或传至中国大陆境外。请先阅读具体范围与处理方式。",
+    "readCrossBorder": "观跨境传输说明",
+    "decline": "暂不受而退出",
+    "agree": "确认而续"
+  },
+  "sponsors": {
+    "title": "本月赞助者名录",
+    "description": "谢本月于爱发电助 Tora 之用户。此处唯示赞助者昵称，不示金额或其他账户信息。",
+    "source": "数据出自爱发电",
+    "total": "共 {{count}} 位赞助者",
+    "loaded": "已示 {{count}} 位赞助者",
+    "empty": "本月暂无赞助者",
+    "emptyMore": "当前页暂无本月赞助者，可续载更多。",
+    "loading": "正载赞助者…",
+    "loadError": "赞助者名录暂不可用，请稍后重试。",
+    "retry": "重试",
+    "more": "载更多",
+    "donate": "赞助",
+    "leaveTitle": "往爱发电赞助？",
+    "leaveDescription": "确认后将离 Tora，于系统浏览器中开下列外部网站。",
+    "confirmLeave": "确认而开"
+  },
+  "polls": {
+    "title": "投票",
+    "subtitle": "参与投票，观活动与结果",
+    "all": "全部活动",
+    "history": "吾之投票记录",
+    "search": "搜索",
+    "loadMore": "载更多",
+    "from": "始日",
+    "to": "终日",
+    "starts": "始",
+    "ends": "截止",
+    "forever": "永久有效",
+    "refresh": "刷新投票",
+    "startsIn": "距始 {{time}}",
+    "startingSoon": "将始，正确认状态…",
+    "dayUnit": "日",
+    "state": {
+      "draft": "未发布",
+      "scheduled": "未始",
+      "active": "进行中",
+      "ended": "已终",
+      "archived": "已归档"
+    },
+    "type": {
+      "single": "单选",
+      "multiple": "多选",
+      "score": "百分制评分"
+    },
+    "frequency": {
+      "once": "每人一次",
+      "daily": "每日一次（北京时间）",
+      "unlimited": "不限次数"
+    },
+    "maxSelections": "至多择 {{count}} 项",
+    "voted": "已投票",
+    "votedCount": "已提交 {{count}} 次",
+    "available": "可参与",
+    "choose": "择左侧活动以观详情",
+    "empty": "暂无投票活动",
+    "loading": "方載投票",
+    "noHistory": "尚無投票之錄",
+    "results": "投票之果",
+    "participants": "{{count}} 次投票",
+    "countHidden": "與者之數未宣",
+    "detailsHidden": "選項細目未宣",
+    "resultsUnavailable": "其果暫未宣",
+    "autoRefresh": "每 5 秒自更新",
+    "pieHint": "圓環顯各選項所佔之分；多選投票，其選擇率之和或逾 100%。",
+    "submit": "呈投票",
+    "submitting": "方呈…",
+    "confirmVote": "確認呈投票？呈後不可改。",
+    "submitted": "投票已呈",
+    "queued": "離線投票已存，聯網後自呈；服務端未確認前，不為投票成。",
+    "pending": "待同步之投票",
+    "waitingSync": "待服務端確認",
+    "retry": "再試",
+    "remove": "移去",
+    "removePending": "移去此待同步之投票？",
+    "selectionRequired": "請擇合規之選項",
+    "scoreRequired": "請為每選項填 0–100 之整數分",
+    "submitError": "呈上失敗",
+    "loadError": "投票載入失敗",
+    "disabled": "投票之能，已由管理者閉。"
+  },
+  "common": {
+    "toraModels": "Tora 模型",
+    "add": "增",
+    "agent": "智能體",
+    "cancel": "罷",
+    "channel": "頻道",
+    "chat": "閒談",
+    "new-task": "新務",
+    "model-switch-warning": "於任務中途易模，致對話脈絡遺失，token 耗增，舊談易遭刪簡，終害輸出。",
+    "automation": "自化",
+    "close": "閉",
+    "confirm": "確認",
+    "create": "創",
+    "creating": "創中…",
+    "credential": "憑證",
+    "date": "日期",
+    "delete": "刪",
+    "disabled": "已禁",
+    "edit": "編修",
+    "error": "有誤",
+    "information": "資訊",
+    "knowledge": "知識庫",
+    "loading": "方載...",
+    "shownCount": "已示 {{count}} 個",
+    "selectedCount": "已選 {{selected}} 個，共 {{total}} 個",
+    "model": "模型",
+    "name": "名",
+    "no": "否",
+    "noData": "暫無資料",
+    "readOnly": "唯讀",
+    "readOnlyTooltip": "此資源以唯讀之式共予汝，編修與刪除皆禁。",
+    "completed": "已成",
+    "failed": "已敗",
+    "running": "行中",
+    "save": "存",
+    "saving": "方存…",
+    "schedule": "日程",
+    "selectAgent": "擇智能體",
+    "settings": "設定",
+    "switchToZh": "易為中文",
+    "switchToZhHant": "易為繁體中文",
+    "switchToEn": "易為英文",
+    "team": "團隊",
+    "uploading": "方上傳",
+    "leader": "隊長",
+    "time": "時",
+    "yes": "是",
+    "deleteTitle": "刪{{entity}} \"{{name}}\"？",
+    "deleteDescription": "此舉不可復。",
+    "mcp-hub": "MCP 中心",
+    "mine": "吾",
+    "my-mcp": "已裝之 MCP",
+    "skill-hub": "技能中心",
+    "browser": "瀏覽器",
+    "polls": "投票",
+    "my-skill": "已裝之技能",
+    "message": "消息",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "向量",
+    "select": "請擇",
+    "workflow": "工作流"
+  },
+  "error": {
+    "description": "頁遇意外之誤。汝可再試，或返首頁。",
+    "retry": "再試",
+    "home": "返首頁"
+  },
+  "tool": {
+    "callGeneric": "調用工具",
+    "read": {
+      "name": "讀取",
+      "fileCount_one": "{{count}} 文卷",
+      "fileCount_other": "{{count}} 文卷",
+      "lineCount_one": "览 {{formatted}} 行",
+      "lineCount_other": "览 {{formatted}} 行"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} 次命令",
+      "read": "{{count}} 次读取",
+      "edit": "{{count}} 次编修",
+      "search": "{{count}} 次检索",
+      "todo": "{{count}} 项事务",
+      "mcp": "{{count}} 次 MCP 调用",
+      "separator": "、",
+      "fallback": "{{count}} 次器具调用"
+    }
+  },
+  "textInput": {
+    "toComplete": "补全",
+    "attach": "附文卷",
+    "attachNotSupported": "今之模型不纳文卷之附",
+    "send": "发送",
+    "stop": "止其生成",
+    "stopping": "止之 ...",
+    "sendWithSkills": "携 {{count}} 技而送",
+    "selectedSkills": "已择之技",
+    "removeSkill": "去 {{name}}",
+    "skillOnlyPrompt": "请用吾所择之技。",
+    "selectedElements": "已择页面元素",
+    "removeElement": "去元素 {{tag}}",
+    "elementRefLine": "操页面元素 `{{selector}}`",
+    "slashMenu": {
+      "selectedLabel": "已择",
+      "hintSelect": "Enter 择之，Space 多择",
+      "hintSend": "按 Enter 而送",
+      "clear": "清除",
+      "close": "关闭",
+      "empty": "尚未置技 — 可往技苑一观",
+      "emptyQuery": "无合「{{query}}」之技",
+      "moreMatches": "尚余 {{count}} 合，续输字键以筛之",
+      "selectedCount": "已择 {{count}} 技",
+      "keyboardHighlight": "+ 键盘所亮之项",
+      "clickToMulti": "点行以多择；Esc 闭之"
+    },
+    "optimize": "精炼提示词",
+    "optimizing": "精炼中…",
+    "optimizeTitle": "精炼后之提示词",
+    "optimizeFailed": "精炼不成",
+    "optimizeApply": "施用",
+    "optimizeRetry": "复精炼",
+    "optimizeDiscard": "弃之",
+    "optimizeBy": "DeepSeek 所精炼"
+  },
+  "browserPanel": {
+    "newTab": "新签页",
+    "createTab": "新开签页",
+    "closeTab": "闭签页",
+    "back": "退后",
+    "forward": "前进",
+    "reload": "刷新",
+    "pickElement": "择元素",
+    "pickElementHint": "择元素：悬于页面则高亮，点之则元素之卡附于交谈输入之框（Esc 罢）",
+    "openInBrowser": "启于浏览器",
+    "openInBrowserHint": "以系统默认之浏览器启当前页面",
+    "urlPlaceholder": "输入网址或所寻之事，而后回车",
+    "noTabPick": "尚未开签页。先于地址栏输入网址或所寻之事并回车，然后择元素。",
+    "noTabAction": "尚未开签页。点右上方 + 以新开，或于地址栏输入网址或所寻之事并回车。",
+    "iframeFallbackHint": "今为浏览器权宜之式（<iframe>）：同源之页可用，跨源之站多为 X-Frame-Options / CSP 所拒，不能嵌入，内容亦不可读。桌面端 App 所用乃真内置之浏览器（<webview>），无此诸限。"
+  },
+  "voice": {
+    "micTooltip": "语音输入",
+    "listening": "正听之，再点则止",
+    "transcribing": "辨识中…",
+    "micDenied": "不能取用话筒，请于系统设置中许之而后再试",
+    "transcribeFailed": "语音辨识不成",
+    "emptyTranscript": "未辨识得内容",
+    "keyMissing": "未设语音辨识之 API Key（voice-config.json）"
+  },
+  "confirmCard": {
+    "toConfirm": "确认",
+    "yesWithRule": "可，且此番交谈之中皆许 {{toolName}} 行 {{ruleContent}}"
+  },
+  "messageBubble": {
+    "thinking": "深思",
+    "thinkingFor": "深思 {{duration}}",
+    "taskProcess": {
+      "title": "事务之程",
+      "running": "已费时 {{duration}}",
+      "finished": "费时 {{duration}}",
+      "hour": "小时",
+      "minute": "分",
+      "second": "秒",
+      "noConclusion": "此轮已毕，然模型未出结语。可展事务之程以观其详。"
+    },
+    "audioGenerating": "正成音声…",
+    "playAudio": "奏音声",
+    "pauseAudio": "止音声",
+    "running": "运行中...",
+    "skillAttached": "已附技 {{name}}",
+    "changedFiles": {
+      "title": "{{count}} 文卷已改",
+      "openPanel": "于面板中观诸改动"
+    },
+    "processed": "已治 {{duration}}",
+    "completed": "已成 {{duration}}",
+    "duration": {
+      "day": "日",
+      "hour": "时",
+      "minute": "分",
+      "second": "秒"
+    },
+    "hintSource": {
+      "tool_output": "工具之輸出",
+      "team": "群",
+      "team_message": "群訊",
+      "schedule": "定時之務",
+      "system": "系統之訊",
+      "channel": "頻道",
+      "runtime_state": "運行狀態"
+    },
+    "error": {
+      "title": "回覆未成",
+      "blockedTitle": "本輪為規則所阻",
+      "authentication": "驗權未成 —— 請檢模型之 API key 或憑證。",
+      "permission": "所求見拒 —— 今之憑證無權訪此模型或端點。",
+      "rate_limit": "為限流所觸或額度已盡 —— 請稍後復試。",
+      "invalid_request": "發往模型之求，判為非法。",
+      "upstream": "上游模型之服務返錯。",
+      "connection": "不能連模型之服務 —— 網絡有誤或逾時。",
+      "internal": "生未料之內誤。",
+      "setup": "會話未備 —— 請檢此智能體之模型、工具與知識庫之配置。",
+      "unknown": "回覆因未知之誤而敗。"
+    },
+    "copy": "複製"
+  },
+  "questionPanel": {
+    "supplementTitle": "尚有補訊可陳乎？",
+    "supplementPlaceholder": "添補訊",
+    "optional": "可選",
+    "of": "之",
+    "prev": "前一步",
+    "next": "次一步",
+    "submit": "呈",
+    "cancel": "罷",
+    "other": "其他",
+    "otherPlaceholder": "請輸入"
+  },
+  "chat": {
+    "inputPlaceholder": "隨心而書",
+    "confirmToolCall": "許此舉乎？",
+    "subagentConfirmTitle": "{{name}} 求確認",
+    "newSession": "新會話",
+    "newConversation": "新對話",
+    "greeting": "與 Tora 共事而編程",
+    "greetingProject": "吾等當於{{project}}中何為？",
+    "thinking": "思之",
+    "project": {
+      "label": "項目",
+      "unassigned": "未屬項目",
+      "rename": "易項目之名"
+    },
+    "maxItersExceeded": {
+      "title": "已至最大迭代之數",
+      "description": "入新訊則可續談，或按繼續以成今務。",
+      "continue": "續"
+    },
+    "context": {
+      "compact": {
+        "title": "上下文已自壓縮",
+        "evicted": "逐 {{count}} 條工具輸出",
+        "compacted": "較早之史已撮要",
+        "fallback": "已壓縮",
+        "description": "{{parts}}（約 {{before}} → {{after}} tokens，限 {{budget}}）"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "擇智能體",
+      "emptyTitle": "尚無智能體",
+      "emptyDescription": "創一智能體以始用。",
+      "groupYours": "吾之",
+      "groupShared": "共享於我"
+    },
+    "session": {
+      "label": "會話",
+      "emptyTitle": "尚無會話",
+      "emptyNoAgent": "請先擇一智能體。",
+      "emptyHasAgent": "創會話以始談。",
+      "today": "今日",
+      "earlier": "更早"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "創智能體",
+    "description": "定新智能體之身份與行止。"
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "智能體之身份",
+      "description": "定此智能體行止之名與指令。",
+      "name": {
+        "label": "名稱",
+        "placeholder": "吾之智能體"
+      },
+      "system-prompt": {
+        "label": "系統提示詞"
+      }
+    },
+    "context-config": {
+      "legend": "上下文之配置",
+      "description": "掌上下文窗之管與壓縮之法。",
+      "trigger-ratio": {
+        "label": "觸發比例"
+      },
+      "reserve-ratio": {
+        "label": "保留比例"
+      },
+      "tool-result-limit": {
+        "label": "工具結果之限"
+      },
+      "compression-prompt": {
+        "label": "壓縮提示詞"
+      },
+      "summary-template": {
+        "label": "摘要模板"
+      },
+      "max-image-num": {
+        "label": "最大圖數"
+      }
+    },
+    "react-config": {
+      "legend": "ReAct 之配置",
+      "description": "掌推理與行動循環之行止。",
+      "max-iters": {
+        "label": "最大迭代之數"
+      },
+      "stop-on-reject": {
+        "label": "拒則止"
+      },
+      "structured-output-grace-iters": {
+        "label": "結構化輸出寬限輪數",
+        "description": "逾最大迭代之數後，另許之輪，使已至上限之覆仍能出所求之結構化輸出。"
+      },
+      "interruption-message": {
+        "label": "中斷回覆",
+        "description": "用戶中斷回覆時，智能體所出之答。"
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "拋出 CancelledError",
+        "description": "處斷既畢，復拋 asyncio.CancelledError，勿吞之。"
+      }
+    },
+    "invite-config": {
+      "legend": "邀請之配置",
+      "description": "掌此智能體可為他智能體經 AgentInvite 所邀否。",
+      "invitable": {
+        "label": "許其見邀"
+      },
+      "invite-description": {
+        "label": "邀請之說明",
+        "placeholder": "略述此智能體所長；許其受邀時必填。"
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "編輯智能體",
+    "description": "更新此智能體之配置。"
+  },
+  "dialog-agent-delete": {
+    "entity": "智能體",
+    "confirm": "刪除"
+  },
+  "dialog-session-delete": {
+    "entity": "會話",
+    "confirm": "刪除"
+  },
+  "dialog-session-rename": {
+    "title": "更名會話",
+    "description": "為此會話立新名。",
+    "label": "名稱",
+    "placeholder": "會話名稱"
+  },
+  "dialog-project-rename": {
+    "title": "更名項目",
+    "description": "僅易側欄與迎辭中項目之顯示名，不改文件夾或會話之題。",
+    "label": "項目名稱",
+    "placeholder": "項目名稱"
+  },
+  "session-menu": {
+    "rename": "更名",
+    "delete": "刪除"
+  },
+  "dialog-credential-create": {
+    "title": "增憑證",
+    "description": "為模型提供商增憑證。",
+    "selectType": "提供商",
+    "selectTypePlaceholder": "擇提供商"
+  },
+  "dialog-credential-edit": {
+    "title": "編輯憑證",
+    "description": "更新此提供商已存之憑證。"
+  },
+  "dialog-knowledge-base-create": {
+    "title": "建知識庫",
+    "description": "以 Embedding 模型建新知識庫。",
+    "name": {
+      "label": "名稱",
+      "placeholder": "吾之知識庫"
+    },
+    "descriptionField": {
+      "label": "述",
+      "placeholder": "述知識庫之用。"
+    },
+    "embeddingModel": {
+      "label": "Embedding 模型"
+    },
+    "dimension": {
+      "label": "維度"
+    },
+    "chunker": {
+      "label": "分塊策略"
+    },
+    "policy": {
+      "lockedTitle": "維度已鎖為 {{dimension}}d",
+      "lockedDescription": "此實例已令諸知識庫皆用 {{dimension}} 維 embedding，下列僅示相容之模型。",
+      "noCompatibleTitle": "暫無可用之 Embedding 模型",
+      "noCompatibleAny": "汝模型表中無可用之 Embedding 模型，請先於設定中增模型。",
+      "noCompatibleLocked": "汝憑證中無模型可支援 {{dimension}} 維 embedding。"
+    },
+    "errors": {
+      "nameRequired": "請填知識庫之名。",
+      "embeddingRequired": "請擇 Embedding 模型。",
+      "dimensionRequired": "請擇 Embedding 維度。",
+      "chunkerRequired": "請擇分塊策略。"
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "編輯知識庫",
+    "description": "改知識庫之名與述。",
+    "name": {
+      "label": "名稱",
+      "placeholder": "吾之知識庫"
+    },
+    "descriptionField": {
+      "label": "述",
+      "placeholder": "述知識庫之用。"
+    },
+    "embeddingModel": {
+      "label": "Embedding 模型"
+    },
+    "chunker": {
+      "label": "分塊策略"
+    },
+    "errors": {
+      "nameRequired": "請填知識庫之名。"
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "刪知識庫",
+    "description": "此舉將永刪知識庫 \"{{name}}\" 及其所索引諸文書，不可復原。"
+  },
+  "credential": {
+    "noProviders": "暫無可用之提供商",
+    "selectHint": "未擇憑證",
+    "selectHintDescription": "自左擇一憑證以觀其詳。",
+    "availableModels": "可用之模型",
+    "noModels": "暫無可用之模型",
+    "noModelsDescription": "此提供商未返任何模型。",
+    "deleteEntity": "憑證",
+    "subtitle": "模型 API 授權之配置",
+    "configured": "已配",
+    "addProvider": "增憑證",
+    "reasoning": "推理模型",
+    "realtime": "實時",
+    "table": {
+      "model": "模型",
+      "context": "上下文",
+      "maxOutput": "最大輸出",
+      "accepts": "輸入",
+      "outputs": "輸出",
+      "legend": "上下文與最大輸出皆以 token 計。REASONING 謂模型能深思。",
+      "dimensions": "維度"
+    }
+  },
+  "knowledge": {
+    "subtitle": "掌智能體所用之知識庫",
+    "selectHint": "未擇知識庫",
+    "selectHintDescription": "自左擇一知識庫以觀其詳。",
+    "list": {
+      "label": "知識庫",
+      "emptyTitle": "暫無知識庫",
+      "emptyDescription": "建知識庫以始索引文書。",
+      "createButton": "建知識庫"
+    },
+    "document": {
+      "emptyTitle": "暫無文書",
+      "emptyDescription": "上傳文書以索引於此知識庫。",
+      "uploadButton": "上傳文書",
+      "uploadButtonShort": "上傳",
+      "chunkCount_one": "{{count}} 分塊",
+      "chunkCount_other": "{{count}} 分塊",
+      "deleteConfirmTitle": "刪文書",
+      "deleteConfirmDescription": "確認刪 \"{{name}}\"？此舉將並除文書及其所索引諸分塊，不可復原。",
+      "deleteError": "刪文書失敗。",
+      "dropHintIdle": "或拽檔案至此",
+      "unsupportedExtension": "\"{{name}}\" 已略過——不支援此檔案類型。",
+      "status": {
+        "queued": "候列中",
+        "uploading": "上载中",
+        "pending": "待理",
+        "parsing": "析中",
+        "chunking": "分块中",
+        "indexing": "立索引",
+        "ready": "已备",
+        "error": "败",
+        "cancelled": "已罢"
+      },
+      "actions": {
+        "cancel": "罢",
+        "dismiss": "闭",
+        "remove": "删",
+        "clearFinished": "除已毕者"
+      },
+      "title": "文卷",
+      "chunkCount": "{{count}} 块"
+    },
+    "test": {
+      "button": "试",
+      "title": "检索试",
+      "description": "于 \"{{name}}\" 上发一临时检索。",
+      "queryLabel": "查询",
+      "queryPlaceholder": "输入自然语言之问…",
+      "topKLabel": "Top K",
+      "searchButton": "搜",
+      "score": "分值",
+      "chunkPosition": "第 {{index}} / {{total}} 段",
+      "emptyTitle": "无合",
+      "emptyDescription": "此查询未返任何分块。"
+    },
+    "config": {
+      "title": "配置信息",
+      "embeddingModel": "嵌入模型",
+      "dimensions": "向量维度",
+      "credential": "凭证",
+      "chunker": "分块器",
+      "counts": "内容",
+      "countsValue": "{{documents}} 文卷 · {{chunks}} 块",
+      "status": "索引状态",
+      "statusValue": "{{ready}} 备 · {{indexing}} 理中 · {{failed}} 败",
+      "createdAt": "创建时间"
+    },
+    "documentDetail": {
+      "description": "已索引 {{count}} 块",
+      "chunksTab": "分块",
+      "previewTab": "预览",
+      "chunksEmptyTitle": "尚无分块",
+      "chunksEmptyDescription": "此文卷尚未生已索引之块。",
+      "chunksUnsupportedTitle": "不能览块",
+      "chunksUnsupportedDescription": "今所配置之向量数据库不支分块列表。",
+      "previousPage": "前页",
+      "nextPage": "后页",
+      "pageIndicator": "第 {{page}} / {{pageCount}} 页",
+      "previewUnavailableTitle": "不能在线预览",
+      "previewUnavailableDescription": "此文件之类不能于浏览器中预览。",
+      "previewTooLargeTitle": "文件过大，不能预览",
+      "previewTooLargeDescription": "此文件逾在线预览之限，请下载后览源文件。",
+      "downloadButton": "下载源文"
+    }
+  },
+  "llm-select": {
+    "placeholder": "择模型",
+    "loading": "载入中…",
+    "empty": {
+      "title": "尚无可用之模型",
+      "description": "请先于设置中添模型。"
+    },
+    "addCredential": "添模型",
+    "clear": "除所选",
+    "noFallback": "无备模型",
+    "pickForDetails": "择模型以观其详",
+    "vision": "视觉",
+    "contextBadge": "{{size}} 上下文",
+    "thinking": "思之强弱",
+    "contextWindow": "上下文窗口",
+    "hintSmallContext": "此模型乃小上下文者，不支 1M",
+    "level": {
+      "off": "闭",
+      "low": "低",
+      "high": "高",
+      "max": "极"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "择 Embedding 模型",
+    "loading": "载入中…",
+    "empty": {
+      "title": "尚无可用之 Embedding 模型",
+      "description": "请先于设置中添支持 Embedding 之模型。"
+    },
+    "addCredential": "添模型"
+  },
+  "chunker-select": {
+    "placeholder": "择分块之策",
+    "loading": "载入中…",
+    "empty": "尚无可用之分块策"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "近似 Token 数",
+      "params": {
+        "chunk_size": {
+          "label": "块之大小",
+          "description": "每块最大近似 Token 之数。"
+        },
+        "overlap": {
+          "label": "重叠之大小",
+          "description": "邻块之间所共享近似 Token 之数。"
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "择维度",
+    "pickModelFirst": "请先择 Embedding 模型"
+  },
+  "permission-mode": {
+    "placeholder": "择权限模式",
+    "trigger-tooltip": "权限模式",
+    "panel-title": "何以准 Agent 之操作？",
+    "learn-more": "知其详",
+    "default": "手准",
+    "default-desc": "要事由尔核准，至安",
+    "accept_edits": "自准",
+    "accept_edits-desc": "自许工作区内文件读写，余事仍询尔",
+    "explore": "唯讀探索",
+    "explore-desc": "唯許讀取與搜尋，禁寫入及行令。",
+    "bypass": "全權存取",
+    "bypass-desc": "未經核可，徑行本機；僅宜用於可信或沙箱之境。",
+    "dont_ask": "無人監守",
+    "dont_ask-desc": "凡須詢之操作，一概拒之；宜於定時之務與後臺之行。"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "MCP 配置",
+    "keepAlive": "保持連接",
+    "keepAliveDesc": "於交互之間存其狀態。適於瀏覽器操作及久運之 MCP。",
+    "parseError": "JSON 配置無效：{{message}}",
+    "missingMcpServers": "配置中必含 \"mcpServers\" 之對象。",
+    "emptyMcpServers": "配置中未見 MCP 伺服器。"
+  },
+  "dialog-mcp-delete": {
+    "entity": "MCP 伺服器",
+    "skillEntity": "技能",
+    "skillDescription": "欲將此技能自工作區移除乎？"
+  },
+  "schedule": {
+    "subtitle": "配置並理自動之務，使 Tora 依計而行工作流",
+    "calendar": "日曆",
+    "createSchedule": {
+      "description": "設定時或一次性之自動務，使智能體依計而行工作流。",
+      "descriptionLabel": "描述",
+      "descriptionPlaceholder": "述此自動務之用途...",
+      "namePlaceholder": "例如：每日之報",
+      "title": "創自動之務"
+    },
+    "deleteSchedule": {
+      "entity": "自動之務"
+    },
+    "endAt": "終止日期",
+    "end_at": "終止之時",
+    "executionHistory": "執行史",
+    "freqDaily": "每日",
+    "freqMonthly": "每月",
+    "freqOnce": "一次",
+    "freqWeekly": "每週",
+    "frequency": "頻率",
+    "friday": "週五",
+    "list": "列表",
+    "monday": "週一",
+    "more": "更多",
+    "nextMonth": "次月",
+    "nextYear": "明年",
+    "noSchedules": "尚無自動之務",
+    "noSchedulesDescription": "立一自動之務，使 Tora 依計而行工作流。",
+    "pickDate": "擇日",
+    "permissionMode": "權限模式",
+    "timezone": "時區",
+    "triggerTime": "觸發之時",
+    "createdAt": "創立之時",
+    "dayOfMonthSuffix": "日",
+    "stateful": "有狀態",
+    "statefulDesc": "啟後，每觸皆復用同一會話，以積上下文；閉則每觸皆立新會話。",
+    "previousMonth": "前月",
+    "previousYear": "去年",
+    "saturday": "週六",
+    "sunday": "週日",
+    "thursday": "週四",
+    "today": "今日",
+    "tuesday": "週二",
+    "wednesday": "週三"
+  },
+  "model-parameters": {
+    "title": "模型參數",
+    "description": "調所選模型之推理參數。",
+    "empty": "尚無可配置之參數。",
+    "fallbackLabel": "後備模型",
+    "fallbackLabelWithModel": "後備模型（{{model}}）",
+    "parametersLabel": "參數",
+    "ttsLabel": "語音合成",
+    "ttsEmpty": "尚無可用之語音合成模型。",
+    "ttsParameters": "參數",
+    "ttsParametersDescription": "調所選語音合成模型之參數。",
+    "noTts": "不用語音合成"
+  },
+  "setup": {
+    "title": "連接伺服器",
+    "description": "請輸伺服器地址及用戶名，以始用之。",
+    "serverUrl": "伺服器地址",
+    "serverUrlPlaceholder": "https://...",
+    "username": "用戶名",
+    "usernamePlaceholder": "請輸用戶名",
+    "submit": "始用",
+    "checking": "連接中...",
+    "errorUnreachable": "未能連接此伺服器。請察地址是否正確、服務是否已啟，以及是否許跨域之請求。",
+    "errorTimeout": "伺服器已連接，然逾時未應。或負載過重，或啟動滯矣。",
+    "errorNotAgentScope": "地址可達，然非 AgentScope 之服務。請察地址，或升未具健康檢查接口之舊版後端。",
+    "errorUnauthorized": "伺服器拒此用戶名，請填有效之用戶名。",
+    "errorNotReady": "伺服器可連，然尚未就緒。下列子系統啟動未成：",
+    "hint": "此應用唯供前端之服務，諸數據皆來自所填伺服器地址，用戶名唯用於服務端鑑權。"
+  },
+  "task-panel": {
+    "blockedBy": "依賴"
+  },
+  "panel": {
+    "plan": {
+      "title": "計畫",
+      "completed": "已成：{{count}}",
+      "total": "總計：{{count}}",
+      "emptyTitle": "尚無事",
+      "emptyDescription": "智能體所規之事，將見於此。"
+    },
+    "mcp": {
+      "description": "工作區中所配之 MCP 伺服器。",
+      "searchPlaceholder": "於工作區中搜 MCP",
+      "add": "增 MCP",
+      "addDescription": "復用已裝之 MCP，或粘一配置。",
+      "fromConfig": "自 configuration 導入",
+      "tools": "{{count}} 工具",
+      "unhealthy": "此 MCP 不可連",
+      "healthy": "連接如常",
+      "emptyTitle": "尚無 MCP 伺服器",
+      "emptyDescription": "添 MCP 伺服器，為工作區置工具。",
+      "fromInstalled": "導入已裝之 MCP",
+      "installedEmptyTitle": "尚未安裝任何 MCP",
+      "installedEmptyDescription": "往 MCP 中心安裝其一，或就此貼配置。"
+    },
+    "skill": {
+      "title": "技藝",
+      "description": "工作區所配之技藝。",
+      "searchPlaceholder": "於工作區中搜技藝",
+      "add": "添技藝",
+      "emptyTitle": "尚無技藝",
+      "emptyDescription": "添技藝，為工作區備能。",
+      "addDescription": "自所裝 Skill 中擇，或上傳本地文夾。",
+      "fromInstalled": "導入已裝 Skill",
+      "fromFolder": "自文夾上傳",
+      "installedEmptyTitle": "尚無所裝 Skill",
+      "installedEmptyDescription": "先往 Skill 市安裝，再自此入工作區。",
+      "pickFolderTitle": "擇一 Skill 文夾",
+      "pickFolderDescription": "文夾根錄須含 SKILL.md。",
+      "pickFolder": "擇文夾",
+      "importLocal": "自本地文夾導入",
+      "pickAnother": "重擇",
+      "fileCount": "{{count}} 文件"
+    },
+    "workspace": {
+      "checkpoint": "檢點",
+      "diff": "變更預覽",
+      "browser": "瀏覽器",
+      "terminal": "終端",
+      "hooks": "鉤子"
+    },
+    "knowledge": {
+      "title": "知識庫",
+      "description": "智能體可檢索之知識庫。",
+      "searchPlaceholder": "搜知識庫",
+      "emptyTitle": "尚無知識庫",
+      "emptyDescription": "請先於「知識庫」頁創其一。",
+      "parametersTitle": "檢索配置",
+      "parametersDescription": "知識庫檢索參數之設"
+    },
+    "permission": {
+      "title": "權限",
+      "description": "本會話所行之權限。",
+      "mode": "模式：{{mode}}",
+      "workingDirectories": "工作目錄",
+      "noWorkingDirectories": "尚無工作目錄。",
+      "allow": "允",
+      "deny": "拒",
+      "ask": "問",
+      "anyInvocation": "任意調用",
+      "rulesTitle": "規則（施於諸會話）",
+      "addButton": "添",
+      "contentPlaceholder": "匹配之文，空則 = 任意調用",
+      "deleteRule": "刪此規則",
+      "loadFailed": "規則載入敗：{{detail}}",
+      "emptyTitle": "尚無規則",
+      "emptyDescription": "允 / 拒 / 問之規則，添後現於此。"
+    },
+    "search": {
+      "emptyTitle": "無果",
+      "emptyDescription": "無合 “{{query}}” 之果。"
+    },
+    "loading": "載入中…",
+    "team": {
+      "membersHeading": "成員",
+      "noMembers": "尚無成員——令隊長以 AgentCreate 添其一。",
+      "emptyTitle": "無團隊",
+      "emptyDescription": "本會話不屬任何團隊。agent 將以 TeamCreate 立團隊。",
+      "running": "運行中",
+      "idle": "空閒",
+      "missingSession": "（無會話）"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "掃碼授權",
+      "manualTab": "手填",
+      "scanHint": "以平台 App 掃碼並確認，憑證自生。",
+      "authorized": "已確認，憑證已備。",
+      "failed": "授權未成。",
+      "unsafeUrl": "平台所還之鏈，未能安顯。",
+      "retry": "重生"
+    },
+    "title": "頻道",
+    "subtitle": "接飛書、Discord 等外台，令智能體於群聊中作事",
+    "status": "狀態",
+    "connected": "已連",
+    "enable": "啟用",
+    "disable": "停用",
+    "deleteEntity": "頻道",
+    "routing": "路由",
+    "routingDesc": "以入站訊息匹配某智能體及會話粒度。末條規則匹配其餘諸訊息。",
+    "sectionActive": "已接",
+    "sectionAdd": "添頻道",
+    "rules": "{{count}} 規則",
+    "empty": {
+      "title": "尚無頻道",
+      "description": "創一頻道，連智能體於飛書、釘釘等外台。"
+    },
+    "create": {
+      "title": "創頻道",
+      "titleFor": "接 {{name}}",
+      "description": "連智能體於外部訊息平台。",
+      "channelType": "平台",
+      "nameLabel": "名",
+      "namePlaceholder": "如：客服當值",
+      "nameDesc": "以便區分同平台諸頻道",
+      "modelDesc": "新會話創建時之初始模型",
+      "permissionMode": "權限模式",
+      "permissionModeDesc": "新會話創建時之初始權限模式",
+      "showToolMessages": "顯示工具消息",
+      "showToolMessagesDesc": "於頻道中顯示工具調用及返回之消息。",
+      "showThinking": "顯示思維過程",
+      "showThinkingDesc": "於頻道中顯示模型推理之過程。"
+    },
+    "fields": {
+      "app_id": {
+        "title": "應用 ID",
+        "description": "飛書應用 ID"
+      },
+      "app_secret": {
+        "title": "應用密鑰",
+        "description": "飛書應用密鑰"
+      },
+      "bot_token": {
+        "title": "機器人令牌"
+      },
+      "application_id": {
+        "title": "應用 ID"
+      },
+      "only_at_reply": {
+        "title": "唯被提及時乃覆",
+        "description": "於群聊中，唯機器人被 @提及時乃覆。"
+      },
+      "show_tool_process": {
+        "title": "顯示工具過程",
+        "description": "於回覆中顯示工具調用及返回結果"
+      },
+      "show_thinking": {
+        "title": "顯示思考過程",
+        "description": "於回覆中顯示模型推理之過程"
+      }
+    },
+    "edit": {
+      "title": "編輯頻道",
+      "description": "修路由、模型與回覆之設。平台與憑據不可改。"
+    },
+    "sessionScope": {
+      "per_chat": "依聊天",
+      "per_chat_user": "依聊天+用戶"
+    },
+    "sessions": {
+      "title": "派生會話",
+      "empty": "尚無會話",
+      "openInChat": "於對話中開啟"
+    },
+    "detail": {
+      "config": "配置",
+      "configDesc": "新會話創建時所用之初始配置",
+      "configItem": "配置項",
+      "configValue": "值",
+      "condition": "條件",
+      "created": "創建時間",
+      "deleteChannel": "刪除頻道",
+      "routingDesc": "入站消息如何匹配智能體與會話粒度",
+      "sessionsDesc": "該頻道所派生之會話",
+      "selectHint": "擇一頻道以觀其詳"
+    },
+    "state": {
+      "stopped": "已止",
+      "connecting": "連接中",
+      "retrying": "重連中",
+      "connected": "已連接",
+      "failed": "連接失敗"
+    },
+    "binding": {
+      "rule": "匹配規則",
+      "matchKey": "匹配字段",
+      "matchValue": "匹配值",
+      "matchValuePlaceholder": "如某 chat_id",
+      "routeTo": "路由至",
+      "scope": "會話粒度",
+      "fallback": "兜底規則",
+      "fallbackDesc": "未中上列諸則之消息，皆路由至此",
+      "catchAll": "其餘諸消息",
+      "addRule": "增設規則"
+    }
+  },
+  "mcp": {
+    "subtitle": "瀏覽並安裝 MCP 服務",
+    "hubsLabel": "來源",
+    "searchPlaceholder": "於該來源中搜尋",
+    "mineSearchPlaceholder": "搜尋汝之 MCP",
+    "noHubsTitle": "暫無可用來源",
+    "noHubsDescription": "請告管理員增之。",
+    "noCardsTitle": "未獲內容",
+    "noCardsDescription": "更易關鍵詞試之。",
+    "mineDescription": "汝已安裝之 MCP 服務",
+    "mineEmptyTitle": "尚無 MCP 服務",
+    "mineEmptyDescription": "自左側來源中安裝一者。",
+    "needsConfig": "須配置",
+    "stateful": "有狀態",
+    "configLabel": "配置",
+    "install": "安裝",
+    "installed": "已安裝",
+    "installTitle": "安裝 {{name}}",
+    "installDescription": "加入汝之 MCP 中，嗣後可於會話中啟用。",
+    "editTitle": "編輯 {{name}}",
+    "editDescription": "密鑰若空，則仍用所存之值。",
+    "nameLabel": "名稱",
+    "loadFailedTitle": "未能連接服務",
+    "loadFailedDescription": "請察服務之址，並審服務已啟否。",
+    "retry": "重試"
+  },
+  "skill": {
+    "category": {
+      "testing": "測試調試",
+      "security": "安全合規",
+      "devops": "部署運維",
+      "writing": "寫作內容",
+      "office-efficiency": "辦公提效",
+      "knowledge-management": "知識管理",
+      "content-creation": "內容創作",
+      "ai-agent": "AI 智能體",
+      "dev-programming": "開發編程",
+      "design-media": "設計媒體",
+      "data-analysis": "數據分析",
+      "life-service": "生活服務",
+      "professional": "專業領域",
+      "design-creative": "設計創意",
+      "coding-agents": "編程智能體",
+      "agent-skills": "智能體技能",
+      "development": "研發工程",
+      "agent-frameworks": "智能體框架",
+      "browser-automation": "瀏覽器自動化",
+      "productivity": "效率工具",
+      "rag-knowledge": "RAG 與知識庫",
+      "automation": "自動化",
+      "document-processing": "文檔處理",
+      "education": "教育",
+      "finance": "金融",
+      "legal-compliance": "法律合規",
+      "media-automation": "媒體自動化",
+      "Personal AI": "個人 AI",
+      "research": "研究",
+      "web-automation": "網頁自動化"
+    },
+    "allCategories": "全部",
+    "matchButton": "依任務匹配",
+    "matchHint": "請先於搜索框中述明任務",
+    "matchRecommends": "為此任務推薦",
+    "matchAlternatives": "備選",
+    "matchScore": "匹配度 {{score}}",
+    "matchSearched": "已檢得 {{count}} 技能",
+    "matchFailed": "未能得配技能",
+    "matchDismiss": "關閉",
+    "matchPolicy": "來源之策：{{policy}}",
+    "subtitle": "瀏覽並安裝技能",
+    "hubsLabel": "來源",
+    "searchPlaceholder": "於該來源中搜索",
+    "mineSearchPlaceholder": "搜尋爾之技能",
+    "noHubsTitle": "尚無可用之來源",
+    "noHubsDescription": "請聯繫管理員添加。",
+    "noCardsTitle": "未得內容",
+    "noCardsDescription": "換他關鍵詞試之。",
+    "mineDescription": "爾已安裝之技能",
+    "mineEmptyTitle": "尚無技能",
+    "mineEmptyDescription": "自左側來源中安裝其一。",
+    "install": "安裝",
+    "installed": "已安裝",
+    "versionLabel": "版本",
+    "hubLabel": "來源",
+    "updatedLabel": "更新於",
+    "updatedAgo": "{{ago}}前更新",
+    "updatedRecently": "方纔更新",
+    "installsLabel": "安裝量",
+    "downloadsLabel": "下載量",
+    "linkLabel": "頁面",
+    "viewOnHub": "於來源站觀之",
+    "noReadme": "此技未供 SKILL.md 正文。",
+    "loadFailedTitle": "未能連接服務",
+    "loadFailedDescription": "請察服務地址，並察服務已啟否。",
+    "retry": "重試"
+  },
+  "agent-menu": {
+    "settings": "設置",
+    "delete": "刪除智能體"
+  },
+  "workdir": {
+    "title": "工作目錄",
+    "description": "擇智能體之工作目錄。",
+    "root": "工作區根目錄",
+    "parent": "上一級",
+    "errorTitle": "未能列出該文件夾",
+    "pathPlaceholder": "輸入或貼路徑",
+    "empty": "此文件夾空",
+    "pressEnter": "先按回車以校此路徑",
+    "pickerPlaceholder": "擇文件夾以行工具",
+    "recent": "最近",
+    "recentEmpty": "尚無最近所用之文件夾",
+    "browse": "選擇文件夾",
+    "gitTooltip": "{{staged}} 已暫存 · {{unstaged}} 已改 · {{untracked}} 未追蹤\n行數不含未追蹤文件"
+  },
+  "settings": {
+    "title": "設置",
+    "backToApp": "返 Tora",
+    "close": "關閉",
+    "loadFailed": "讀取設置未成（或後端未起、端口不合）：{{error}}",
+    "loadingRuntime": "方載運行時配置…",
+    "sections": {
+      "general": "通用",
+      "theme": "主題",
+      "agent": "智能體",
+      "model": "模型",
+      "memory": "記憶",
+      "data": "數據管理",
+      "about": "關於",
+      "usage": "使用統計",
+      "account": "賬號",
+      "developer": "開發者&調試"
+    },
+    "memory": {
+      "title": "記憶",
+      "desc": "跨會話之長期記憶：會話始時注入相關條目，會話終後可擇自動提煉",
+      "inject": "會話注入",
+      "injectDesc": "會話始時，依當前項目以相關記憶注入系統提示",
+      "distill": "自動提煉",
+      "distillDesc": "會話正常終後，以模型回顧本輪對話，沉澱 0-3 條堪久記之內容",
+      "searchPh": "搜尋記憶（回車檢索）",
+      "contentPh": "記憶內容，例如：本項目測試皆用 node --test",
+      "projectKeyPh": "項目絕對路徑（空則歸全局）",
+      "scopeGlobal": "全局",
+      "scopeProject": "項目",
+      "add": "新增記憶",
+      "save": "存",
+      "cancel": "罷",
+      "edit": "編輯",
+      "delete": "刪除",
+      "confirmDelete": "確認刪除乎？",
+      "pin": "置頂",
+      "unpin": "撤置頂",
+      "dedupedToast": "內容相近之記憶已存，故未重複保存",
+      "projectGroup": "項目記憶",
+      "globalGroup": "全局記憶",
+      "empty": "尚無記憶。對話之際，可令助手「記住…」，或於此手添之。",
+      "emptySearch": "無相合之記憶",
+      "kinds": {
+        "preference": "偏好",
+        "fact": "事實",
+        "pitfall": "陷阱",
+        "convention": "約定"
+      },
+      "sources": {
+        "manual": "手動",
+        "tool": "工具",
+        "distill": "提煉"
+      }
+    },
+    "theme": {
+      "title": "主題",
+      "subtitle": "擇外觀、動畫與工作區背景",
+      "modeTitle": "外觀",
+      "modeDesc": "淺色、深色或隨系統",
+      "light": "淺色",
+      "dark": "深色",
+      "system": "隨系統",
+      "motionTitle": "互動動畫",
+      "motionDesc": "設置點擊回饋與頁面切換之節奏。系統「減少動態效果」之設定恆優先。",
+      "motionModeTitle": "動畫節奏",
+      "motion": {
+        "system": "隨系統",
+        "off": "閉",
+        "gentle": "柔和",
+        "standard": "標準",
+        "fast": "快速"
+      },
+      "motionReduced": "系統已啟減少動態效果，今以無動畫之式呈現。",
+      "motionClickTitle": "點擊回饋",
+      "motionClickDesc": "按鈕、連結與選單項短促按下之回饋",
+      "motionPageTitle": "頁面切換",
+      "motionPageDesc": "於工作區頁面之間平滑過渡",
+      "backgroundTitle": "背景",
+      "backgroundDesc": "工作區、設置與登入界面共用背景",
+      "lavender": "柔紫",
+      "mist": "霧藍",
+      "stone": "暖灰",
+      "midnight": "深夜",
+      "none": "無背景",
+      "custom": "自訂",
+      "import": "導入圖片",
+      "replace": "更換圖片",
+      "remove": "移除自訂背景",
+      "localOnly": "自訂背景唯存本機，不上傳。可用 PNG、JPEG、WebP，至多 16 MB。",
+      "invalidType": "請擇 PNG、JPEG 或 WebP 圖片",
+      "tooLarge": "圖片不得逾 16 MB",
+      "processFailed": "無法讀取此圖，請易檔再試",
+      "storageFailed": "存背景敗，或本機儲存空間不足"
+    },
+    "general": {
+      "title": "通用",
+      "common": "常規",
+      "language": {
+        "title": "語言",
+        "desc": "界面顯示語言",
+        "zh": "簡體中文",
+        "zhHant": "繁體中文",
+        "en": "英語",
+        "ja": "日語",
+        "ko": "韓語",
+        "fr": "法語",
+        "de": "德語",
+        "it": "意大利語",
+        "ar": "阿拉伯語",
+        "es": "西班牙語",
+        "pt": "葡萄牙語",
+        "ru": "俄語",
+        "hi": "印地語",
+        "lzh": "文言文"
+      },
+      "searchEngine": {
+        "title": "搜尋引擎",
+        "desc": "地址欄輸入非網址之內容時所用",
+        "engines": {
+          "360": "360 搜索",
+          "baidu": "百度",
+          "google": "谷歌",
+          "sogou": "搜狗",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "必應"
+        }
+      },
+      "systemNotifications": {
+        "title": "系統訊息通知",
+        "desc": "新訊以系統通知提醒；鎖屏通知不示標題與正文。系統設定亦須允 Tora 通知。",
+        "test": "試發通知",
+        "testing": "方試之…",
+        "shown": "系統已受通知；若橫幅不現，請察 macOS 通知之設或專注之式。",
+        "failed": "系統拒示通知。macOS 宜於正式簽名之版試之，並察通知之權。",
+        "unsupported": "當今系統不具原生通知。",
+        "unconfirmed": "已請系統通知，然未得顯示之驗；請察通知之權。"
+      },
+      "sound": {
+        "title": "提示之音",
+        "desc": "任務之事，以聲為警",
+        "replyDoneTitle": "答覆既成",
+        "replyDoneDesc": "Agent 答畢則鳴",
+        "needConfirmTitle": "需待確認",
+        "needConfirmDesc": "確認之請既出，或問於君，則鳴",
+        "kindTitle": "音效",
+        "kindDesc": "擇提示之音",
+        "kindDing": "叮",
+        "kindCrisp": "清越",
+        "kindSoft": "柔婉",
+        "kindCustom": "自定",
+        "preview": "試聽",
+        "customTitle": "自定音效",
+        "customDesc": "用本地音訊之檔（mp3 / wav / ogg 等）",
+        "customChoose": "擇檔",
+        "customClear": "清除",
+        "volumeTitle": "音量",
+        "volumeDesc": "提示音鳴放之量",
+        "tooLarge": "檔案過巨（限 10MB）",
+        "saveFailed": "存之不成，請再試"
+      },
+      "behavior": "行為"
+    },
+    "developer": {
+      "title": "開發者與調試",
+      "desc": "Agent 運行之行止、鉤子、代碼索引與語言服務。改畢即效，下次運行讀新配置。",
+      "behavior": "行為"
+    },
+    "behavior": {
+      "presets": {
+        "title": "執行配置檔",
+        "desc": "一鍵施以驗證之運行配置；如需，仍可於下逐項微調。",
+        "fast": {
+          "title": "速",
+          "desc": "宜於短務，可省其費"
+        },
+        "balanced": {
+          "title": "均衡",
+          "desc": "宜用於日常開發"
+        },
+        "deep": {
+          "title": "深入",
+          "desc": "宜於繁務，多予迭代之餘"
+        }
+      },
+      "context": {
+        "title": "上下文 token 之上限",
+        "desc": "對話逾此數則自縮其舊史（默 24000）。愈小愈省 token，然失史之細。",
+        "suffix": "tokens"
+      },
+      "toolOutput": {
+        "title": "一器輸出之上限",
+        "desc": "一器一呼所還字數之極（默 6000），過則截之。",
+        "suffix": "字符"
+      },
+      "maxTurns": {
+        "title": "Agent 迭代之最多輪數",
+        "desc": "一務之中 Agent 循環之最多輪數（默 40），過則強止。",
+        "suffix": "輪"
+      },
+      "shellSandbox": {
+        "title": "命令行程沙箱",
+        "desc": "限 Agent 之 Bash 與 Git 命令，僅得書於工作之目錄；閉之則命令得今用戶之檔案權。"
+      },
+      "shellNetwork": {
+        "title": "許沙箱命令聯網",
+        "desc": "默閉。開則命令可通外網與本機之務；惟需聯網安裝等事乃開。"
+      }
+    },
+    "data": {
+      "title": "數據之管",
+      "subtitle": "清除本地與服務端之會話數據",
+      "wipe": {
+        "title": "清空諸會話",
+        "desc": "盡刪會話之錄、智能體與憑證，此舉不可復。",
+        "button": "清空",
+        "confirm": "確認清空",
+        "cancel": "取消",
+        "processing": "處理中…",
+        "error": "清空不成：{{error}}"
+      }
+    },
+    "about": {
+      "title": "關於",
+      "tora": "本地 Agent 工作臺 · 版本 {{version}}",
+      "runtime": "Electron 桌面端 · 本地 ASAPI 服務 · 自接之模型",
+      "runtimeTitle": "運行之法",
+      "update": {
+        "title": "軟件更新",
+        "desc": "察 Tora 之新版。macOS 與 Windows 皆於後臺下載，下畢則告重啟安裝。",
+        "check": "察更新",
+        "checking": "察之…",
+        "upToDate": "今已為最新之版。",
+        "available": "得 Tora {{version}}，請依更新之示續之。",
+        "downloading": "得 Tora {{version}}，方於後臺下載。",
+        "ready": "Tora {{version}} 已下，待重啟安裝。",
+        "development": "開發之境不能察正式發布之版。",
+        "unavailable": "此臺暫不具自動更新。",
+        "desktopOnly": "請於 Tora 桌面應用中察更新。",
+        "failed": "察更新不成：{{error}}"
+      }
+    },
+    "errors": {
+      "backend": "後端所還 {{status}}",
+      "runtimeSave": "存之不成 ({{status}})：{{text}}",
+      "saveFailed": "存之不成：{{error}}",
+      "wipeFailed": "清空不成：{{error}}"
+    },
+    "advanced": {
+      "title": "高級",
+      "subtitle": "鉤子、代碼索引與語言服務。改畢即效，下次運行讀新配置。",
+      "hooks": {
+        "title": "生命週期之鉤子",
+        "desc": "許於 UserPromptSubmit / PreToolUse / PostToolUse / Stop 四點行己之命令。閉之則鉤子全不運行。"
+      },
+      "changes": {
+        "title": "變更感知之上下文",
+        "desc": "以「近改之檔 + git 未提交之檔」注於系統提示之詞，使模型知磁盤之檔或已變。"
+      },
+      "lsp": {
+        "title": "語言服務（LSP）",
+        "desc": "配置既成，Lsp 工具之跳定義／尋引用／診斷乃由真 LSP，可得類型之訊；不配則用本地符號索引（足用，然無類型）。",
+        "none": "未察已裝之 language server",
+        "enable": "啟用",
+        "enabled": "已啟用",
+        "disable": "停用",
+        "probeFailed": "探測未成：{{error}}"
+      },
+      "index": {
+        "title": "代碼索引",
+        "desc": "符號索引與語義倒排索引（供 Search 工具用）。依檔案 mtime 增量而新，常無須手動重建。",
+        "rebuild": "重建索引",
+        "rebuilding": "重建中…",
+        "done": "索引已重建：{{files}} 檔 / {{symbols}} 符號 / {{tokens}} 詞條",
+        "noWorkspace": "須先於一會話中擇定工作目錄，方可重建索引",
+        "stats": "當前：{{files}} 檔 / {{symbols}} 符號"
+      },
+      "mcp": {
+        "title": "MCP 伺服器",
+        "desc": "以 stdio 傳輸之 Model Context Protocol 伺服器。所配之工具，將以 mcp__服务器__工具 之名入於會話。改動存後，下次運行乃效。",
+        "add": "添加",
+        "namePlaceholder": "名稱（字母數字-_）",
+        "commandPlaceholder": "命令，如 npx",
+        "argsPlaceholder": "參數（空格為隔，可空）",
+        "probe": "探測",
+        "probing": "探測中…",
+        "toolsCount": "{{count}} 工具",
+        "noServers": "尚未配置 MCP 伺服器",
+        "delete": "刪除此伺服器",
+        "probeFailed": "探測未成：{{error}}"
+      },
+      "trust": {
+        "title": "信任項目鉤子",
+        "desc": "工作目錄中之 .tora/hooks.json 來自倉庫內容。信之，即許該倉庫行命令；請先覽其內容而後決。",
+        "trusted": "已信此目錄之專案鉤子",
+        "trust": "信當前工作目錄",
+        "revoke": "撤銷信任",
+        "none": "尚無工作目錄"
+      },
+      "saveFailed": "存而未成：{{error}}"
+    },
+    "usage": {
+      "title": "使用統計",
+      "desc": "據本地會話與用量數據而聚合（Token 用量、談話時長、連續日數、工具之用）",
+      "cards": {
+        "totalTokens": "累計 Token 數",
+        "peakTokens": "峰值 Token 數",
+        "longestChat": "最長談話時長",
+        "currentStreak": "當前連續日數",
+        "longestStreak": "最長連續日數"
+      },
+      "activity": {
+        "title": "Token 活動",
+        "daily": "每日",
+        "weekly": "每週",
+        "cumulative": "累計",
+        "tipDaily": "已用 {{tokens}} Token",
+        "tipWeekly": "該週合計 {{tokens}} Token",
+        "tipCumulative": "累計已用 {{tokens}} Token"
+      },
+      "insights": {
+        "title": "活動洞察",
+        "chats": "談話總數",
+        "runs": "運行總數",
+        "activeDays": "活躍日數",
+        "toolRuns": "工具運行總數",
+        "topModel": "最常用之模型"
+      },
+      "topTools": {
+        "title": "最常用之工具",
+        "empty": "尚無工具使用之記",
+        "runs": "{{count}} 次運行"
+      },
+      "loading": "載入中…",
+      "loadFailed": "讀使用統計未成：{{error}}",
+      "days": "{{count}} 日",
+      "refresh": "刷新"
+    },
+    "account": {
+      "title": "帳號",
+      "homeTitle": "登入 Tora",
+      "homeDesc": "輸入用戶名或郵箱，吾將視汝欲登入抑或註冊",
+      "continue": "登入/註冊",
+      "nextStep": "繼續",
+      "otherWays": "以他法登入",
+      "register": "註冊",
+      "emailTitle": "登入或註冊",
+      "registerTitle": "創建帳號",
+      "emailDesc": "汝將得愈智之答，並用雲端之能。",
+      "emailLabel": "電子郵件地址",
+      "emailPlaceholder": "電子郵件地址",
+      "passwordTitle": "輸入密碼",
+      "createPasswordTitle": "創建密碼",
+      "passwordLabel": "密碼（至少八位）",
+      "confirmLabel": "確認密碼",
+      "login": "登入",
+      "createAccount": "創建帳號",
+      "or": "或",
+      "terms": "續之，即示汝允 Tora 之使用條款與隱私政策。",
+      "back": "返回",
+      "logout": "退出登入",
+      "since": "註冊於 {{date}}",
+      "errors": {
+        "confirmMismatch": "二次所輸密碼不合",
+        "shortPassword": "密碼至少八位",
+        "alreadyRegistered": "此郵箱已註，請徑登入",
+        "invalidEmail": "郵箱格式不正",
+        "longPassword": "密碼過長",
+        "wrongCredentials": "帳號或密碼有誤",
+        "wrongPassword": "當前密碼有誤",
+        "emailTaken": "此郵箱已被使用",
+        "avatarTooLarge": "頭像過大，請易以小圖",
+        "avatarInvalid": "頭像格式不支",
+        "invalidUsername": "用户名须为二至三十二位字母、数字、下划线、连字符或汉字",
+        "usernameTaken": "此用户名已为人所用",
+        "codeTooFrequent": "发送过频，请少顷再试",
+        "codeSendFailed": "验证码发送不果，请少顷再试",
+        "codeInvalid": "验证码有误或已过期",
+        "turnstileFailed": "人机验证不果，请重试"
+      },
+      "networkWarning": "认证服务暂不可接，请检网络后重试",
+      "networkRetryHint": "登入資訊猶存。網路復通後，請重驗。",
+      "manager": {
+        "description": "管理個人資料，護持帳戶。",
+        "profileTitle": "個人資料",
+        "securityTitle": "帳戶安全",
+        "registeredAt": "註冊之日",
+        "passwordHint": "更易登入 Tora 之密碼",
+        "emailPasswordHint": "請輸現用密碼，以驗本人",
+        "confirmNewPassword": "再輸新密碼",
+        "savePassword": "存密碼",
+        "saveEmail": "存郵址",
+        "logoutTitle": "退出此帳戶",
+        "logoutHint": "再用時須重新登入。",
+        "logoutConfirmTitle": "退出登入乎？",
+        "logoutConfirmDescription": "退出後，須重新登入方可續用 Tora。",
+        "changeAvatar": "更易头像",
+        "avatarHint": "点头像以更易（支持 PNG / JPG / WebP，自动裁剪压缩）",
+        "avatarSaved": "头像已更新",
+        "changePassword": "改密码",
+        "changeEmail": "改邮箱",
+        "currentEmail": "现今邮箱：{{email}}",
+        "newEmail": "新邮箱地址",
+        "currentPassword": "现今密码",
+        "newPassword": "新密码（至少八位）",
+        "save": "保存",
+        "passwordSaved": "密码已更新",
+        "emailSaved": "邮箱已更新"
+      },
+      "accountLabel": "用户名或邮箱",
+      "accountPlaceholder": "用户名或邮箱",
+      "usernameLabel": "用户名（二至三十二位字母、数字或汉字）",
+      "codeLabel": "邮箱验证码",
+      "captchaTitle": "安全验证",
+      "captchaLoginDesc": "毕人机验证以登录",
+      "captchaRegisterDesc": "毕人机验证以创建账号",
+      "showPassword": "显示密码",
+      "hidePassword": "隐藏密码",
+      "sendCode": "发送验证码",
+      "codeCooldown": "{{s}}s 后再发"
+    }
+  },
+  "agentSection": {
+    "title": "智能体",
+    "desc": "配置默认智能体之名与系统提示词。系统提示词若空，则用内置之 Corey 提示词。",
+    "select": "择智能体",
+    "name": "名称",
+    "namePlaceholder": "智能体名称",
+    "systemPrompt": "系统提示词",
+    "systemPromptPlaceholder": "留空则用内置 Corey 系统提示词",
+    "save": "保存",
+    "saved": "已保存",
+    "saveFailed": "保存未成：{{error}}"
+  },
+  "modelSection": {
+    "title": "模型",
+    "subtitle": "模型管理",
+    "desc": "配置 API key 以增可用模型，所启首模型即为默认对话模型。",
+    "addModel": "添加模型",
+    "empty": "尚无可用模型，点击「添加模型」以接入汝之初模型",
+    "loading": "载入中…",
+    "tableHeaders": {
+      "model": "模型",
+      "provider": "服务商",
+      "actions": "操作"
+    },
+    "aria": {
+      "edit": "编辑",
+      "delete": "删除",
+      "close": "关闭",
+      "back": "返回"
+    },
+    "errors": {
+      "noModels": "服务商未返任何模型",
+      "submitFailed": "提交未成：{{error}}",
+      "backend": "返回 {{status}}",
+      "loginRequired": "请先于「账号」栏登录，模型列表依账号云端同步"
+    },
+    "form": {
+      "titleEdit": "编辑模型",
+      "titleAdd": "由服务商添加",
+      "provider": "服务商",
+      "apiKey": "API 密钥",
+      "apiKeyPlaceholder": "请输入 API Key",
+      "apiKeyKeepEmpty": "若不改则留空",
+      "getApiKey": "获取 API 密钥",
+      "model": "模型",
+      "modelPlaceholder": "选择模型",
+      "modelInputPlaceholder": "选择或输入模型 ID（如 glm-4.6）",
+      "fetchingModels": "正在获取可用模型列表…",
+      "fetchHint": "输入 API 密钥后自动拉取模型列表；亦可直接输入模型 ID",
+      "advanced": "高级配置",
+      "vision": {
+        "title": "视觉输入",
+        "auto": "自动",
+        "on": "支持",
+        "off": "不支持",
+        "hint": "自动 = 按模型名判断；支持视觉输入之模型（如 deepseek-flash、gpt-4o、qwen-vl）可上传图片"
+      },
+      "baseUrl": "接口地址（Base URL）",
+      "saveHint": "保存后将以模型列表接口验连通性，密钥仅存于本机",
+      "reset": "重置",
+      "saveEdit": "保存修改",
+      "saveAdd": "添加模型",
+      "selectedCount": "已选 {{count}} 个",
+      "selectAll": "全选",
+      "deselectAll": "取消全选",
+      "alreadyAdded": "已添加",
+      "apiKeyReused": "留空则复用已配置之 Key",
+      "keyReusedHint": "察此服务商已配 API Key，留空即可复用，径择模型而添。"
+    },
+    "providers": {
+      "custom": "自定义模型",
+      "volcengine": "火山引擎",
+      "dashscope": "阿里云",
+      "siliconflow": "硅基流动",
+      "stepfun": "階躍星辰（中國）",
+      "stepfunGlobal": "階躍星辰（國際）",
+      "hunyuan": "騰訊雲",
+      "ollama": "Ollama（本地）"
+    }
+  }
+}

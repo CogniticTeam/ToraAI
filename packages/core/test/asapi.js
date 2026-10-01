@@ -75,6 +75,20 @@ async function main() {
   let r = await realFetch(base + '/health');
   assert.equal((await r.json()).status, 'ok');
 
+  await test('累计 Token 里程碑端点：到档待展示，确认后不再弹出', async () => {
+    const { recordUsage } = await import('../src/asapi/usage-store.js');
+    const initial = await (await realFetch(base + '/admin/usage-milestones')).json();
+    assert.deepEqual(initial.pending, []);
+    recordUsage({ tokens: 100_000 });
+    const reached = await (await realFetch(base + '/admin/usage-milestones')).json();
+    assert.deepEqual(reached.pending, [100_000]);
+    const ack = await realFetch(base + '/admin/usage-milestones/100000/ack', { method: 'POST' });
+    assert.equal(ack.status, 200);
+    assert.deepEqual((await ack.json()).pending, []);
+    assert.equal((await realFetch(base + '/admin/usage-milestones/123/ack', { method: 'POST' })).status, 404);
+    assert.deepEqual((await (await realFetch(base + '/admin/usage-milestones')).json()).pending, []);
+  });
+
   let agentId;
   await test('agent 列表（自动创建默认 Corey）', async () => {
     const r = await realFetch(base + '/agent/');
@@ -128,6 +142,55 @@ async function main() {
     // 有启用模型列表时用列表（可能 1+ 项），否则退回内置默认集（4 项）
     assert.ok(models.length >= 1);
     assert.ok(models.every((mm) => mm.type === 'chat_model'));
+  });
+
+  await test('deepseek-flash 自动公布图像输入能力，并将图片送入用户消息', async () => {
+    const { loadConfig, saveConfig } = await import('../src/config.js');
+    const previousModels = loadConfig().modelList;
+    const previousVision = loadConfig().vision;
+    const previousFetch = globalThis.fetch;
+    let captured = null;
+    let sub = null;
+    let sid = null;
+    try {
+      saveConfig({ vision: false, modelList: [{ id: 'deepseek-vision-test', provider: 'deepseek', label: 'DeepSeek', model: 'deepseek-flash', baseURL: 'https://api.deepseek.com/v1', apiKey: 'test-key', enabled: true, vision: true }] });
+      const card = (await (await realFetch(base + '/model/')).json()).models.find((item) => item.name === 'deepseek-flash');
+      assert.ok(card);
+      assert.ok(card.input_types.includes('image/png'));
+      assert.ok(card.input_types.includes('image/webp'));
+
+      const created = await (await realFetch(base + '/sessions/', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId, chat_model_config: { type: 'openai_compatible', credential_id: '', model: 'deepseek-flash', parameters: {} } })
+      })).json();
+      sid = created.session_id;
+      const { resolveRunCfg } = await import('../src/asapi/bridge.js');
+      const { loadSessionRecord } = await import('../src/asapi/store.js');
+      assert.equal(resolveRunCfg(loadSessionRecord(sid), null).vision, true, '空 credential_id 仍须应用模型列表的视觉开关');
+      sub = await listen(sid);
+      globalThis.fetch = async (_url, init) => {
+        if (isTitleCall(init)) return sse([{ content: '' }]);
+        const body = JSON.parse(init.body);
+        if (body.messages?.some((message) => Array.isArray(message.content) && message.content.some((part) => part.type === 'image_url'))) captured = body;
+        return sse([{ content: '图片已收到' }]);
+      };
+      const response = await realFetch(base + '/chat/', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId, session_id: sid, input: { content: [
+          { type: 'text', text: '描述图片' },
+          { type: 'image', name: 'sample.png', source: { type: 'base64', media_type: 'image/png', data: 'cG5n' } }
+        ] } })
+      });
+      assert.equal(response.status, 200);
+      assert.ok(await sub.waitFor((events) => events.some((event) => event.type === 'REPLY_END'), 6000));
+      const user = captured?.messages.find((message) => Array.isArray(message.content) && message.content.some((part) => part.type === 'image_url'));
+      assert.equal(user?.content.find((part) => part.type === 'image_url')?.image_url?.url, 'data:image/png;base64,cG5n');
+    } finally {
+      sub?.stop();
+      globalThis.fetch = previousFetch;
+      if (sid) await realFetch(base + `/sessions/${sid}`, { method: 'DELETE' });
+      saveConfig({ modelList: previousModels, vision: previousVision });
+    }
   });
 
   console.log('--- 会话与聊天（SSE 全链路）---');
@@ -444,6 +507,48 @@ async function main() {
     assert.equal((await r.json()).total, 0);
   });
 
+  await test('进程重启后的未完成回复在历史中标记为已中断', async () => {
+    const created = await (await realFetch(base + '/sessions/', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: agentId })
+    })).json();
+    const { loadSessionRecord, saveSessionRecord, deleteSession } = await import('../src/asapi/store.js');
+    const { assistantMsgShell } = await import('../src/asapi/protocol.js');
+    const record = loadSessionRecord(created.session_id);
+    const partial = assistantMsgShell('reply-crashed');
+    partial.content.push({ id: 'pending-tool', type: 'tool_call', name: 'Bash', input: '{}', state: 'asking' });
+    record.display.push(partial);
+    saveSessionRecord(record);
+    const history = await (await realFetch(base + `/sessions/${created.session_id}/messages?agent_id=${agentId}`)).json();
+    assert.equal(history.messages.at(-1).finished_reason, 'interrupted');
+    assert.equal(history.messages.at(-1).content[0].state, 'finished');
+    assert.equal(history.is_running, false);
+    deleteSession(created.session_id);
+  });
+
+  await test('进程退出后从追加日志恢复未落盘的用户消息与回复进度', async () => {
+    const created = await (await realFetch(base + '/sessions/', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: agentId })
+    })).json();
+    const { deleteSession } = await import('../src/asapi/store.js');
+    const { appendSessionEvent } = await import('../src/asapi/session-events.js');
+    const { userMsg, assistantMsgShell } = await import('../src/asapi/protocol.js');
+    const user = userMsg('从日志恢复');
+    const reply = assistantMsgShell('reply-journal-crashed');
+    reply.content.push({ id: 'journal-tool', type: 'tool_call', name: 'Bash', input: '{}', state: 'asking' });
+    appendSessionEvent(created.session_id, 'run-started', {
+      replyId: reply.id, user, internal: [{ role: 'user', content: '从日志恢复' }]
+    });
+    appendSessionEvent(created.session_id, 'reply-progress', { reply });
+    try {
+      const history = await (await realFetch(base + `/sessions/${created.session_id}/messages?agent_id=${agentId}`)).json();
+      assert.equal(history.messages[0].content[0].text, '从日志恢复');
+      assert.equal(history.messages[1].finished_reason, 'interrupted');
+      assert.equal(history.messages[1].content[0].state, 'finished');
+    } finally {
+      deleteSession(created.session_id);
+    }
+  });
+
   await test('上下文自动压缩：压缩后 display 记录仍完整（tool_call/tool_result 不丢）', async () => {
     // 1) 建会话 + 设 cwd
     const mk = await realFetch(base + '/sessions/', {
@@ -561,23 +666,27 @@ async function main() {
     assert.equal(typeof original.maxTokensBudget, 'number');
     assert.equal(typeof original.toolOutputLimit, 'number');
     assert.equal(typeof original.maxTurns, 'number');
+    assert.equal(original.shellSandbox, true);
+    assert.equal(original.shellNetworkAccess, false);
 
     try {
       // 合法 PATCH 往返
       const patch = await realFetch(base + '/admin/runtime', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ maxTokensBudget: 8000, toolOutputLimit: 4000, maxTurns: 20 })
+        body: JSON.stringify({ maxTokensBudget: 8000, toolOutputLimit: 4000, maxTurns: 20, shellNetworkAccess: true })
       });
       const after = await patch.json();
       assert.equal(patch.status, 200);
       assert.equal(after.maxTokensBudget, 8000);
       assert.equal(after.toolOutputLimit, 4000);
       assert.equal(after.maxTurns, 20);
+      assert.equal(after.shellNetworkAccess, true);
       // GET 落地一致
       const re = await (await realFetch(base + '/admin/runtime')).json();
       assert.equal(re.maxTokensBudget, 8000);
       assert.equal(re.toolOutputLimit, 4000);
       assert.equal(re.maxTurns, 20);
+      assert.equal(re.shellNetworkAccess, true);
 
       // 越界值被夹回合法区间（2000..200000 / 200..50000 / 1..200）
       const clamp = await realFetch(base + '/admin/runtime', {
@@ -2069,6 +2178,27 @@ async function main() {
       const forked = await (await realFetch(base + `/sessions/${fk.session_id}/messages?agent_id=${agentId}`)).json();
       assert.ok(forked.messages.length >= 1, '分支应继承历史');
 
+      await realFetch(base + '/chat/', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId, session_id: sid, input: { content: [{ type: 'text', text: '第二轮不同的问题' }] } })
+      });
+      for (let i = 0; i < 60; i++) {
+        const h = await (await realFetch(base + `/sessions/${sid}/messages?agent_id=${agentId}`)).json();
+        if (h.messages.length >= 4 && !h.is_running) break;
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      const partialResponse = await realFetch(base + `/sessions/${sid}/fork`, {
+        method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ upto: 2 })
+      });
+      assert.equal(partialResponse.status, 200, '已完成轮次应有可用的精确快照');
+      const partial = await partialResponse.json();
+      const { loadSessionRecord } = await import('../src/asapi/store.js');
+      const branch = loadSessionRecord(partial.session_id);
+      assert.equal(branch.display.length, 2);
+      assert.ok(branch.internal.some((message) => String(message.content).includes('独角兽搜索用例')));
+      assert.ok(branch.internal.every((message) => !String(message.content).includes('第二轮不同的问题')),
+        '相同的助手回复文本不能把第二轮上下文带入第一轮分支');
+
       const md = await (await realFetch(base + `/sessions/${sid}/export?format=md`)).json();
       assert.equal(md.format, 'md');
       assert.ok(md.body.includes('独角兽'), '导出内容应含会话正文');
@@ -2523,6 +2653,49 @@ async function main() {
     assert.equal(cm.status, 'ok');
     const lg = await (await realFetch(base + `/git/log?session_id=${sid}&limit=5`)).json();
     assert.ok(lg.commits.some((c) => c.subject === 'add g'), '日志应有 add g');
+  });
+
+  await test('UserPromptSubmit 拒绝在 SSE 和历史中保留 blocked 错误，而非 completed', async () => {
+    const { loadSessionRecord, saveSessionRecord, deleteSession } = await import('../src/asapi/store.js');
+    const { readSessionEvents } = await import('../src/asapi/session-events.js');
+    const { loadConfig, saveConfig } = await import('../src/config.js');
+    const previousHooksEnabled = loadConfig().hooksEnabled;
+    const hookScript = join(TEST_HOME, 'deny-prompt.cjs');
+    const hookPath = join(TEST_HOME, 'hooks.json');
+    const created = await (await realFetch(base + '/sessions/', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ agent_id: agentId })
+    })).json();
+    const sid = created.session_id;
+    const record = loadSessionRecord(sid);
+    record.config.naming = { auto: false };
+    saveSessionRecord(record);
+    writeFileSync(hookScript, 'process.stdout.write(JSON.stringify({ decision: "deny", reason: "测试规则阻止" }));');
+    writeFileSync(hookPath, JSON.stringify({ UserPromptSubmit: [{ command: `"${process.execPath}" "${hookScript}"` }] }));
+    saveConfig({ hooksEnabled: true });
+    try {
+      const response = await realFetch(base + '/chat/', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ agent_id: agentId, session_id: sid,
+          input: { id: 'blocked-user', name: 'user', role: 'user',
+            content: [{ type: 'text', id: 'blocked-text', text: '请执行', created_at: new Date().toISOString() }],
+            metadata: {}, created_at: new Date().toISOString(), finished_at: new Date().toISOString() }
+        })
+      });
+      assert.equal(response.status, 200);
+      assert.ok(await waitFor(() => loadSessionRecord(sid)?.display?.at(-1)?.finished_reason === 'error'));
+      const history = await (await realFetch(base + `/sessions/${sid}/messages?agent_id=${agentId}`)).json();
+      const reply = history.messages.at(-1);
+      assert.equal(reply.finished_reason, 'error');
+      assert.equal(reply.error?.type, 'blocked');
+      assert.match(reply.error?.message, /测试规则阻止/);
+      assert.equal(readSessionEvents(sid).events.at(-1)?.type, 'reply-finished');
+    } finally {
+      saveConfig({ hooksEnabled: previousHooksEnabled });
+      rmSync(hookPath, { force: true });
+      rmSync(hookScript, { force: true });
+      deleteSession(sid);
+    }
   });
 
   srv.close();

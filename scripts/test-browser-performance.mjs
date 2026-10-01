@@ -42,6 +42,7 @@ try {
 		localStorage.setItem('tora_auth_token', 'browser-performance-token');
 		localStorage.setItem('username', 'browser-performance-test');
 		localStorage.setItem('tora:first-run:intro:v1', '1');
+		localStorage.setItem('tora:first-use-consent:v1', JSON.stringify({ terms: true, privacy: true, crossBorder: true }));
 		localStorage.setItem('tora:first-run:tour:v1', '1');
 	}, base);
 	await page.reload({ waitUntil: 'domcontentloaded' });

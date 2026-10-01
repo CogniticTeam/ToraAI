@@ -1,6 +1,6 @@
 {
   "name": "@tora/desktop",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "Tora 桌面版（Electron 壳：启动本地 ASAPI 服务并托管 agentscope 风格前端）",
   "main": "main.js",
@@ -27,16 +27,16 @@
       "output": "release"
     },
     "files": [
-      "**/*",
-      "!release/**",
-      "!frontend/node_modules/**",
-      "!frontend/src/**",
-      "!frontend/package-lock.json"
+      "*.js",
+      "*.cjs",
+      "*.json",
+      "assets/**/*"
     ],
     "extraResources": [
       {
         "from": "../core",
-        "to": "core"
+        "to": "core",
+        "filter": ["src/**/*", "package.json"]
       },
       {
         "from": "frontend/dist",

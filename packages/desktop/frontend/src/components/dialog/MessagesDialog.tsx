@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useAccountPresence } from '@/components/auth/AccountPresence';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LANGUAGE_OPTIONS, normalizeLanguage, type AppLanguage } from '@/i18n/languages';
 import { useTranslation } from '@/i18n/useI18n';
 import { cloudFetch } from '@/utils/modelSync';
 
-type Message = { id: string; title: string; body: string; created_at: string; read_at: string | null; source_language?: 'zh' | 'en' | null };
+type Message = { id: string; title: string; body: string; created_at: string; read_at: string | null; source_language?: AppLanguage | null };
 type TranslationState = { loading?: boolean; show?: boolean; skipped?: boolean; error?: string; result?: { title: string; body: string } };
 function messagePreview(body: string) {
   const characters = Array.from(body.replace(/\s+/g, ' ').trim());
@@ -15,7 +16,8 @@ function messagePreview(body: string) {
 }
 export function MessagesDialog({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
-  const targetLanguage = (i18n.resolvedLanguage || i18n.language).startsWith('zh') ? 'zh' : 'en';
+  const targetLanguage = normalizeLanguage(i18n.language) ?? 'en';
+  const languageOption = LANGUAGE_OPTIONS.find(option => option.value === targetLanguage)!;
   const { revision } = useAccountPresence();
   const [messages, setMessages] = useState<Message[]>([]);
   const [offset, setOffset] = useState<number | null>(0);
@@ -28,7 +30,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   const loadVersion = useRef(0);
   const selectedRef = useRef<Message | null>(null);
   selectedRef.current = selected;
-  const translationKey = (message: Message) => `${message.id}:${targetLanguage}`;
+  const translationKey = (message: Message) => `${message.id}:${targetLanguage}:${message.title}\0${message.body}`;
   const displayed = (message: Message) => {
     const state = translations[translationKey(message)];
     return state?.show && state.result ? state.result : message;
@@ -58,11 +60,12 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   }
   function translationControl(message: Message) {
     const state = translations[translationKey(message)];
-    const unnecessary = message.source_language === targetLanguage || message.source_language === null || state?.skipped;
+    // 不确定语言不禁用翻译，服务端模型会核对原文是否已是目标语言。
+    const unnecessary = message.source_language === targetLanguage || state?.skipped;
     return <div className="space-y-1">
       <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs text-muted-foreground" disabled={!!unnecessary || state?.loading} onClick={() => void translate(message)}>
         {state?.loading ? <Loader2 className="size-3.5 animate-spin" /> : <Languages className="size-3.5" />}
-        {t(`inbox.${state?.loading ? 'translating' : unnecessary ? 'noTranslationNeeded' : state?.show ? 'showOriginal' : state?.result ? 'showTranslation' : targetLanguage === 'zh' ? 'translateToChinese' : 'translateToEnglish'}`)}
+        {t(`inbox.${state?.loading ? 'translating' : unnecessary ? 'noTranslationNeeded' : state?.show ? 'showOriginal' : state?.result ? 'showTranslation' : 'translateToLanguage'}`, { language: t(`settings.general.language.${languageOption.key}`) })}
       </Button>
       {state?.error && <p role="alert" className="text-xs text-destructive">{t(`inbox.${state.error}`)}</p>}
     </div>;
@@ -78,12 +81,19 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
       setMessages(previous => more ? [...previous, ...data.messages] : data.messages);
       setOffset(data.nextOffset);
       const current = selectedRef.current;
-      if (current && !data.messages.some((item: Message) => item.id === current.id)) {
-        const detail = await cloudFetch('/account/messages/' + encodeURIComponent(current.id));
-        if (version !== loadVersion.current) return;
-        if (detail.status === 404) {
-          recalled.current.add(current.id);
-          setSelected(value => value?.id === current.id ? null : value);
+      if (current) {
+        let updated = data.messages.find((item: Message) => item.id === current.id) as Message | undefined;
+        if (!updated) {
+          const detail = await cloudFetch('/account/messages/' + encodeURIComponent(current.id));
+          if (version !== loadVersion.current) return;
+          if (detail.status === 404) {
+            recalled.current.add(current.id);
+            setSelected(value => value?.id === current.id ? null : value);
+            setTranslations(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith(current.id + ':'))));
+          } else if (detail.ok) updated = await detail.json() as Message;
+        }
+        if (updated && (updated.title !== current.title || updated.body !== current.body)) {
+          setSelected(value => value?.id === current.id ? updated : value);
           setTranslations(previous => Object.fromEntries(Object.entries(previous).filter(([key]) => !key.startsWith(current.id + ':'))));
         }
       }

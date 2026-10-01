@@ -465,6 +465,7 @@ export function useMessages(
 		const controller = new AbortController();
 		abortRef.current = controller;
 		let cancelled = false;
+		let historyLoaded = adopted;
 
 		(async () => {
 			// 1. Fetch persisted history — skipped for an adopted session
@@ -499,9 +500,9 @@ export function useMessages(
 					// greeting over a conversation that does have history.
 					// Both setters now land in the same React batch.
 					setMsgs([...msgsRef.current]);
+					historyLoaded = true;
 				} catch (e) {
 					if (!cancelled) setError(e as Error);
-					return;
 				} finally {
 					// Marks the load done whether it succeeded or threw —
 					// an error surfaces through `error`, and leaving
@@ -511,20 +512,43 @@ export function useMessages(
 				}
 			}
 
-			// 2. Open SSE long connection for live events
-			try {
-				for await (const event of sessionApi.streamEvents(
-					sessionId,
-					agentId,
-					controller.signal,
-				)) {
-					if (cancelled) break;
-					processEvent(event);
+			// 2. SSE 断线后带游标补发；服务重启或缓冲缺口则重读历史。
+			let cursor: string | null = null;
+			let failures = 0;
+			while (!cancelled && !controller.signal.aborted) {
+				try {
+					for await (const frame of sessionApi.streamEvents(sessionId, agentId, controller.signal, cursor)) {
+						if (cancelled) break;
+						if (frame.kind === 'status') {
+							if (frame.mode === 'reset' || !historyLoaded) {
+								const { messages, is_running } = await sessionApi.messages(sessionId, agentId);
+								if (cancelled) break;
+								cursor = null;
+								startedRepliesRef.current = new Set();
+								currentReplyRef.current = null;
+								msgsRef.current = messages;
+								const tail = messages[messages.length - 1];
+								setPhase(is_running || hasPendingToolCall(tail) ? 'streaming' : 'idle');
+								if (hasPendingToolCall(tail)) currentReplyRef.current = tail ?? null;
+								setSubagentHitl([]);
+								setUserQuestion(null);
+								setMsgs([...messages]);
+								historyLoaded = true;
+							}
+							failures = 0;
+							setError(null);
+							continue;
+						}
+						cursor = frame.cursor ?? cursor;
+						processEvent(frame.event);
+					}
+				} catch (e) {
+					if (cancelled || controller.signal.aborted) break;
+					failures++;
+					if (failures >= 3) setError(e as Error);
 				}
-			} catch (e) {
-				if ((e as Error).name !== 'AbortError' && !cancelled) {
-					setError(e as Error);
-				}
+				if (cancelled || controller.signal.aborted) break;
+				await new Promise((resolve) => setTimeout(resolve, Math.min(5000, 500 * 2 ** Math.min(failures, 4))));
 			}
 		})();
 

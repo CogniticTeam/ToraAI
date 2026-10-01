@@ -392,7 +392,7 @@ export function ModelParametersPopover({
 																				'invisible',
 																		)}
 																	/>
-																	{credentialLabel(credential)}
+																	{credentialLabel(credential, t('common.toraModels'))}
 																</DropdownMenuSubTrigger>
 																<DropdownMenuPortal>
 																	<DropdownMenuSubContent className="max-h-60 overflow-y-auto">
@@ -574,7 +574,7 @@ export function ModelParametersPopover({
 																				'invisible',
 																		)}
 																	/>
-																	{credentialLabel(credential)}
+																	{credentialLabel(credential, t('common.toraModels'))}
 																</DropdownMenuSubTrigger>
 																<DropdownMenuPortal>
 																	<DropdownMenuSubContent className="max-h-60 overflow-y-auto">
