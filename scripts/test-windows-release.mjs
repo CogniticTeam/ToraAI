@@ -49,7 +49,8 @@ await exec(installer, ['/S', '/CURRENTUSER', `/D=${install}`], { timeout: 180000
 const app = join(install, 'Tora.exe'); assert.ok(existsSync(app), 'NSIS must install Tora.exe');
 const binary = readFileSync(app), peOffset = binary.readUInt32LE(0x3c);
 assert.equal(binary.readUInt16LE(peOffset + 4), 0x8664, 'Installed app must be x64');
-const status = execFileSync('powershell.exe', ['-NoProfile', '-Command', `(Get-AuthenticodeSignature -LiteralPath '${installer.replaceAll("'", "''")}').Status.ToString()`], { encoding: 'utf8' }).trim();
+// Match the runner's PowerShell 7 host; its PSModulePath is incompatible with Windows PowerShell 5.
+const status = execFileSync('pwsh.exe', ['-NoProfile', '-Command', `(Get-AuthenticodeSignature -LiteralPath '${installer.replaceAll("'", "''")}').Status.ToString()`], { encoding: 'utf8' }).trim();
 assert.equal(status, 'NotSigned', 'First Windows release is explicitly unsigned');
 const env = { ...process.env, TORA_HOME: join(directory, 'data') };
 delete env.ELECTRON_RUN_AS_NODE;
