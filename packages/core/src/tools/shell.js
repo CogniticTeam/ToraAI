@@ -39,6 +39,15 @@ export function normalizeShellCwd(cwd, platform = process.platform) {
   return cwd;
 }
 
+export function shellCwdExpression(platform, executable, exists = existsSync) {
+  if (platform !== 'win32') return '$PWD';
+  const directory = win32.dirname(executable);
+  const converter = [win32.join(directory, 'cygpath.exe'), win32.join(directory, '..', 'usr', 'bin', 'cygpath.exe')].find(exists);
+  if (!converter) throw new Error('Git for Windows 缺少 cygpath.exe，无法安全识别 Bash 工作目录');
+  // /tmp 和 /usr 等 MSYS 挂载点不能仅靠 /c -> C: 字符串替换。
+  return `$(${JSON.stringify(converter.replaceAll('\\', '/'))} -m "$PWD")`;
+}
+
 function spawnOptions(cwd, extraEnv = {}) {
   return {
     cwd,
@@ -82,9 +91,11 @@ class PersistentShell {
     const launch = prepareShellSandbox(cwd, sandbox);
     this.cleanupSandbox = launch.cleanup;
     try {
+      const executable = shellPath();
+      this.cwdExpression = shellCwdExpression(process.platform, executable);
       this.proc = spawn(
-        launch.executable || shellPath(),
-        launch.executable ? [...launch.args, shellPath(), '-i'] : ['-i'],
+        launch.executable || executable,
+        launch.executable ? [...launch.args, executable, '-i'] : ['-i'],
         spawnOptions(cwd, launch.env)
       );
     } catch (error) { launch.cleanup(); throw error; }
@@ -162,7 +173,7 @@ class PersistentShell {
         if (signal.aborted) onAbort(); else signal.addEventListener('abort', onAbort, { once: true });
       }
       this.pending = { marker, resolve, timer };
-      this._write(`${command}\nprintf '${marker}%s|%s\\n' "$?" "$PWD"\n`);
+      this._write(`${command}\nprintf '${marker}%s|%s\\n' "$?" "${this.cwdExpression}"\n`);
     });
   }
 
