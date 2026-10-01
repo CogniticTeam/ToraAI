@@ -41,7 +41,15 @@ jobs:
           if-no-files-found: error
           retention-days: 30
       - name: Run deterministic core and ASAPI regression suite
-        run: npm test
+        # Bash sandbox coverage requires the OS namespace tool on this ephemeral runner.
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends bubblewrap
+          if [ -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          bwrap --ro-bind / / --dev-bind /dev /dev --proc /proc true
+          npm test
       - name: Verify isolated work-execution evaluation fixtures
         run: npm run eval:baseline
       - name: Verify desktop navigation security policy

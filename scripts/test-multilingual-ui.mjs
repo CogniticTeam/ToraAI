@@ -46,7 +46,7 @@ try {
         const label = await page.locator('input[autocomplete="username"] ~ label').boundingBox();
         assert.ok(Math.abs((label.x + label.width) - (input.x + input.width)) < 30,
           `阿拉伯语登录输入标签应靠右：input=${JSON.stringify(input)} label=${JSON.stringify(label)}`);
-        await page.screenshot({ path: '/private/tmp/tora-login-ar.png' });
+        await page.screenshot({ path: join(tmpdir(), 'tora-login-ar.png') });
       }
       await page.getByRole('button', { name: expected.settings.general.language.title }).click();
       const dialog = page.getByRole('dialog', { name: expected.settings.general.language.title });
@@ -56,7 +56,7 @@ try {
       assert.equal(await dialog.locator('button[aria-pressed]').count(), 14);
       await search.fill('日本語');
       assert.equal(await dialog.locator('button[aria-pressed]').count(), 1, `${language} 的跨语言搜索失效`);
-      if (['ja', 'ar', 'lzh'].includes(language)) await page.screenshot({ path: `/private/tmp/tora-language-${language}.png` });
+      if (['ja', 'ar', 'lzh'].includes(language)) await page.screenshot({ path: join(tmpdir(), `tora-language-${language}.png`) });
       assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), true,
         `${language} 出现横向溢出`);
       assert.deepEqual(errors, [], `${language} 页面脚本错误：${errors.join(' | ')}`);

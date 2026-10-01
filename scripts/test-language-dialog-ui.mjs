@@ -65,7 +65,7 @@ try {
   assert.ok(Math.abs((await dialog.boundingBox()).height - dialogHeight) < 1, '搜索结果变化不应使居中弹窗上下跳动');
   await search.fill('');
   assert.equal(await dialog.locator('button[aria-pressed]').count(), 14);
-  await page.screenshot({ path: '/private/tmp/tora-language-search-login.png' });
+  await page.screenshot({ path: join(tmpdir(), 'tora-language-search-login.png') });
 
   const cardBounds = await card.boundingBox();
   await page.waitForTimeout(300);
