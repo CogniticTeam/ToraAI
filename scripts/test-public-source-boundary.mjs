@@ -11,7 +11,13 @@ const privateFiles = new Set([
   'scripts/test-message-recall.mjs', 'scripts/test-new-user-messages.mjs',
   'scripts/test-polls-admin-ui.mjs',
 ]);
-const forbidden = files.filter(file => file.startsWith('website/') || file.startsWith('docs/research/')
-  || /^scripts\/(?:test|generate)-website[^/]*$/.test(file) || privateFiles.has(file));
+const isPrivate = file => file.startsWith('website/') || file.startsWith('docs/research/')
+  || /^scripts\/(?:test|generate)-website[^/]*$/.test(file) || privateFiles.has(file);
+const forbidden = files.filter(isPrivate);
 assert.deepEqual(forbidden, [], `Private website files must not be tracked in the public repository:\n${forbidden.join('\n')}`);
+if (process.argv.includes('--history')) {
+  const objects = execFileSync('git', ['rev-list', '--objects', '--all'], { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const leaked = [...new Set(objects.split('\n').map(line => line.slice(line.indexOf(' ') + 1)).filter(isPrivate))];
+  assert.deepEqual(leaked, [], 'Old private website history must not be pushed. Publish from a fresh clone of the cleaned repository.');
+}
 console.log('Verified: tracked open-source files exclude the private website, tools and site-dependent tests.');

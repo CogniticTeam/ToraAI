@@ -26,7 +26,10 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Keep private website files out of the open-source repository
-        run: npm run verify:public-source
+        run: |
+          npm run verify:public-source
+          git fetch --unshallow --tags || git fetch --tags
+          node scripts/test-public-source-boundary.mjs --history
       - run: npm ci --prefix packages/desktop/frontend
       - name: Reject high-severity dependency vulnerabilities
         run: npm audit --workspaces --audit-level=high
