@@ -49,3 +49,17 @@ Thumbs.db
 
 # 生成产物（截图等）
 output/
+
+# 官网为独立维护内容，不纳入应用开源仓库
+/website/
+/merge-pages.js
+/docs/website-i18n.md
+/docs/research/
+/scripts/generate-website*
+/scripts/test-website*
+# 以下集成测试依赖非开源的官网管理页面
+/scripts/test-account-ui.mjs
+/scripts/test-admin-ban-ui.mjs
+/scripts/test-message-recall.mjs
+/scripts/test-new-user-messages.mjs
+/scripts/test-polls-admin-ui.mjs

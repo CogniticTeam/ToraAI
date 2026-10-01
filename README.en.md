@@ -14,6 +14,8 @@ A self-hosting-friendly coding agent. The frontend adopts an [agentscope](https:
 
 ## ✨ Features
 
+This repository covers the Tora application and its included tools. Website source, website assets and operational content are maintained separately and are not part of this open-source repository.
+
 - **Bring your own model**: any OpenAI-compatible endpoint (OpenAI / DeepSeek / Zhipu / Moonshot / Ollama / vLLM…); when the model doesn't support `tool_calls`, it automatically falls back to text-based ReAct instead of breaking entirely
 - **Do more with fewer tokens**: repo map + local code index (symbol / semantic inverted) + automatic context management (evicting old tool outputs + history summarization) + tool output truncation + prompt cache + change-aware context
 - **Zero-dependency core**: the core package depends on no npm modules — pure Node.js (≥18) + fetch

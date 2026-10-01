@@ -17,6 +17,7 @@
     "test:ui": "node scripts/test-ui-headless.mjs",
     "test:ui:critical": "node scripts/test-task-process-ui.mjs && node scripts/test-composer-ui.mjs && node scripts/test-language-dialog-ui.mjs && node scripts/test-multilingual-ui.mjs",
     "test:bundle": "node scripts/check-frontend-bundle.mjs",
+    "verify:public-source": "node scripts/test-public-source-boundary.mjs",
     "refresh:mac-metadata": "node scripts/refresh-mac-metadata.mjs",
     "sbom": "npm sbom --sbom-format cyclonedx --package-lock-only",
     "test:desktop-security": "node scripts/test-desktop-security.mjs",

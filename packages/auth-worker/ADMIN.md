@@ -1,6 +1,6 @@
 # Tora 消息与账户管理
 
-后台页面地址：<https://ohfun.online/admin>，由官网 Cloudflare Pages 项目 `tora` 托管。`website/admin.html` 和 `website/admin.js` 通过跨域请求调用 `https://tora.ohfun.online/admin/*` 的 Worker 接口；旧 Worker 页面地址自动跳转到官网。管理员输入 Worker 的 `ADMIN_TOKEN` 管理密钥登录。密钥只保留在当前页面内存中，刷新或退出后需重新输入；不要放入客户端、仓库或分享给普通用户。
+后台页面地址：<https://ohfun.online/admin>，由独立维护的官网托管，页面源码不包含在本开源仓库中。页面通过跨域请求调用 `https://tora.ohfun.online/admin/*` 的 Worker 接口；旧 Worker 页面地址自动跳转到官网。管理员输入 Worker 的 `ADMIN_TOKEN` 管理密钥登录。密钥只保留在当前页面内存中，刷新或退出后需重新输入；不要放入客户端、仓库或分享给普通用户。
 
 后台支持按用户名/邮箱搜索、定向/全体消息、封禁原因、封禁和解封。消息存入 D1，用户从账户菜单的「消息」查看，打开单条消息后标为已读。`admin_audit` 保存管理操作记录。
 
@@ -13,7 +13,6 @@
 发送给「全部账户」时，可勾选「新用户可收到消息」（默认关闭）。启用的通知保存在 `message_campaigns`，通过 D1 注册触发器在新用户创建的同一事务中投递一次；不追溯投递未勾选的历史消息。定向消息禁止启用。撤回同时关闭后续投递并隐藏已投递副本；即使当前没有账户，也可发布和撤回面向新用户的通知。无需更新客户端即可接收新用户消息。
 
 ```sh
-npx wrangler pages deploy website --project-name tora --branch main
 npx wrangler secret put ADMIN_TOKEN --config packages/auth-worker/wrangler.toml
 npx wrangler deploy --dry-run --config packages/auth-worker/wrangler.toml
 npx wrangler deploy --config packages/auth-worker/wrangler.toml
