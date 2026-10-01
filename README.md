@@ -16,6 +16,8 @@
 
 开源范围为 Tora 应用代码及本仓库内的相关工具。官网源码、官网素材和运营内容独立维护，不包含在此开源仓库中。
 
+2026-10-01 已清理公开分支与标签中的官网历史。使用此前克隆的开发者请重新克隆本仓库，不要合并或推送旧历史。发布前执行 `npm run verify:public-source` 和 `node scripts/test-public-source-boundary.mjs --history`。
+
 - **自接入模型**：任何 OpenAI 兼容接口（OpenAI / DeepSeek / 智谱 / Moonshot / Ollama / vLLM…）；模型不支持 `tool_calls` 时自动降级为文本 ReAct，不会整个失效
 - **低 token 多干活**：repo map + 本地代码索引（符号 / 语义倒排）+ 上下文自动治理（驱逐旧工具输出 + 历史摘要压缩）+ 工具输出截断 + prompt cache + 变更感知上下文
 - **零依赖核心**：core 包不依赖任何 npm 模块，纯 Node.js（≥18）+ fetch
