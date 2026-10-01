@@ -25,6 +25,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - run: npm ci --prefix packages/desktop/frontend
       - name: Reject high-severity dependency vulnerabilities
         run: npm audit --workspaces --audit-level=high
       - name: Generate CycloneDX software bill of materials

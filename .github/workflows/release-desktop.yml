@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   windows:
-    if: github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1'
+    if: github.event_name == 'workflow_dispatch' || (github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2')
     name: Build and verify Windows x64
     runs-on: windows-latest
     timeout-minutes: 25

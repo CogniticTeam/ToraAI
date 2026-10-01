@@ -49,6 +49,11 @@ try {
 
   const search = dialog.getByRole('searchbox', { name: '搜索语言' });
   await search.waitFor({ state: 'visible' });
+  // Compare settled layout, not the dialog's initial scale-in animation.
+  await dialog.evaluate(async element => {
+    await document.fonts.ready;
+    await Promise.all(element.getAnimations({ subtree: true }).filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {})));
+  });
   const dialogHeight = (await dialog.boundingBox()).height;
   await search.fill('traditional');
   assert.equal(await dialog.getByRole('button', { name: /繁體中文/ }).count(), 1);
