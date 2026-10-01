@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, mkdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, mkdirSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -25,7 +25,7 @@ if (process.argv[2] === '--engine') {
   try {
     const moved = await shell.run(`cd ${JSON.stringify(work)}`, 15000);
     assert.equal(moved.exitCode, 0, moved.output);
-    assert.equal(resolve(moved.cwd).toLowerCase(), resolve(work).toLowerCase());
+    assert.equal(realpathSync(moved.cwd).toLowerCase(), realpathSync(work).toLowerCase());
     assert.equal((await shell.run('export TORA_WIN_VALUE=retained', 10000)).exitCode, 0);
     const printed = await shell.run('printf %s "$TORA_WIN_VALUE"', 10000);
     assert.equal(printed.exitCode, 0); assert.match(printed.output, /retained/);

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { test } from 'node:test';
+import { join } from 'node:path';
 import { desktopStorageName } from '../packages/desktop/brand-compat.js';
 const code = readFileSync(new URL('../packages/desktop/frontend/public/brand-migration.js', import.meta.url), 'utf8');
 function migrate(entries) {
@@ -45,5 +46,5 @@ test('存储被限制时仍能启动', () => {
 });
 test('新用户使用 Tora 存储身份，旧用户保留密钥链与 profile 身份', () => {
   assert.equal(desktopStorageName('/app-data', () => false), 'Tora');
-  assert.equal(desktopStorageName('/app-data', path => path === '/app-data/CoCode'), 'CoCode');
+  assert.equal(desktopStorageName('/app-data', path => path === join('/app-data', 'CoCode')), 'CoCode');
 });
