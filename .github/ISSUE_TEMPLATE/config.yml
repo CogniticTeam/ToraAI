@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "📌 Issues 提交注意事项"
+    url: https://github.com/CognitictTeam/ToraAI/blob/main/.github/ISSUE_GUIDELINES.md
+    about: "了解需要提供的信息、隐私保护及标签含义。"
+  - name: "💬 使用求助与讨论 / Q&A"
+    url: https://github.com/CognitictTeam/ToraAI/discussions
+    about: "一般使用问题、经验交流和尚未形成具体提案的讨论请在这里进行。"
+  - name: "🌐 官网与下载"
+    url: https://ohfun.online
+    about: "获取安装包与产品信息；官网源码不包含在开源仓库中。"

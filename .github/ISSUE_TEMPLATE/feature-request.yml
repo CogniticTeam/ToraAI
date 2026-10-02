@@ -1,0 +1,45 @@
+name: "✨ 新功能提案"
+description: "提出一个新的能力、工作流程或可配置选项。"
+title: "[新功能]: "
+labels: ["新提交", "enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: "请阅读 [提交注意事项](https://github.com/CognitictTeam/ToraAI/blob/main/.github/ISSUE_GUIDELINES.md)。日常求助请前往 Discussions。English proposals are welcome."
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "提交前确认"
+      options:
+        - label: "我已搜索现有议题，本次只提出一个具体功能。"
+          required: true
+        - label: "我已确认当前设置或已有功能不能满足这一需求。"
+          required: true
+        - label: "我理解提案需要评估，提交不代表已接受或承诺开发时间。"
+          required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: "使用场景与当前困难"
+      description: "谁会在什么任务中遇到这个困难？现有流程有哪些限制？"
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "建议的功能与交互"
+      description: "说明入口、操作过程和预期结果，可附草图或已脱敏示例。"
+    validations:
+      required: true
+  - type: textarea
+    id: benefit
+    attributes:
+      label: "价值与验收标准"
+      description: "如何判断功能已满足需求？涉及模型、平台、隐私或费用时请说明约束。"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "替代方案或参考实现（可选）"
+      description: "列出已尝试的方法；可链接相关产品或开源项目，并解释具体参考点。"

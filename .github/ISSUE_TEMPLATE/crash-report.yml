@@ -1,0 +1,57 @@
+name: "💥 崩溃、卡死或无法启动"
+description: "应用退出、窗口长时间无响应、安装后无法启动。"
+title: "[崩溃/卡死]: "
+labels: ["新提交", "bug"]
+body:
+  - type: markdown
+    attributes:
+      value: "先阅读 [提交注意事项](https://github.com/CognitictTeam/ToraAI/blob/main/.github/ISSUE_GUIDELINES.md)。这份表单针对应用故障；普通模型回复错误请使用 Bug 反馈。English reports are welcome."
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: "提交前确认"
+      options:
+        - label: "我已查找相同故障的议题，并核对版本和系统兼容性。"
+          required: true
+        - label: "本次仅报告一个故障，所有附件均已脱敏。"
+          required: true
+  - type: input
+    id: version
+    attributes:
+      label: "应用版本与安装来源"
+      placeholder: "例如 v1.0.2，官网下载 / GitHub Release / 源码运行。"
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: "系统与硬件环境"
+      description: "系统版本、Apple 芯片/Intel/x64、可用内存；安装失败时附系统提示。"
+    validations:
+      required: true
+  - type: dropdown
+    id: symptom
+    attributes:
+      label: "故障类型"
+      options: ["无法安装或启动", "意外退出 / 崩溃", "窗口卡死 / 无响应", "持续白屏或加载中", "其他"]
+    validations:
+      required: true
+  - type: textarea
+    id: trigger
+    attributes:
+      label: "发生时机与复现步骤"
+      description: "从启动到故障的操作顺序、是否每次发生、最后可正常使用的版本。"
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: "崩溃报告 / 日志 / 错误提示"
+      description: "附已脱敏的系统崩溃报告、终端输出或截图；无法获取时请说明。不要上传配置文件、会话数据库或完整工作区。"
+    validations:
+      required: true
+  - type: textarea
+    id: attempts
+    attributes:
+      label: "已尝试的排查（可选）"
+      description: "如重启、重新安装或检查代理设置，说明操作和结果；不要为排查而清除未备份的用户数据。"

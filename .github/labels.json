@@ -1,0 +1,23 @@
+[
+  {"name":"新提交","color":"1d76db","description":"新收到的反馈，尚未完成分类与初步核查。"},
+  {"name":"❗重要","color":"b60205","description":"影响核心流程或较多用户，需要优先评估。"},
+  {"name":"➡️计划之中","color":"c5def5","description":"已接受并进入后续开发计划，尚未开始实现。"},
+  {"name":"⏳等待处理","color":"fbca04","description":"已确认反馈，等待维护者分配和处理。"},
+  {"name":"⏸暂停","color":"a9a9a9","description":"工作暂时中止，待阻碍消除后再继续。"},
+  {"name":"⏸等待","color":"fef2c0","description":"等待依赖更新、外部条件或相关事项完成。"},
+  {"name":"❌拒绝/放弃","color":"000000","description":"经过评估不再继续，原因记录在议题中。"},
+  {"name":"❌无法复现","color":"000000","description":"按已提供信息无法重现；需要新的可验证证据。"},
+  {"name":"❌暂无计划","color":"e99695","description":"需求已记录，但当前没有排期或实现计划。"},
+  {"name":"❌第三方引起","color":"e99695","description":"原因位于外部模型服务、插件或上游组件，本仓库无法直接修复。"},
+  {"name":"❌网络问题","color":"e99695","description":"已定位为外部网络或代理环境问题，而非应用实现故障。"},
+  {"name":"❌超时","color":"e99695","description":"长时间缺少必要补充信息而关闭；有新证据可继续回复。"},
+  {"name":"👌已完成","color":"0e8a16","description":"对应改动已完成，是否已发布请查看 Release。"},
+  {"name":"💥破坏性","color":"fbca04","description":"可能改变兼容性、配置或数据结构，需要迁移说明与充分测试。"},
+  {"name":"🔁重复","color":"000000","description":"已有其他议题覆盖同一问题，讨论集中到原议题。"},
+  {"name":"🔄️需要复现","color":"e99695","description":"需要其他用户或开发者确认复现情况与影响范围。"},
+  {"name":"🔨正在处理","color":"fbca04","description":"正在调查、开发、修复或验证。"},
+  {"name":"🗨更多细节","color":"e99695","description":"需要提交者补充环境、错误信息或最小复现步骤。"},
+  {"name":"🗨需要讨论","color":"e99695","description":"实现范围或方案尚需维护者与社区讨论。"},
+  {"name":"🚫违规","color":"b60205","description":"包含骚扰、垃圾信息或违反议题规范的内容，需要维护者处理。"},
+  {"name":"🧪实验性","color":"5319e7","description":"试验中的能力或方案，行为与兼容性尚未稳定。"}
+]
