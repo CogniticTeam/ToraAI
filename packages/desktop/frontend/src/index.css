@@ -414,6 +414,10 @@ html[data-app-background='none'] .app-wallpaper { background-image: none; }
 .app-no-drag {
 	-webkit-app-region: no-drag;
 }
+/* 标题栏内的交互控件从原生拖拽命中区域中排除，正文不作为拖拽区。 */
+.app-drag :is(button, a, input, textarea, select, [role="button"], [role="checkbox"], [role="switch"], [role="tab"], [role="slider"], [role="combobox"], [contenteditable="true"]) {
+	-webkit-app-region: no-drag;
+}
 
 /* ============================================================
    动画 / 模糊 / 玻璃化（v2 优化）
@@ -798,6 +802,43 @@ body {
 	transition:
 		border-color var(--animate-base) var(--ease-out-quart),
 		box-shadow var(--animate-base) var(--ease-out-quart);
+}
+/* ToChat 聊天模式单行胶囊；工作模式不匹配此选择器，保持原有布局。 */
+.composer-shell[data-composer-variant="capsule"] {
+	border-radius: var(--capsule-radius, 9999px);
+	padding: 6px 8px;
+}
+.composer-shell[data-composer-variant="capsule"][data-has-attachments="true"] {
+	border-radius: 24px;
+}
+.composer-shell[data-composer-variant="capsule"] .composer-body {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	align-items: center;
+	gap: 4px;
+}
+.composer-shell[data-composer-variant="capsule"] .composer-controls {
+	display: contents;
+}
+.composer-shell[data-composer-variant="capsule"] .composer-leading-controls {
+	grid-column: 1;
+	grid-row: 1;
+}
+.composer-shell[data-composer-variant="capsule"] .composer-editor {
+	grid-column: 2;
+	grid-row: 1;
+}
+.composer-shell[data-composer-variant="capsule"] .composer-trailing-controls {
+	grid-column: 3;
+	grid-row: 1;
+}
+.composer-shell[data-composer-variant="capsule"] .composer-leading-controls > button > span {
+	display: none;
+}
+.composer-shell[data-composer-variant="capsule"] .voice-waveform {
+	left: 50px;
+	right: 250px;
+	top: 12px;
 }
 .composer-shell:not(:hover):not(:focus-within) {
 	border-color: var(--border);

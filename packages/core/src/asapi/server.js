@@ -10,6 +10,7 @@ import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
+import { discoverSessionImports, previewSessionImports, commitSessionImports, readSessionImportBody } from './session-import.js';
 import { loadConfig, saveConfig, syncEffectiveModel, DEFAULT_CONFIG } from '../config.js';
 import {
   listAgents, getAgent, createAgent, updateAgent, deleteAgent,
@@ -393,6 +394,13 @@ async function route(req, res) {
     return json(res, 200, { baseURL: cfg.baseURL, model: cfg.model, apiKeySet: !!cfg.apiKey });
   }
   // 写入：apiKey 空字符串/缺省 = 保留原值
+  if(p==='/admin/tochat-config' && method==='POST') {
+    const body=await readBody(req);
+    const baseURL=String(body.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'');
+    if(!/^https:\/\//.test(baseURL)&&!/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseURL)) return apiError(res,422,'官方服务地址必须使用 HTTPS');
+    saveConfig({tochat:{baseURL,authToken:String(body.authToken||'')}});
+    return json(res,200,{status:'ok'});
+  }
   if (p === '/admin/config' && method === 'POST') {
     try {
       const body = await readBody(req);
@@ -832,6 +840,11 @@ async function route(req, res) {
       } else if (provider === 'stepfun' || provider === 'stepfun-global') {
         ids = ids.filter((id) => /^step-/i.test(id)
           && !/(?:^|[-_.])(?:audio|asr|tts|music|image|realtime)(?:[-_.]|$)/i.test(id));
+      } else if (provider === 'apiyi') {
+        // 网关目录还含图像、视频、音频与向量模型；Tora 当前使用 Chat Completions。
+        ids = ids.filter((id) => !/(?:^|[-_.])(?:audio|asr|tts|image|realtime|transcribe|embedding|rerank|moderation)(?:[-_.]|$)/i.test(id)
+          && !/^(?:sora|veo|wan|seedance|seedream|flux|dall-e|ideogram|recraft|whisper|(?:nano-)?banana)(?:[-_.\d]|$)/i.test(id)
+          && !/^gpt-.*[-_.]pro(?:[-_.]|$)/i.test(id));
       }
       return json(res, 200, { models: ids });
     } catch (e) { return apiError(res, 502, `拉取模型列表失败: ${e?.message || e}`); }
@@ -991,6 +1004,15 @@ async function route(req, res) {
   }
 
   // ---------- Sessions ----------
+  if (p.startsWith('/sessions/import/')) {
+    if (!isLoopbackHost(req)) return apiError(res, 403, '导入功能仅允许本机访问');
+    try {
+      if (p === '/sessions/import/sources' && method === 'GET') return json(res, 200, await discoverSessionImports(q.source));
+      if (p === '/sessions/import/preview' && method === 'POST') return json(res, 200, await previewSessionImports(await readSessionImportBody(req)));
+      if (p === '/sessions/import/commit' && method === 'POST') return json(res, 200, await commitSessionImports(await readSessionImportBody(req,1024*1024)));
+      return apiError(res, 404, '导入端点不存在');
+    } catch (error) { return json(res, error.status || 400, { detail: error.message, code: error.code || 'import_failed' }); }
+  }
   if (p === '/sessions/' && method === 'GET') {
     const views = listSessionRecords()
       .filter((s) => !q.agent_id || s.agent_id === q.agent_id)
@@ -1013,6 +1035,12 @@ async function route(req, res) {
       toraCfg: loadConfig(),
       cwd: body.cwd || null,
     });
+    record.config.application_mode=body.application_mode==='tochat'?'tochat':'tocode';
+    record.config.task_mode=body.task_mode==='chat'?'chat':'work';
+    record.config.model_source=body.model_source==='custom'?'custom':'official';
+    record.config.web_search=body.web_search===true;
+    if(record.config.application_mode==='tochat'&&record.config.task_mode==='chat') record.config.cwd=null;
+    saveSessionRecord(record);
     // 无会话时前端把权限模式记在本地，随第一条消息带过来 —— 与 cwd 同一策略。
     if (body.permission_mode) {
       if (body.permission_mode) {
@@ -1105,9 +1133,13 @@ async function route(req, res) {
         }
       }
       if ('fallback_chat_model_config' in body) s.config.fallback_chat_model_config = body.fallback_chat_model_config ?? null;
+      if (s.config.application_mode === 'tochat' && typeof body.web_search === 'boolean') {
+        s.config.web_search = body.web_search;
+      }
       if ('cwd' in body) {
-        s.config.cwd = body.cwd ?? null;
-        if (body.cwd) addWorkspaceRecent(body.cwd);
+        const chatOnly = s.config.application_mode === 'tochat' && s.config.task_mode === 'chat';
+        s.config.cwd = chatOnly ? null : body.cwd ?? null;
+        if (s.config.cwd) addWorkspaceRecent(s.config.cwd);
       }
       if (body.permission_mode) {
         // 前端通过 state_updated SSE / PermissionPanel 读

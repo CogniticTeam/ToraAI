@@ -56,6 +56,7 @@ export const DEFAULT_CONFIG = {
   // 所以默认**不信任**。用户确认过某个仓库之后可以把它加到 trustProjectHooksFor。
   trustProjectHooks: false,
   trustProjectHooksFor: [],    // 信任项目钩子的工作目录列表（绝对路径）
+  trustProjectToolsFor: [],    // 单独显式信任的项目工具目录；默认不执行仓库内的 JS
   // ---- 变更感知 ----
   changesAware: true,          // 把「最近改动的文件」注入系统提示词
   changesLimit: 12,

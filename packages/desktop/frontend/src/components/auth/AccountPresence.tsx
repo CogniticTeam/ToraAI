@@ -39,7 +39,7 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
       try {
         const response = await cloudFetch('/auth/me', { signal: controller.signal });
         if (!alive) return;
-        if (response.status === 401) { await clearAll(); return; }
+        if (response.status === 401 && response.headers.get('content-type')?.includes('application/json') && token === getToken()) { await clearAll(); return; }
         if (!response.ok) return;
         const account = await response.json();
         if (!alive) return;
@@ -61,7 +61,8 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
       if (!alive) return;
       try {
         const response = await cloudFetch('/account/events-ticket', { method: 'POST', signal: controller.signal });
-        if (response.status === 401) { await clearAll(); return; }
+        if (!alive || token !== getToken()) return;
+        if (response.status === 401 && response.headers.get('content-type')?.includes('application/json')) { await clearAll(); return; }
         if (!response.ok) throw new Error('Realtime unavailable');
         const { ticket } = await response.json();
         if (!alive) return;

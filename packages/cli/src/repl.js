@@ -145,6 +145,7 @@ export async function runRepl(cfg) {
     const renderer = createAgentRenderer();
     const ac = new AbortController();
     running = { ac };
+    session.messages.push({ role: 'user', content });
     try {
       for await (const ev of runAgent({
         cfg,

@@ -46,6 +46,7 @@ import { detectMessageLanguage, translateAccountMessage } from './message-transl
 import { editMessage, ensureMessageCampaigns, listSentMessages, recallMessage, sendMessage } from './admin-messages.js';
 import { handleAdminPoll, handleUserPoll } from './polls.js';
 import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
+import { handleToChat } from './tochat.js';
 export { AccountEvents } from './account-events.js';
 
 const SESSION_TTL_MS = 30 * 24 * 3600 * 1000;
@@ -458,7 +459,7 @@ async function handle(request, env, ctx) {
         headers: {
           'access-control-allow-origin': '*',
           'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-          'access-control-allow-headers': 'content-type, authorization',
+          'access-control-allow-headers': 'content-type, authorization, x-tochat-mode, x-tochat-message-id, x-tochat-request-id',
         },
       });
     }
@@ -618,6 +619,7 @@ async function handle(request, env, ctx) {
       return handleAsrGateway(env, request, url.pathname.slice('/asr/v1/'.length));
     }
     if (p.startsWith('/official/v1/')) return bad('Not Found', 404);
+    if (p.startsWith('/tochat/')) return handleToChat(request,env,ctx,await userFromRequest(env.DB,request,true));
 
     // 「登录或注册」第一步：查账号是否已注册。只回 registered 布尔——
     // 不回 email/username，避免用用户名反查邮箱的账号枚举与邮箱泄露。
@@ -654,6 +656,9 @@ async function handle(request, env, ctx) {
       if (!isValidUsername(username)) return bad('用户名需为 2-32 位字母、数字、下划线、连字符或中文');
       if (password.length < 8) return bad('密码至少 8 位');
       if (password.length > 128) return bad('密码过长');
+      if (!(await verifyTurnstile(env, request, body['cf-turnstile-response'], 'register'))) {
+        return bad('人机验证失败，请重试', 403);
+      }
       // 邮箱验证码：校验即消费（一次性，防重放）
       if (!(await consumeVerificationCode(env.DB, email, code))) return bad('验证码错误或已过期');
       const emailTaken = await env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(email).first();
@@ -678,7 +683,9 @@ async function handle(request, env, ctx) {
 
     if (p === '/auth/login' && method === 'POST') {
       const body = await request.json().catch(() => ({}));
-      const account = String(body.account ?? '').trim();
+      const rawAccount = String(body.account ?? '').trim();
+      // Email lookup and lockout must share the same canonical identity.
+      const account = rawAccount.includes('@') ? rawAccount.toLowerCase() : rawAccount;
       const password = String(body.password ?? '');
       if (!account) return bad('请输入用户名或邮箱');
       // Turnstile 门禁

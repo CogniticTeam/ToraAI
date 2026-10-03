@@ -67,7 +67,7 @@ function DetailPanel({ knowledgeBase, onTest }: DetailPanelProps) {
 	return (
 		<div className="flex h-full flex-col">
 			{/* Header */}
-			<div className="shrink-0 flex items-start justify-between gap-x-4 p-[18px_18px_16px]">
+			<div data-window-drag-region className="app-drag shrink-0 flex items-start justify-between gap-x-4 p-[18px_18px_16px]">
 				<div className="app-drag flex flex-col gap-y-1 min-w-0">
 					<div className="flex items-center gap-x-2">
 						<span className="truncate text-lg font-medium tracking-[-0.015em] text-foreground">
@@ -227,7 +227,7 @@ export const KnowledgePage = () => {
 	return (
 		<div className="flex size-full p-2 gap-2">
 			<Sidebar collapsible="none" className="rounded-[22px]">
-				<SidebarHeader className={'flex flex-col p-[20px_18px_14px] gap-y-1'}>
+				<SidebarHeader className={'app-drag flex flex-col p-[20px_18px_14px] gap-y-1'}>
 					<div className="text-xl font-medium tracking-[-0.02em] text-foreground">
 						{t('common.knowledge')}
 					</div>

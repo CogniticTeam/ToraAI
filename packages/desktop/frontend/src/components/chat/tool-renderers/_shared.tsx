@@ -4,7 +4,6 @@ import type { ReactNode } from 'react';
 
 import type { ToolCallWithResult } from './types';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { formatNumber } from '@/utils/common.ts';
 
@@ -74,6 +73,7 @@ export function ToolCallRow({
 	body?: ReactNode;
 }) {
 	const expandable = body != null && body !== false;
+	const Row = expandable ? 'button' : 'div';
 	// NOTE: never put the ``shimmer`` util on this row wrapper. It is a
 	// text-clip effect that sets ``-webkit-text-fill-color: transparent`` and
 	// paints the glyphs with an animated gradient — and that property is
@@ -83,10 +83,12 @@ export function ToolCallRow({
 	// stays visible). The running state is carried by ``ToolStateIcon`` below,
 	// which already spins — that is the cue, not a shimmer.
 	const row = (
-		<div
+		<Row
+			type={expandable ? 'button' : undefined}
+			data-tool-call-id={pair.call.id}
 			className={cn(
-				'group flex flex-row gap-x-2 items-center w-full',
-				expandable && 'cursor-pointer',
+				'group flex min-h-7 w-full min-w-0 flex-row items-center gap-x-2 text-left',
+				expandable && 'cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
 			)}
 		>
 			{header}
@@ -98,7 +100,7 @@ export function ToolCallRow({
 					}
 				/>
 			)}
-		</div>
+		</Row>
 	);
 
 	if (!expandable) return row;
@@ -259,17 +261,16 @@ export function collectChangedFiles(calls: ToolCallWithResult[]): ChangedFileEnt
 }
 
 /**
- * Framed body box shared by file-oriented tools (Read / Edit / Write): a
- * bordered card with the file path as a header, a separator, then the tool's
+ * Borderless body shared by file-oriented tools (Read / Edit / Write):
+ * the file path as a header, then the tool's
  * own content (numbered source lines for Read, a diff for Edit / Write).
  */
 export function FramedFileBody({ filePath, children }: { filePath?: string; children: ReactNode }) {
 	return (
-		<div className="flex flex-col border rounded-sm bg-background">
+		<div className="flex min-w-0 flex-col rounded-sm bg-muted/40">
 			{filePath && (
 				<>
 					<div className="px-2 py-1 whitespace-nowrap overflow-x-auto">{filePath}</div>
-					<Separator />
 				</>
 			)}
 			{children}

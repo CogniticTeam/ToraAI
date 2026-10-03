@@ -12,6 +12,7 @@ const AUTH_API_KEY = 'tora_auth_api';
 const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 const SERVER_URL_KEY = 'server_url';
 const DEFAULT_SERVER_URL = 'http://127.0.0.1:3210';
+let mirrorWrites: Promise<unknown> = Promise.resolve();
 
 export const cloudApi = () =>
 	(localStorage.getItem(AUTH_API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
@@ -31,6 +32,20 @@ export async function cloudFetch(path: string, init?: RequestInit): Promise<Resp
 	});
 }
 
+/** Serialize mirror writes and discard responses belonging to a signed-out account. */
+export function syncLocalModelMirror(models: unknown[], token: string): Promise<void> {
+	const write = mirrorWrites.then(async () => {
+		if (!token || getToken() !== token) return;
+		const response = await fetch(`${localApi()}/admin/models-config`, {
+			method: 'PUT', headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ models }),
+		});
+		if (!response.ok) throw new Error('Model mirror update failed');
+	});
+	mirrorWrites = write.catch(() => {});
+	return write;
+}
+
 /**
  * 拉取当前账号的自定义模型列表并写入本地运行时镜像。
  */
@@ -43,12 +58,9 @@ export async function syncModelsFromCloud(): Promise<void> {
 		});
 		if (!res.ok) return;
 		const body = await res.json();
+		if (getToken() !== token) return;
 		const models = Array.isArray(body.models) ? body.models : [];
-		await fetch(`${localApi()}/admin/models-config`, {
-			method: 'PUT',
-			headers: { 'content-type': 'application/json' },
-			body: JSON.stringify({ models }),
-		});
+		await syncLocalModelMirror(models, token);
 	} catch {
 		// 同步失败不阻塞登录流程（下次打开设置板块会再拉一次）
 	}

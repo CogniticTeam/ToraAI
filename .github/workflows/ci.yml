@@ -55,10 +55,14 @@ jobs:
           fi
           bwrap --ro-bind / / --dev-bind /dev /dev --proc /proc true
           npm test
+      - name: Verify code-review regression cases
+        run: npm run test:review
       - name: Verify isolated work-execution evaluation fixtures
         run: npm run eval:baseline
       - name: Verify desktop navigation security policy
         run: npm run test:desktop-security
+      - name: Verify model-provider protocols without real credentials
+        run: npm run test:providers
 
   frontend-build:
     name: Frontend production build

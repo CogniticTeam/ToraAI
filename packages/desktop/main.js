@@ -13,6 +13,7 @@ import { applicationMenuTemplate } from './application-menu.js';
 import { normalizeNativeLanguage, nativeText } from './native-i18n.js';
 import { createAccountMessageNotification } from './message-notifications.js';
 import { desktopStorageName } from './brand-compat.js';
+import { createWindowIpc } from './window-ipc.js';
 
 app.setName(desktopStorageName(app.getPath('appData')));
 
@@ -43,6 +44,8 @@ const { autoUpdater } = electronUpdater;
 
 let win = null;
 let serverUrl = '';
+let localServer = null;
+let windowCreation = null;
 let notificationLanguage = 'zh';
 const activeMessageNotifications = new Set();
 
@@ -346,14 +349,15 @@ async function createWindow() {
   // 每次启动的 origin 都不同——RegionGate 的「已同意」记录、主题偏好、
   // 登录态等全部丢失，合规告知就会每次启动都重弹。
   // 3210 被占用（比如浏览器直连着 dev 服务）时退回随机端口，保证能启动。
-  let server;
-  try {
-    server = await startASAPIServer({ port: 3210 });
-  } catch (e) {
-    if (e?.code !== 'EADDRINUSE') throw e;
-    server = await startASAPIServer({ port: 0 });
+  if (!localServer) {
+    try {
+      localServer = await startASAPIServer({ port: 3210 });
+    } catch (e) {
+      if (e?.code !== 'EADDRINUSE') throw e;
+      localServer = await startASAPIServer({ port: 0 });
+    }
   }
-  const { port } = server.address();
+  const { port } = localServer.address();
   serverUrl = `http://127.0.0.1:${port}`;
 
   // 首选上次上报过的主题（用户固定的），没有缓存才跟系统。
@@ -393,8 +397,9 @@ async function createWindow() {
   });
 
   // 窗口状态桥：渲染层据此决定 Tora 标题是否给红绿灯让位
-  ipcMain.on('win:is-maximized', (e) => { e.returnValue = win.isMaximized(); });
-  ipcMain.on('win:is-fullscreen', (e) => { e.returnValue = win.isFullScreen(); });
+  const windowIpc = createWindowIpc(ipcMain);
+  windowIpc.on('win:is-maximized', (e) => { e.returnValue = win.isMaximized(); });
+  windowIpc.on('win:is-fullscreen', (e) => { e.returnValue = win.isFullScreen(); });
   const updateTitlebarState = () => {
     const fullscreen = win.isFullScreen();
     const expanded = win.isMaximized() || fullscreen;
@@ -413,19 +418,20 @@ async function createWindow() {
   // 深浅色桥：渲染层主题就绪/变化时上报实际深浅，同步窗口原生背景（加载页底色）。
   // 同时持久化进 theme-cache.json，下次启动建窗直接用它（用户固定主题零偏差）。
   // 系统主题运行时切换也跟随 —— 但渲染层已上报过（用户固定了主题）则以渲染层为准。
-  ipcMain.on('win:set-background', (_e, isDark) => {
+  windowIpc.on('win:set-background', (_e, isDark) => {
     reportedDark = Boolean(isDark);
     win?.setBackgroundColor(winBackgroundFor(reportedDark));
     try { writeFileSync(THEME_CACHE_FILE(), JSON.stringify({ dark: reportedDark })); } catch { /* 只影响下次启动的初值，失败可忽略 */ }
   });
-  nativeTheme.on('updated', () => {
+  const updateNativeBackground = () => {
     win?.setBackgroundColor(winBackgroundFor(reportedDark ?? nativeTheme.shouldUseDarkColors));
-  });
+  };
+  nativeTheme.on('updated', updateNativeBackground);
 
 
   // 系统文件夹选择器（macOS NSOpenPanel / Windows IFileOpenDialog / Linux zenity）
   // 替代前端自定义目录浏览器：用户在原生对话框里选目录，无需翻页 + 上传 baseURL 后端代理
-  ipcMain.handle('dialog:open-folder', async () => {
+  windowIpc.handle('dialog:open-folder', async () => {
     const r = await dialog.showOpenDialog(win, {
       properties: ['openDirectory', 'createDirectory'],
       title: '选择文件夹',
@@ -439,13 +445,13 @@ async function createWindow() {
   // GLM-ASR-2512 云端转写（智谱）：无需本地模型。
   // 双通道：用户自配 Key 时直连；无 Key 时用登录 token 走免费 Tora ASR。
   // getSecure 在下方凭证存储块定义（函数提升）。
-  ipcMain.handle('voice:status', () => voiceStatus({ token: getSecure('token') }));
-  ipcMain.handle('voice:transcribe', (_e, samples) => transcribeSamples(samples, { token: getSecure('token') }));
+  windowIpc.handle('voice:status', () => voiceStatus({ token: getSecure('token') }));
+  windowIpc.handle('voice:transcribe', (_e, samples) => transcribeSamples(samples, { token: getSecure('token') }));
 
   // ---------------------------------------------------------------- 提示词优化
   // DeepSeek deepseek-flash 改写输入框草稿（Key 从环境变量 DEEPSEEK_API_KEY
   // 或 ~/.tora/.env 读取，不入库不进包；渲染层直连会被 CORS 拦截，故走主进程代理）。
-  ipcMain.handle('prompt-optimizer:run', (_e, text) => optimizePrompt(text));
+  windowIpc.handle('prompt-optimizer:run', (_e, text) => optimizePrompt(text));
 
   // ---------------------------------------------------------------- 凭证安全存储
   // 登录令牌/邮箱/用户名用 safeStorage（macOS Keychain / Windows DPAPI /
@@ -488,15 +494,15 @@ async function createWindow() {
       return { status: account.banned ? 'banned' : 'ok' };
     } catch { return { status: 'unavailable' }; /* 断网不覆盖已确认的限制状态。 */ }
   }
-  ipcMain.handle('account:refresh', refreshAccountAccess);
+  windowIpc.handle('account:refresh', refreshAccountAccess);
   void refreshAccountAccess();
   const KEYS = ['token', 'email', 'username'];
   for (const k of KEYS) {
     // get 同步（sendSync → returnValue）：前端与 localStorage.getItem 同步语义
-    ipcMain.on(`auth:get-${k}`, (e) => { e.returnValue = getSecure(k); });
+    windowIpc.on(`auth:get-${k}`, (e) => { e.returnValue = getSecure(k); });
     // set/del 异步（invoke）：写文件不阻塞渲染层
-    ipcMain.handle(`auth:set-${k}`, (_e, v) => setSecure(k, v));
-    ipcMain.handle(`auth:del-${k}`, () => setSecure(k, null));
+    windowIpc.handle(`auth:set-${k}`, (_e, v) => setSecure(k, v));
+    windowIpc.handle(`auth:del-${k}`, () => setSecure(k, null));
   }
 
   // 权限白名单：只放行麦克风/通知/全屏/指针锁/剪贴板写；其余（剪贴板读、
@@ -581,17 +587,11 @@ async function createWindow() {
     return { action: 'deny' };
   });
 
-  // preload 在 React 执行前写入当前 origin，无需整页刷新和重复初始化。
-  await win.loadURL(serverUrl + '/');
-
-  // 仅供本地签名构建验收：无需账户或管理消息，不会在正常启动时弹出通知。
-  if (process.argv.includes('--tora-notification-self-test')) {
-    void showNativeMessageNotification().then(result => console.log('[notifications] Self-test:', result.status));
-  }
-
-  attachBrowserDriver(win);
-  scheduleUpdateChecks();
+  // Register cleanup before loading: the user may close the window mid-load.
+  const createdWindow = win;
   win.on('closed', () => {
+    windowIpc.dispose();
+    nativeTheme.removeListener('updated', updateNativeBackground);
     win = null;
     // 驱动持有 win 引用；窗口没了必须摘掉，否则工具会对着一个销毁的
     // webContents 调 executeJavaScript（报错信息还很难懂）。
@@ -599,6 +599,23 @@ async function createWindow() {
     // 语音识别已改为云端 GLM-ASR（voice.js 无本地识别器），原
     // disposeVoiceRecognizer() 随 sherpa-onnx 一起移除，此处无需释放。
   });
+  // preload 在 React 执行前写入当前 origin，无需整页刷新和重复初始化。
+  try { await createdWindow.loadURL(serverUrl + '/'); }
+  catch (error) { if (win === createdWindow) throw error; }
+  if (win !== createdWindow) return;
+
+  // 仅供本地签名构建验收：无需账户或管理消息，不会在正常启动时弹出通知。
+  if (process.argv.includes('--tora-notification-self-test')) {
+    void showNativeMessageNotification().then(result => console.log('[notifications] Self-test:', result.status));
+  }
+  attachBrowserDriver(win);
+  scheduleUpdateChecks();
+}
+
+function ensureWindow() {
+  if (win) return Promise.resolve();
+  if (!windowCreation) windowCreation = createWindow().finally(() => { windowCreation = null; });
+  return windowCreation;
 }
 
 /**
@@ -679,8 +696,8 @@ if (!gotLock) {
     setWebFetcher((url, init) => net.fetch(url, {
       ...init, credentials: 'omit', bypassCustomProtocolHandlers: true,
     }));
-    return createWindow();
+    return ensureWindow();
   });
   app.on('window-all-closed', () => process.platform !== 'darwin' && app.quit());
-  app.on('activate', () => { if (!win) createWindow(); });
+  app.on('activate', () => { if (!win) void ensureWindow().catch(error => console.error('[window]', error)); });
 }

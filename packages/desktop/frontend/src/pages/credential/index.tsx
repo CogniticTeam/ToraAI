@@ -302,7 +302,7 @@ function DetailPanel({ credential, schema, onEdit, onDelete }: DetailPanelProps)
 	return (
 		<div className="flex h-full flex-col">
 			{/* Header */}
-			<div className="shrink-0 flex items-start justify-between gap-x-4 p-[18px_18px_16px]">
+			<div data-window-drag-region className="app-drag shrink-0 flex items-start justify-between gap-x-4 p-[18px_18px_16px]">
 				<div className="app-drag flex flex-col gap-y-1">
 					<span className="text-foreground text-lg font-medium tracking-[-0.015em]">
 						{name}
@@ -518,7 +518,7 @@ export const CredentialPage = () => {
 		<div className="flex h-full w-full p-2 gap-2">
 			{/* Left sidebar */}
 			<Sidebar collapsible="none" className="rounded-[22px]">
-				<SidebarHeader className={'flex flex-col p-[20px_18px_14px] gap-y-1'}>
+				<SidebarHeader className={'app-drag flex flex-col p-[20px_18px_14px] gap-y-1'}>
 					<div className="text-xl font-medium tracking-[-0.02em] text-foreground">
 						{t('common.credential')}
 					</div>

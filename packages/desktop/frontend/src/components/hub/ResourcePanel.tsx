@@ -34,8 +34,8 @@ interface Props {
  */
 export function ResourcePanel({ title, description, icon, action, search, children }: Props) {
 	return (
-		<div className="app-no-drag flex h-full flex-col">
-			<div className="flex shrink-0 flex-col gap-y-4 p-[18px_18px_16px]">
+		<div className="flex h-full flex-col">
+			<div data-window-drag-region className="app-drag flex shrink-0 flex-col gap-y-4 p-[18px_18px_16px]">
 				{/* Borderless Item, so the header lines up with the rows
 				    below it rather than being a second layout. */}
 				<Item className="p-0">
@@ -47,7 +47,7 @@ export function ResourcePanel({ title, description, icon, action, search, childr
 					{action ? <ItemActions>{action}</ItemActions> : null}
 				</Item>
 				{search && (
-					<div className="flex items-center gap-2">
+					<div className="app-no-drag flex items-center gap-2">
 						<div className="relative min-w-0 flex-1">
 							<Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
 							<Input
@@ -70,7 +70,7 @@ export function ResourcePanel({ title, description, icon, action, search, childr
 			    not butt up hard against the search box or the panel bottom;
 			    with no overflow it shows nothing. No horizontal padding: the
 			    rows own it, so their active border-left reaches the edge. */}
-			<div className="flex-1 min-h-0 overflow-y-auto scroll-fade">{children}</div>
+			<div className="app-no-drag flex-1 min-h-0 overflow-y-auto scroll-fade">{children}</div>
 		</div>
 	);
 }

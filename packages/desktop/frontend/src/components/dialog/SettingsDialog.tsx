@@ -14,7 +14,9 @@ import { agentApi, type AgentView } from '@/api';
 import { AccountSection } from '@/components/dialog/AccountSection';
 import { MemorySection } from '@/components/dialog/MemorySection';
 import { ThemeSection } from '@/components/dialog/ThemeSection';
+import { ToChatModelSource } from '@/components/dialog/ToChatModelSource';
 import { UsageSection } from '@/components/dialog/UsageSection';
+import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownSelect } from '@/components/ui/dropdown-select';
@@ -44,7 +46,7 @@ import {
 } from '@/lib/sound';
 import { setSystemMessageNotificationsEnabled, systemMessageNotificationsEnabled } from '@/lib/systemNotifications';
 import { getToken } from '@/utils/authStore';
-import { cloudFetch } from '@/utils/modelSync';
+import { cloudFetch, syncLocalModelMirror } from '@/utils/modelSync';
 
 interface Props {
 	open: boolean;
@@ -136,6 +138,7 @@ const PROVIDER_DEFS: ProviderDefBase[] = [
 	{ key: 'stepfun-global', baseURL: 'https://api.stepfun.ai/v1', keyUrl: 'https://platform.stepfun.ai/interface-key', icon: Zap, color: 'bg-foreground text-background' },
 	{ key: 'zai', baseURL: 'https://api.z.ai/api/paas/v4', keyUrl: 'https://z.ai', icon: Zap, color: 'bg-zinc-800 text-white' },
 	{ key: 'openrouter', baseURL: 'https://openrouter.ai/api/v1', keyUrl: 'https://openrouter.ai/keys', icon: Shuffle, color: 'bg-blue-600 text-white' },
+	{ key: 'apiyi', baseURL: 'https://api.apiyi.com/v1', keyUrl: 'https://api.apiyi.com/token', icon: Layers, color: 'bg-blue-600 text-white' },
 	{ key: 'kimi-cn', baseURL: 'https://api.moonshot.cn/v1', keyUrl: 'https://platform.moonshot.cn/console/api-keys', icon: Moon, color: 'bg-neutral-800 text-white' },
 	{ key: 'kimi-global', baseURL: 'https://api.moonshot.ai/v1', keyUrl: 'https://platform.moonshot.ai/console/api-keys', icon: Moon, color: 'bg-neutral-700 text-white' },
 	{ key: 'byteplus', baseURL: 'https://ark.ap-southeast.bytepluses.com/api/v3', keyUrl: 'https://www.byteplus.com', icon: Repeat, color: 'bg-blue-700 text-white' },
@@ -167,6 +170,7 @@ const BRAND_LABEL_KEYS: Record<string, string | null> = {
 	mimo: null,
 	zai: null,
 	openrouter: null,
+	apiyi: null,
 	'kimi-cn': null,
 	'kimi-global': null,
 	byteplus: null,
@@ -183,6 +187,7 @@ const BRAND_LABELS: Record<string, string> = {
 	mimo: 'Xiaomi MIMO',
 	zai: 'Z.ai',
 	openrouter: 'OpenRouter',
+	apiyi: 'APIYI',
 	'kimi-cn': 'Kimi CN',
 	'kimi-global': 'Kimi Global',
 	byteplus: 'BytePlus',
@@ -286,20 +291,22 @@ export function ModelSection() {
 	const effBaseURL = fDef.key === 'custom' ? fBaseURL.trim() : fDef.baseURL;
 
 	async function loadList(silent = false) {
+		const token = getToken();
 		if (!silent) setLoading(true);
 		setListErr(null);
 		try {
-			if (!getToken()) {
+			if (!token) {
 				setItems([]);
 				setListErr(t('modelSection.errors.loginRequired'));
 				return;
 			}
 			const res = await cloudFetch('/models');
 			const body = await res.json();
+			if (getToken() !== token) return;
 			if (!res.ok) throw new Error(body?.detail || t('modelSection.errors.backend', { status: res.status }));
 			const models: ModelItem[] = body.models ?? [];
 			setItems(models);
-			await syncLocalMirror(models);
+			await syncLocalMirror(models, token);
 		} catch (e) {
 			setListErr(e instanceof Error ? e.message : String(e));
 		} finally {
@@ -308,13 +315,9 @@ export function ModelSection() {
 	}
 
 	/** 把完整自定义模型列表（含 apiKey）全量写进本地 config.modelList 镜像 */
-	async function syncLocalMirror(models: ModelItem[]) {
+	async function syncLocalMirror(models: ModelItem[], token: string) {
 		try {
-			await fetch(apiUrl('/admin/models-config'), {
-				method: 'PUT',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ models }),
-			});
+			await syncLocalModelMirror(models, token);
 			queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY });
 		} catch {
 			// 本地镜像同步失败不阻塞云端展示（下次 loadList 会再试）
@@ -656,6 +659,7 @@ export function ModelSection() {
 	return (
 		<>
 			<h3 className="text-lg font-semibold">{t('modelSection.title')}</h3>
+			<ToChatModelSource />
 			<div className="mt-3 text-sm font-medium">{t('modelSection.subtitle')}</div>
 			<div className="mt-1 text-xs text-muted-foreground">{t('modelSection.desc')}</div>
 
@@ -1784,6 +1788,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 
 				{/* 右侧内容 */}
 				<div className="relative flex min-w-0 flex-1 flex-col">
+					<WindowDragRegion className="absolute inset-x-0 top-0 z-10 h-12" />
 					{/* key={section} 让板块切换时重挂载触发入场动画 */}
 					<div key={section} className="settings-section-transition min-h-0 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-250">
 						<div className={`mx-auto w-full px-8 py-14 sm:px-12 lg:py-16 ${section === 'account' ? 'max-w-[856px]' : 'max-w-4xl'}`}>

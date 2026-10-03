@@ -17,6 +17,7 @@ const SchedulePage = lazy(async () => ({ default: (await import('@/pages/schedul
 const MCPHubPage = lazy(async () => ({ default: (await import('./pages/mcp')).MCPHubPage }));
 const SkillHubPage = lazy(async () => ({ default: (await import('./pages/skill')).SkillHubPage }));
 const PollsPage = lazy(async () => ({ default: (await import('./pages/polls')).PollsPage }));
+const ToChatPage = lazy(async () => ({ default: (await import('./pages/tochat')).ToChatPage }));
 
 function PageLoading() {
 	return <div className="grid h-full min-h-40 place-items-center text-sm text-muted-foreground" role="status">正在加载工作台…</div>;
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
 						path: '/chat/:agentId?/:sessionId?/:memberId?',
 						element: <ChatPage />,
 					},
+					{ path: '/tochat/:agentId?/:sessionId?', element: <Suspense fallback={<PageLoading />}><ToChatPage /></Suspense> },
 					{ path: '/schedule', element: <Suspense fallback={<PageLoading />}><SchedulePage /></Suspense> },
 					{ path: '/channel', element: <Suspense fallback={<PageLoading />}><ChannelPage /></Suspense> },
 					{ path: '/credential', element: <Suspense fallback={<PageLoading />}><CredentialPage /></Suspense> },

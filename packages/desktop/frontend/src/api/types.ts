@@ -137,6 +137,10 @@ export type SessionOrigin =
 export type SessionSourceKind = SessionOrigin['type'];
 
 export interface SessionConfig {
+	application_mode?: 'tochat' | 'tocode';
+	task_mode?: 'chat' | 'work';
+	model_source?: 'official' | 'custom';
+	web_search?: boolean;
 	name: string;
 	/** Who owns `name` — see the backend's `SessionNaming`. */
 	naming: { auto: boolean };
@@ -175,6 +179,10 @@ export interface SessionRecord extends RecordBase {
 }
 
 export interface CreateSessionRequest {
+	application_mode?: 'tochat' | 'tocode';
+	task_mode?: 'chat' | 'work';
+	model_source?: 'official' | 'custom';
+	web_search?: boolean;
 	agent_id: string;
 	workspace_id?: string;
 	chat_model_config?: ChatModelConfig | null;
@@ -201,6 +209,7 @@ export interface InterruptSessionResponse {
 }
 
 export interface UpdateSessionRequest {
+	web_search?: boolean;
 	name?: string;
 	chat_model_config?: ChatModelConfig;
 	/**

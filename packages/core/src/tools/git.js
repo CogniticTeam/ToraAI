@@ -191,7 +191,15 @@ export const gitTool = {
     }
     const limit = Number.isFinite(max_chars) ? Math.max(200, Math.min(max_chars, 200000))
       : (ctx?.toolOutputLimit ?? 6000);
-    const res = await runGit([sub, ...argv], ctx?.cwd, { sandbox: sandboxOptionsForContext(ctx) });
+    // Only the dedicated, permission-gated Git tool may write repository metadata.
+    // Bash retains its .git protection. Include linked-worktree metadata roots.
+    const sandbox = sandboxOptionsForContext(ctx);
+    if (GIT_WRITE_SUBCOMMANDS.has(sub)) {
+      sandbox.allowGitMetadata = true;
+      const metadata = await runGit(['rev-parse', '--path-format=absolute', '--git-dir', '--git-common-dir'], ctx?.cwd);
+      if (metadata.ok) sandbox.roots = [...(sandbox.roots?.length ? sandbox.roots : [ctx.cwd]), ...metadata.stdout.trim().split('\n')];
+    }
+    const res = await runGit([sub, ...argv], ctx?.cwd, { sandbox });
     const head = `$ git ${[sub, ...argv].join(' ')}\nexit_code: ${res.code}\n`;
     let body = res.stdout || '';
     if (res.stderr) body += (body ? '\n' : '') + `[stderr]\n${res.stderr}`;

@@ -22,7 +22,7 @@ export function shellSandboxKey(cwd, sandbox = {}) {
   return `${cwd}\0sandbox\0${sandbox.networkAccess !== false}\0${roots.join('\0')}`;
 }
 
-export function macosShellProfile({ roots, scratch, networkAccess = true, cwd }) {
+export function macosShellProfile({ roots, scratch, networkAccess = true, cwd, allowGitMetadata = false }) {
   const writable = [...new Set([...roots, scratch].map(realpathAllowMissing))];
   return [
     '(version 1)', '(deny default)',
@@ -36,7 +36,7 @@ export function macosShellProfile({ roots, scratch, networkAccess = true, cwd })
     ...(networkAccess ? ['(allow network*)'] : []),
     ...writable.map((root) => `(allow file-write* (subpath ${quote(root)}))`),
     // 工作树元数据和项目本地配置只有专用 Git/设置路径可以更改。
-    ...['.git', '.tora'].flatMap((name) => {
+    ...(allowGitMetadata ? ['.tora'] : ['.git', '.tora']).flatMap((name) => {
       const target = join(realpathAllowMissing(cwd), name);
       return [`(deny file-write* (literal ${quote(target)}))`, `(deny file-write* (subpath ${quote(target)}))`];
     })
@@ -68,7 +68,7 @@ export function prepareShellSandbox(cwd, sandbox = {}) {
       if (!existsSync('/usr/bin/sandbox-exec')) throw new Error('macOS Seatbelt 不可用');
       return {
         executable: '/usr/bin/sandbox-exec',
-        args: ['-p', macosShellProfile({ roots, scratch, networkAccess: sandbox.networkAccess !== false, cwd })],
+        args: ['-p', macosShellProfile({ roots, scratch, networkAccess: sandbox.networkAccess !== false, cwd, allowGitMetadata: sandbox.allowGitMetadata === true })],
         env, cleanup
       };
     }
@@ -78,7 +78,7 @@ export function prepareShellSandbox(cwd, sandbox = {}) {
       const args = ['--die-with-parent', '--ro-bind', '/', '/', '--dev-bind', '/dev', '/dev', '--proc', '/proc',
         ...roots.flatMap((root) => ['--bind', root, root]), '--bind', scratch, scratch, '--chdir', cwd];
       if (sandbox.networkAccess === false) args.push('--unshare-net');
-      for (const name of ['.git', '.tora']) {
+      for (const name of sandbox.allowGitMetadata ? ['.tora'] : ['.git', '.tora']) {
         const target = join(realpathAllowMissing(cwd), name);
         if (existsSync(target)) args.push('--ro-bind', target, target);
       }

@@ -6,7 +6,9 @@ import {
 	Globe,
 	ChevronUp,
 	Heart,
+	Import,
 	Languages,
+	LogOut,
 	Mail,
 	Settings,
 	UsersRound,
@@ -14,9 +16,10 @@ import {
 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 
-import { agentApi, sessionApi } from '@/api';
 import { useAccountPresence } from '@/components/auth/AccountPresence';
+import { ApplicationModeSwitcher } from '@/components/layout/ApplicationModeSwitcher';
 import { SessionListSection } from '@/components/layout/SessionListSection';
 import { FIRST_RUN_CLOSE_SETTINGS_EVENT, FIRST_RUN_SETTINGS_CLOSED_EVENT } from '@/components/onboarding/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,6 +27,7 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
+	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -40,11 +44,13 @@ import {
 import { useMacFullscreen } from '@/hooks/useMacFullscreen';
 import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
+import { signOutAccount } from '@/utils/authLogout';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
 const SponsorsDialog = lazy(async () => ({ default: (await import('@/components/dialog/SponsorsDialog')).SponsorsDialog }));
 const LanguageDialog = lazy(async () => ({ default: (await import('@/components/dialog/LanguageDialog')).LanguageDialog }));
+const SessionImportDialog = lazy(async () => ({ default: (await import('@/components/dialog/SessionImportDialog')).SessionImportDialog }));
 
 // 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
 const NAV_INDICATOR_LAYOUT_ID = 'tora-sidebar-nav-indicator';
@@ -89,10 +95,12 @@ function NavIndicator({ visible, motionMode }: { visible: boolean; motionMode: N
 export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationMotion }) {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const newTaskActive = /^\/(?:chat|tochat)(?:\/[\w-]+)?\/?$/.test(location.pathname);
 	const { t } = useTranslation();
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [messagesOpen, setMessagesOpen] = useState(false);
 	const [languageOpen, setLanguageOpen] = useState(false);
+	const [importOpen, setImportOpen] = useState(false);
 	useEffect(() => getWindowBridge()?.onOpenMessagesFromNotification?.(() => setMessagesOpen(true)), []);
 	const [sponsorsMode, setSponsorsMode] = useState<'list' | 'donate' | null>(null);
 	const { unread } = useAccountPresence();
@@ -179,36 +187,18 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 		};
 	}, []);
 
-	// 「新任务」自动建会话：
-	// - 已在某会话里 → 仅回到 /chat（空态，由用户从列表挑选或再点新任务）；
-	// - 不在任何会话里（空态页/其它页面）→ 直接创建新会话并跳进去，
-	//   免去"点了新任务还得手动点进会话"的一步。
-	// agent 未定（URL 无 agentId）时用记住的 agent，再退回第一个 agent。
-	const handleNewTask = useCallback(async () => {
-		const inSession = /^\/chat\/[\w-]+\/[\w-]+/.test(location.pathname);
-		if (inSession) {
-			navigate('/chat');
+	// 新任务只进入草稿页，首次发送再建会话。裸 /chat 用于恢复上次会话，
+	// 所以从其它页面新建时明确携带意图，避免恢复逻辑把用户送回旧会话。
+	const handleNewTask = useCallback(() => {
+		if (location.pathname.startsWith('/tochat')) {
+			const agentId = location.pathname.split('/')[2];
+			const task = new URLSearchParams(location.search).get('task') === 'work' ? 'work' : 'chat';
+			navigate(`${agentId ? `/tochat/${agentId}` : '/tochat'}?task=${task}`);
 			return;
 		}
-		const remembered =
-			localStorage.getItem('chat_last_agent') ??
-			(location.pathname.match(/^\/chat\/([\w-]+)/)?.[1] ?? null);
-		try {
-			const agents = await agentApi.list();
-			const agentId =
-				(remembered && agents.agents.some((a) => a.id === remembered) ? remembered : null) ??
-				agents.agents[0]?.id;
-			if (!agentId) {
-				navigate('/chat');
-				return;
-			}
-			const res = await sessionApi.create({ agent_id: agentId });
-			navigate(`/chat/${agentId}/${res.session_id}`);
-		} catch {
-			// 建会话失败（网络/无 agent）：退回老路径，让 ChatPage 自行恢复
-			navigate('/chat');
-		}
-	}, [location.pathname, navigate]);
+		const agentId = location.pathname.match(/^\/chat\/([\w-]+)/)?.[1];
+		navigate(agentId ? `/chat/${agentId}` : '/chat?new=1');
+	}, [location.pathname, location.search, navigate]);
 
 	// Logo 在全屏中仍显示；只有普通 macOS 窗口需要给原生按钮让位。
 	const fullscreen = useMacFullscreen();
@@ -250,26 +240,22 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 				</div>
 			</SidebarHeader>}
 			<SidebarContent>
+				<ApplicationModeSwitcher />
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							<SidebarMenuItem key={'chat'}>
 								<NavIndicator
 									motionMode={navigationMotion}
-									visible={
-										location.pathname === '/chat' ||
-										location.pathname.startsWith('/chat/')
-									}
+									visible={newTaskActive}
 								/>
 								<SidebarMenuButton
-									isActive={
-										location.pathname === '/chat' ||
-										location.pathname.startsWith('/chat/')
-									}
+									isActive={newTaskActive}
+									data-testid="new-conversation"
 									onClick={() => void handleNewTask()}
 								>
 									<BotMessageSquare />
-									<span>{t('common.new-task')}</span>
+									<span>{t(location.pathname.startsWith('/tochat') ? 'chat.newConversation' : 'common.new-task')}</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							{/* 自动化：复用已有的 /schedule 路由（定时任务），置于 新任务 与 技能中心 之间 */}
@@ -359,12 +345,22 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							<Languages />
 							<span>{t('settings.general.language.title')}</span>
 						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem className="py-1 text-[13px]" data-testid="open-session-import" onSelect={() => setImportOpen(true)}>
+							<Import /><span>{t('sessionImport.title')}</span>
+						</DropdownMenuItem>
+						<DropdownMenuSeparator />
+						<DropdownMenuItem className="py-1 text-[13px]" data-testid="account-sign-out" onSelect={() => void signOutAccount().catch(() => toast.error(t('common.error')))}>
+							<LogOut />
+							<span>{t('settings.account.logout')}</span>
+						</DropdownMenuItem>
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarFooter>
 			{/* key=settingsTab：同一 tab 重开时靠 open effect 复位；不同 tab 重挂载强制切换 */}
 			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
 			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
+			{importOpen && <Suspense fallback={null}><SessionImportDialog onClose={() => setImportOpen(false)} /></Suspense>}
 			{sponsorsMode && <Suspense fallback={null}><SponsorsDialog mode={sponsorsMode} onClose={() => setSponsorsMode(null)} /></Suspense>}
 			{settingsOpen && (
 				<Suspense fallback={null}>

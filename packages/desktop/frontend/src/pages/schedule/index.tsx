@@ -81,7 +81,7 @@ export function SchedulePage() {
 	return (
 		<div className="flex size-full p-2">
 			<main className="flex h-full min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-[22px] bg-card shadow-panel">
-				<div className="flex items-start justify-between gap-3 px-6 pt-5 pb-4">
+				<div data-window-drag-region className="app-drag flex items-start justify-between gap-3 px-6 pt-5 pb-4">
 					<div className="app-drag">
 						<div className="text-2xl font-semibold">{t('common.automation')}</div>
 						<div className="mt-1 text-sm text-muted-foreground">

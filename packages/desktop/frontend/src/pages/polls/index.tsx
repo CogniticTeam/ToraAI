@@ -203,7 +203,7 @@ export function PollsPage() {
 
   return <div className="flex size-full p-2">
     <main className="flex h-full min-w-0 flex-1 flex-col overflow-hidden rounded-[22px] bg-card shadow-panel">
-      <div className="app-drag flex items-center justify-between px-6 pt-5 pb-4"><div><h1 className="text-2xl font-semibold">{t('polls.title')}</h1><p className="mt-1 text-sm text-muted-foreground">{t('polls.subtitle')}</p></div><Button variant="ghost" size="icon" onClick={() => { void loadPolls(); void loadHistory(); if (selectedId) void loadResults(selectedId); }} aria-label={t('polls.refresh')}><RefreshCw /></Button></div>
+      <div data-window-drag-region className="app-drag flex items-center justify-between px-6 pt-5 pb-4"><div><h1 className="text-2xl font-semibold">{t('polls.title')}</h1><p className="mt-1 text-sm text-muted-foreground">{t('polls.subtitle')}</p></div><Button variant="ghost" size="icon" onClick={() => { void loadPolls(); void loadHistory(); if (selectedId) void loadResults(selectedId); }} aria-label={t('polls.refresh')}><RefreshCw /></Button></div>
       {!enabled ? <div className="m-6 rounded-xl border border-border p-6 text-sm text-muted-foreground">{t('polls.disabled')}</div> : <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-6 pb-6">
         <div className="mb-4 flex gap-2 border-b border-border pb-3"><Button variant={view === 'polls' ? 'secondary' : 'ghost'} onClick={() => setView('polls')}>{t('polls.all')}</Button><Button variant={view === 'history' ? 'secondary' : 'ghost'} onClick={() => setView('history')}>{t('polls.history')}</Button></div>
         {!!error && <p role="alert" className="mb-3 rounded-xl border border-destructive/50 p-3 text-sm text-destructive">{error}</p>}

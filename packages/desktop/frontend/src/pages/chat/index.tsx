@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ChatViewport } from './ChatViewport';
 import { hasFreshlyCreated } from '@/api/session';
@@ -21,6 +21,8 @@ const LAST_SESSION_KEY = 'chat_last_session';
 
 const ChatPageInner = () => {
 	const navigate = useNavigate();
+	const [searchParams] = useSearchParams();
+	const newTask = searchParams.get('new') === '1';
 	const {
 		agentId: urlAgentId,
 		sessionId: urlSessionId,
@@ -85,13 +87,13 @@ const ChatPageInner = () => {
 	useEffect(() => {
 		if (urlAgentId || agents.length === 0) return;
 		const rememberedAgent = localStorage.getItem(LAST_AGENT_KEY);
-		const rememberedSession = localStorage.getItem(LAST_SESSION_KEY);
+		const rememberedSession = newTask ? null : localStorage.getItem(LAST_SESSION_KEY);
 		const agent = agents.find((a) => a.id === rememberedAgent) ?? agents[0];
 		navigate(
 			rememberedSession ? `/chat/${agent.id}/${rememberedSession}` : `/chat/${agent.id}`,
 			{ replace: true },
 		);
-	}, [agents, urlAgentId, navigate]);
+	}, [agents, urlAgentId, newTask, navigate]);
 
 	// URL 里的 agentId 已不存在（agent 被删/数据被清后本地缓存残留）→
 	// 落回第一个可用 agent。否则发消息时后端 404 "agent 不存在"，

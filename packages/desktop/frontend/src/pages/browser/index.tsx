@@ -1,3 +1,4 @@
+import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { BrowserPanel } from '@/components/panel/BrowserPanel';
 import { getSearchEngineHomeUrl } from '@/lib/searchEngine';
 
@@ -15,7 +16,7 @@ export function BrowserPage() {
 			{/* 无边框窗口拖拽区：本页没有顶栏，顶部留一条空白把手。
 			    不做进标签栏 —— 标签栏是 overflow-x-auto 滚动区，滚动区
 			    当拖拽区在 Electron 里不可靠（见 AppSidebar 同款教训）。 */}
-			<div className="app-drag h-8 shrink-0" />
+			<WindowDragRegion className="h-8 shrink-0" />
 			<div className="flex min-h-0 flex-1 flex-col px-2 pb-2">
 				<BrowserPanel initialUrl={startUrl} enableElementPicker={false} />
 			</div>

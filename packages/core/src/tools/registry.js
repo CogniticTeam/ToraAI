@@ -35,7 +35,7 @@ export function createToolRegistry(tools, canonicalName) {
         } else {
           value = await tool.execute(args, context);
           if (['Write', 'Edit'].includes(canonical) && typeof value === 'string') ok = false;
-          if (canonical === 'Bash' && typeof value === 'string') {
+          if (['Bash', 'Git'].includes(canonical) && typeof value === 'string') {
             const exitCode = /\bexit_code:\s*(-?\d+|null)\b/.exec(value)?.[1];
             if (exitCode !== '0' || /^(?:命令已被用户中止|命令超时|命令输出超过)/.test(value)) ok = false;
           }

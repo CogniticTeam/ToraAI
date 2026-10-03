@@ -13,6 +13,7 @@ import minimax from '@/assets/providers/si-minimax.svg';
 import ollama from '@/assets/providers/si-ollama.svg';
 import openrouter from '@/assets/providers/si-openrouter.svg';
 import xiaomi from '@/assets/providers/si-xiaomi.svg';
+import apiyi from '@/assets/providers/site-apiyi.png';
 import bigmodel from '@/assets/providers/site-bigmodel.png';
 import byteplus from '@/assets/providers/site-byteplus.png';
 import hunyuan from '@/assets/providers/site-hunyuan.png';
@@ -38,6 +39,7 @@ export const PROVIDER_ICONS: Record<string, string> = {
 	'stepfun-global': stepfun,
 	zai,
 	openrouter,
+	apiyi,
 	'kimi-cn': kimi,
 	'kimi-global': kimi,
 	byteplus,

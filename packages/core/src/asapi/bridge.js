@@ -21,6 +21,7 @@ import { accessBlockReason } from './access.js';
 import { generateTitle, placeholderTitle } from '../title.js';
 import { distillAfterRun } from './memory-distill.js';
 import { appendSessionEvent } from './session-events.js';
+import { realpathAllowMissing } from '../security.js';
 
 /** 每个会话一个 bus：running 时含事件缓冲与订阅者 */
 const buses = new Map();
@@ -135,7 +136,8 @@ export function resolveRunCfg(session, agent) {
   const cred = mc.credential_id ? getCredential(mc.credential_id) : null;
   if (cred?.data?.base_url) {
     baseURL = cred.data.base_url;
-    if (cred?.data?.api_key) apiKey = cred.data.api_key;
+    // An explicitly keyless endpoint must never inherit another provider's secret.
+    apiKey = cred.data.api_key ?? '';
   } else {
     // 新会话可能没有 credential_id，但仍选中了模型列表中的模型。
     // 必须按模型名读取其 endpoint / key / 视觉能力，不能只用全局默认值。
@@ -159,7 +161,19 @@ export function resolveRunCfg(session, agent) {
     thinking: mc.parameters?.thinking !== false,
     thinkingEffort: typeof mc.parameters?.thinkingEffort === 'string' ? mc.parameters.thinkingEffort : undefined
   };
-  if (visionOverride !== undefined) cfg.vision = visionOverride;
+  if(session.config?.application_mode==='tochat') {
+    cfg.appMode='tochat';cfg.tochatMode=session.config.task_mode==='work'?'work':'chat';
+    // ToChat exposes public web tools automatically; the model chooses when to use them.
+    // Legacy sessions with web_search=false must not silently lose this capability.
+    cfg.webSearch=true;
+    cfg.injectProjectContext=cfg.tochatMode==='work';cfg.defaultScopeFullDisk=false;
+    if(session.config.model_source!=='custom') {
+      cfg.baseURL=String(toraCfg.tochat?.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
+      cfg.apiKey=toraCfg.tochat?.authToken||'';cfg.model='deepseek-flash';cfg.provider='tochat-official';cfg.vision=true;
+      cfg.thinking=true;
+    }
+  }
+  if (visionOverride !== undefined && cfg.provider!=='tochat-official') cfg.vision = visionOverride;
   if (agent?.data?.system_prompt) cfg.systemPrompt = agent.data.system_prompt;
   if (agent?.data?.context_config?.tool_result_limit) cfg.toolOutputLimit = agent.data.context_config.tool_result_limit;
   if (agent?.data?.react_config?.max_iters) cfg.maxTurns = agent.data.react_config.max_iters;
@@ -185,9 +199,14 @@ export function resolveRunCfg(session, agent) {
  *   { name, description, parameters, execute(args, ctx) }
  * 这是 agent.js 里 extraTools 参数的落地入口（原先 bridge 从不传，形同虚设）。
  */
-export async function loadExtraTools(cwd) {
+export async function loadExtraTools(cwd, cfg = loadConfig()) {
   const dirs = [join(TORA_DIR, 'tools')];
-  if (cwd) dirs.unshift(join(cwd, '.tora', 'tools'));
+  const trusted = cwd && Array.isArray(cfg.trustProjectToolsFor)
+    && cfg.trustProjectToolsFor.some(path => typeof path === 'string'
+      && realpathAllowMissing(path) === realpathAllowMissing(cwd));
+  // Imports execute module-level code, before any tool permission gate. Project
+  // code requires its own explicit trust; hook trust and bypass do not imply it.
+  if (trusted) dirs.unshift(join(cwd, '.tora', 'tools'));
   const tools = [];
   for (const dir of dirs) {
     let files;
@@ -302,13 +321,14 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   // 无论成败都锁 naming.auto=false —— 仅第一次，后续轮次零额外请求。
   const firstRun = session.config.naming?.auto !== false;
   const cfg = resolveRunCfg(session, agent);
+  cfg.tochatMessageId=replyId;
   if (firstRun) {
     session.config.naming = { auto: false };
     const ph = placeholderTitle(userText);
     if (!session.config.name || session.config.name === ph) {
       session.config.name = session.config.name || ph;
       saveSessionRecord(session);
-      generateTitle(cfg, { userText })
+      (cfg.appMode==='tochat' ? Promise.resolve(null) : generateTitle(cfg, { userText }))
         .then((t) => {
           if (!t) return;
           session.config.name = t;
@@ -459,8 +479,8 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
     // 工作目录从 session.config.cwd 取；为 null 也启动 runAgent（让对话正常进行），
     // 工具执行处会自行检查 cwd==null 并返回提示——避免 process.cwd() 兜底成
     // Tora 包根目录。Electron 进程的 cwd 永远不是合法会话工作目录。
-    const sessionCwd = session.config?.cwd || null;
-    const extraTools = await loadExtraTools(sessionCwd);
+    const sessionCwd = cfg.appMode==='tochat'&&cfg.tochatMode==='chat' ? null : session.config?.cwd || null;
+    const extraTools = cfg.appMode==='tochat'&&cfg.tochatMode==='chat' ? [] : await loadExtraTools(sessionCwd);
     for await (const e of runAgent({
       cfg,
       cwd: sessionCwd,
@@ -744,7 +764,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
 
   // Memory 可选提炼（fire-and-forget）：只认"正常完成"的收尾，开关关闭时不发请求。
   // distillAfterRun 内部全静默（见 memory-distill.js），这里再兜一层 .catch。
-  if (doneReason === 'completed') {
+  if (doneReason === 'completed' && cfg.appMode !== 'tochat') {
     const lastText = [...replyBlocks].reverse().find((b) => b.type === 'text')?.text || '';
     void distillAfterRun(cfg, {
       userText: bus.userText,

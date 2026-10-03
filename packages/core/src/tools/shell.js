@@ -88,6 +88,7 @@ class PersistentShell {
     this.pending = null; // { marker, resolve, timer, chunks, truncated }
     this.dead = false;
     this.cold = true;    // 首条命令用短超时探测：起不来就立刻回退一次性执行
+    this.queue = Promise.resolve();
     const launch = prepareShellSandbox(cwd, sandbox);
     this.cleanupSandbox = launch.cleanup;
     try {
@@ -120,6 +121,7 @@ class PersistentShell {
     this.cleanupSandbox?.();
     if (this.pending) {
       clearTimeout(this.pending.timer);
+      this.pending.cleanup?.();
       this.pending.resolve({
         exitCode: -1,
         output: cleanShellOutput(this.buf) + '\n[shell 会话已断开，已回退到一次性执行模式]',
@@ -143,8 +145,10 @@ class PersistentShell {
     const marker = `__TORA_DONE_${randomBytes(8).toString('hex')}__`;
     return new Promise((resolve) => {
       const timer = setTimeout(() => {
-        if (!this.pending) return;
+        if (this.pending?.marker !== marker) return;
         this.pending = null;
+        this.dead = true;
+        cleanup();
         // 命令可能挂住了（等 stdin / 死循环）：杀掉整条 shell，下次重建。
         try { this.proc.kill('SIGKILL'); } catch { /* ignore */ }
         resolve({
@@ -159,9 +163,11 @@ class PersistentShell {
       // 用户点停止：立即杀掉整条 shell 并收尾。不带 broken —— broken 会让
       // 上层用一次性执行把同一条命令重跑一遍，等于中止失效。
       const onAbort = () => {
-        if (!this.pending) return;
+        if (this.pending?.marker !== marker) return;
         clearTimeout(timer);
         this.pending = null;
+        this.dead = true;
+        cleanup();
         try { this.proc.kill('SIGKILL'); } catch { /* ignore */ }
         resolve({
           exitCode: -1,
@@ -169,10 +175,10 @@ class PersistentShell {
           aborted: true
         });
       };
-      if (signal) {
-        if (signal.aborted) onAbort(); else signal.addEventListener('abort', onAbort, { once: true });
-      }
-      this.pending = { marker, resolve, timer };
+      const cleanup = () => signal?.removeEventListener('abort', onAbort);
+      this.pending = { marker, resolve, timer, cleanup };
+      if (signal?.aborted) { onAbort(); return; }
+      signal?.addEventListener('abort', onAbort, { once: true });
       this._write(`${command}\nprintf '${marker}%s|%s\\n' "$?" "${this.cwdExpression}"\n`);
     });
   }
@@ -183,10 +189,17 @@ class PersistentShell {
    * 连同握手输出一起丢掉 —— 否则第一次调用的输出里会混进
    * `user@host dir %` 这类提示符。
    */
-  async run(command, timeoutMs, signal) {
+  run(command, timeoutMs, signal) {
+    const result = this.queue.then(() => this._run(command, timeoutMs, signal));
+    this.queue = result.catch(() => {});
+    return result;
+  }
+
+  async _run(command, timeoutMs, signal) {
+    if (signal?.aborted) return { exitCode: -1, output: '[命令已被用户中止]', aborted: true };
     if (this.dead) return { broken: true, exitCode: -1, output: '' };
     if (this.cold) {
-      const warm = await this._runRaw(':', Math.min(timeoutMs, 8000));
+      const warm = await this._runRaw(':', Math.min(timeoutMs, 8000), signal);
       if (warm.aborted) return warm;
       if (warm.timedOut || warm.broken) return warm; // 上层回退一次性执行
       this.cold = false;
@@ -214,9 +227,10 @@ class PersistentShell {
     const output = cleanShellOutput(this.buf.slice(0, idx));
     this.buf = this.buf.slice(idx + completion[0].length);
 
-    const { resolve, timer, marker, truncated } = this.pending;
+    const { resolve, timer, marker, truncated, cleanup } = this.pending;
     this.pending = null;
     clearTimeout(timer);
+    cleanup?.();
 
     const sep = meta.indexOf('|');
     const exitCode = Number(sep >= 0 ? meta.slice(0, sep) : meta);
@@ -232,7 +246,7 @@ class PersistentShell {
   }
 
   dispose() {
-    this.dead = true;
+    this._die();
     try { this.proc.stdin.end(); } catch { /* ignore */ }
     try { this.proc.kill('SIGTERM'); } catch { /* ignore */ }
     this.cleanupSandbox?.();
@@ -240,13 +254,15 @@ class PersistentShell {
 }
 
 /** 拿到（或创建）cwd 对应的常驻 shell */
-export function acquireShell(cwd, sandbox = {}) {
-  const key = shellSandboxKey(cwd, sandbox);
+export function acquireShell(cwd, sandbox = {}, owner = '') {
+  const key = JSON.stringify([owner, shellSandboxKey(cwd, sandbox)]);
   let sh = shells.get(key);
   if (sh && !sh.dead) return sh;
   if (sh) shells.delete(key);
   try {
     sh = new PersistentShell(cwd, sandbox);
+    sh.owner = owner;
+    sh.initialCwd = cwd;
   } catch {
     return null;
   }
@@ -295,9 +311,15 @@ export function runOnce(command, cwd, timeoutMs, signal, sandbox = {}) {
 }
 
 /** 关掉某目录的常驻 shell（工作目录变更 / 运行结束时调用） */
-export function releaseShell(cwd) {
+export function releaseShell(cwd, owner = '') {
   for (const [key, sh] of shells) {
-    if (key.startsWith(`${cwd}\0`)) { sh.dispose(); shells.delete(key); }
+    if (sh.owner === owner && (sh.initialCwd === cwd || sh.cwd === cwd)) { sh.dispose(); shells.delete(key); }
+  }
+}
+
+export function disposeOwnerShells(owner) {
+  for (const [key, sh] of shells) {
+    if (sh.owner === owner) { sh.dispose(); shells.delete(key); }
   }
 }
 

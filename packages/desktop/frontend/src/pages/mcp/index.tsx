@@ -620,7 +620,7 @@ export function MCPHubPage() {
 				</SidebarContent>
 			</Sidebar>
 
-			<main className="app-drag flex-1 min-w-0 min-h-0 overflow-hidden rounded-[22px] bg-card shadow-panel">
+			<main className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-[22px] bg-card shadow-panel">
 				{hubId ? (
 					// Remount on hub change so the panel's query box resets.
 					<HubPanel

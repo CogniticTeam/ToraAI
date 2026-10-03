@@ -18,7 +18,7 @@ export const GrepRenderer: ToolRenderer = {
 
 	renderBody: (pair) =>
 		pair.result ? (
-			<pre className="border rounded-sm bg-background p-2 font-mono text-xs overflow-x-auto whitespace-pre">
+			<pre className="rounded-sm bg-muted/40 p-2 font-mono text-xs overflow-x-auto whitespace-pre">
 				{getResultText(pair.result)}
 			</pre>
 		) : null,

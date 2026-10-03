@@ -6,9 +6,6 @@ import {
 	FileText,
 	ArrowUp,
 	Sparkles,
-	Sparkle,
-	Check,
-	RefreshCw,
 	MousePointer2,
 } from 'lucide-react';
 import mime from 'mime';
@@ -54,12 +51,6 @@ import {
 } from '@/lib/insertChatText';
 import { cn } from '@/lib/utils';
 
-// 提示词优化桥（Electron 主进程代理 DeepSeek）。浏览器 dev 模式无此桥，
-// 优化按钮随之隐藏 —— 与 VoiceRecorder 的可用性策略一致。
-type PromptOptimizerBridge = { optimize: (text: string) => Promise<string> };
-const promptOptimizer =
-	(window as unknown as { toraPromptOptimizer?: PromptOptimizerBridge }).toraPromptOptimizer ?? null;
-
 /**
  * Represents a file that has been selected and processed (or is being processed).
  */
@@ -73,6 +64,8 @@ interface ProcessedFile {
 }
 
 interface TextInputProps {
+	/** Single-row chat composer; the default work composer remains unchanged. */
+	variant?: 'default' | 'capsule';
 	onSend: (blocks: ContentBlock[], commands: SlashItem[]) => void;
 	placeholder?: string;
 	autoComplete?: (input: string) => string | null;
@@ -107,6 +100,7 @@ interface TextInputProps {
 	 *   - ``interrupting`` — Stop (disabled while the interrupt is in flight)
 	 */
 	phase?: ReplyPhase;
+	autoFocus?: boolean;
 	onInterrupt?: () => void;
 	/**
 	 * Optional project picker strip shown only on a new chat, above the card.
@@ -154,12 +148,14 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		{
 			onSend,
 			placeholder,
+			variant = 'default',
 			autoComplete,
 			disabled = false,
 			className,
 			allowedInputTypes,
 			fileProcessor,
 			phase = 'idle',
+			autoFocus = true,
 			onInterrupt,
 			headerSlot,
 			footerLeft,
@@ -179,11 +175,6 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		const [voiceRecording, setVoiceRecording] = useState(false);
 		const voiceWaveformRef = useRef<HTMLDivElement>(null);
 		const voiceWaveBarsRef = useRef<(HTMLSpanElement | null)[]>([]);
-		// 提示词优化三态：请求进行中 / 成功结果（预览卡片） / 失败原因。
-		// 成功前绝不动输入框原文 —— 应用与否由用户在预览卡片里决定。
-		const [optimizing, setOptimizing] = useState(false);
-		const [optimizeResult, setOptimizeResult] = useState<{ original: string; optimized: string } | null>(null);
-		const [optimizeError, setOptimizeError] = useState<string | null>(null);
 		const fileInputRef = useRef<HTMLInputElement>(null);
 
 		// 录音组件逐帧回传 RMS 音量；仅改柱条 DOM，避免声音采样触发整块输入框重渲染。
@@ -284,7 +275,10 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			if (!textarea) return;
 			textarea.style.height = 'auto';
 			textarea.style.height = `${textarea.scrollHeight}px`;
-		}, [value]);
+			if (variant === 'capsule') {
+				textarea.closest<HTMLElement>('.composer-shell')?.style.setProperty('--capsule-radius', textarea.scrollHeight > TEXTAREA_MIN_HEIGHT_PX ? '24px' : '9999px');
+			}
+		}, [value, variant]);
 
 		// Calculate autocomplete suggestion using useMemo
 		const suggestion = useMemo(() => {
@@ -350,45 +344,6 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			setValue('');
 			setSlashDismissed(false);
 		}, []);
-
-		// ─────── 提示词优化（主进程代理 DeepSeek，预览确认后应用）───────
-		const handleDiscardOptimized = useCallback(() => {
-			setOptimizeResult(null);
-			setOptimizeError(null);
-		}, []);
-
-		const handleApplyOptimized = useCallback(() => {
-			if (!optimizeResult) return;
-			setValue(optimizeResult.optimized);
-			setOptimizeResult(null);
-			setOptimizeError(null);
-			textareaRef.current?.focus();
-		}, [optimizeResult]);
-
-		const handleOptimize = useCallback(async () => {
-			const original = value.trim();
-			if (!promptOptimizer || !original || optimizing) return;
-			setOptimizing(true);
-			setOptimizeError(null);
-			try {
-				const optimized = await promptOptimizer.optimize(original);
-				setOptimizeResult({ original, optimized });
-			} catch (err) {
-				setOptimizeResult(null);
-				setOptimizeError(err instanceof Error ? err.message : String(err));
-			} finally {
-				setOptimizing(false);
-			}
-		}, [value, optimizing]);
-
-		// 优化按钮可用性：桌面端 + 有文本 + 空闲 + 未在录音/请求；预览打开时
-		// 禁用（卡片里已有「重新优化」，避免两个入口同时触发）。
-		const optimizeDisabled =
-			!promptOptimizer
-			|| disabled || voiceBusy || optimizing
-			|| phase !== 'idle'
-			|| !value.trim()
-			|| optimizeResult !== null;
 
 		const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
 			// Tab key to select autocomplete
@@ -575,7 +530,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 
 			selected.forEach((file) => {
 				// Insert a placeholder in processing state
-				const placeholder: ProcessedFile = {
+					const placeholder: ProcessedFile = {
 					name: file.name,
 					status: 'processing',
 					block: null,
@@ -589,7 +544,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 							(prev) =>
 								prev
 									.map((f) =>
-										f.name === file.name && f.status === 'processing'
+										f === placeholder
 											? block
 												? { ...f, status: 'done', block }
 												: null
@@ -603,7 +558,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						// Just silently remove the entry here.
 						setFiles((prev) =>
 							prev.filter(
-								(f) => !(f.name === file.name && f.status === 'processing'),
+								(f) => f !== placeholder,
 							),
 						);
 					});
@@ -686,6 +641,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						selectedCommands.length > 0 || elementRefs.length > 0 ? 'mt-2' : headerSlot ? '-mt-5' : '',
 					)}
 					data-tour="chat-input"
+					data-composer-variant={variant}
+					data-has-attachments={files.length > 0 ? 'true' : undefined}
 				>
 					{/* 声波只占上方文字区；底部操作按钮始终清晰可点。 */}
 					{voiceRecording && (
@@ -760,8 +717,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						</AttachmentGroup>
 					)}
 
-					<div className="relative z-10 flex min-w-0 flex-col">
-						<div className="relative min-w-0">
+					<div className="composer-body relative z-10 flex min-w-0 flex-col">
+						<div className="composer-editor relative min-w-0">
 							{/* ``block`` — inline-block would sit on the text baseline and
 							    leave a descender gap that makes the wrapper taller. */}
 							<textarea
@@ -777,16 +734,16 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 								rows={1}
 								className="block w-full resize-none border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
 								style={{
-									minHeight: `${TEXTAREA_MIN_HEIGHT_PX}px`,
+									minHeight: `${variant === 'capsule' ? 40 : TEXTAREA_MIN_HEIGHT_PX}px`,
 									maxHeight: `${MAX_HEIGHT_PX}px`,
 									lineHeight: `${LINE_HEIGHT_PX}px`,
-									paddingLeft: `${TEXTAREA_PADDING_X_PX}px`,
-									paddingRight: `${TEXTAREA_PADDING_X_PX}px`,
+									paddingLeft: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
+									paddingRight: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
 									paddingTop: `${TEXTAREA_PADDING_Y_PX}px`,
 									paddingBottom: `${TEXTAREA_PADDING_Y_PX}px`,
 									overflowY: 'auto',
 								}}
-								autoFocus={true}
+								autoFocus={autoFocus}
 							/>
 
 							{/* Autocomplete overlay — its padding and line-height mirror the
@@ -796,8 +753,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 									className="pointer-events-none absolute left-0 top-0 text-base"
 									style={{
 										lineHeight: `${LINE_HEIGHT_PX}px`,
-										paddingLeft: `${TEXTAREA_PADDING_X_PX}px`,
-										paddingRight: `${TEXTAREA_PADDING_X_PX}px`,
+										paddingLeft: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
+										paddingRight: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
 										paddingTop: `${TEXTAREA_PADDING_Y_PX}px`,
 										paddingBottom: `${TEXTAREA_PADDING_Y_PX}px`,
 										whiteSpace: 'pre-wrap',
@@ -816,8 +773,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 							)}
 						</div>
 
-						<div className="relative z-10 flex min-w-0 items-center justify-between gap-2 px-1 pb-1">
-							<div className="flex min-w-0 items-center gap-1">
+						<div className="composer-controls relative z-10 flex min-w-0 items-center justify-between gap-2 px-1 pb-1">
+							<div className="composer-leading-controls flex min-w-0 items-center gap-1">
 								<Tooltip>
 									<TooltipTrigger asChild>
 										<Button type="button" variant="ghost" size="icon-lg" aria-label={t('textInput.attach')}
@@ -828,19 +785,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 									<TooltipContent>{attachDisabled && allowedInputTypes?.length === 0 ? t('textInput.attachNotSupported') : t('textInput.attach')}</TooltipContent>
 								</Tooltip>
 								{footerLeft}
-								{promptOptimizer && (
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button type="button" variant="ghost" size="icon-lg" aria-label={t('textInput.optimize')}
-												onClick={handleOptimize} disabled={optimizeDisabled} className="group shrink-0 rounded-rect">
-												{optimizing ? <Loader2 className="size-4 animate-spin" /> : <Sparkle className="size-4 text-muted-foreground group-hover:text-foreground" />}
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>{optimizing ? t('textInput.optimizing') : t('textInput.optimize')}</TooltipContent>
-									</Tooltip>
-								)}
 							</div>
-							<div className="flex min-w-0 items-center justify-end gap-1.5">
+							<div className="composer-trailing-controls flex min-w-0 items-center justify-end gap-1.5">
 								{footerRight}
 								<VoiceRecorder
 									className="rounded-full"
@@ -877,57 +823,6 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						</div>
 					</div>
 
-					{/* 优化预览卡片 — 锚定在输入胶囊上方（与 SlashCommandMenu 同思路）。
-					    成功展示改写结果、失败展示错误 + 重试；应用前不动输入框原文。 */}
-					{(optimizeResult || optimizeError) && (
-						<div className="absolute bottom-full right-0 z-50 mb-2 w-[min(32rem,100%)] rounded-2xl border bg-background p-3.5 shadow-xl shadow-black/5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-fast">
-							{/* 头部：星形徽章 + 标题（错误态整体转红） */}
-							<div className="mb-2.5 flex items-center gap-2">
-								<span
-									className={cn(
-										'flex size-6 shrink-0 items-center justify-center rounded-rect-sm',
-										optimizeError ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary',
-									)}
-								>
-									<Sparkle className="size-3.5" />
-								</span>
-								<span className={cn('text-sm font-medium', optimizeError && 'text-destructive')}>
-									{optimizeError ? t('textInput.optimizeFailed') : t('textInput.optimizeTitle')}
-								</span>
-							</div>
-							{/* 正文：柔和底色块聚焦阅读；重新优化时半透明弱化 */}
-							<div
-								className={cn(
-									'mb-3 max-h-56 overflow-y-auto rounded-xl px-3 py-2.5 transition-opacity duration-200',
-									optimizeError ? 'bg-destructive/5' : 'bg-muted/50',
-									optimizing && 'opacity-60',
-								)}
-							>
-								<p className={cn('whitespace-pre-wrap break-words text-sm leading-relaxed', optimizeError && 'text-destructive')}>
-									{optimizeError ?? optimizeResult?.optimized}
-								</p>
-							</div>
-							{/* 底部：左侧模型标注，右侧操作按钮（主操作最强且最右） */}
-							<div className="flex items-center justify-between gap-2">
-								<span className="truncate text-xs text-muted-foreground">{t('textInput.optimizeBy')}</span>
-								<div className="flex shrink-0 items-center gap-1.5">
-									<Button type="button" variant="ghost" size="sm" onClick={handleDiscardOptimized}>
-										{t('textInput.optimizeDiscard')}
-									</Button>
-									<Button type="button" variant="outline" size="sm" disabled={optimizing} onClick={handleOptimize}>
-										<RefreshCw className={cn('mr-1 size-3.5', optimizing && 'animate-spin')} />
-										{t('textInput.optimizeRetry')}
-									</Button>
-									{!optimizeError && (
-										<Button type="button" size="sm" onClick={handleApplyOptimized}>
-											<Check className="mr-1 size-3.5" />
-											{t('textInput.optimizeApply')}
-										</Button>
-									)}
-								</div>
-							</div>
-						</div>
-					)}
 				</div>
 
 					{/* Slash command menu — anchored ``absolute bottom-full`` so it floats *above*

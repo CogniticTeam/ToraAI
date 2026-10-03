@@ -38,13 +38,13 @@ export const BashRenderer: ToolRenderer = {
 
 		const shellRes = getResultText(pair.result);
 		return (
-			<div className="flex flex-col border bg-background rounded-sm p-2 text-xs">
+			<div className="flex flex-col bg-muted/40 rounded-sm p-2 text-xs">
 				<div className="text-muted-foreground">Input</div>
-				<pre className="overflow-x-auto p-2 border rounded bg-secondary ">
+				<pre className="overflow-x-auto p-2 rounded bg-muted/40 ">
 					{JSON.stringify(parseInput(pair.call.input), null, 2)}
 				</pre>
 				<div className="text-muted-foreground mt-2">Output</div>
-				<pre className="overflow-auto p-2 border rounded bg-secondary max-h-[200px]">
+				<pre className="overflow-auto p-2 rounded bg-muted/40 max-h-[200px]">
 					{shellRes}
 				</pre>
 			</div>

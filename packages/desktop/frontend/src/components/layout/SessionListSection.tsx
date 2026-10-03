@@ -71,7 +71,7 @@ function parseChatPath(pathname: string): {
 	agentId: string | null;
 	sessionId: string | null;
 } {
-	const m = pathname.match(/^\/chat(?:\/([\w-]+))?(?:\/([\w-]+))?/);
+	const m = pathname.match(/^\/(?:chat|tochat)(?:\/([\w-]+))?(?:\/([\w-]+))?/);
 	return { agentId: m?.[1] ?? null, sessionId: m?.[2] ?? null };
 }
 
@@ -84,6 +84,8 @@ function parseChatPath(pathname: string): {
 export function SessionListSection() {
 	const navigate = useNavigate();
 	const location = useLocation();
+	const tochat = location.pathname.startsWith('/tochat');
+	const routeBase = tochat ? '/tochat' : '/chat';
 	const { t } = useTranslation();
 	const { agents } = useAgents();
 	const { agentId: urlAgentId, sessionId: urlSessionId } = parseChatPath(location.pathname);
@@ -112,8 +114,9 @@ export function SessionListSection() {
 	// 单一列表按 updated_at desc 排；服务端 listSessionRecords 已按此序排过，
 	// 这里再 sort 一次保险（refetch 后可能保持原序）。
 	const sortedSessions = useMemo<SessionView[]>(
-		() => sessions.slice().sort((a, b) => (a.session.updated_at < b.session.updated_at ? 1 : -1)),
-		[sessions],
+		() => sessions.filter((view) => (view.session.config.application_mode === 'tochat') === tochat)
+			.sort((a, b) => (a.session.updated_at < b.session.updated_at ? 1 : -1)),
+		[sessions, tochat],
 	);
 
 	// 同一 cwd 的会话归到一个项目；无 cwd 的旧会话保留在独立的未分配分组，
@@ -138,7 +141,7 @@ export function SessionListSection() {
 	const handleDeleteSession = async (sessionId: string) => {
 		await removeSession(sessionId);
 		if (sessionId === urlSessionId && agentId) {
-			navigate(`/chat/${agentId}`, { replace: true });
+			navigate(`${routeBase}/${agentId}`, { replace: true });
 		}
 	};
 
@@ -160,7 +163,7 @@ export function SessionListSection() {
 				<SidebarMenuButton
 					className="text-muted-foreground transition-all duration-150 hover:translate-x-0.5 hover:text-foreground active:scale-[0.98] group-has-data-[sidebar=menu-action]/menu-item:pr-16"
 					isActive={active}
-					onClick={() => navigate(`/chat/${agentId}/${session.id}`)}
+					onClick={() => navigate(`${routeBase}/${agentId}/${session.id}`)}
 				>
 					{showSourceIcons && <SourceIcon />}
 					<span className="truncate">
@@ -214,7 +217,7 @@ export function SessionListSection() {
 						title={project.cwd ?? undefined}
 						onClick={() => {
 							if (agentId && firstSession) {
-								navigate(`/chat/${agentId}/${firstSession.session.id}`);
+								navigate(`${routeBase}/${agentId}/${firstSession.session.id}`);
 							}
 						}}
 					>
@@ -255,7 +258,7 @@ export function SessionListSection() {
 			<SidebarGroupLabel>{t('chat.project.label')}</SidebarGroupLabel>
 			<SidebarGroupContent className="flex min-h-0 flex-1 flex-col">
 				<div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
-					{sessions.length === 0 ? (
+					{sortedSessions.length === 0 ? (
 						<Empty className="border-none py-4 min-h-50">
 							<EmptyHeader>
 								<EmptyMedia variant="icon" className="text-primary">

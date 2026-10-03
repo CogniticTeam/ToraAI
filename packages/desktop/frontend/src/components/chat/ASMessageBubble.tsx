@@ -357,7 +357,7 @@ function CopyButton({ text }: { text: string }) {
 	);
 }
 
-/** 对话完成后，在悬停消息时显示本地发送时间。 */
+/** 消息的本地发送时间；可见方式由调用方决定。 */
 function MessageTimestamp({ value }: { value: string }) {
 	const timestamp = new Date(value);
 	if (Number.isNaN(timestamp.getTime())) return null;
@@ -457,8 +457,14 @@ function splitAssistantContent(blocks: ExtendedContentBlock[]) {
 			break;
 		}
 	}
+	// 进度文字会把连续工具分组拆开；同一轮的工具在过程末尾汇总，
+	// 保留每次调用及结果的顺序，正文和结语仍使用原来的分界。
+	const process = visible.slice(0, lastProcessIndex + 1);
+	const calls = process.flatMap((block) => block.type === 'tool_call_group' ? block.calls : []);
 	return {
-		processBlocks: visible.slice(0, lastProcessIndex + 1),
+		processBlocks: calls.length
+			? [...process.filter((block) => block.type !== 'tool_call_group'), { type: 'tool_call_group' as const, calls }]
+			: process,
 		finalBlocks: visible.slice(lastProcessIndex + 1),
 	};
 }
@@ -509,7 +515,7 @@ function AssistantTaskProcess({ message, blocks, finished }: {
 
 	return <Collapsible open={open} onOpenChange={setOpen} className="mb-2 w-full" data-task-process>
 		<CollapsibleTrigger asChild>
-			<button type="button" className="group/process flex min-h-8 w-full items-center gap-2 border-b border-foreground/15 pb-2 text-left text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+			<button type="button" className="group/process flex min-h-8 w-full items-center gap-2 text-left text-sm font-normal text-muted-foreground transition-colors hover:text-foreground focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
 				<ProcessDurationLabel message={message} finished={finished} />
 				<ChevronRight className="size-4 shrink-0 transition-transform group-data-[state=open]/process:rotate-90" />
 			</button>
@@ -528,8 +534,10 @@ interface MessageBubbleProps {
 	skillLibrary: SkillView[];
 	/** 首个 assistant 内容块到达前，紧贴用户消息展示的等待状态。 */
 	showThinking?: boolean;
-	/** 仅在本轮完成后允许显示时间；实际显示仍由消息悬停触发。 */
+	/** 是否渲染发送时间；可见方式由 timestampVisibility 决定。 */
 	showTimestamp?: boolean;
+	/** 网页版可持续显示时间，桌面端沿用悬停显示。 */
+	timestampVisibility?: 'hover' | 'always';
 	onUserConfirm: (
 		toolCallBlock: ToolCallBlock,
 		confirm: boolean,
@@ -558,6 +566,7 @@ function ASMessageBubbleComponent({
 	skillLibrary,
 	showThinking = false,
 	showTimestamp = false,
+	timestampVisibility = 'hover',
 }: MessageBubbleProps) {
 	const isUser = message.role === 'user';
 	const { t } = useTranslation();
@@ -650,7 +659,7 @@ function ASMessageBubbleComponent({
 		.join('\n\n');
 
 	const timestamp = showTimestamp ? (
-		<span className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover/message:opacity-100">
+		<span className={cn('message-timestamp pointer-events-none', timestampVisibility === 'hover' && 'opacity-0 transition-opacity duration-150 group-hover/message:opacity-100')}>
 			<MessageTimestamp value={message.created_at} />
 		</span>
 	) : null;
@@ -731,8 +740,7 @@ function ASMessageBubbleComponent({
 						))}
 				</AttachmentGroup>
 				{message.role === 'user' ? (
-					// 让状态、时间与复制紧贴用户气泡底边；时间和复制均按悬停
-					// 出现，避免静态界面在每条用户消息下堆积操作控件。
+					// 状态、时间与复制紧贴用户气泡；时间可常驻，复制沿用悬停规则。
 					<MessageFooter className="-mt-2 gap-1.5 py-0">
 						{showThinking && <ThinkingStatus />}
 						{timestamp}
@@ -966,20 +974,20 @@ export function ASBlock({ block, ...props }: ASBlockProps) {
 		case 'tool_call_group': {
 			const { title, insertions, deletions } = summarizeToolGroup(block.calls, t);
 			return (
-				<Collapsible defaultOpen={false}>
+				<Collapsible defaultOpen={false} data-tool-call-group data-tool-count={block.calls.length}>
 					<CollapsibleTrigger asChild>
 						{/* 折叠行是运行中唯一可见的东西，所以它必须自己说明状态：
 						    有工具在跑就转圈（ToolStateIcon 收到 undefined 时就是 spinner），
 						    跑完再换成对勾/叉。此前这里挂的是容器级 shimmer —— 那既没有
 						    转圈，又把整行文字刷成透明，只剩一个箭头，看起来就是个空位。 */}
-						<div className="group w-full flex gap-2 items-center text-sm text-muted-foreground cursor-pointer hover:text-primary">
+						<button type="button" className="group flex min-h-8 w-full items-center gap-2 text-left text-sm text-muted-foreground hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
 							<span>{title}</span>
 							<ToolStateIcon state={groupToolState(block.calls)} />
 							<ChevronRight className="size-3 shrink-0 transition-transform group-data-[state=open]:rotate-90" />
 							<DiffStats insertions={insertions} deletions={deletions} />
-						</div>
+						</button>
 					</CollapsibleTrigger>
-					<CollapsibleContent className="flex flex-col w-full gap-y-1 bg-muted p-2 rounded text-sm text-muted-foreground">
+					<CollapsibleContent className="flex w-full min-w-0 flex-col gap-y-1 ps-3 pt-1 text-sm text-muted-foreground" data-tool-call-details>
 						{block.calls.map((pair) => renderToolCall(pair, t))}
 					</CollapsibleContent>
 				</Collapsible>

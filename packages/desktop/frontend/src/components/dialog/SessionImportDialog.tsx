@@ -1,0 +1,57 @@
+import {useQueryClient} from '@tanstack/react-query';
+import {Download,FileUp,Loader2,X} from 'lucide-react';
+import {useEffect,useRef,useState} from 'react';
+import {useLocation,useNavigate} from 'react-router-dom';
+import {toast} from 'sonner';
+
+import {sessionImportApi,SessionImportClientError} from '@/api/session-import';
+import type {ImportCandidate,ImportPreview,ImportSource} from '@/api/session-import';
+import {Button} from '@/components/ui/button';
+import {Dialog,DialogContent,DialogDescription,DialogFooter,DialogHeader,DialogTitle} from '@/components/ui/dialog';
+import {useAgents} from '@/hooks/useAgents';
+import {useTranslation} from '@/i18n/useI18n';
+
+export function SessionImportDialog({onClose}:{onClose:()=>void}){
+ const {t,i18n}=useTranslation(),query=useQueryClient(),navigate=useNavigate(),location=useLocation(),{agents}=useAgents();
+ const input=useRef<HTMLInputElement>(null),abort=useRef<AbortController|null>(null);
+ const [rows,setRows]=useState<ImportCandidate[]>([]),[selected,setSelected]=useState<Set<string>>(new Set()),[preview,setPreview]=useState<ImportPreview|null>(null),[busy,setBusy]=useState<'scan'|'preview'|'import'|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState('');
+ const [mode,setMode]=useState<'tocode'|'tochat'>(()=>location.pathname.startsWith('/tochat')?'tochat':'tocode');
+ const [agentId,setAgentId]=useState(()=>location.pathname.split('/')[2]||'');
+ useEffect(()=>{if(!agents.some(agent=>agent.id===agentId)&&agents[0])setAgentId(agents[0].id);},[agents,agentId]);
+ useEffect(()=>()=>abort.current?.abort(),[]);
+ const label=(key:string,values?:Record<string,string|number>)=>t('sessionImport.'+key,values);
+ const errorLabel=(code:string)=>t('sessionImport.error.'+code,{defaultValue:label('failure')});
+ const report=(caught:unknown)=>{if(caught instanceof DOMException&&caught.name==='AbortError')return;setError(caught instanceof SessionImportClientError?errorLabel(caught.code):label('failure'));};
+ const request=()=>{abort.current?.abort();abort.current=new AbortController();return abort.current.signal;};
+ const toggle=(id:string)=>{if(!selected.has(id)&&selected.size>=100){setError(errorLabel('too_many_files'));return;}setSelected(previous=>{const next=new Set(previous);if(next.has(id))next.delete(id);else next.add(id);return next;});};
+ const eligible=preview?preview.entries.filter(entry=>!entry.duplicate).map(entry=>entry.id):rows.filter(row=>row.size_bytes<=32*1024*1024).map(row=>row.selection_id);
+ const selectable=eligible.slice(0,100);
+ const selectAll=()=>setSelected(previous=>selectable.every(id=>previous.has(id))?new Set():new Set(selectable));
+ const show=(value:ImportPreview)=>{setPreview(value);setSelected(new Set(value.entries.filter(entry=>!entry.duplicate).map(entry=>entry.id)));};
+ const scan=async(source:ImportSource)=>{setBusy('scan');setError('');setNotice('');setPreview(null);setSelected(new Set());setRows([]);try{const result=await sessionImportApi.discover(source,request());setRows(result.sessions);if(!result.sessions.length)setNotice(label('scanEmpty'));else if(result.limited)setNotice(label('scanLimited',{shown:result.sessions.length,total:result.total}));}catch(caught){report(caught);}finally{setBusy(null);}};
+ const loadFiles=async(files:File[])=>{
+  if(!files.length)return;setBusy('preview');setError('');setNotice('');
+  try{if(files.length>100||files.some(file=>file.size>32*1024*1024)||files.reduce((sum,file)=>sum+file.size,0)>64*1024*1024)throw new SessionImportClientError('batch_too_large');const values=[];for(const file of files)values.push({name:file.name,content:await file.text()});show(await sessionImportApi.preview({files:values},request()));}catch(caught){report(caught);}finally{setBusy(null);}
+ };
+ const previewSelected=async()=>{if(!selected.size)return;setBusy('preview');setError('');try{show(await sessionImportApi.preview({selection_ids:[...selected]},request()));}catch(caught){report(caught);}finally{setBusy(null);}};
+ const commit=async()=>{if(!preview||!selected.size||!agentId)return;setBusy('import');setError('');try{const result=await sessionImportApi.commit({preview_id:preview.preview_id,entry_ids:[...selected],agent_id:agentId,application_mode:mode});await query.invalidateQueries({queryKey:['sessions']});toast.success(label('success',{count:result.imported,skipped:result.skipped}));onClose();if(result.session_ids[0])navigate('/'+(mode==='tochat'?'tochat':'chat')+'/'+agentId+'/'+result.session_ids[0]);}catch(caught){report(caught);}finally{setBusy(null);}};
+ const stamp=(value:string|null)=>{if(!value)return label('unknownDate');const date=new Date(value);return Number.isNaN(date.getTime())?label('unknownDate'):new Intl.DateTimeFormat(i18n.language==='lzh'?'zh':i18n.language,{dateStyle:'medium',timeStyle:'short'}).format(date);};
+ return <Dialog open onOpenChange={open=>{if(!open&&busy!=='import')onClose();}}><DialogContent data-testid="session-import-dialog" showCloseButton={false} className="flex max-h-[85dvh] flex-col gap-4 sm:max-w-3xl">
+  <Button type="button" variant="ghost" size="icon-sm" className="absolute end-3 top-3" disabled={busy==='import'} aria-label={label('close')} onClick={onClose}><X/></Button>
+  <DialogHeader><DialogTitle>{label(preview?'previewTitle':'title')}</DialogTitle><DialogDescription>{label(preview?'previewHint':'description')}</DialogDescription></DialogHeader>
+  {!preview&&<><div className="flex flex-wrap gap-2"><Button variant="outline" disabled={!!busy} onClick={()=>void scan('codex')}>{label('codex')}</Button><Button variant="outline" disabled={!!busy} onClick={()=>void scan('claude')}>{label('claude')}</Button><Button variant="outline" disabled={!!busy} onClick={()=>input.current?.click()}><FileUp className="size-4"/>{label('files')}</Button></div><input ref={input} data-testid="session-import-files" type="file" multiple accept=".json,.jsonl,application/json" className="hidden" onChange={event=>{const files=Array.from(event.target.files||[]);event.target.value='';void loadFiles(files);}}/><p className="text-xs text-muted-foreground">{label('scanHint')}</p></>}
+  {notice&&<p role="status" className="text-sm text-muted-foreground">{notice}</p>}{error&&<p role="alert" className="text-sm text-destructive">{error}</p>}
+  {busy&&<div role="status" className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin"/>{label('loading')}</div>}
+  {!!eligible.length&&<label className="flex w-fit items-center gap-2 text-sm"><input type="checkbox" checked={selectable.every(id=>selected.has(id))} onChange={selectAll} disabled={!!busy}/>{label('selectAll')}<span className="text-muted-foreground">{label('selected',{count:selected.size})}</span></label>}
+  <div className="min-h-0 flex-1 space-y-2 overflow-y-auto pe-1">
+   {preview?preview.entries.map(entry=><div key={entry.id} className="rounded-lg border border-border p-3"><label className="flex cursor-pointer items-start gap-3"><input type="checkbox" className="mt-1" aria-label={entry.title} disabled={!!busy||entry.duplicate} checked={selected.has(entry.id)} onChange={()=>toggle(entry.id)}/><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><span className="min-w-0 truncate text-sm font-medium">{entry.title}</span><span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[11px]">{entry.source==='codex'?'Codex':'Claude Code'}</span>{entry.duplicate&&<span className="text-xs text-muted-foreground">{label('duplicate')}</span>}</div><p className="mt-1 text-xs text-muted-foreground">{label('messages')}: {entry.message_count} · {stamp(entry.updated_at)}</p>{entry.cwd&&<p className="mt-1 truncate text-xs text-muted-foreground" title={entry.cwd}>{entry.cwd}</p>}{entry.model&&<p className="text-xs text-muted-foreground">{entry.model}</p>}</div></label>
+    {(entry.warnings.invalid_lines||entry.warnings.omitted_attachments||entry.warnings.omitted_process_blocks||entry.warnings.skipped_entries)>0&&<p className="mt-2 text-xs text-muted-foreground">{label('warnings',{invalid:entry.warnings.invalid_lines,attachments:entry.warnings.omitted_attachments,process:entry.warnings.omitted_process_blocks+entry.warnings.skipped_entries})}</p>}{entry.warnings.unknown_timestamps>0&&<p className="mt-1 text-xs text-muted-foreground">{label('missingTime',{count:entry.warnings.unknown_timestamps})}</p>}
+    <details className="mt-2 text-xs"><summary className="cursor-pointer text-muted-foreground">{label('samples')}</summary><div className="mt-2 space-y-2">{entry.sample.map((message,index)=><div key={index} className="rounded-md bg-muted/50 p-2"><p className="mb-1 text-muted-foreground">{message.role==='user'?label('user'):(entry.source==='codex'?'Codex':'Claude Code')} · {stamp(message.created_at)}</p><p className="whitespace-pre-wrap break-words">{message.text}</p></div>)}</div></details>
+   </div>):rows.map(row=><label key={row.selection_id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3"><input type="checkbox" className="mt-1" aria-label={row.title} disabled={!!busy||row.size_bytes>32*1024*1024} checked={selected.has(row.selection_id)} onChange={()=>toggle(row.selection_id)}/><div className="min-w-0 flex-1"><p className="truncate text-sm font-medium">{row.title}</p><p className="mt-1 text-xs text-muted-foreground">{row.source==='codex'?'Codex':'Claude Code'} · {stamp(row.modified_at)} · {(row.size_bytes/1024/1024).toFixed(1)} MB</p><p className="truncate text-xs text-muted-foreground">{row.cwd||row.name}</p></div></label>)}
+   {preview&&preview.errors.length>0&&<div role="status" className="rounded-lg border border-border p-3 text-xs"><p className="font-medium">{label('errors')}</p>{preview.errors.map((item,index)=><p key={index} className="mt-1 break-words">{item.name}: {errorLabel(item.code)}</p>)}</div>}
+  </div>
+  {preview&&<div className="flex flex-wrap gap-4"><label className="space-y-1 text-xs"><span className="block">{label('destination')}</span><select aria-label={label('destination')} className="h-9 rounded-md border border-border bg-background px-2 text-sm" value={mode} onChange={event=>setMode(event.target.value as 'tocode'|'tochat')} disabled={!!busy}><option value="tocode">ToCode</option><option value="tochat">ToChat</option></select></label><label className="min-w-0 space-y-1 text-xs"><span className="block">{label('agent')}</span><select aria-label={label('agent')} className="h-9 max-w-64 rounded-md border border-border bg-background px-2 text-sm" value={agentId} onChange={event=>setAgentId(event.target.value)} disabled={!!busy}>{agents.map(agent=><option key={agent.id} value={agent.id}>{agent.data.name}</option>)}</select></label></div>}
+  {!agents.length&&<p role="status" className="text-xs text-muted-foreground">{label('noAgent')}</p>}<p className="text-xs text-muted-foreground">{label('fileLimit')}</p>
+  <DialogFooter><Button variant="outline" disabled={busy==='import'} onClick={onClose}>{label('cancel')}</Button>{preview&&<Button variant="outline" disabled={!!busy} onClick={()=>{setPreview(null);setSelected(new Set());setError('');}}>{label('back')}</Button>}<Button data-testid="session-import-submit" disabled={!!busy||!selected.size||(!!preview&&!agentId)} onClick={()=>void(preview?commit():previewSelected())}>{preview?<Download className="size-4"/>:null}{label(preview?'import':'preview',{count:selected.size})}</Button></DialogFooter>
+ </DialogContent></Dialog>;
+}

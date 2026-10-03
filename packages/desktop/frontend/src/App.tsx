@@ -7,6 +7,7 @@ import { FirstUseConsent } from '@/components/auth/FirstUseConsent';
 import { LogoLoader } from '@/components/auth/LoginAnimation';
 import { LoginGate } from '@/components/auth/LoginGate';
 import { RequiredUpdate } from '@/components/auth/RequiredUpdate';
+import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { FirstLaunchIntro } from '@/components/onboarding/FirstLaunchIntro';
 import { queryClient } from '@/lib/query-client';
 
@@ -16,7 +17,7 @@ const Workspace = lazy(() => import('./Workspace'));
 export default function App() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<div aria-hidden="true" className="app-drag fixed inset-x-0 top-0 z-[200] h-3" />
+			<WindowDragRegion data-testid="global-window-drag-region" className="fixed inset-x-0 top-0 z-[200] h-4" />
 			<RequiredUpdate><FirstLaunchIntro><FirstUseConsent><AccountPresence>
 				<LoginGate>
 					<Suspense fallback={<div className="grid h-screen place-items-center bg-background"><LogoLoader /></div>}>

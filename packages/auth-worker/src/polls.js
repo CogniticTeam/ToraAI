@@ -412,7 +412,7 @@ export async function handleAdminPoll(request, env, url) {
     const now = Date.now();
     const placeholders = ids.map(() => '?').join(',');
     const clause = body.action === 'archive' ? "status = 'published'" : 'end_at IS NOT NULL AND end_at <= ?';
-    const binds = body.action === 'archive' ? [now, now, ...ids] : [now, now, now, ...ids];
+    const binds = body.action === 'archive' ? [now, now, ...ids] : [now, now, ...ids, now];
     const sql = body.action === 'archive'
       ? `UPDATE polls SET status = 'archived', archived_at = ?, updated_at = ? WHERE id IN (${placeholders}) AND deleted_at IS NULL AND ${clause}`
       : `UPDATE polls SET deleted_at = ?, updated_at = ? WHERE id IN (${placeholders}) AND deleted_at IS NULL AND ${clause}`;

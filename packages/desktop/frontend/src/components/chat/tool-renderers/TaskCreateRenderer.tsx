@@ -32,7 +32,7 @@ export const TaskCreateRenderer: ToolRenderer = {
 	renderBody: (pair) => {
 		const description = (parseInput(pair.call.input).description as string) || '';
 		return description ? (
-			<div className="border rounded-sm bg-background p-2 text-xs text-muted-foreground break-all">
+			<div className="rounded-sm bg-muted/40 p-2 text-xs text-muted-foreground break-all">
 				{description}
 			</div>
 		) : null;

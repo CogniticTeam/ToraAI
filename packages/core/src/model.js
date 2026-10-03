@@ -1,4 +1,5 @@
 import { anthropicCompletion } from './anthropic.js';
+import { randomUUID } from 'node:crypto';
 
 // Tora 模型接入层：OpenAI 兼容 Chat Completions + Claude 原生 Messages API
 // 零依赖实现：fetch + 手写 SSE 解析，支持流式与工具调用聚合
@@ -10,6 +11,7 @@ import { anthropicCompletion } from './anthropic.js';
 const toolSupport = new Map();
 
 const capabilityKey = (cfg) => `${String(cfg?.baseURL || '').replace(/\/+$/, '')}|${cfg?.model || ''}`;
+const isAPIYI = (cfg) => cfg?.provider === 'apiyi' || /^https:\/\/(?:api|b|vip|api-cf)\.apiyi\.com\/v1\/?$/i.test(String(cfg?.baseURL || ''));
 
 export function getToolSupport(cfg) {
   return toolSupport.get(capabilityKey(cfg)) ?? true;
@@ -62,12 +64,14 @@ export function createClient(cfg) {
     apiKey: cfg.apiKey,
     model: cfg.model,
     provider: cfg.provider,
+    tochatMode: cfg.tochatMode,
+    tochatMessageId: cfg.tochatMessageId,
     temperature: cfg.temperature,
     maxTurns: cfg.maxTurns ?? 40,
     // 能力位：tool_calls 由探测结果决定；vision 由模型名/配置推断
     // GPT-6 Astra 的 Chat Completions 不支持 function calling；Tora 的
     // Responses 适配尚未提供，直接用文本 ReAct，避免每轮先撞一次 400。
-    supportsTools: cfg.forceReact || (/^https:\/\/api\.openai\.com\/v1\/?$/i.test(cfg.baseURL) && /^gpt-6-astra(?:-|$)/i.test(cfg.model))
+    supportsTools: cfg.forceReact || ((/^https:\/\/api\.openai\.com\/v1\/?$/i.test(cfg.baseURL) || isAPIYI(cfg)) && /^gpt-6-astra(?:-|$)/i.test(cfg.model))
       ? false : getToolSupport(cfg),
     vision: detectVision(cfg),
     // prompt cache：稳定前缀 + 由厂商自动缓存（DeepSeek/智谱）时无需额外字段；
@@ -184,6 +188,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
 			}));
 		}
 		if (m.name) out.name = sanitizeLoneSurrogates(m.name);
+		if(typeof m.reasoning_content==='string') out.reasoning_content=sanitizeLoneSurrogates(m.reasoning_content);
 		return out;
 	});
   const baseBody = {
@@ -196,24 +201,28 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
   // 同一端点后续请求直接用对的那一档）。
   const thinkingKey = `${client.baseURL}|${client.model}`;
   const officialOpenAI = /^https:\/\/api\.openai\.com\/v1\/?$/i.test(client.baseURL);
+  const nativeDeepSeek = client.provider==='tochat-official'||/^https:\/\/api\.deepseek\.com(?:\/v1)?\/?$/i.test(client.baseURL);
+  // APIYI 的 GPT/o 系模型遵从 OpenAI 参数规则；其他家族仍按端点自适应。
+  const openAICompatible = officialOpenAI || (isAPIYI(client) && /^(?:gpt-|o[1-9](?:[.-]|$))/i.test(client.model));
   const officialGoogle = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/openai\/?$/i.test(client.baseURL);
-  const openAIReasoningModel = officialOpenAI && /^(?:o[1-9](?:[.-]|$)|gpt-[5-9](?:[.-]|$))/i.test(client.model);
+  const openAIReasoningModel = openAICompatible && /^(?:o[1-9](?:[.-]|$)|gpt-[5-9](?:[.-]|$))/i.test(client.model);
   const thinkingVariants = [
     { key: 'enable_thinking', extra: { enable_thinking: true } },
     { key: 'reasoning_effort', extra: { reasoning_effort: client.thinkingEffort === 'max' ? 'high' : (client.thinkingEffort ?? 'high') } },
     { key: 'none', extra: {} }
   ];
   // Google 的兼容接口使用 reasoning_effort；这些端点不接受 enable_thinking。
-  if (officialOpenAI || officialGoogle) {
+  if (openAICompatible || officialGoogle) {
     thinkingVariants.splice(0, officialGoogle || openAIReasoningModel ? 1 : 2);
   }
   // GPT-6 Sol/Luna 在 Chat Completions 中仅允许 reasoning_effort=none 时调用工具。
   // 保持工具能力比在此端点强制思考更重要；无工具请求仍使用用户选定的思考档位。
-  const openAIChatToolsNeedNone = officialOpenAI && /^gpt-6-(?:sol|luna)(?:-|$)/i.test(client.model) && !!tools?.length;
+  const openAIChatToolsNeedNone = openAICompatible && /^gpt-6-(?:sol|luna)(?:-|$)/i.test(client.model) && !!tools?.length;
   const knownVariant = thinkingParamCache.get(thinkingKey);
   if (knownVariant && !openAIChatToolsNeedNone) thinkingVariants.sort((a, b) => (a.key === knownVariant ? -1 : 1));
-  const thinkingVariantsForClient = client.thinking && !openAIChatToolsNeedNone
-    ? thinkingVariants : [{ key: 'none', extra: openAIChatToolsNeedNone ? { reasoning_effort: 'none' } : {} }];
+  const thinkingVariantsForClient = nativeDeepSeek
+    ? [{key:'none',extra:{thinking:{type:client.thinking?'enabled':'disabled'},reasoning_effort:client.thinking?(['low','high','max'].includes(client.thinkingEffort)?client.thinkingEffort:'high'):'none'}}]
+    : client.thinking && !openAIChatToolsNeedNone ? thinkingVariants : [{ key: 'none', extra: openAIChatToolsNeedNone ? { reasoning_effort: 'none' } : {} }];
   // 已知不支持 tool_calls 的端点：不再带 tools，省一次必然失败的往返
   const toolsEnabled = !!tools?.length && client.supportsTools !== false;
   if (toolsEnabled) {
@@ -242,6 +251,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
             'content-type': 'application/json',
             ...(client.apiKey ? { authorization: `Bearer ${client.apiKey}` } : {}),
             ...(officialGoogle ? { 'x-goog-api-client': 'tora-desktop/1.0.0' } : {}),
+            ...(client.provider==='tochat-official'?{'x-tochat-mode':client.tochatMode||'chat','x-tochat-message-id':client.tochatMessageId||randomUUID(),'x-tochat-request-id':randomUUID()}:{}),
             // 任务模式声明（ask|craft），网关按模式倍率差异化计费；非官方端点会忽略此头
             'x-tora-mode': client.mode || 'craft'
           },
@@ -326,7 +336,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
           // 深度思考增量：DeepSeek/Qwen 用 reasoning_content，OpenRouter 等用 reasoning。
           // 只上屏、不进 history —— 绝大多数端点不接受 reasoning_content 回传。
           const reasoning = delta.reasoning_content ?? delta.reasoning;
-          if (typeof reasoning === 'string' && reasoning) onThinking?.(reasoning);
+          if (typeof reasoning === 'string' && reasoning) {message.reasoning_content=(message.reasoning_content||'')+reasoning;onThinking?.(reasoning);}
           if (delta.content) {
             message.content += delta.content;
             onDelta?.(delta.content);
@@ -365,6 +375,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
     const message = { role: 'assistant', content: typeof msg.content === 'string' ? sanitizeLoneSurrogates(msg.content) : '' };
     // 非流式的思考内容一次性到达，同样只上屏不进 history
     const reasoning = msg.reasoning_content ?? msg.reasoning;
+    if(typeof reasoning==='string') message.reasoning_content=reasoning;
     if (typeof reasoning === 'string' && reasoning) onThinking?.(reasoning);
     if (Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
       message.tool_calls = msg.tool_calls.map((tc, i) => ({

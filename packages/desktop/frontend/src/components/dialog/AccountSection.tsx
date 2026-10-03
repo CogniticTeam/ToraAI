@@ -3,8 +3,8 @@
  * 登录/注册一体流：首页输入「用户名或邮箱」→ 服务端 /auth/check 分流——
  *   已注册 → 密码页登录；未注册 → 注册页（用户名 + 邮箱 + 密码 + 邮箱验证码）。
  * 一号一邮箱由服务端 UNIQUE 约束保证。Tora 自有视觉：
- *   · 极光光斑缓漂背景 + 网格衬底（AuthBackdrop）
- *   · 居中玻璃卡片（spring 入场）
+ *   · 与网页版同步的黑白登录表面（login-surface.css）
+ *   · 居中表单卡片与小窗口滚动
  *   · 步骤切换：AnimatePresence 滑动过渡（首页 → 密码 / 注册）
  *   · 提交 busy：DotPulse 三点；成功后 LoginGate 播放 SuccessCheck 描边
  *
@@ -15,15 +15,18 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { ArrowLeft, AtSign, Camera, ChevronRight, Eye, EyeOff, KeyRound, Languages, Loader2, LogOut } from 'lucide-react';
 import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 
+import '../auth/login-surface.css';
+
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from '@/i18n/useI18n';
+import { signOutAccount } from '@/utils/authLogout';
 import {
 	getToken, getEmail, getUsername,
 	setToken as storeToken, setEmail as storeEmail, setUsername as storeUsername,
-	delToken, delEmail, delUsername,
+	delToken, delEmail,
 } from '@/utils/authStore';
 
 const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
@@ -76,15 +79,15 @@ export async function fileToAvatar(file: File): Promise<string> {
 // ---- 登录/注册卡片共用样式（精修版统一 token）----
 /** 输入框：focus 主色描边 + 25% 柔光环，过渡只动 border/shadow */
 const FIELD_CLS =
-	'h-12 w-full rounded-2xl border border-input bg-background px-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/25';
-/** 主按钮：品牌紫渐变 + 外发光（Tora × MiniMax 主色统一），禁用整体指针语义 */
+	'h-12 w-full rounded-xl border border-input bg-background px-4 text-sm outline-none transition-[border-color,box-shadow] duration-200 placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/25';
+/** 主按钮：黑白主操作色，禁用整体指针语义 */
 const SUBMIT_CLS =
-	'btn-brand flex h-11 w-full items-center justify-center rounded-sm text-sm font-medium text-primary-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:filter-none';
+	'btn-brand flex h-12 w-full items-center justify-center rounded-xl text-sm font-medium text-primary-foreground active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none disabled:filter-none';
 /** 返回按钮 */
 const BACK_CLS =
 	'absolute -left-2 -top-1 rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground rtl:left-auto rtl:-right-2';
 /** 标题层级 */
-const TITLE_CLS = 'text-[21px] font-semibold tracking-[-0.02em]';
+const TITLE_CLS = 'text-[24px] font-semibold tracking-[-0.035em]';
 /** 错误条：淡入下滑出现，退场收起，避免卡片高度突跳 */
 const errorMotion = {
 	initial: { opacity: 0, y: -4 },
@@ -368,16 +371,7 @@ export function AccountSection({ onAuthenticated, mode = 'settings' }: {
 	};
 
 	const logout = async () => {
-		const token = getToken();
-		if (token) {
-			await fetch(`${authApi()}/auth/logout`, {
-				method: 'POST',
-				headers: { authorization: `Bearer ${token}` },
-			}).catch(() => {});
-		}
-		await delToken();
-		await delEmail();
-		await delUsername();
+		await signOutAccount();
 		setUser(null);
 		setPassword('');
 		setConfirm('');
@@ -402,7 +396,7 @@ export function AccountSection({ onAuthenticated, mode = 'settings' }: {
 
 
 	return (
-		<div className="app-drag relative flex h-full w-full items-center justify-center overflow-hidden" data-language-open={languageOpen}>
+		<div className="app-drag tora-auth-panel relative flex h-full w-full items-center justify-center overflow-x-hidden overflow-y-auto px-5 pb-8 pt-24 sm:px-8 sm:pb-12 sm:pt-16" data-language-open={languageOpen}>
 			<AuthBackdrop />
 
 			{onAuthenticated ? (
@@ -410,7 +404,7 @@ export function AccountSection({ onAuthenticated, mode = 'settings' }: {
 					type="button"
 					onClick={() => setLanguageOpen(true)}
 					aria-label={t('settings.general.language.title')}
-					className="app-no-drag absolute right-5 top-5 z-30 flex h-9 items-center gap-2 rounded-rect border border-border bg-background/90 px-3 text-xs font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted"
+					className="app-no-drag absolute right-5 top-5 z-30 flex h-10 items-center gap-2 rounded-xl border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground sm:right-8 sm:top-7"
 				>
 					<Languages className="size-4 text-muted-foreground" />
 					<span>{t('settings.general.language.title')}</span>
@@ -422,15 +416,15 @@ export function AccountSection({ onAuthenticated, mode = 'settings' }: {
 				initial={{ opacity: 0, y: 24, scale: 0.97 }}
 				animate={{ opacity: 1, y: 0, scale: 1 }}
 				transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-				className="app-no-drag relative z-10 w-full max-w-[360px] rounded-3xl border border-border bg-popover p-8 shadow-[0_24px_80px_-24px_rgb(0_0_0/0.35)]"
+				className="app-no-drag tora-auth-card relative z-10 my-auto w-full max-w-[420px] rounded-[24px] border border-border bg-popover p-7 sm:p-10"
 			>
 				<AnimatePresence mode="wait" initial={false}>
 					{step === 'home' ? (
 						// ---------- 首页：用户名/邮箱 → 服务端分流登录或注册 ----------
 						<motion.div key="home" {...stepMotion} className="flex flex-col items-center text-center">
-							<BrandLogo />
-							<h3 className={TITLE_CLS + ' mt-5'}>{t('settings.account.homeTitle')}</h3>
-							<div className="mt-1.5 text-xs text-muted-foreground">{t('settings.account.homeDesc')}</div>
+							<BrandLogo size={60} />
+							<h3 className={TITLE_CLS + ' mt-6'}>{t('settings.account.homeTitle')}</h3>
+							<div className="mt-2 text-sm leading-relaxed text-muted-foreground">{t('settings.account.homeDesc')}</div>
 
 							{/* 账号输入：浮动标签弹起 + 聚焦光圈扩散 */}
 							<div className="relative mt-6 w-full">
@@ -488,7 +482,7 @@ export function AccountSection({ onAuthenticated, mode = 'settings' }: {
 								)}
 							</AnimatePresence>
 
-							<p className="mt-6 text-center text-[11px] leading-relaxed text-muted-foreground">{t('settings.account.terms')}</p>
+							<p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">{t('settings.account.terms')}</p>
 						</motion.div>
 					) : step === 'password' ? (
 						// ---------- 密码页（已注册账号登录；仅输入密码，人机验证在下一步） ----------
@@ -503,7 +497,7 @@ export function AccountSection({ onAuthenticated, mode = 'settings' }: {
 							</button>
 
 							<h3 className={TITLE_CLS}>{t('settings.account.passwordTitle')}</h3>
-							<p className="mx-auto mt-2 max-w-full truncate rounded-rect-sm bg-muted px-3 py-1 text-xs text-muted-foreground">{account.trim()}</p>
+							<p className="mx-auto mt-2 mb-4 max-w-full truncate rounded-rect-sm bg-muted px-3 py-1 text-xs text-muted-foreground">{account.trim()}</p>
 
 							<PasswordField
 								autoFocus

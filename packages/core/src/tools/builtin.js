@@ -243,18 +243,18 @@ export const bashTool = {
   async execute({ command, timeout = 120000, reset = false }, ctx) {
     if (!ctx?.cwd) return '工具不可用：未选择工作目录。';
     const limit = ctx.toolOutputLimit ?? 6000;
-    if (reset) releaseShell(ctx.cwd);
+    if (reset) releaseShell(ctx.cwd, ctx.shellOwner);
     const sandbox = sandboxOptionsForContext(ctx);
 
     const persistent = ctx.persistentShell !== false;
     let res;
     if (persistent) {
-      const sh = acquireShell(ctx.cwd, sandbox);
+      const sh = acquireShell(ctx.cwd, sandbox, ctx.shellOwner);
       if (sh) {
         res = await sh.run(command, timeout, ctx.signal);
         if (res.broken) {
           // shell 会话挂了 → 回退一次性执行，并让上层不再复用这条 shell
-          releaseShell(ctx.cwd);
+          releaseShell(ctx.cwd, ctx.shellOwner);
           res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
         }
       } else {

@@ -41,7 +41,7 @@ export function defaultRenderBody(pair: ToolCallWithResult, t: TFunction): React
 	if (!result) return null;
 	if (call.state === 'asking' || result.state === 'running') {
 		return (
-			<div className="flex flex-col border rounded-sm bg-background">
+			<div className="flex flex-col rounded-sm bg-muted/40">
 				<div className="px-2 py-1 whitespace-nowrap overflow-x-auto">
 					{t('common.running')}
 				</div>
@@ -51,7 +51,7 @@ export function defaultRenderBody(pair: ToolCallWithResult, t: TFunction): React
 	if (result.state === 'interrupted') {
 		const result = getResultText(pair.result);
 		return (
-			<div className="flex flex-col border rounded-sm bg-background">
+			<div className="flex flex-col rounded-sm bg-muted/40">
 				<div className="px-2 py-1 whitespace-nowrap overflow-x-auto">{result}</div>
 			</div>
 		);
@@ -73,7 +73,7 @@ export function defaultRenderBody(pair: ToolCallWithResult, t: TFunction): React
 	}
 
 	return (
-		<pre className="border rounded-sm bg-background p-2 text-xs overflow-auto max-h-[200px] whitespace-pre-wrap">
+		<pre className="rounded-sm bg-muted/40 p-2 text-xs overflow-auto max-h-[200px] whitespace-pre-wrap">
 			{text}
 		</pre>
 	);

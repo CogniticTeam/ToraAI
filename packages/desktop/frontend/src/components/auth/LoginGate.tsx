@@ -10,6 +10,7 @@
  * 网络异常时保留凭据，显示独立的重试状态；不渲染账户设置或放行工作区。
  */
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import './login-surface.css';
 
 import { BrandLogo, LogoLoader, SuccessCheck } from '@/components/auth/LoginAnimation';
 import { Button } from '@/components/ui/button';
@@ -122,7 +123,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
   if (phase === 'ok') return <>{children}</>;
 
   return (
-    <div className="app-wallpaper fixed inset-0 z-[100]">
+    <div className="app-wallpaper tora-auth-gate fixed inset-0 z-[100]">
       {phase === 'unavailable' && (
         <div className="flex h-full items-center justify-center p-6">
           <div role="alert" className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
@@ -148,6 +149,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
 
       {phase === 'login' && (
         <div className="h-full w-full">
+          <span className="pointer-events-none absolute left-28 top-3 z-30 px-2 py-1 text-lg font-semibold tracking-[-0.045em] text-foreground">Cognitic</span>
           <Suspense fallback={<div className="flex h-full items-center justify-center"><LogoLoader /></div>}>
             <AccountSection mode="auth" onAuthenticated={() => setPhase('success')} />
           </Suspense>

@@ -1,0 +1,46 @@
+/* Desktop sign-in shares the Cognitic login palette and spacing. */
+.app-wallpaper.tora-auth-gate {
+  background: #f7f7f6;
+  background-image: none;
+}
+.dark .app-wallpaper.tora-auth-gate { background: #141414; }
+.tora-auth-panel { align-items: safe center; }
+.tora-auth-panel .auth-aurora,
+.tora-auth-panel .auth-grid { display: none; }
+.tora-auth-card {
+  border-color: #e7e7e5;
+  box-shadow: 0 18px 60px -36px rgb(0 0 0 / 0.22), 0 2px 12px rgb(0 0 0 / 0.03);
+}
+.dark .tora-auth-card {
+  border-color: #333331;
+  box-shadow: 0 18px 60px -36px rgb(0 0 0 / 0.72);
+}
+.tora-auth-card input {
+  border-color: #d9d9d6;
+}
+.dark .tora-auth-card input { border-color: #50504e; }
+.tora-auth-card input:focus-visible {
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--foreground) 13%, transparent);
+}
+.tora-auth-card .btn-brand {
+  background: #191919;
+  color: #fff;
+  box-shadow: none;
+}
+.dark .tora-auth-card .btn-brand {
+  background: #f3f3f1;
+  color: #171717;
+}
+.tora-auth-card .btn-brand:hover:not(:disabled) {
+  filter: none;
+  box-shadow: 0 7px 16px -10px rgb(0 0 0 / 0.35);
+}
+.tora-auth-card .btn-brand:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+.tora-auth-card .btn-brand:disabled { opacity: .38; }
+@media (max-width: 480px) {
+  .tora-auth-card { box-shadow: none; }
+}

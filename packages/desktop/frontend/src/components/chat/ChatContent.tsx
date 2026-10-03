@@ -87,6 +87,13 @@ function TypewriterGreeting({ text }: { text: string }) {
 }
 
 interface ChatContentProps {
+	/** Mode-specific content; the default work composer layout stays unchanged. */
+	greetingOverride?: string;
+	showWorkspace?: boolean;
+	composerVariant?: 'default' | 'capsule';
+	/** 持续显示发送时间，包括回复生成期间的历史消息。 */
+	alwaysShowMessageTimestamps?: boolean;
+	autoFocusInput?: boolean;
 	msgs: Msg[];
 	/**
 	 * Whether the history for the currently selected session is still on
@@ -151,6 +158,11 @@ interface ChatContentProps {
 }
 
 const ChatContentComponent: React.FC<ChatContentProps> = ({
+	greetingOverride,
+	showWorkspace = true,
+	composerVariant = 'default',
+	alwaysShowMessageTimestamps = false,
+	autoFocusInput = true,
 	msgs,
 	loading = false,
 	phase,
@@ -394,7 +406,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	const waitingUserMessage = isWaitingForFirstResponse
 		? [...msgs].reverse().find((message) => message.role === 'user')
 		: undefined;
-	const canShowMessageTimestamps = phase === 'idle';
+	const canShowMessageTimestamps = alwaysShowMessageTimestamps || phase === 'idle';
 
 	// 首个内容块（文本或工具调用）到达后立即撤掉占位。请求失败不会产生
 	// 内容，因此只在已经确实进入 streaming 后再由 idle 清理本地状态。
@@ -430,14 +442,15 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			.filter((tc) => tc.state === 'asking')
 			.map((tc) => ({ replyId: lastMsg.id, toolCall: tc }));
 	}, [msgs]);
-	const greeting = projectName
+	const greeting = greetingOverride ?? (projectName
 		? t('chat.greetingProject', { project: projectName })
-		: t('chat.greeting');
+		: t('chat.greeting'));
 
 	// On an empty session the prompt and the input centre together, so every box
 	// down to the message list shrinks to its content instead of filling.
 	return (
 		<div
+			data-chat-empty={isEmpty}
 			className={cn(
 				'flex flex-col h-full w-full items-center gap-4',
 				isEmpty && 'justify-center',
@@ -493,6 +506,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											onUserConfirm={onUserConfirm}
 											showThinking={message === waitingUserMessage}
 											showTimestamp={canShowMessageTimestamps}
+											timestampVisibility={alwaysShowMessageTimestamps ? 'always' : 'hover'}
 										/>
 									</MessageScrollerItem>
 									);
@@ -572,6 +586,8 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 					</FlipCard>
 					{/* 新聊天保留项目入口；已创建的会话直接显示输入卡片。 */}
 					<TextInput
+						autoFocus={autoFocusInput}
+						variant={composerVariant}
 						className="w-full"
 						onSend={handleSend}
 						commandItems={slashItems}
@@ -583,7 +599,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 						onInterrupt={onInterrupt}
 						footerLeft={permissionControl}
 						footerRight={modelControl}
-						headerSlot={isEmpty ? (
+						headerSlot={isEmpty && showWorkspace ? (
 							<div className="composer-context mx-4 flex min-w-0 items-center rounded-t-[24px] bg-muted px-5 pb-6 pt-2">
 								<WorkspacePicker
 									value={cwd}

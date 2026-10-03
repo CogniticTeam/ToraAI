@@ -12,7 +12,7 @@ import type {
 import { appendEvent, AssistantMsg, UserMsg } from '@agentscope-ai/agentscope/message';
 import type { Msg, ContentBlock } from '@agentscope-ai/agentscope/message';
 import type { ToolCallBlock } from '@agentscope-ai/agentscope/message';
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useLayoutEffect } from 'react';
 
 import type { CreateSessionRequest } from '@/api';
 import { sessionApi, takeFreshlyCreated } from '@/api';
@@ -205,6 +205,14 @@ export function useMessages(
 	// create 失败时清空以便下次重试；会话切换/接管后旧 promise 失去意义，
 	// 在生命周期 effect 开头归零。
 	const pendingCreateRef = useRef<Promise<string> | null>(null);
+	const optimisticSessionRef = useRef<string | null>(null);
+	const lifecycleRef = useRef<object>({});
+	const activeRouteRef = useRef<string | null>(null);
+	useLayoutEffect(() => {
+		lifecycleRef.current = {};
+		activeRouteRef.current = `${agentId}:${sessionId}`;
+		return () => { lifecycleRef.current = {}; activeRouteRef.current = null; };
+	}, [agentId, sessionId]);
 	/**
 	 * Reply ids whose ``REPLY_START`` we have already applied *on this SSE
 	 * connection*. Cleared whenever the connection is (re)opened.
@@ -443,7 +451,9 @@ export function useMessages(
 		// 这就是全部历史 —— **原样接管**（只标记已加载，不重置、不拉取）。
 		// 放在最前面：早先的实现先重置再查 freshlyCreated，会把刚追加的
 		// 用户消息一起抹掉 —— 用户视角就是"发了消息但新对话是空的"。
-		const adopted = sessionId ? takeFreshlyCreated(sessionId) : false;
+		const fresh = sessionId ? takeFreshlyCreated(sessionId) : false;
+		const adopted = fresh && optimisticSessionRef.current === sessionId;
+		optimisticSessionRef.current = null;
 		if (adopted) {
 			setLoadedKey(`${agentId}:${sessionId}`);
 		} else {
@@ -593,6 +603,8 @@ export function useMessages(
 			selectedSkills?: { id: string; name: string; display_name?: string | null }[],
 		) => {
 			if (!agentId) return;
+			const lifecycle = lifecycleRef.current;
+			const sendOptions = optionsRef.current;
 
 			// No session yet — auto-create one so the user can send a
 			// message into an empty conversation list / a bare ``/chat/:agent``
@@ -638,6 +650,7 @@ export function useMessages(
 					}
 					realSessionId = await pendingCreateRef.current;
 				} catch (e) {
+					if (lifecycleRef.current !== lifecycle) return;
 					setError(e as Error);
 					// create 失败：撤回这条乐观消息（toast 已由 client 弹出），
 					// 并清掉 rejected promise，让下一条消息可以重新建会话。
@@ -650,7 +663,14 @@ export function useMessages(
 				// 先把用户消息追加进内存，再通知宿主改 URL —— 跳转触发的
 				// 加载 effect 会走「接管」分支（freshlyCreated），不会把
 				// 这条乐观消息抹掉。顺序反了消息就会凭空消失。
-				optionsRef.current?.onSessionCreated?.(realSessionId);
+				if (lifecycleRef.current === lifecycle) {
+					optimisticSessionRef.current = realSessionId;
+					sendOptions?.onSessionCreated?.(realSessionId);
+				} else {
+					// The submitted task still belongs to C, but must not navigate
+					// away from B or let C adopt B's optimistic message buffer.
+					takeFreshlyCreated(realSessionId);
+				}
 			} else {
 				msgsRef.current = [...msgsRef.current, displayUserMsg];
 				scheduleUpdate();
@@ -666,7 +686,9 @@ export function useMessages(
 						? { selected_skill_ids: selectedSkillIds }
 						: {}),
 				});
+				if (lifecycleRef.current !== lifecycle) sendOptions?.onSessionUpdated?.();
 			} catch (e) {
+				if (lifecycleRef.current !== lifecycle && activeRouteRef.current !== `${agentId}:${realSessionId}`) return;
 				setError(e as Error);
 				// 请求未被服务端接收时不会有 REPLY_END，必须把乐观进入的
 				// streaming 状态复位，避免“思考中”与停止按钮永久停留。
@@ -894,8 +916,10 @@ export function useMessages(
 	// 重新拉取持久化历史，把新提示条即时补进本地消息尾部。
 	const reloadHistory = useCallback(async () => {
 		if (!agentId || !sessionId) return;
+		const lifecycle = lifecycleRef.current;
 		try {
 			const { messages } = await sessionApi.messages(sessionId, agentId);
+			if (lifecycleRef.current !== lifecycle) return;
 			// 合并策略：以服务器历史为准，但保留本地流式中未落盘的尾巴
 			// （reply 进行中时服务器 display 还没有这条 assistant Msg）。
 			// 简单可靠的做法：只在服务器比本地「多出尾部 system 消息」时追加。

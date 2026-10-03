@@ -874,7 +874,7 @@ export function SkillHubPage() {
 	}, [refetchSkills]);
 
 	return (
-		// 拖拽区只留在 `SidebarHeader` 的标题条与 `main` 上。**不要**给最外层
+		// 拖拽区只留在 SidebarHeader 与 ResourcePanel 的标题条。不要给最外层
 		// wrapper 或 `SidebarContent` 加 `app-drag`：整块作为拖拽区、再靠内部
 		// `app-no-drag` 逐块挖洞，在 Electron 里并不可靠（`SidebarContent` 还带
 		// `overflow-auto`，Chromium 不支持滚动区当拖拽区），会表现为侧栏按钮点不动。
@@ -989,7 +989,7 @@ export function SkillHubPage() {
 				</SidebarContent>
 			</Sidebar>
 
-			<main className="app-drag flex-1 min-w-0 min-h-0 overflow-hidden rounded-[22px] bg-card shadow-panel">
+			<main className="flex-1 min-w-0 min-h-0 overflow-hidden rounded-[22px] bg-card shadow-panel">
 				{hubId ? (
 					// Remount on hub change so the panel's query box resets.
 					<HubPanel

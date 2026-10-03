@@ -28,6 +28,7 @@ import MCPSvg from '@/assets/images/mcp.svg?react';
 import { ChatContent } from '@/components/chat/ChatContent.tsx';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { SubagentHitlCard } from '@/components/chat/SubagentHitlCard';
+import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { PanelDock, type PanelDescriptor, type PanelKey } from '@/components/panel/PanelDock.tsx';
 import { KnowledgeBaseParametersPopover } from '@/components/popover/KnowledgeBaseParametersPopover';
 import { LlmSelect } from '@/components/select/LlmSelect';
@@ -935,7 +936,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 						minSize="24rem"
 					>
 						<div className="flex flex-col flex-1 min-h-0 min-w-0 overflow-x-hidden bg-transparent">
-						<div className="flex h-12 shrink-0 flex-row items-center justify-between border-b border-border px-5">
+						<div data-window-drag-region className="app-drag flex h-12 shrink-0 flex-row items-center justify-between border-b border-border px-5">
 							<div className="flex min-w-0 flex-1 flex-row items-center gap-x-1">
 									<SidebarTrigger className="md:hidden" />
 									{/* The open session, named opposite its own
@@ -959,9 +960,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 										{view?.session.config.name || t('chat.newConversation')}
 									</span>
 								)}
-								{/* 窗口拖拽把手：只占标题右侧的空白，不覆盖任何可点元素。
-								    整条顶栏设 app-drag 会把右边的面板开关按钮一起吞掉。 */}
-								<div className="app-drag min-w-4 flex-1 self-stretch" />
+								{/* 整条顶栏可拖动，index.css 将交互控件明确排除为 no-drag。
+								    空白把手保持原布局，并提供稳定的非交互命中区域。 */}
+								<WindowDragRegion className="min-w-4 flex-1 self-stretch" />
 								</div>
 								{/* Never squeezed by a long session name: the
 								    name truncates instead. */}

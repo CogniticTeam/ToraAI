@@ -2350,8 +2350,15 @@ async function main() {
     const cmds = await (await realFetch(base + `/commands?session_id=${sid}`)).json();
     assert.ok(cmds.some((c) => c.name === 'review' && c.description === '审查改动'), '项目级命令应被发现');
 
-    const tools = await (await realFetch(base + `/tools/extra?session_id=${sid}`)).json();
-    assert.ok(tools.some((t) => t.name === 'HelloTool'), '项目级额外工具应被加载（extraTools 不再是空转）');
+    const untrusted = await (await realFetch(base + `/tools/extra?session_id=${sid}`)).json();
+    assert.ok(!untrusted.some((t) => t.name === 'HelloTool'), '未信任的项目工具不得导入执行');
+    const { loadConfig, saveConfig } = await import('../src/config.js');
+    const previousTrust = loadConfig().trustProjectToolsFor;
+    try {
+      saveConfig({ trustProjectToolsFor: [dir] });
+      const tools = await (await realFetch(base + `/tools/extra?session_id=${sid}`)).json();
+      assert.ok(tools.some((t) => t.name === 'HelloTool'), '显式信任后项目工具应可加载');
+    } finally { saveConfig({ trustProjectToolsFor: previousTrust }); }
 
     // 本地模型探测：本地没起服务时应返回空数组而不是 5xx
     const lm = await realFetch(base + '/admin/local-models');
