@@ -33,12 +33,14 @@ Website history was removed from public branches and tags on 2026-10-01. If you 
 
 ## 📸 Screenshots
 
+Updated on 2026-10-03 using a demo account and sample conversation. No real credentials are shown.
+
 | | |
 |---|---|
-| ![Chat home](docs/screenshots/01-聊天主页-导航栏展开.png) | ![Dark theme](docs/screenshots/19-深色主题.png) |
-| *Chat home · sidebar session list* | *Dark theme* |
-| ![Settings window](docs/screenshots/03-设置窗口.png) | ![Add model](docs/screenshots/12-表单字段顺序-密钥在前.png) |
-| *Settings · connection / advanced options* | *Add model · OpenAI-compatible form* |
+| ![Chat home](docs/screenshots/2026-10-03-chat-home.jpg) | ![Dark theme](docs/screenshots/2026-10-03-dark-chat.jpg) |
+| *Chat home · ToCode and project navigation* | *Dark theme · grouped tool calls and change previews* |
+| ![Settings window](docs/screenshots/2026-10-03-settings.jpg) | ![Add model](docs/screenshots/2026-10-03-add-model.jpg) |
+| *Settings · general preferences and notification sounds* | *Add model · API key and advanced configuration* |
 
 ## 📦 Architecture (monorepo)
 

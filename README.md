@@ -33,12 +33,14 @@
 
 ## 📸 界面预览
 
+2026-10-03 更新，使用演示账号与示例会话，未展示真实凭据。
+
 | | |
 |---|---|
-| ![聊天主页](docs/screenshots/01-聊天主页-导航栏展开.png) | ![深色主题](docs/screenshots/19-深色主题.png) |
-| *聊天主页 · 侧栏会话列表* | *深色主题* |
-| ![设置窗口](docs/screenshots/03-设置窗口.png) | ![添加模型](docs/screenshots/12-表单字段顺序-密钥在前.png) |
-| *设置窗口 · 连接信息 / 高级选项* | *添加模型 · OpenAI 兼容表单* |
+| ![聊天主页](docs/screenshots/2026-10-03-chat-home.jpg) | ![深色主题](docs/screenshots/2026-10-03-dark-chat.jpg) |
+| *聊天主页 · ToCode 与项目导航* | *深色主题 · 工具调用汇总与变更预览* |
+| ![设置窗口](docs/screenshots/2026-10-03-settings.jpg) | ![添加模型](docs/screenshots/2026-10-03-add-model.jpg) |
+| *设置 · 通用与提示音* | *添加模型 · API 密钥与高级配置* |
 
 ## 📦 架构（monorepo）
 
