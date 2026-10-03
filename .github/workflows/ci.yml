@@ -36,7 +36,7 @@ jobs:
       - name: Generate CycloneDX software bill of materials
         run: |
           mkdir -p artifacts
-          npm sbom --sbom-format cyclonedx --package-lock-only --omit=dev > artifacts/tora.cdx.json
+          npm sbom --sbom-format cyclonedx --package-lock-only > artifacts/tora.cdx.json
           node -e "const s=require('./artifacts/tora.cdx.json'); if (s.bomFormat !== 'CycloneDX' || !Array.isArray(s.components) || !s.components.length) process.exit(1); console.log('SBOM verified:', s.specVersion, s.components.length, 'components')"
       - name: Preserve SBOM for release and security review
         uses: actions/upload-artifact@v4
