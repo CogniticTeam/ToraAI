@@ -82,14 +82,17 @@ test('同一 shell 的并发调用排队，不混合输出；不同 owner 相互
   const a = acquireShell(cwd, {}, 'A'), b = acquireShell(cwd, {}, 'B');
   assert.notEqual(a, b);
   const ac = new AbortController();
-  const [first, second] = await Promise.all([a.run('sleep 0.1; printf FIRST', 3000, ac.signal), a.run('printf SECOND', 3000)]);
-  assert.equal(first.output.trim(), 'FIRST'); assert.equal(second.output.trim(), 'SECOND');
+  const [first, second] = await Promise.all([a.run('sleep 0.1; printf "FIRST\\n"', 3000, ac.signal), a.run('printf "SECOND\\n"', 3000)]);
+  // Linux 交互式 Bash 可回显输入；只匹配独立输出行，仍严格检查调用间不串流。
+  const taskOutput = result => result.output.split('\n').filter(line => /^(FIRST|SECOND|INDEPENDENT)$/.test(line)).join('\n');
+  assert.equal(first.exitCode, 0); assert.equal(second.exitCode, 0);
+  assert.equal(taskOutput(first), 'FIRST'); assert.equal(taskOutput(second), 'SECOND');
   const next = a.run('sleep 0.1; printf NEXT', 3000);
   ac.abort(); // Completed request's listener must no longer cancel another command.
   assert.equal((await next).exitCode, 0);
-  const independent = b.run('sleep 0.1; printf INDEPENDENT', 3000);
+  const independent = b.run('sleep 0.1; printf "INDEPENDENT\\n"', 3000);
   disposeOwnerShells('A');
-  assert.equal((await independent).output.trim(), 'INDEPENDENT');
+  assert.equal(taskOutput(await independent), 'INDEPENDENT');
   const stopped = new AbortController(); stopped.abort();
   assert.equal((await b.run('touch should-not-exist', 3000, stopped.signal)).aborted, true);
   assert.equal(existsSync(join(cwd, 'should-not-exist')), false);

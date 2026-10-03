@@ -54,7 +54,7 @@ try {
     await document.fonts.ready;
     await Promise.all(element.getAnimations({ subtree: true }).filter(animation => animation.effect?.getComputedTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {})));
   });
-  const dialogHeight = (await dialog.boundingBox()).height;
+  const dialogBounds = await dialog.boundingBox();
   await search.fill('traditional');
   assert.equal(await dialog.getByRole('button', { name: /繁體中文/ }).count(), 1);
   assert.equal(await dialog.getByRole('button', { name: /简体中文/ }).count(), 0);
@@ -62,7 +62,9 @@ try {
   assert.equal(await dialog.getByRole('button', { name: /繁體中文/ }).count(), 1, '繁简中文名称都应可搜索');
   await search.fill('not-a-language');
   assert.equal(await dialog.getByRole('status').getByText('没有匹配的语言').isVisible(), true);
-  assert.ok(Math.abs((await dialog.boundingBox()).height - dialogHeight) < 1, '搜索结果变化不应使居中弹窗上下跳动');
+  const filteredBounds = await dialog.boundingBox();
+  assert.ok(Math.abs(filteredBounds.width - dialogBounds.width) < 1, '搜索结果变化应保持共享选择器宽度');
+  assert.ok(Math.abs(filteredBounds.y + filteredBounds.height / 2 - dialogBounds.y - dialogBounds.height / 2) < 1, '自适应高度的选择器应保持垂直居中');
   await search.fill('');
   assert.equal(await dialog.locator('button[aria-pressed]').count(), 14);
   await page.screenshot({ path: join(tmpdir(), 'tora-language-search-login.png') });
