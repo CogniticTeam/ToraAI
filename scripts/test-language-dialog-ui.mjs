@@ -73,7 +73,7 @@ try {
   assert.ok(Math.abs(cardBounds.x - cardAfter.x) < 1 && Math.abs(cardBounds.y - cardAfter.y) < 1,
     '打开语言弹窗后登录卡片不应移动');
   await search.fill('english');
-  await dialog.getByRole('button', { name: 'English / 英语' }).click();
+  await dialog.getByRole('button', { name: 'English', exact: true }).click();
   await dialog.waitFor({ state: 'hidden' });
   assert.equal(await page.evaluate(() => localStorage.getItem('tora_language_preference')), 'en');
   assert.equal(await page.locator('.app-drag[data-language-open]').getAttribute('data-language-open'), 'false');
