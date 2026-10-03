@@ -49,7 +49,7 @@ try {
         await page.screenshot({ path: join(tmpdir(), 'tora-login-ar.png') });
       }
       await page.getByRole('button', { name: expected.settings.general.language.title }).click();
-      const dialog = page.getByRole('dialog', { name: expected.settings.general.language.title });
+      const dialog = page.getByRole('dialog', { name: expected.languageDialog.title });
       await dialog.waitFor({ state: 'visible' });
       const search = dialog.getByRole('searchbox', { name: expected.languageDialog.search });
       assert.equal(await search.isVisible(), true);
