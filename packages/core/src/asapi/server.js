@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { discoverSessionImports, previewSessionImports, commitSessionImports, readSessionImportBody } from './session-import.js';
 import { loadConfig, saveConfig, syncEffectiveModel, DEFAULT_CONFIG } from '../config.js';
+import { catgirlSettings } from '../catgirl.js';
 import {
   listAgents, getAgent, createAgent, updateAgent, deleteAgent,
   listCredentials, createCredential, updateCredential, deleteCredential,
@@ -26,7 +27,7 @@ import { HubError } from './hub-error.js';
 import { accessBlockReason, setAccessBlock } from './access.js';
 import { HUBS, providerFor } from './hubs.js';
 import { toSessionView, inputToText, systemNoticeMsg } from './protocol.js';
-import { startChatRun, isRunning, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools } from './bridge.js';
+import { startChatRun, isRunning, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools, updateRunningPermissionMode } from './bridge.js';
 import { readGitInfo, runGit } from '../tools/git.js';
 import { realpathAllowMissing } from '../security.js';
 import { listMemories, saveMemory, updateMemory, deleteMemory, searchMemories, loadMemoryConfig, saveMemoryConfig, MemoryValidationError } from './memory.js';
@@ -386,6 +387,26 @@ async function route(req, res) {
     if (acknowledged === null) return apiError(res, 404, '里程碑不存在或尚未达到');
     if (!acknowledged) return apiError(res, 500, '里程碑确认尚未保存，请重试');
     return json(res, 200, { status: 'ok', ...usageMilestoneStatus() });
+  }
+
+  // 彩蛋解锁与人格偏好保存在本地配置；不接收客户端提供的提示词。
+  if (p === '/admin/catgirl' && method === 'GET') {
+    return json(res, 200, catgirlSettings(loadConfig()));
+  }
+  if (p === '/admin/catgirl' && method === 'POST') {
+    try {
+      const body = await readBody(req);
+      if (body.install !== undefined && typeof body.install !== 'boolean') return apiError(res, 422, 'install 必须为布尔值');
+      if (body.enabled !== undefined && typeof body.enabled !== 'boolean') return apiError(res, 422, 'enabled 必须为布尔值');
+      if (body.install === false && body.enabled === true) return apiError(res, 422, '停用语言包时不能开启猫娘人格');
+      const current = catgirlSettings(loadConfig());
+      if (body.enabled === true && !current.installed && body.install !== true) return apiError(res, 409, '请先添加猫娘语言包');
+      const patch = {};
+      if (typeof body.install === 'boolean') patch.catgirlLanguagePackInstalled = body.install;
+      if (typeof body.enabled === 'boolean') patch.catgirlPersonaEnabled = body.enabled;
+      if (body.install === false) patch.catgirlPersonaEnabled = false;
+      return json(res, 200, catgirlSettings(saveConfig(patch)));
+    } catch (e) { return apiError(res, 400, e?.message || String(e)); }
   }
 
   // 读取生效 baseURL/model/apiKey 不回明文
@@ -1108,7 +1129,11 @@ async function route(req, res) {
       const body = await readBody(req);
       const s = loadSessionRecord(id);
       if (!s) return apiError(res, 404, '会话不存在');
-      if (isRunning(id)) return apiError(res, 409, '会话正在运行，配置已被快照，稍后再改');
+      const permissionOnly = Object.keys(body).length === 1 && 'permission_mode' in body;
+      if ('permission_mode' in body && !['default', 'accept_edits', 'explore', 'bypass', 'dont_ask'].includes(body.permission_mode)) {
+        return apiError(res, 400, '无效的权限模式');
+      }
+      if (isRunning(id) && !permissionOnly) return apiError(res, 409, '会话正在运行，仅允许修改权限模式');
       if (typeof body.name === 'string') {
         s.config.name = body.name.slice(0, 40);
         s.config.naming = { auto: false };
@@ -1152,7 +1177,12 @@ async function route(req, res) {
           ? s.state.permission_context : {};
         s.state.permission_context = { ...ctx, mode: body.permission_mode };
       }
-      return json(res, 200, toSessionView(saveSessionRecord(s), 'idle').session);
+      const saved = saveSessionRecord(s);
+      if (body.permission_mode) updateRunningPermissionMode(id, {
+        permission_mode: saved.state.permission_mode,
+        permission_context: saved.state.permission_context,
+      });
+      return json(res, 200, toSessionView(saved, isRunning(id) ? 'running' : 'idle').session);
     }
     if (method === 'DELETE') {
       if (isRunning(id)) return apiError(res, 409, '会话正在运行，无法删除');

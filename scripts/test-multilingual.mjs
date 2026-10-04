@@ -8,7 +8,7 @@ import { normalizeNativeLanguage } from '../packages/desktop/native-i18n.js';
 
 const locale = (name) => JSON.parse(readFileSync(new URL(`../packages/desktop/frontend/src/i18n/locales/${name}.json`, import.meta.url), 'utf8'));
 const added = ['ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh'];
-const all = ['en', 'zh', 'zh-Hant', ...added];
+const all = ['en-US', 'en-GB', 'zh', 'zh-HK', 'zh-TW', ...added];
 const english = locale('en');
 const requireFrontend = createRequire(new URL('../packages/desktop/frontend/package.json', import.meta.url));
 const i18next = requireFrontend('i18next');
@@ -49,7 +49,7 @@ test('全部界面语言有同一词条和数组结构，插值与代码片段�
     }
     if (added.includes(name)) assert.ok(changed > expectedKeys.length * 0.6, `${name} 的译文覆盖不足`);
     for (const option of all) {
-      const key = option === 'zh-Hant' ? 'zhHant' : option;
+      const key = option === 'en-GB' ? 'enGB' : option === 'en-US' ? 'enUS' : option === 'zh-HK' ? 'zhHK' : option === 'zh-TW' ? 'zhTW' : option;
       assert.ok(locale(name).settings.general.language[key], `${name} 缺少 ${option} 的语言名称`);
     }
     assert.ok(locale(name).languageDialog.search, `${name} 缺少语言搜索文案`);
@@ -90,8 +90,11 @@ test('新增语言的桌面菜单与通知词条均已本地化', () => {
     });
     assert.equal(notice.options.body, native[name]['You have a new message']);
   }
+  assert.equal(normalizeNativeLanguage('en-GB'),'en-GB');
+  assert.equal(normalizeNativeLanguage('en'),'en-US');
+  assert.equal(normalizeNativeLanguage('en_US'),'en-US');
   assert.equal(normalizeNativeLanguage('pt-BR'), 'pt');
   assert.equal(normalizeNativeLanguage('ar-SA'), 'ar');
-  assert.equal(normalizeNativeLanguage('zh-TW'), 'zh-Hant');
+  assert.equal(normalizeNativeLanguage('zh-TW'), 'zh-TW');
   assert.equal(normalizeNativeLanguage('zh-wenyan'), 'lzh');
 });

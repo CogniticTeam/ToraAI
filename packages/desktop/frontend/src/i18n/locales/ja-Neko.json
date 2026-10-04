@@ -1,0 +1,1908 @@
+{
+  "releaseNotes": {
+    "title": "更新内容",
+    "forVersion": "{{version}} のリリースノート",
+    "installedTitle": "Tora {{version}} に更新されました",
+    "loading": "リリースノートを読み込み中…",
+    "empty": "このバージョンのリリースノートはありませんにゃ。",
+    "error": "リリースノートを読み込めませんでしたにゃ。",
+    "retry": "再試行",
+    "open": "GitHub でリリースノート全文を見る",
+    "continue": "Tora を使い続ける",
+    "view": "リリースノートを見る"
+  },
+  "languageDialog": {
+    "title": "言語を選ぶにゃ",
+    "subtitle": "言語を選択にゃ",
+    "search": "好きな言語を探すにゃ",
+    "noResults": "その言語は見つからなかったにゃ",
+    "systemSuggestion": "システム言語は{{language}}です。切り替えますかにゃ？",
+    "switch": "{{language}}に切り替えにゃ",
+    "later": "今はしないにゃ",
+    "close": "言語セレクターを閉じるにゃ",
+    "switchError": "言語を切り替えられませんにゃ"
+  },
+  "usageMilestone": {
+    "title": "トークンのマイルストーン達成にゃ",
+    "subtitle": "Tora での累計トークン使用量が新しいマイルストーンに到達したにゃ。",
+    "total": "合計 {{count}} トークン使用にゃ",
+    "more": "あと {{count}} 件のマイルストーンを表示にゃ",
+    "continue": "Tora を続行にゃ",
+    "retry": "このマイルストーンを保存できませんでした。もう一度お試しくださいにゃ。",
+    "levels": {
+      "100k": "100K",
+      "1m": "1M",
+      "10m": "10M",
+      "100m": "100M",
+      "500m": "500M",
+      "1b": "1B",
+      "2b": "2B",
+      "5b": "5B",
+      "10b": "10B"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "外部リンクを開きますかにゃ？",
+    "externalLinkWarning": "外部ウェブサイトにアクセスしようとしていますにゃ。",
+    "copyLink": "リンクをコピーにゃ",
+    "copied": "コピーしたにゃ",
+    "openLink": "リンクを開くにゃ",
+    "close": "閉じるにゃ"
+  },
+  "inbox": {
+    "translateToLanguage": "{{language}}に翻訳にゃ",
+    "detail": "メッセージの詳細にゃ",
+    "translateToChinese": "中国語に翻訳にゃ",
+    "translateToEnglish": "英語に翻訳にゃ",
+    "translating": "翻訳中にゃ…",
+    "showOriginal": "原文を表示にゃ",
+    "showTranslation": "翻訳を表示にゃ",
+    "noTranslationNeeded": "翻訳は不要だにゃ",
+    "translationError": "翻訳に失敗しました。翻訳ボタンをクリックして再試行してほしいにゃ。",
+    "translationRateLimit": "翻訳リクエストが多すぎます。しばらくしてからもう一度お試しくださいにゃ。",
+    "title": "メッセージにゃ",
+    "newMessage": "Tora からの新着メッセージにゃ",
+    "empty": "メッセージはまだないにゃ",
+    "loading": "読み込み中にゃ…",
+    "unread": "未読にゃ",
+    "more": "さらに読み込むにゃ",
+    "back": "メッセージに戻るにゃ",
+    "retry": "再試行にゃ",
+    "loadError": "メッセージを読み込めませんにゃ",
+    "readError": "メッセージを既読にできませんでした。もう一度お試しくださいにゃ。",
+    "blocked": "アカウント停止中にゃ",
+    "blockedReason": "このアカウントは現在 Tora を利用できませんにゃ。",
+    "unbanHint": "管理者が停止を解除すると、自動的にアクセスが再開されますにゃ。",
+    "signOut": "サインアウトにゃ"
+  },
+  "requiredUpdate": {
+    "title": "Tora を更新にゃ",
+    "description": "バージョン {{version}} が利用可能です。続行するには更新してほしいにゃ。",
+    "download": "公式ダウンロードページを開くにゃ",
+    "macHint": "自動更新が利用できない場合は、公式サイトから最新の DMG をダウンロードし、アプリを手動で置き換えてくださいにゃ。",
+    "downloading": "更新をダウンロード中… {{percent}}%にゃ",
+    "install": "再起動してインストールにゃ",
+    "retry": "ダウンロードを再試行にゃ",
+    "error": "自動更新に失敗しました。再試行するか、公式ウェブサイトからダウンロードしてほしいにゃ。",
+    "quit": "Tora を終了にゃ"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Tora 初回起動時のウェルカムアニメーションにゃ",
+      "welcome": "Tora へようこそにゃ",
+      "headlineFirst": "アイデアをにゃ",
+      "headlineSecond": "行動ににゃ。",
+      "description": "モデルを接続し、プロジェクトを開き、会話を始めましょう。Tora はコードの読解や編集、作業の遂行を支援するにゃ。",
+      "hint": "短いガイドで基本を案内するにゃ",
+      "foot": "ワークスペースの準備がほぼ整いましたにゃ。",
+      "logoAlt": "Tora ロゴにゃ",
+      "enter": "開始するにゃ",
+      "skip": "アニメーションをスキップにゃ"
+    },
+    "tour": {
+      "skip": "ガイドをスキップにゃ",
+      "later": "後で設定にゃ",
+      "next": "次へにゃ",
+      "pauseSettings": "モデル管理が開いています。完了したら設定を閉じると、ガイドが続行するにゃ。",
+      "pauseFolder": "プロジェクトフォルダを選択するか、続行するにはメニューを閉じてくださいにゃ。",
+      "pausePermission": "承認モードを確認または選択し、続行するにはメニューを閉じてくださいにゃ。",
+      "demoSend": "送信をシミュレートします。実際には送信されませんにゃ",
+      "clickHint": "続行するにはハイライトされたコントロールをクリックしてほしいにゃ",
+      "loading": "コントロールを検索中にゃ…",
+      "demoTag": "ガイド付きデモ · 実際のコマンドは実行されませんにゃ",
+      "demoMessage": "このプロジェクトのビルドスクリプトを確認して、まず計画を立ててくださいにゃ。",
+      "demoResponse": "Tora はまずタスクを理解し、必要に応じてツールの権限を求めます。各ステップを確認し、続行するかどうかを判断できるにゃ。",
+      "demoApprove": "今回のみ許可（デモ）にゃ",
+      "demoCheckpoint": "チェックポイントを表示（デモ）にゃ",
+      "completeTitle": "作成する準備ができましたにゃ。",
+      "completeBody": "モデル、フォルダ、権限はいつでも変更できます。不確かな操作は続行する前に確認してほしいにゃ。",
+      "startWorking": "Tora を開始にゃ",
+      "startAgain": "ガイドをもう一度見るにゃ",
+      "steps": [
+        {
+          "chapter": "準備するにゃ",
+          "title": "自分のモデルを選択にゃ",
+          "body": "Toraはあなたが追加したモデルを使用します。モデルピッカーをクリックして、プロバイダーを接続する場所を確認してほしいにゃ。"
+        },
+        {
+          "chapter": "準備するにゃ",
+          "title": "モデルプロバイダーを追加にゃ",
+          "body": "「モデルを追加」をクリックしてモデル管理を開きます。プロバイダーを選択し、モデルの詳細を入力します。セットアップを完了するかスキップすると、ガイドが再開するにゃ。"
+        },
+        {
+          "chapter": "準備するにゃ",
+          "title": "プロジェクトの範囲を設定にゃ",
+          "body": "フォルダコントロールをクリックしてプロジェクトを選択します。エージェントは、あなたが許可したワークスペース内で読み取り、編集、ツールの実行を行います。これは後で行うこともできるにゃ。"
+        },
+        {
+          "chapter": "準備するにゃ",
+          "title": "制御を維持するにゃ",
+          "body": "許可モードをクリックしてオプションを確認します。手動承認は良い出発点です。リスクの高いアクションはあなたの決定を待ちますにゃ。"
+        },
+        {
+          "chapter": "タスクを開始にゃ",
+          "title": "明確な目標を説明にゃ",
+          "body": "メッセージボックスをクリックします。達成すべきこと、触れてはいけないこと、完了したと判断する方法を述べてくださいにゃ。"
+        },
+        {
+          "chapter": "タスクを開始にゃ",
+          "title": "最初のタスクを開始にゃ",
+          "body": "これは送信ボタンです。次のステップは実行をシミュレートするだけです。モデルクレジットは消費されず、実際のメッセージは送信されませんにゃ。"
+        },
+        {
+          "chapter": "レビューとリカバリにゃ",
+          "title": "各重要なステップを承認するにゃ",
+          "body": "これは許可リクエストのデモです。ツールが何をしようとしているかを読んでから、許可または拒否してほしいにゃ。"
+        },
+        {
+          "chapter": "レビューとリカバリにゃ",
+          "title": "間違った方向から回復するにゃ",
+          "body": "チェックポイントは変更前の状態を記録します。実際に復元する前に、影響を受けるファイルを確認してほしいにゃ。"
+        },
+        {
+          "chapter": "Toraを拡張にゃ",
+          "title": "スキルでワークフローを再利用にゃ",
+          "body": "スキルをクリックします。信頼できるスキルをインポートまたはインストールして、便利なワークフローを繰り返し可能にするにゃ。"
+        },
+        {
+          "chapter": "Toraを拡張にゃ",
+          "title": "ブラウザで結果を確認にゃ",
+          "body": "内蔵ブラウザをクリックします。あなたとエージェントは同じページでWebアプリを検査、デバッグ、検証できるにゃ。"
+        },
+        {
+          "chapter": "Toraを拡張にゃ",
+          "title": "反復作業をスケジュールにゃ",
+          "body": "「自動化」をクリックして、定期的なチェックや整理タスクをスケジュールし、各実行を確認するにゃ。"
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "始める前に",
+    "description": "利用規約、プライバシーポリシー、越境データ転送に関する通知を個別に確認し、同意してください。3つすべてが選択されるまで、Toraはサインインやワークスペースを開きません。",
+    "terms": "利用規約を読み、同意します",
+    "readTerms": "利用規約を読む",
+    "privacy": "プライバシーポリシーを読み、理解しました",
+    "readPrivacy": "プライバシーポリシーを読む",
+    "crossBorder": "個人情報の越境移転に個別に同意します",
+    "crossBorderHint": "アカウントやクラウド機能を使用すると、必要な情報が中国本土外に転送される場合があります。範囲と取り扱いの詳細を確認してください。",
+    "readCrossBorder": "越境移転に関する通知を読む",
+    "decline": "拒否して終了",
+    "agree": "確認して続行"
+  },
+  "sponsors": {
+    "title": "今月のサポーターにゃ",
+    "description": "今月AfdianでToraを支援してくださっているユーザーの皆様、ありがとうございます。表示名のみが表示され、金額やアカウントの詳細は表示されませんにゃ。",
+    "source": "Afdianからのデータにゃ",
+    "total": "{{count}}人のサポーターにゃ",
+    "loaded": "{{count}}人のサポーターを表示中にゃ",
+    "empty": "今月のサポーターはいませんにゃ",
+    "emptyMore": "このページには今月のサポーターがいません。続行するにはさらに読み込んでくださいにゃ。",
+    "loading": "サポーターを読み込み中にゃ…",
+    "loadError": "サポーターは一時的に利用できません。後でもう一度お試しくださいにゃ。",
+    "retry": "再試行にゃ",
+    "more": "さらに読み込むにゃ",
+    "donate": "スポンサーにゃ",
+    "leaveTitle": "Afdianを開いてスポンサーになりますかにゃ？",
+    "leaveDescription": "確認後、Toraはこの外部ウェブサイトをシステムブラウザで開きますにゃ。",
+    "confirmLeave": "確認して開くにゃ"
+  },
+  "polls": {
+    "title": "投票にゃ",
+    "subtitle": "投票して結果をフォローにゃ",
+    "all": "すべての投票にゃ",
+    "history": "自分の投票履歴にゃ",
+    "search": "検索にゃ",
+    "loadMore": "さらに読み込むにゃ",
+    "from": "開始にゃ",
+    "to": "終了にゃ",
+    "starts": "開始日時にゃ",
+    "ends": "終了日時にゃ",
+    "forever": "期限なしにゃ",
+    "refresh": "投票を更新にゃ",
+    "startsIn": "{{time}}後に開始にゃ",
+    "startingSoon": "まもなく開始、ステータスを確認中にゃ…",
+    "dayUnit": "日にゃ",
+    "state": {
+      "draft": "下書きにゃ",
+      "scheduled": "未開始にゃ",
+      "active": "受付中にゃ",
+      "ended": "終了にゃ",
+      "archived": "アーカイブ済みにゃ"
+    },
+    "type": {
+      "single": "単一選択にゃ",
+      "multiple": "複数選択にゃ",
+      "score": "100点満点にゃ"
+    },
+    "frequency": {
+      "once": "1人1回にゃ",
+      "daily": "1日1回（北京時間）にゃ",
+      "unlimited": "無制限にゃ"
+    },
+    "maxSelections": "最大{{count}}個選択にゃ",
+    "voted": "投票済みにゃ",
+    "votedCount": "{{count}}回送信済みにゃ",
+    "available": "投票受付中にゃ",
+    "choose": "左側の投票を選択してほしいにゃ",
+    "empty": "投票はまだないにゃ",
+    "loading": "投票を読み込み中にゃ…",
+    "noHistory": "投票履歴がないにゃ",
+    "results": "結果にゃ",
+    "participants": "{{count}} 票にゃ",
+    "countHidden": "投票者数は非公開だにゃ",
+    "detailsHidden": "選択肢の詳細は非公開だにゃ",
+    "resultsUnavailable": "結果はまだ公開されていませんにゃ",
+    "autoRefresh": "5秒ごとに更新にゃ",
+    "pieHint": "リングは各選択肢の割合を示します。複数選択の選択率は合計が100%を超える場合がありますにゃ。",
+    "submit": "投票を送信にゃ",
+    "submitting": "送信中にゃ…",
+    "confirmVote": "この投票を送信しますか？送信後は編集できませんにゃ。",
+    "submitted": "投票を送信したにゃ",
+    "queued": "オフラインで保存されました。接続時に同期されますが、サーバーが確認するまで集計されませんにゃ。",
+    "pending": "保留中の投票にゃ",
+    "waitingSync": "サーバーの確認待ちにゃ",
+    "retry": "再試行にゃ",
+    "remove": "削除にゃ",
+    "removePending": "この保留中の投票を削除しますかにゃ？",
+    "selectionRequired": "有効な選択肢を選択してほしいにゃ",
+    "scoreRequired": "各選択肢に0～100の整数スコアを入力してほしいにゃ",
+    "submitError": "投票を送信できませんでしたにゃ",
+    "loadError": "投票を読み込めませんでしたにゃ",
+    "disabled": "投票は管理者によって無効化されていますにゃ。"
+  },
+  "common": {
+    "toraModels": "Toraモデルにゃ",
+    "add": "追加にゃ",
+    "agent": "エージェントにゃ",
+    "cancel": "今はやめるにゃ",
+    "channel": "チャンネルにゃ",
+    "chat": "チャットにゃ",
+    "new-task": "新しいタスクにゃ",
+    "model-switch-warning": "タスク実行中にモデルを切り替えると、会話コンテキストが失われ、トークン使用量が増え、古い履歴が圧縮されて出力品質が低下する可能性がありますにゃ。",
+    "automation": "自動化にゃ",
+    "workflow": "ワークフローにゃ",
+    "close": "閉じるにゃ",
+    "confirm": "了解にゃ",
+    "create": "作成にゃ",
+    "creating": "作成中にゃ…",
+    "credential": "認証情報にゃ",
+    "date": "日付にゃ",
+    "delete": "削除にゃ",
+    "disabled": "無効にゃ",
+    "edit": "編集にゃ",
+    "error": "あれれ、エラーにゃ",
+    "information": "情報にゃ",
+    "knowledge": "ナレッジベースにゃ",
+    "loading": "読み込み中にゃ…",
+    "shownCount": "{{count}} 件表示にゃ",
+    "selectedCount": "{{total}} 件中 {{selected}} 件選択にゃ",
+    "model": "モデルにゃ",
+    "name": "名前にゃ",
+    "no": "いいえにゃ",
+    "noData": "まだ何もないにゃ",
+    "readOnly": "読み取り専用にゃ",
+    "readOnlyTooltip": "読み取り専用で共有されています。編集と削除は無効だにゃ。",
+    "completed": "できたにゃ！",
+    "failed": "失敗にゃ",
+    "running": "実行中にゃ",
+    "save": "保存するにゃ",
+    "saving": "保存中にゃ…",
+    "schedule": "スケジュールにゃ",
+    "selectAgent": "エージェントを選択にゃ",
+    "settings": "設定にゃ",
+    "switchToZh": "中国語に切り替えにゃ",
+    "switchToZhHant": "繁体字中国語に切り替えにゃ",
+    "switchToEn": "英語に切り替えにゃ",
+    "team": "チームにゃ",
+    "uploading": "アップロード中にゃ",
+    "leader": "リーダーにゃ",
+    "time": "時刻にゃ",
+    "yes": "はいにゃ",
+    "deleteTitle": "{{entity}}「{{name}}」を削除しますかにゃ？",
+    "deleteDescription": "この操作は元に戻せませんにゃ。",
+    "mcp-hub": "MCPハブにゃ",
+    "mine": "わたしのにゃ",
+    "my-mcp": "インストール済みMCPにゃ",
+    "skill-hub": "スキルハブにゃ",
+    "browser": "ブラウザにゃ",
+    "polls": "投票にゃ",
+    "my-skill": "わたしのスキルにゃ",
+    "message": "メッセージにゃ",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "埋め込みにゃ",
+    "select": "選択にゃ"
+  },
+  "error": {
+    "description": "ページで予期しないエラーが発生しました。再試行するか、ホームに戻ってくださいにゃ。",
+    "retry": "再試行にゃ",
+    "home": "ホームに戻るにゃ"
+  },
+  "tool": {
+    "callGeneric": "ツールを呼び出すにゃ",
+    "read": {
+      "name": "読み取りにゃ",
+      "fileCount_one": "{{count}} ファイルにゃ",
+      "fileCount_other": "{{count}} ファイルにゃ",
+      "lineCount_one": "{{formatted}} 行を読み込みにゃ",
+      "lineCount_other": "{{formatted}} 行を読み込みにゃ"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} コマンドにゃ",
+      "read": "{{count}} 読み込みにゃ",
+      "edit": "{{count}} 編集にゃ",
+      "search": "{{count}} 検索にゃ",
+      "todo": "{{count}} ToDo",
+      "mcp": "{{count}} MCP 呼び出しにゃ",
+      "separator": "、",
+      "fallback": "{{count}} ツール呼び出しにゃ"
+    }
+  },
+  "textInput": {
+    "toComplete": "完了までにゃ",
+    "attach": "ファイルを添えるにゃ",
+    "attachNotSupported": "このモデルはファイルの添付に対応していませんにゃ",
+    "send": "送るにゃ",
+    "stop": "いったん止めるにゃ",
+    "stopping": "停止中にゃ…",
+    "sendWithSkills": "{{count}} 個のスキルを付けて送信にゃ",
+    "selectedSkills": "選択したスキルにゃ",
+    "removeSkill": "{{name}} を削除にゃ",
+    "skillOnlyPrompt": "添付したスキルを使用してください。",
+    "selectedElements": "参照された要素にゃ",
+    "removeElement": "要素 {{tag}} を削除にゃ",
+    "elementRefLine": "ページ要素 `{{selector}}` を操作",
+    "slashMenu": {
+      "selectedLabel": "選択済みにゃ",
+      "hintSelect": "Enter で選択、Space で複数選択にゃ",
+      "hintSend": "Enter を押して送信にゃ",
+      "clear": "クリアにゃ",
+      "close": "閉じるにゃ",
+      "empty": "スキルがまだインストールされていません — スキルセンターへにゃ",
+      "emptyQuery": "「{{query}}」に一致するスキルがないにゃ",
+      "moreMatches": "他に {{count}} 件一致 — 入力を続けて絞り込むにゃ",
+      "selectedCount": "{{count}} 個のスキルを選択中にゃ",
+      "keyboardHighlight": "+ キーボードハイライトにゃ",
+      "clickToMulti": "行をクリックして複数選択、Esc で閉じるにゃ"
+    },
+    "optimize": "プロンプトを磨くにゃ",
+    "optimizing": "最適化中にゃ…",
+    "optimizeTitle": "最適化されたプロンプトにゃ",
+    "optimizeFailed": "最適化に失敗したにゃ",
+    "optimizeApply": "適用にゃ",
+    "optimizeRetry": "再試行にゃ",
+    "optimizeDiscard": "破棄にゃ",
+    "optimizeBy": "DeepSeek による最適化"
+  },
+  "browserPanel": {
+    "newTab": "新しいタブにゃ",
+    "createTab": "新しいタブにゃ",
+    "closeTab": "タブを閉じるにゃ",
+    "back": "戻るにゃ",
+    "forward": "進むにゃ",
+    "reload": "再読み込みにゃ",
+    "pickElement": "要素を選択にゃ",
+    "pickElementHint": "要素を選択: ページ上でホバーしてハイライト、クリックでチャット入力欄にカードとして添付 (Esc でキャンセル)にゃ",
+    "openInBrowser": "ブラウザで開くにゃ",
+    "openInBrowserHint": "現在のページをシステムブラウザで開くにゃ",
+    "urlPlaceholder": "URL または検索クエリを入力して Enter を押す",
+    "noTabPick": "タブがまだ開かれていません。アドレスバーに URL または検索クエリを入力してから、要素を選択してほしいにゃ。",
+    "noTabAction": "タブがまだ開かれていません。右上の + をクリックするか、アドレスバーに URL または検索クエリを入力してほしいにゃ。",
+    "iframeFallbackHint": "ブラウザフォールバックモード (<iframe>) が有効です。同一オリジンのページは動作しますが、クロスオリジンのサイトは X-Frame-Options / CSP により埋め込みが拒否される場合があります。デスクトップアプリでは、これらの制限のない実際の内蔵ブラウザ (<webview>) を使用するにゃ。"
+  },
+  "voice": {
+    "micTooltip": "音声入力にゃ",
+    "listening": "聞き取り中 — もう一度クリックで停止にゃ",
+    "transcribing": "文字起こし中にゃ…",
+    "micDenied": "マイクへのアクセスが拒否されました — システム設定で許可してほしいにゃ",
+    "transcribeFailed": "音声認識に失敗したにゃ",
+    "emptyTranscript": "認識できませんでしたにゃ",
+    "keyMissing": "ASR API キーが設定されていません (voice-config.json)にゃ"
+  },
+  "confirmCard": {
+    "toConfirm": "確認するにはにゃ",
+    "yesWithRule": "はい。このセッション中は {{toolName}} に {{ruleContent}} の実行を許可するにゃ"
+  },
+  "messageBubble": {
+    "thinking": "思考中にゃ",
+    "thinkingFor": "{{duration}} 思考中にゃ",
+    "taskProcess": {
+      "title": "タスクの進行状況にゃ",
+      "running": "経過時間 {{duration}}にゃ",
+      "finished": "所要時間 {{duration}}にゃ",
+      "hour": "時間にゃ ",
+      "minute": "分にゃ ",
+      "second": "秒にゃ",
+      "noConclusion": "このターンは結論を出さずに終了しました。詳細はタスクの進行状況を展開してほしいにゃ。"
+    },
+    "audioGenerating": "音声を生成中にゃ…",
+    "playAudio": "音声を再生にゃ",
+    "pauseAudio": "音声を一時停止にゃ",
+    "running": "実行中にゃ…",
+    "skillAttached": "スキル {{name}} を添付したにゃ",
+    "changedFiles": {
+      "title": "{{count}} ファイルが変更されましたにゃ",
+      "openPanel": "パネルですべての変更を表示にゃ"
+    },
+    "processed": "処理時間 {{duration}}にゃ",
+    "completed": "{{duration}} で完了にゃ",
+    "duration": {
+      "day": "日にゃ ",
+      "hour": "時間にゃ ",
+      "minute": "分にゃ",
+      "second": "秒にゃ"
+    },
+    "hintSource": {
+      "tool_output": "ツール出力にゃ",
+      "team": "チームにゃ",
+      "team_message": "チームにゃ",
+      "schedule": "スケジュールにゃ",
+      "system": "システムにゃ",
+      "channel": "チャンネルにゃ",
+      "runtime_state": "ランタイム状態にゃ"
+    },
+    "error": {
+      "title": "返信に失敗したにゃ",
+      "blockedTitle": "ルールによりブロックされましたにゃ",
+      "authentication": "認証に失敗しました — モデルのAPIキーまたは資格情報を確認してほしいにゃ。",
+      "permission": "リクエストが許可されていません — 資格情報にこのモデルまたはエンドポイントへの権限がないにゃ。",
+      "rate_limit": "レート制限またはクォータを超えました — 後でもう一度お試しくださいにゃ。",
+      "invalid_request": "モデルへのリクエストが無効として拒否されましたにゃ。",
+      "upstream": "上流のモデルサービスがエラーを返したにゃ。",
+      "connection": "モデルサービスに到達できませんでした — ネットワークエラーまたはタイムアウトだにゃ。",
+      "internal": "予期しない内部エラーが発生したにゃ。",
+      "setup": "セッションを準備できませんでした — エージェントのモデル、ツール、ナレッジベースを確認してほしいにゃ。",
+      "unknown": "不明なエラーで返信に失敗したにゃ。"
+    },
+    "copy": "コピーにゃ"
+  },
+  "questionPanel": {
+    "supplementTitle": "他に追加したいことはありますかにゃ？",
+    "supplementPlaceholder": "補足情報を追加",
+    "optional": "任意にゃ",
+    "of": "のにゃ",
+    "prev": "戻るにゃ",
+    "next": "次へにゃ",
+    "submit": "送信にゃ",
+    "cancel": "キャンセルにゃ",
+    "other": "その他にゃ",
+    "otherPlaceholder": "ここに入力"
+  },
+  "chat": {
+    "inputPlaceholder": "やりたいことを教えてにゃ",
+    "confirmToolCall": "この操作をしてもいいかにゃ？",
+    "subagentConfirmTitle": "{{name}} が確認を求めていますにゃ",
+    "newSession": "新しいセッションにゃ",
+    "newConversation": "新しい会話にゃ",
+    "greeting": "Toraで何を作ろうかにゃ？",
+    "greetingProject": "{{project}} で一緒に何をするにゃ？",
+    "thinking": "じっくり考え中にゃ…",
+    "project": {
+      "label": "プロジェクトにゃ",
+      "unassigned": "未割り当てにゃ",
+      "rename": "プロジェクト名を変更にゃ"
+    },
+    "maxItersExceeded": {
+      "title": "反復制限に達したにゃ",
+      "description": "続行するには新しいメッセージを送信するか、現在のタスクを続けてくださいにゃ。",
+      "continue": "続行にゃ"
+    },
+    "context": {
+      "compact": {
+        "title": "コンテキストが自動圧縮されましたにゃ",
+        "evicted": "{{count}} 件のツール出力を破棄したにゃ",
+        "compacted": "古い履歴を要約したにゃ",
+        "fallback": "圧縮済みにゃ",
+        "description": "{{parts}}（約 {{before}} → {{after}} トークン、予算 {{budget}}）にゃ"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "エージェントを選択",
+      "emptyTitle": "エージェントはまだいないにゃ",
+      "emptyDescription": "開始するにはエージェントを作成してほしいにゃ。",
+      "groupYours": "あなたのにゃ",
+      "groupShared": "あなたと共有にゃ"
+    },
+    "session": {
+      "label": "セッションにゃ",
+      "emptyTitle": "会話はまだないにゃ",
+      "emptyNoAgent": "まずエージェントを選択してほしいにゃ。",
+      "emptyHasAgent": "チャットを開始するにはセッションを作成してほしいにゃ。",
+      "today": "今日にゃ",
+      "earlier": "以前にゃ"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "エージェントを作成にゃ",
+    "description": "新しいエージェントのアイデンティティと振る舞いを定義するにゃ。"
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "エージェントのアイデンティティにゃ",
+      "description": "このエージェントの振る舞いを定義する名前と指示にゃ。",
+      "name": {
+        "label": "名前にゃ",
+        "placeholder": "マイエージェント"
+      },
+      "system-prompt": {
+        "label": "システムプロンプトにゃ"
+      }
+    },
+    "context-config": {
+      "legend": "コンテキスト設定にゃ",
+      "description": "コンテキストウィンドウの管理と圧縮方法を制御するにゃ。",
+      "trigger-ratio": {
+        "label": "トリガー比率にゃ"
+      },
+      "reserve-ratio": {
+        "label": "予備比率にゃ"
+      },
+      "tool-result-limit": {
+        "label": "ツール結果の制限にゃ"
+      },
+      "compression-prompt": {
+        "label": "圧縮プロンプトにゃ"
+      },
+      "summary-template": {
+        "label": "要約テンプレートにゃ"
+      },
+      "max-image-num": {
+        "label": "最大画像数にゃ"
+      }
+    },
+    "react-config": {
+      "legend": "ReAct設定にゃ",
+      "description": "推論とアクションのループ動作を制御するにゃ。",
+      "max-iters": {
+        "label": "最大反復回数にゃ"
+      },
+      "stop-on-reject": {
+        "label": "拒否時に停止にゃ"
+      },
+      "structured-output-grace-iters": {
+        "label": "構造化出力の猶予にゃ",
+        "description": "最大値を超えて許可される追加の反復。これにより、制限に達した実行でも要求された構造化出力を生成できるにゃ。"
+      },
+      "interruption-message": {
+        "label": "中断時の返信にゃ",
+        "description": "ユーザーが実行を中断したときに、エージェントの返信として送信されますにゃ。"
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "CancelledErrorを発生させるにゃ",
+        "description": "中断が処理された後、asyncio.CancelledErrorを再発生させます（握りつぶさない）にゃ。"
+      }
+    },
+    "invite-config": {
+      "legend": "招待設定にゃ",
+      "description": "他のエージェントがAgentInviteを介してこのエージェントを借用できるかどうかを制御するにゃ。",
+      "invitable": {
+        "label": "招待可能にゃ"
+      },
+      "invite-description": {
+        "label": "招待の説明にゃ",
+        "placeholder": "このエージェントの専門分野を簡単に説明してください。invitable がオンの場合は必須です。"
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "エージェントを編集にゃ",
+    "description": "このエージェントの設定を更新するにゃ。"
+  },
+  "dialog-agent-delete": {
+    "entity": "エージェントにゃ",
+    "confirm": "削除にゃ"
+  },
+  "dialog-session-delete": {
+    "entity": "セッションにゃ",
+    "confirm": "削除にゃ"
+  },
+  "dialog-session-rename": {
+    "title": "セッションの名前を変更にゃ",
+    "description": "このセッションに新しい名前を付けますにゃ。",
+    "label": "名前にゃ",
+    "placeholder": "セッション名"
+  },
+  "dialog-project-rename": {
+    "title": "プロジェクトの名前を変更にゃ",
+    "description": "サイドバーとウェルカムメッセージのプロジェクト表示名のみを変更します。フォルダーとセッションタイトルは変更されませんにゃ。",
+    "label": "プロジェクト名にゃ",
+    "placeholder": "プロジェクト名"
+  },
+  "session-menu": {
+    "rename": "名前を変更にゃ",
+    "delete": "削除にゃ"
+  },
+  "dialog-credential-create": {
+    "title": "認証情報を追加にゃ",
+    "description": "モデルプロバイダーの認証情報を追加するにゃ。",
+    "selectType": "プロバイダーにゃ",
+    "selectTypePlaceholder": "プロバイダーを選択"
+  },
+  "dialog-credential-edit": {
+    "title": "認証情報を編集にゃ",
+    "description": "このプロバイダーの保存済み認証情報を更新するにゃ。"
+  },
+  "dialog-knowledge-base-create": {
+    "title": "ナレッジベースを作成にゃ",
+    "description": "埋め込みモデルを使用して新しいナレッジベースを作成するにゃ。",
+    "name": {
+      "label": "名前にゃ",
+      "placeholder": "マイナレッジベース"
+    },
+    "descriptionField": {
+      "label": "説明にゃ",
+      "placeholder": "このナレッジベースの用途を説明してください。"
+    },
+    "embeddingModel": {
+      "label": "埋め込みモデルにゃ"
+    },
+    "dimension": {
+      "label": "次元数にゃ"
+    },
+    "chunker": {
+      "label": "チャンカーにゃ"
+    },
+    "policy": {
+      "lockedTitle": "次元数は {{dimension}}d に固定されていますにゃ",
+      "lockedDescription": "このサーバーでは、すべてのナレッジベースが {{dimension}} 次元の埋め込みに固定されています。以下には互換性のあるモデルのみが表示されますにゃ。",
+      "noCompatibleTitle": "互換性のある埋め込みモデルがないにゃ",
+      "noCompatibleAny": "どのモデルも埋め込みモデルを提供していません。先に設定でモデルを追加してほしいにゃ。",
+      "noCompatibleLocked": "どの認証情報にも {{dimension}} 次元の埋め込みを生成できるモデルがないにゃ。"
+    },
+    "errors": {
+      "nameRequired": "ナレッジベースに名前を付けてくださいにゃ。",
+      "embeddingRequired": "埋め込みモデルを選択してほしいにゃ。",
+      "dimensionRequired": "次元数を選択してほしいにゃ。",
+      "chunkerRequired": "チャンク分割方法を選択してほしいにゃ。"
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "ナレッジベースを編集にゃ",
+    "description": "ナレッジベースの名前と説明を更新するにゃ。",
+    "name": {
+      "label": "名前にゃ",
+      "placeholder": "マイナレッジベース"
+    },
+    "descriptionField": {
+      "label": "説明にゃ",
+      "placeholder": "このナレッジベースの用途を説明してください。"
+    },
+    "embeddingModel": {
+      "label": "埋め込みモデルにゃ"
+    },
+    "chunker": {
+      "label": "チャンカーにゃ"
+    },
+    "errors": {
+      "nameRequired": "ナレッジベースに名前を付けてくださいにゃ。"
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "ナレッジベースを削除にゃ",
+    "description": "ナレッジベース「{{name}}」と、インデックスされたすべてのドキュメントが完全に削除されます。この操作は取り消せませんにゃ。"
+  },
+  "credential": {
+    "noProviders": "利用可能なプロバイダーがありません",
+    "selectHint": "認証情報が選択されていませんにゃ",
+    "selectHintDescription": "サイドバーから認証情報を選択して詳細を表示するにゃ。",
+    "availableModels": "利用可能なモデルにゃ",
+    "noModels": "利用可能なモデルがないにゃ",
+    "noModelsDescription": "このプロバイダーはモデルを返しませんでしたにゃ。",
+    "deleteEntity": "認証情報にゃ",
+    "subtitle": "モデル API 認証情報の設定にゃ",
+    "configured": "設定済みにゃ",
+    "addProvider": "認証情報を追加にゃ",
+    "reasoning": "推論にゃ",
+    "realtime": "リアルタイムにゃ",
+    "table": {
+      "model": "モデルにゃ",
+      "context": "コンテキストにゃ",
+      "maxOutput": "最大出力にゃ",
+      "accepts": "入力にゃ",
+      "outputs": "出力にゃ",
+      "legend": "コンテキストと最大出力はトークン数です。REASONING は拡張思考をサポートするモデルを示するにゃ。",
+      "dimensions": "次元数にゃ"
+    }
+  },
+  "knowledge": {
+    "subtitle": "エージェントが使用するナレッジベースを管理するにゃ",
+    "selectHint": "ナレッジベースが選択されていませんにゃ",
+    "selectHintDescription": "サイドバーからナレッジベースを選択して詳細を表示するにゃ。",
+    "list": {
+      "label": "ナレッジベースにゃ",
+      "emptyTitle": "ナレッジベースがないにゃ",
+      "emptyDescription": "ドキュメントのインデックス作成を開始するには、ナレッジベースを作成してほしいにゃ。",
+      "createButton": "ナレッジベースを作成にゃ"
+    },
+    "document": {
+      "emptyTitle": "ドキュメントがないにゃ",
+      "emptyDescription": "このナレッジベースにインデックスするには、ドキュメントをアップロードしてほしいにゃ。",
+      "uploadButton": "ドキュメントをアップロードにゃ",
+      "uploadButtonShort": "アップロードにゃ",
+      "chunkCount_one": "{{count}} チャンクにゃ",
+      "chunkCount_other": "{{count}} チャンクにゃ",
+      "deleteConfirmTitle": "ドキュメントを削除にゃ",
+      "deleteConfirmDescription": "「{{name}}」を削除しますか？ このドキュメントと、インデックスされたすべてのチャンクが削除されます。この操作は取り消せませんにゃ。",
+      "deleteError": "ドキュメントを削除できませんでしたにゃ。",
+      "dropHintIdle": "またはここにファイルをドロップにゃ",
+      "unsupportedExtension": "「{{name}}」はスキップされました — ファイル形式がサポートされていませんにゃ。",
+      "status": {
+        "queued": "キューに追加済みにゃ",
+        "uploading": "アップロード中にゃ",
+        "pending": "ワーカーを待機中にゃ",
+        "parsing": "解析中にゃ",
+        "chunking": "チャンク分割中にゃ",
+        "indexing": "インデックス作成中にゃ",
+        "ready": "準備完了にゃ",
+        "error": "エラーにゃ",
+        "cancelled": "キャンセル済みにゃ"
+      },
+      "actions": {
+        "cancel": "キャンセルにゃ",
+        "dismiss": "閉じるにゃ",
+        "remove": "削除にゃ",
+        "clearFinished": "完了済みをクリアにゃ"
+      },
+      "title": "ドキュメントにゃ",
+      "chunkCount": "{{count}} チャンクにゃ"
+    },
+    "test": {
+      "button": "テストにゃ",
+      "title": "検索をテストにゃ",
+      "description": "アドホッククエリで \"{{name}}\" をプローブするにゃ。",
+      "queryLabel": "クエリにゃ",
+      "queryPlaceholder": "自然言語の質問を入力…",
+      "topKLabel": "Top K",
+      "searchButton": "検索にゃ",
+      "score": "スコアにゃ",
+      "chunkPosition": "チャンク {{index}} / {{total}}にゃ",
+      "emptyTitle": "一致なしにゃ",
+      "emptyDescription": "このクエリでしきい値を超えたチャンクはないにゃ。"
+    },
+    "config": {
+      "title": "構成にゃ",
+      "embeddingModel": "埋め込みモデルにゃ",
+      "dimensions": "次元数にゃ",
+      "credential": "認証情報にゃ",
+      "chunker": "チャンカーにゃ",
+      "counts": "内容にゃ",
+      "countsValue": "{{documents}} ドキュメント · {{chunks}} チャンクにゃ",
+      "status": "インデックス作成中にゃ",
+      "statusValue": "{{ready}} 準備完了 · {{indexing}} 進行中 · {{failed}} 失敗にゃ",
+      "createdAt": "作成日時にゃ"
+    },
+    "documentDetail": {
+      "description": "{{count}} 件のインデックス済みチャンクにゃ",
+      "chunksTab": "チャンクにゃ",
+      "previewTab": "プレビューにゃ",
+      "chunksEmptyTitle": "チャンクがないにゃ",
+      "chunksEmptyDescription": "このドキュメントにはまだインデックス化されたチャンクがないにゃ。",
+      "chunksUnsupportedTitle": "チャンクの閲覧は利用できませんにゃ",
+      "chunksUnsupportedDescription": "設定されたベクトルストアはチャンクの一覧表示に対応していませんにゃ。",
+      "previousPage": "前へにゃ",
+      "nextPage": "次へにゃ",
+      "pageIndicator": "{{page}} / {{pageCount}} ページにゃ",
+      "previewUnavailableTitle": "インラインプレビューはないにゃ",
+      "previewUnavailableDescription": "このファイル形式はブラウザでプレビューできませんにゃ。",
+      "previewTooLargeTitle": "ファイルが大きすぎてプレビューできませんにゃ",
+      "previewTooLargeDescription": "このファイルはインラインプレビューの上限を超えています。ダウンロードして原本を表示してほしいにゃ。",
+      "downloadButton": "元のファイルをダウンロードにゃ"
+    }
+  },
+  "llm-select": {
+    "placeholder": "モデルを選択",
+    "loading": "読み込み中にゃ…",
+    "empty": {
+      "title": "利用可能なモデルがないにゃ",
+      "description": "開始するには設定でモデルを追加してほしいにゃ。"
+    },
+    "addCredential": "モデルを追加にゃ",
+    "clear": "選択をクリアにゃ",
+    "noFallback": "フォールバックなしにゃ",
+    "pickForDetails": "詳細を表示するにはモデルを選択してほしいにゃ",
+    "vision": "ビジョンにゃ",
+    "contextBadge": "{{size}} コンテキストにゃ",
+    "thinking": "思考にゃ",
+    "contextWindow": "コンテキストウィンドウにゃ",
+    "hintSmallContext": "小規模コンテキストモデル — 1M はサポートされていませんにゃ",
+    "level": {
+      "off": "オフにゃ",
+      "low": "低にゃ",
+      "high": "高にゃ",
+      "max": "最大にゃ"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "埋め込みモデルを選択",
+    "loading": "読み込み中にゃ…",
+    "empty": {
+      "title": "利用可能な埋め込みモデルがないにゃ",
+      "description": "開始するには、設定で埋め込みに対応したモデルを追加してほしいにゃ。"
+    },
+    "addCredential": "モデルを追加にゃ"
+  },
+  "chunker-select": {
+    "placeholder": "チャンカーを選択",
+    "loading": "読み込み中にゃ…",
+    "empty": "利用可能なチャンカーがないにゃ"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "概算トークンにゃ",
+      "params": {
+        "chunk_size": {
+          "label": "チャンクサイズにゃ",
+          "description": "チャンクあたりの概算トークンの最大数にゃ。"
+        },
+        "overlap": {
+          "label": "オーバーラップにゃ",
+          "description": "連続するチャンク間で共有される概算トークン数にゃ。"
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "次元数を選択",
+    "pickModelFirst": "先にモデルを選択してほしいにゃ"
+  },
+  "permission-mode": {
+    "placeholder": "権限モードを選択",
+    "trigger-tooltip": "権限モードにゃ",
+    "panel-title": "エージェントはどのように承認を求めますかにゃ？",
+    "learn-more": "詳細を見るにゃ",
+    "default": "手動承認にゃ",
+    "default-desc": "重要な操作はあなたが確認します — 最も安全なオプションにゃ",
+    "accept_edits": "編集を自動承認にゃ",
+    "accept_edits-desc": "ワークスペース内のファイルの読み書きを自動許可。それ以外は引き続き確認を求めますにゃ",
+    "explore": "読み取り専用にゃ",
+    "explore-desc": "読み取りと検索のみ — 書き込みやコマンド実行は行いませんにゃ",
+    "bypass": "フルアクセスにゃ",
+    "bypass-desc": "承認なしでローカルで全て実行 — 信頼済みまたはサンドボックス環境のみにゃ",
+    "dont_ask": "無人にゃ",
+    "dont_ask-desc": "確認が必要な操作はすべて拒否 — スケジュールタスクに最適にゃ"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "MCP設定にゃ",
+    "keepAlive": "キープアライブにゃ",
+    "keepAliveDesc": "インタラクション間で状態を維持します。ブラウザ操作やその他の長時間実行MCPで有効にするにゃ。",
+    "parseError": "無効なJSON設定: {{message}}にゃ",
+    "missingMcpServers": "設定には\"mcpServers\"オブジェクトが必要だにゃ。",
+    "emptyMcpServers": "設定にMCPサーバーが見つかりませんにゃ。"
+  },
+  "dialog-mcp-delete": {
+    "entity": "MCPサーバーにゃ",
+    "skillEntity": "スキルにゃ",
+    "skillDescription": "このスキルをワークスペースから削除してもよろしいですかにゃ？"
+  },
+  "schedule": {
+    "subtitle": "自動タスクの設定と管理 - Toraはスケジュールに従ってワークフローを実行するにゃ",
+    "calendar": "カレンダーにゃ",
+    "createSchedule": {
+      "description": "エージェント用の定期または単発の自動化タスクを設定するにゃ。",
+      "descriptionLabel": "説明にゃ",
+      "descriptionPlaceholder": "この自動化が何を行うか説明してください...",
+      "namePlaceholder": "例: 日次レポート",
+      "title": "自動化タスクを作成にゃ"
+    },
+    "deleteSchedule": {
+      "entity": "自動化タスクにゃ"
+    },
+    "endAt": "終了日にゃ",
+    "end_at": "終了時刻にゃ",
+    "executionHistory": "実行履歴にゃ",
+    "freqDaily": "毎日にゃ",
+    "freqMonthly": "毎月にゃ",
+    "freqOnce": "1回にゃ",
+    "freqWeekly": "毎週にゃ",
+    "frequency": "頻度にゃ",
+    "friday": "金にゃ",
+    "list": "リストにゃ",
+    "monday": "月にゃ",
+    "more": "もっとにゃ",
+    "nextMonth": "翌月にゃ",
+    "nextYear": "翌年にゃ",
+    "noSchedules": "自動化タスクがないにゃ",
+    "noSchedulesDescription": "スケジュールに従ってワークフローを実行する自動化タスクを作成するにゃ。",
+    "pickDate": "日付を選択にゃ",
+    "permissionMode": "権限モードにゃ",
+    "timezone": "タイムゾーンにゃ",
+    "triggerTime": "実行時刻にゃ",
+    "createdAt": "作成日時にゃ",
+    "dayOfMonthSuffix": "",
+    "stateful": "ステートフルにゃ",
+    "statefulDesc": "すべての実行で1つのセッションを再利用してコンテキストを蓄積します。無効にすると、実行ごとに新しいセッションが作成されますにゃ。",
+    "previousMonth": "前月にゃ",
+    "previousYear": "前年にゃ",
+    "saturday": "土にゃ",
+    "sunday": "日にゃ",
+    "thursday": "木にゃ",
+    "today": "今日にゃ",
+    "tuesday": "火にゃ",
+    "wednesday": "水にゃ"
+  },
+  "model-parameters": {
+    "title": "モデルパラメータにゃ",
+    "description": "選択したモデルの推論パラメータを調整するにゃ。",
+    "empty": "設定可能なパラメータがないにゃ。",
+    "fallbackLabel": "フォールバックモデルにゃ",
+    "fallbackLabelWithModel": "フォールバックモデル ({{model}})にゃ",
+    "parametersLabel": "パラメータにゃ",
+    "ttsLabel": "TTS",
+    "ttsEmpty": "利用可能なTTSモデルがないにゃ。",
+    "ttsParameters": "パラメータにゃ",
+    "ttsParametersDescription": "選択したTTSモデルのパラメータを調整するにゃ。",
+    "noTts": "TTSなしにゃ"
+  },
+  "setup": {
+    "title": "サービスに接続にゃ",
+    "description": "開始するにはサーバーのURLとユーザー名を入力してほしいにゃ。",
+    "serverUrl": "サーバーURLにゃ",
+    "serverUrlPlaceholder": "https://...",
+    "username": "ユーザー名にゃ",
+    "usernamePlaceholder": "ユーザー名を入力",
+    "submit": "開始にゃ",
+    "checking": "接続中にゃ...",
+    "errorUnreachable": "このサーバーに到達できません。アドレスを確認し、サービスが実行中で、クロスオリジンリクエストが許可されていることを確認してほしいにゃ。",
+    "errorTimeout": "サーバーは接続を受け入れましたが、時間内に応答しませんでした。過負荷か、起動中に停止している可能性がありますにゃ。",
+    "errorNotAgentScope": "アドレスには到達しましたが、AgentScopeサービスではありません — URLを確認するか、ヘルスエンドポイントを公開できないほど古いバックエンドをアップグレードしてほしいにゃ。",
+    "errorUnauthorized": "サーバーがこのユーザー名を拒否しました。有効なユーザー名を入力してほしいにゃ。",
+    "errorNotReady": "サーバーには到達できますが、準備ができていません。以下のサブシステムが起動に失敗しました:にゃ",
+    "hint": "これはフロントエンドのみのアプリケーションで、すべてのデータは上記のサーバーURLから提供されます。ユーザー名はサーバー側の認証にのみ使用されますにゃ。"
+  },
+  "task-panel": {
+    "blockedBy": "ブロック元にゃ"
+  },
+  "panel": {
+    "plan": {
+      "title": "プランにゃ",
+      "completed": "完了: {{count}}にゃ",
+      "total": "合計: {{count}}にゃ",
+      "emptyTitle": "タスクはまだないにゃ",
+      "emptyDescription": "エージェントが計画したタスクがここに表示されますにゃ。"
+    },
+    "mcp": {
+      "description": "ワークスペースに装備されたMCPサーバーにゃ。",
+      "searchPlaceholder": "ワークスペースでMCPを検索",
+      "add": "MCPを追加にゃ",
+      "addDescription": "既にインストール済みのものを再利用するか、設定を貼り付けてくださいにゃ。",
+      "fromConfig": "設定からにゃ",
+      "tools": "{{count}} 個のツールにゃ",
+      "unhealthy": "この MCP に接続できませんでしたにゃ",
+      "healthy": "接続済みにゃ",
+      "emptyTitle": "MCP サーバーがないにゃ",
+      "emptyDescription": "MCP サーバーを追加して、ワークスペースにツールを装備しましょうにゃ。",
+      "fromInstalled": "インストール済みの MCPにゃ",
+      "installedEmptyTitle": "まだ何もインストールされていませんにゃ",
+      "installedEmptyDescription": "MCP Hub からインストールするか、設定を貼り付けてくださいにゃ。"
+    },
+    "skill": {
+      "title": "スキルにゃ",
+      "description": "ワークスペースに装備されているスキルにゃ。",
+      "searchPlaceholder": "ワークスペース内のスキルを検索",
+      "add": "スキルを追加にゃ",
+      "emptyTitle": "スキルがないにゃ",
+      "emptyDescription": "スキルを追加してワークスペースに装備しましょうにゃ。",
+      "addDescription": "インストール済みのスキルから選ぶか、ローカルフォルダをアップロードしてほしいにゃ。",
+      "fromInstalled": "インストール済みからにゃ",
+      "fromFolder": "フォルダをアップロードにゃ",
+      "installedEmptyTitle": "インストール済みのスキルはまだないにゃ",
+      "installedEmptyDescription": "スキルハブからインストールして、ここに追加してほしいにゃ。",
+      "pickFolderTitle": "スキルフォルダを選択にゃ",
+      "pickFolderDescription": "フォルダのルートに SKILL.md が必要だにゃ。",
+      "pickFolder": "フォルダを選択にゃ",
+      "importLocal": "ローカルフォルダからインポートにゃ",
+      "pickAnother": "別のものを選択にゃ",
+      "fileCount": "{{count}} 個のファイルにゃ"
+    },
+    "workspace": {
+      "checkpoint": "チェックポイントにゃ",
+      "diff": "変更にゃ",
+      "browser": "ブラウザにゃ",
+      "terminal": "ターミナルにゃ",
+      "hooks": "フックにゃ"
+    },
+    "knowledge": {
+      "title": "ナレッジベースにゃ",
+      "description": "エージェントが参照できるナレッジベースにゃ。",
+      "searchPlaceholder": "ナレッジベースを検索",
+      "emptyTitle": "ナレッジベースがないにゃ",
+      "emptyDescription": "まずナレッジベースページで作成してほしいにゃ。",
+      "parametersTitle": "取得設定にゃ",
+      "parametersDescription": "ナレッジベースの取得設定にゃ。"
+    },
+    "permission": {
+      "title": "権限にゃ",
+      "description": "このセッションに適用される権限にゃ。",
+      "mode": "モード: {{mode}}にゃ",
+      "workingDirectories": "作業ディレクトリにゃ",
+      "noWorkingDirectories": "作業ディレクトリがないにゃ。",
+      "allow": "許可にゃ",
+      "deny": "拒否にゃ",
+      "ask": "確認にゃ",
+      "anyInvocation": "すべての呼び出しにゃ",
+      "rulesTitle": "ルール（すべてのセッションに適用）にゃ",
+      "addButton": "追加にゃ",
+      "contentPlaceholder": "一致させるパターン。空 = すべての呼び出し",
+      "deleteRule": "このルールを削除にゃ",
+      "loadFailed": "ルールの読み込みに失敗しました: {{detail}}にゃ",
+      "emptyTitle": "ルールが設定されていませんにゃ",
+      "emptyDescription": "許可 / 拒否 / 確認ルールは追加されるとここに表示されますにゃ。"
+    },
+    "search": {
+      "emptyTitle": "結果なしにゃ",
+      "emptyDescription": "「{{query}}」に一致するものはないにゃ。"
+    },
+    "loading": "読み込み中にゃ…",
+    "team": {
+      "membersHeading": "メンバーにゃ",
+      "noMembers": "メンバーはまだいません — リーダーに AgentCreate で作成するよう依頼してほしいにゃ。",
+      "emptyTitle": "チームなしにゃ",
+      "emptyDescription": "このセッションはチームに属していません。エージェントは TeamCreate でチームを形成するにゃ。",
+      "running": "実行中にゃ",
+      "idle": "アイドルにゃ",
+      "missingSession": "（セッションなし）にゃ"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "QR コードをスキャンにゃ",
+      "manualTab": "手動で入力にゃ",
+      "scanHint": "プラットフォームアプリでスキャンし、承認して認証情報を作成してほしいにゃ。",
+      "authorized": "承認されました。認証情報の準備ができましたにゃ。",
+      "failed": "連携を完了できませんでしたにゃ。",
+      "unsafeUrl": "プラットフォームが安全に表示できないリンクを返したにゃ。",
+      "retry": "再試行にゃ"
+    },
+    "title": "チャンネルにゃ",
+    "subtitle": "Feishu や Discord などの外部プラットフォームを接続して、エージェントがグループチャットで動作できるようにするにゃ",
+    "status": "ステータスにゃ",
+    "connected": "接続済みにゃ",
+    "enable": "有効化にゃ",
+    "disable": "無効化にゃ",
+    "deleteEntity": "チャンネルにゃ",
+    "routing": "ルーティングにゃ",
+    "routingDesc": "受信メッセージをエージェントとセッションスコープにマッチさせます。最後のルールがそれ以外すべてにマッチするにゃ。",
+    "sectionActive": "接続済みにゃ",
+    "sectionAdd": "チャンネルを追加にゃ",
+    "rules": "{{count}} 件のルールにゃ",
+    "empty": {
+      "title": "チャンネルがないにゃ",
+      "description": "チャンネルを作成して、エージェントを Feishu や DingTalk などの外部プラットフォームに接続するにゃ。"
+    },
+    "create": {
+      "title": "チャンネルを作成にゃ",
+      "titleFor": "{{name}} を接続にゃ",
+      "description": "エージェントを外部メッセージングプラットフォームに接続するにゃ。",
+      "channelType": "プラットフォームにゃ",
+      "nameLabel": "名前にゃ",
+      "namePlaceholder": "例: サポートデスク",
+      "nameDesc": "同じプラットフォーム上のチャンネルを区別するにゃ",
+      "modelDesc": "新しいセッションの初期モデルにゃ",
+      "permissionMode": "権限モードにゃ",
+      "permissionModeDesc": "新しいセッションの初期権限モードにゃ",
+      "showToolMessages": "ツールメッセージを表示にゃ",
+      "showToolMessagesDesc": "チャンネルにツール呼び出し/結果メッセージを表示するにゃ。",
+      "showThinking": "思考を表示にゃ",
+      "showThinkingDesc": "チャンネルにモデルの推論プロセスを表示するにゃ。"
+    },
+    "fields": {
+      "app_id": {
+        "title": "アプリIDにゃ",
+        "description": "Feishu アプリIDにゃ"
+      },
+      "app_secret": {
+        "title": "アプリシークレットにゃ",
+        "description": "Feishu アプリシークレットにゃ"
+      },
+      "bot_token": {
+        "title": "ボットトークンにゃ"
+      },
+      "application_id": {
+        "title": "アプリケーションIDにゃ"
+      },
+      "only_at_reply": {
+        "title": "メンションされた場合のみ返信にゃ",
+        "description": "グループチャットでは、ボットが@メンションされた場合のみ返信するにゃ"
+      },
+      "show_tool_process": {
+        "title": "ツールの処理を表示にゃ",
+        "description": "返信内にツール呼び出しと結果をインラインで表示するにゃ"
+      },
+      "show_thinking": {
+        "title": "思考を表示にゃ",
+        "description": "返信内にモデルの推論をインラインで表示するにゃ"
+      }
+    },
+    "edit": {
+      "title": "チャンネルを編集にゃ",
+      "description": "ルーティング、モデル、返信設定を更新します。プラットフォームと認証情報は変更できませんにゃ。"
+    },
+    "sessionScope": {
+      "per_chat": "チャットごとにゃ",
+      "per_chat_user": "チャットユーザーごとにゃ"
+    },
+    "sessions": {
+      "title": "セッションにゃ",
+      "empty": "セッションはまだないにゃ",
+      "openInChat": "チャットで開くにゃ"
+    },
+    "detail": {
+      "config": "設定にゃ",
+      "configDesc": "新しいセッションに適用される初期設定にゃ",
+      "configItem": "項目にゃ",
+      "configValue": "値にゃ",
+      "condition": "条件にゃ",
+      "created": "作成日時にゃ",
+      "deleteChannel": "チャンネルを削除にゃ",
+      "routingDesc": "受信メッセージがエージェントとセッションスコープにどのようにマッピングされるかにゃ",
+      "sessionsDesc": "このチャンネルが生成したセッションにゃ",
+      "selectHint": "詳細を表示するにはチャンネルを選択してほしいにゃ"
+    },
+    "state": {
+      "stopped": "停止にゃ",
+      "connecting": "接続中にゃ",
+      "retrying": "再接続中にゃ",
+      "connected": "接続済みにゃ",
+      "failed": "失敗にゃ"
+    },
+    "binding": {
+      "rule": "マッチルールにゃ",
+      "matchKey": "マッチフィールドにゃ",
+      "matchValue": "マッチ値にゃ",
+      "matchValuePlaceholder": "例: chat_id",
+      "routeTo": "ルーティング先にゃ",
+      "scope": "セッションスコープにゃ",
+      "fallback": "フォールバックルールにゃ",
+      "fallbackDesc": "上記のどのルールにも一致しないメッセージはここにルーティングされますにゃ",
+      "catchAll": "その他のすべてのメッセージにゃ",
+      "addRule": "ルールを追加にゃ"
+    }
+  },
+  "mcp": {
+    "subtitle": "MCPサーバーを閲覧してインストールにゃ",
+    "hubsLabel": "ハブにゃ",
+    "searchPlaceholder": "このハブを検索",
+    "mineSearchPlaceholder": "MCPを検索",
+    "noHubsTitle": "利用可能なハブがないにゃ",
+    "noHubsDescription": "管理者に追加を依頼してほしいにゃ。",
+    "noCardsTitle": "何も見つかりませんにゃ",
+    "noCardsDescription": "別のキーワードを試してほしいにゃ。",
+    "mineDescription": "インストール済みのMCPサーバーにゃ",
+    "mineEmptyTitle": "MCPサーバーはまだないにゃ",
+    "mineEmptyDescription": "左側のハブからインストールしてほしいにゃ。",
+    "needsConfig": "設定が必要にゃ",
+    "stateful": "ステートフルにゃ",
+    "configLabel": "設定にゃ",
+    "install": "インストールにゃ",
+    "installed": "インストール済みにゃ",
+    "installTitle": "{{name}}をインストールにゃ",
+    "installDescription": "MCPに追加します。その後、使用するセッションを選択してほしいにゃ。",
+    "editTitle": "{{name}}を編集にゃ",
+    "editDescription": "シークレットを空欄にすると、保存済みのものが保持されますにゃ。",
+    "nameLabel": "名前にゃ",
+    "loadFailedTitle": "サーバーに接続できませんでしたにゃ",
+    "loadFailedDescription": "サーバーURLと、サービスが実行中であることを確認してほしいにゃ。",
+    "retry": "再試行にゃ"
+  },
+  "skill": {
+    "category": {
+      "testing": "テストとデバッグにゃ",
+      "security": "セキュリティにゃ",
+      "devops": "デプロイと運用にゃ",
+      "writing": "ライティングにゃ",
+      "office-efficiency": "オフィス効率化にゃ",
+      "knowledge-management": "ナレッジ管理にゃ",
+      "content-creation": "コンテンツ作成にゃ",
+      "ai-agent": "AIエージェントにゃ",
+      "dev-programming": "開発にゃ",
+      "design-media": "デザインとメディアにゃ",
+      "data-analysis": "データ分析にゃ",
+      "life-service": "ライフスタイルにゃ",
+      "professional": "プロフェッショナルにゃ",
+      "design-creative": "デザインとクリエイティブにゃ",
+      "coding-agents": "コーディングエージェントにゃ",
+      "agent-skills": "エージェントスキルにゃ",
+      "development": "エンジニアリングにゃ",
+      "agent-frameworks": "エージェントフレームワークにゃ",
+      "browser-automation": "ブラウザ自動化にゃ",
+      "productivity": "生産性にゃ",
+      "rag-knowledge": "RAGとナレッジにゃ",
+      "automation": "自動化にゃ",
+      "document-processing": "ドキュメント処理にゃ",
+      "education": "教育にゃ",
+      "finance": "金融にゃ",
+      "legal-compliance": "法務とコンプライアンスにゃ",
+      "media-automation": "メディア自動化にゃ",
+      "Personal AI": "パーソナルAIにゃ",
+      "research": "リサーチにゃ",
+      "web-automation": "Web自動化にゃ"
+    },
+    "allCategories": "すべてにゃ",
+    "matchButton": "タスクにマッチにゃ",
+    "matchHint": "まず検索ボックスにタスクを入力してほしいにゃ",
+    "matchRecommends": "このタスクにおすすめにゃ",
+    "matchAlternatives": "代替案にゃ",
+    "matchScore": "マッチ度 {{score}}にゃ",
+    "matchSearched": "{{count}} 件のスキルを検索したにゃ",
+    "matchFailed": "スキルをマッチできませんでしたにゃ",
+    "matchDismiss": "閉じるにゃ",
+    "matchPolicy": "ソースポリシー: {{policy}}にゃ",
+    "subtitle": "スキルを閲覧してインストールにゃ",
+    "hubsLabel": "ハブにゃ",
+    "searchPlaceholder": "このハブを検索",
+    "mineSearchPlaceholder": "自分のスキルを検索",
+    "noHubsTitle": "利用可能なハブがないにゃ",
+    "noHubsDescription": "管理者に追加を依頼してほしいにゃ。",
+    "noCardsTitle": "何も見つかりませんにゃ",
+    "noCardsDescription": "別のキーワードを試してほしいにゃ。",
+    "mineDescription": "インストール済みのスキルにゃ",
+    "mineEmptyTitle": "スキルはまだないにゃ",
+    "mineEmptyDescription": "左のハブからインストールしてほしいにゃ。",
+    "install": "インストールにゃ",
+    "installed": "インストール済みにゃ",
+    "versionLabel": "バージョンにゃ",
+    "hubLabel": "ハブにゃ",
+    "updatedLabel": "更新日時にゃ",
+    "updatedAgo": "{{ago}}前に更新にゃ",
+    "updatedRecently": "たった今更新にゃ",
+    "installsLabel": "インストール数にゃ",
+    "downloadsLabel": "ダウンロード数にゃ",
+    "linkLabel": "ページにゃ",
+    "viewOnHub": "ハブで表示にゃ",
+    "noReadme": "このスキルには SKILL.md の本文が含まれていませんにゃ。",
+    "loadFailedTitle": "サーバーに接続できませんでしたにゃ",
+    "loadFailedDescription": "サーバーURLとサービスが実行中か確認してほしいにゃ。",
+    "retry": "再試行にゃ"
+  },
+  "agent-menu": {
+    "settings": "設定にゃ",
+    "delete": "エージェントを削除にゃ"
+  },
+  "workdir": {
+    "title": "作業ディレクトリにゃ",
+    "description": "エージェントの作業ディレクトリを選択してほしいにゃ。",
+    "root": "ワークスペースのルートにゃ",
+    "parent": "1 つ上の階層へにゃ",
+    "errorTitle": "このフォルダーを一覧表示できませんでしたにゃ",
+    "pathPlaceholder": "パスを入力または貼り付け",
+    "empty": "このフォルダーは空だにゃ",
+    "pressEnter": "Enter を押して先にこのパスを確認にゃ",
+    "pickerPlaceholder": "ツールを使用するフォルダーを選択",
+    "recent": "最近使用した項目にゃ",
+    "recentEmpty": "最近使用したフォルダーはないにゃ",
+    "browse": "フォルダーを選択にゃ",
+    "gitTooltip": "{{staged}} ステージ済み · {{unstaged}} 変更あり · {{untracked}} 未追跡\n行数に未追跡ファイルは含まれませんにゃ"
+  },
+  "settings": {
+    "title": "設定にゃ",
+    "backToApp": "Tora に戻るにゃ",
+    "close": "閉じるにゃ",
+    "loadFailed": "設定の読み込みに失敗しました（バックエンドがオフラインか、間違ったポートを使用している可能性があります）: {{error}}にゃ",
+    "loadingRuntime": "ランタイム設定を読み込み中にゃ…",
+    "sections": {
+      "general": "一般にゃ",
+      "theme": "テーマにゃ",
+      "agent": "エージェントにゃ",
+      "model": "モデルにゃ",
+      "memory": "メモリにゃ",
+      "data": "データにゃ",
+      "about": "Tora についてにゃ",
+      "usage": "使用状況にゃ",
+      "account": "アカウントにゃ",
+      "developer": "開発者とデバッグにゃ"
+    },
+    "memory": {
+      "title": "メモリにゃ",
+      "desc": "セッションをまたぐ長期メモリ: セッション開始時に関連するエントリが注入され、オプションでセッション後の抽出も行われますにゃ",
+      "inject": "セッション注入にゃ",
+      "injectDesc": "現在のプロジェクトについて、セッション開始時に関連するメモリをシステムプロンプトに注入するにゃ",
+      "distill": "自動抽出にゃ",
+      "distillDesc": "セッション完了後、モデルが会話をレビューし、記憶に値するエントリを 0〜3 件抽出するにゃ",
+      "searchPh": "メモリを検索（Enter で検索）にゃ",
+      "contentPh": "メモリの内容（例：このプロジェクトのテストは常に node --test で実行される）にゃ",
+      "projectKeyPh": "プロジェクトの絶対パス（空の場合はグローバルにフォールバック）にゃ",
+      "scopeGlobal": "グローバルにゃ",
+      "scopeProject": "プロジェクトにゃ",
+      "add": "メモリを追加にゃ",
+      "save": "保存にゃ",
+      "cancel": "キャンセルにゃ",
+      "edit": "編集にゃ",
+      "delete": "削除にゃ",
+      "confirmDelete": "削除してもよろしいですかにゃ？",
+      "pin": "ピン留めにゃ",
+      "unpin": "ピン留めを解除にゃ",
+      "dedupedToast": "類似のメモリが既に存在するため、再保存されませんでしたにゃ",
+      "projectGroup": "プロジェクトのメモリにゃ",
+      "globalGroup": "グローバルのメモリにゃ",
+      "empty": "メモリはまだありません。会話でアシスタントに「覚えて…」と依頼するか、ここで追加してほしいにゃ。",
+      "emptySearch": "一致するメモリがないにゃ",
+      "kinds": {
+        "preference": "好みにゃ",
+        "fact": "事実にゃ",
+        "pitfall": "落とし穴にゃ",
+        "convention": "規約にゃ"
+      },
+      "sources": {
+        "manual": "手動にゃ",
+        "tool": "ツールにゃ",
+        "distill": "蒸留にゃ"
+      }
+    },
+    "theme": {
+      "title": "テーマにゃ",
+      "subtitle": "外観、モーション、ワークスペースの背景を選択にゃ",
+      "modeTitle": "外観にゃ",
+      "modeDesc": "ライト、ダーク、またはシステムに従うにゃ",
+      "light": "ライトにゃ",
+      "dark": "ダークにゃ",
+      "system": "システムにゃ",
+      "motionTitle": "インタラクションのモーションにゃ",
+      "motionDesc": "クリックのフィードバックとページ切り替えの速度を設定します。システムの「動きを減らす」設定が常に優先されますにゃ。",
+      "motionModeTitle": "モーションの速度にゃ",
+      "motion": {
+        "system": "システムにゃ",
+        "off": "オフにゃ",
+        "gentle": "やさしいにゃ",
+        "standard": "標準にゃ",
+        "fast": "高速にゃ"
+      },
+      "motionReduced": "システムで「動きを減らす」が有効になっているため、現在アニメーションは無効だにゃ。",
+      "motionClickTitle": "クリックのフィードバックにゃ",
+      "motionClickDesc": "ボタン、リンク、メニュー項目を押したときの短いフィードバックにゃ",
+      "motionPageTitle": "ページ遷移にゃ",
+      "motionPageDesc": "ワークスペースのページ間のスムーズな切り替えにゃ",
+      "backgroundTitle": "背景にゃ",
+      "backgroundDesc": "ワークスペース、設定、サインイン画面で共有されますにゃ",
+      "lavender": "ソフトラベンダーにゃ",
+      "mist": "ブルーミストにゃ",
+      "stone": "ウォームストーンにゃ",
+      "midnight": "ミッドナイトにゃ",
+      "none": "なしにゃ",
+      "custom": "カスタムにゃ",
+      "import": "画像をインポートにゃ",
+      "replace": "画像を置き換えにゃ",
+      "remove": "カスタム背景を削除にゃ",
+      "localOnly": "カスタム背景はこのデバイスに保存され、アップロードされることはありません。PNG、JPEG、WebP は最大 16 MB だにゃ。",
+      "invalidType": "PNG、JPEG、WebP 画像を選択にゃ",
+      "tooLarge": "画像は 16 MB 未満である必要がありますにゃ",
+      "processFailed": "この画像を読み込めませんでした。別のファイルをお試しくださいにゃ。",
+      "storageFailed": "背景を保存できませんでした。ローカルストレージが満杯の可能性がありますにゃ。"
+    },
+    "general": {
+      "title": "一般にゃ",
+      "common": "共通にゃ",
+      "language": {
+        "title": "言語にゃ",
+        "desc": "インターフェースの言語にゃ",
+        "zh": "簡体字中国語",
+        "zhHant": "繁体字中国語",
+        "zhHK": "繁体字中国語（中国香港）",
+        "zhTW": "繁体字中国語（中国台湾）",
+        "en": "英語",
+        "enGB": "English (UK)",
+        "enUS": "English (US)",
+        "ja": "日本語",
+        "ko": "韓国語",
+        "fr": "フランス語",
+        "de": "ドイツ語",
+        "it": "イタリア語",
+        "ar": "アラビア語",
+        "es": "スペイン語",
+        "pt": "ポルトガル語",
+        "ru": "ロシア語",
+        "hi": "ヒンディー語",
+        "lzh": "漢文"
+      },
+      "searchEngine": {
+        "title": "検索エンジンにゃ",
+        "desc": "アドレスバーの入力が URL でない場合に使用されますにゃ",
+        "engines": {
+          "360": "360 Search",
+          "baidu": "Baidu",
+          "google": "Google",
+          "sogou": "Sogou",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "Bing"
+        }
+      },
+      "systemNotifications": {
+        "title": "システムメッセージ通知にゃ",
+        "desc": "新着メッセージにシステム通知を使用します。メッセージのタイトルと本文は非表示のままです。システム通知設定で Tora を許可してほしいにゃ。",
+        "test": "テスト通知にゃ",
+        "testing": "テスト中にゃ…",
+        "shown": "システムは通知を受け入れました。バナーが表示されない場合は、通知設定または集中モードを確認してほしいにゃ。",
+        "failed": "システムは通知を拒否しました。macOSでは、署名済みビルドでテストし、通知権限を確認してほしいにゃ。",
+        "unsupported": "このシステムではネイティブ通知はサポートされていませんにゃ。",
+        "unconfirmed": "通知が要求されましたが、表示は確認されませんでした。通知権限を確認してほしいにゃ。"
+      },
+      "sound": {
+        "title": "通知音にゃ",
+        "desc": "タスクイベントのサウンドアラートにゃ",
+        "replyDoneTitle": "返信完了にゃ",
+        "replyDoneDesc": "エージェントが返信を終了したときに再生にゃ",
+        "needConfirmTitle": "確認が必要にゃ",
+        "needConfirmDesc": "確認や質問であなたの対応が必要なときに再生にゃ",
+        "kindTitle": "サウンドにゃ",
+        "kindDesc": "アラートサウンドを選択にゃ",
+        "kindDing": "ディンにゃ",
+        "kindCrisp": "クリスプにゃ",
+        "kindSoft": "ソフトにゃ",
+        "kindCustom": "カスタムにゃ",
+        "preview": "プレビューにゃ",
+        "customTitle": "カスタムサウンドにゃ",
+        "customDesc": "ローカルオーディオファイルを使用（mp3 / wav / ogg など）にゃ",
+        "customChoose": "ファイルを選択にゃ",
+        "customClear": "クリアにゃ",
+        "volumeTitle": "音量にゃ",
+        "volumeDesc": "アラートサウンドの再生音量にゃ",
+        "tooLarge": "ファイルが大きすぎます（最大10MB）にゃ",
+        "saveFailed": "保存に失敗しました。再試行してほしいにゃ"
+      },
+      "behavior": "動作にゃ"
+    },
+    "developer": {
+      "title": "開発者とデバッグにゃ",
+      "desc": "エージェントのランタイム動作、フック、コードインデックス、言語サーバー。変更は次回の実行時に適用されますにゃ。",
+      "behavior": "動作にゃ"
+    },
+    "behavior": {
+      "presets": {
+        "title": "実行プロファイルにゃ",
+        "desc": "実績のあるランタイムプロファイルを適用し、必要に応じて以下の個別制限を微調整するにゃ。",
+        "fast": {
+          "title": "高速にゃ",
+          "desc": "低コストの短いタスクにゃ"
+        },
+        "balanced": {
+          "title": "バランスにゃ",
+          "desc": "日常業務に推奨にゃ"
+        },
+        "deep": {
+          "title": "徹底にゃ",
+          "desc": "反復の余地が大きい複雑なタスクにゃ"
+        }
+      },
+      "context": {
+        "title": "コンテキストトークン制限にゃ",
+        "desc": "会話がこの値を超えると、以前の履歴が自動圧縮されます（デフォルト24000）。低くするとトークンを節約できますが、履歴の詳細が失われますにゃ。",
+        "suffix": "トークンにゃ"
+      },
+      "toolOutput": {
+        "title": "単一ツール出力制限にゃ",
+        "desc": "単一ツール呼び出しで返される最大文字数（デフォルト6000）。それより長い出力は切り捨てられますにゃ。",
+        "suffix": "文字にゃ"
+      },
+      "maxTurns": {
+        "title": "最大エージェント反復回数にゃ",
+        "desc": "タスクあたりの最大エージェントループ回数（デフォルト40）。超過した実行は強制停止されますにゃ。",
+        "suffix": "ターンにゃ"
+      },
+      "shellSandbox": {
+        "title": "コマンドプロセスサンドボックスにゃ",
+        "desc": "エージェントのBashおよびGitコマンドが書き込める場所を制限します。無効にすると、コマンドにユーザーアカウントのファイルアクセス権が付与されますにゃ。"
+      },
+      "shellNetwork": {
+        "title": "サンドボックス化されたコマンドのネットワーク使用を許可にゃ",
+        "desc": "デフォルトではオフ。有効にすると、コマンドがインターネットやローカルサービスにアクセスできるようになります。必要な場合にのみ有効にしてほしいにゃ。"
+      }
+    },
+    "data": {
+      "title": "データにゃ",
+      "subtitle": "ローカルおよびサーバー側のセッションデータをクリアにゃ",
+      "wipe": {
+        "title": "すべてのセッションをクリアにゃ",
+        "desc": "すべてのセッション記録、エージェント、認証情報を削除します。これは元に戻せませんにゃ。",
+        "button": "クリアにゃ",
+        "confirm": "クリアを確認にゃ",
+        "cancel": "キャンセルにゃ",
+        "processing": "処理中にゃ…",
+        "error": "クリアに失敗しました: {{error}}にゃ"
+      }
+    },
+    "about": {
+      "title": "情報にゃ",
+      "tora": "ローカルエージェントワークスペース · v{{version}}にゃ",
+      "runtime": "Electronデスクトップ · ローカルASAPIサービス · 独自のモデルを持ち込むにゃ",
+      "runtimeTitle": "ランタイムにゃ",
+      "update": {
+        "title": "ソフトウェアアップデートにゃ",
+        "desc": "新しいToraリリースを確認します。macOSとWindowsではバックグラウンドでダウンロードされ、再起動とインストールを促されますにゃ。",
+        "check": "アップデートを確認にゃ",
+        "checking": "確認中にゃ…",
+        "upToDate": "最新だにゃ。",
+        "available": "Tora {{version}} が利用可能です。続行するにはアップデートのプロンプトに従ってくださいにゃ。",
+        "downloading": "Tora {{version}} が利用可能で、バックグラウンドでダウンロード中だにゃ。",
+        "ready": "Tora {{version}} のダウンロードが完了し、インストールの準備ができましたにゃ。",
+        "development": "開発ビルドではアップデートは利用できませんにゃ。",
+        "unavailable": "このプラットフォームでは自動アップデートは利用できませんにゃ。",
+        "desktopOnly": "Toraデスクトップアプリからアップデートを確認してほしいにゃ。",
+        "failed": "アップデートを確認できませんでした: {{error}}にゃ"
+      }
+    },
+    "errors": {
+      "backend": "バックエンドが {{status}} を返したにゃ",
+      "runtimeSave": "保存に失敗しました ({{status}}): {{text}}にゃ",
+      "saveFailed": "保存に失敗しました: {{error}}にゃ",
+      "wipeFailed": "クリアに失敗しました: {{error}}にゃ"
+    },
+    "advanced": {
+      "title": "詳細設定にゃ",
+      "subtitle": "フック、コードインデックス、言語サーバー。変更は次回の実行時に適用されますにゃ。",
+      "hooks": {
+        "title": "ライフサイクルフックにゃ",
+        "desc": "UserPromptSubmit / PreToolUse / PostToolUse / Stop で独自のコマンドを実行します。オフの場合、フックは一切実行されませんにゃ。"
+      },
+      "changes": {
+        "title": "変更認識コンテキストにゃ",
+        "desc": "「最近変更された + gitダーティなファイル」をシステムプロンプトに注入し、モデルがディスクの状態が変わっている可能性を認識できるようにするにゃ。"
+      },
+      "lsp": {
+        "title": "言語サーバー (LSP)にゃ",
+        "desc": "設定されている場合、Lspは定義 / 参照 / 診断のために実際のサーバーにアクセスし、型情報を取得します。それ以外の場合はローカルシンボルインデックスを使用するにゃ。",
+        "none": "言語サーバーが検出されませんでしたにゃ",
+        "enable": "有効にするにゃ",
+        "enabled": "有効にゃ",
+        "disable": "無効にするにゃ",
+        "probeFailed": "プローブに失敗しました: {{error}}にゃ"
+      },
+      "index": {
+        "title": "コードインデックスにゃ",
+        "desc": "シンボルインデックスとセマンティック転置インデックス（検索で使用）。mtime により増分更新されます。手動での再構築はほとんど不要だにゃ。",
+        "rebuild": "インデックスを再構築にゃ",
+        "rebuilding": "再構築中にゃ…",
+        "done": "インデックスを再構築しました: {{files}} ファイル / {{symbols}} シンボル / {{tokens}} 用語にゃ",
+        "noWorkspace": "先にセッションで作業ディレクトリを選択してほしいにゃ",
+        "stats": "現在: {{files}} ファイル / {{symbols}} シンボルにゃ"
+      },
+      "mcp": {
+        "title": "MCP サーバーにゃ",
+        "desc": "stdio 経由の Model Context Protocol サーバー。それらのツールは mcp__server__tool としてセッションに参加します。保存した変更は次回の実行時に適用されますにゃ。",
+        "add": "追加にゃ",
+        "namePlaceholder": "名前（英字、数字、- _）",
+        "commandPlaceholder": "コマンド、例: npx",
+        "argsPlaceholder": "引数（スペース区切り、任意）",
+        "probe": "プローブにゃ",
+        "probing": "プローブ中にゃ…",
+        "toolsCount": "{{count}} 個のツールにゃ",
+        "noServers": "MCP サーバーが構成されていませんにゃ",
+        "delete": "このサーバーを削除にゃ",
+        "probeFailed": "プローブに失敗しました: {{error}}にゃ"
+      },
+      "trust": {
+        "title": "プロジェクトフックを信頼するにゃ",
+        "desc": "ワークスペースの .tora/hooks.json はリポジトリの内容に由来します。信頼すると、そのリポジトリでコマンドを実行できるようになります — 先に内容を確認してほしいにゃ。",
+        "trusted": "このディレクトリのプロジェクトフックは信頼されていますにゃ",
+        "trust": "現在のディレクトリを信頼するにゃ",
+        "revoke": "信頼を取り消すにゃ",
+        "none": "作業ディレクトリがまだないにゃ"
+      },
+      "saveFailed": "保存に失敗しました: {{error}}にゃ"
+    },
+    "usage": {
+      "title": "使用統計にゃ",
+      "desc": "ローカルセッションと実行から集計（トークン、チャット時間、連続日数、ツール使用）にゃ",
+      "cards": {
+        "totalTokens": "合計トークンにゃ",
+        "peakTokens": "ピークトークンにゃ",
+        "longestChat": "最長チャットにゃ",
+        "currentStreak": "現在の連続日数にゃ",
+        "longestStreak": "最長連続日数にゃ"
+      },
+      "activity": {
+        "title": "トークンアクティビティにゃ",
+        "daily": "日次にゃ",
+        "weekly": "週次にゃ",
+        "cumulative": "累積にゃ",
+        "tipDaily": "{{tokens}} トークンを使用にゃ",
+        "tipWeekly": "週間合計: {{tokens}} トークンにゃ",
+        "tipCumulative": "合計 {{tokens}} トークンにゃ"
+      },
+      "insights": {
+        "title": "インサイトにゃ",
+        "chats": "合計チャット数にゃ",
+        "runs": "合計実行数にゃ",
+        "activeDays": "アクティブ日数にゃ",
+        "toolRuns": "ツール実行にゃ",
+        "topModel": "トップモデルにゃ"
+      },
+      "topTools": {
+        "title": "最も使用されたツールにゃ",
+        "empty": "ツールの使用はまだないにゃ",
+        "runs": "{{count}} 回の実行にゃ"
+      },
+      "loading": "読み込み中にゃ…",
+      "loadFailed": "使用統計の読み込みに失敗しました: {{error}}にゃ",
+      "days": "{{count}} 日にゃ",
+      "refresh": "更新にゃ"
+    },
+    "account": {
+      "title": "アカウントにゃ",
+      "homeTitle": "Tora にサインインにゃ",
+      "homeDesc": "ユーザー名またはメールアドレスを入力してください — サインインまたはサインアップに誘導するにゃ",
+      "continue": "サインイン / サインアップにゃ",
+      "nextStep": "続けるにゃ",
+      "otherWays": "その他のサインイン方法にゃ",
+      "register": "サインアップにゃ",
+      "emailTitle": "サインインまたはサインアップにゃ",
+      "registerTitle": "アカウント作成にゃ",
+      "emailDesc": "よりスマートな返信とクラウド機能を利用できるにゃ。",
+      "emailLabel": "メールアドレスにゃ",
+      "emailPlaceholder": "メールアドレス",
+      "passwordTitle": "パスワードを入力にゃ",
+      "createPasswordTitle": "パスワードを作成にゃ",
+      "passwordLabel": "パスワード（最低 8 文字）にゃ",
+      "confirmLabel": "パスワードを確認にゃ",
+      "login": "サインインにゃ",
+      "createAccount": "アカウント作成にゃ",
+      "or": "またはにゃ",
+      "terms": "続行することで、Tora の利用規約とプライバシーポリシーに同意したことになりますにゃ。",
+      "back": "戻るにゃ",
+      "logout": "サインアウトにゃ",
+      "since": "{{date}} からメンバーにゃ",
+      "errors": {
+        "confirmMismatch": "パスワードが一致しませんにゃ",
+        "shortPassword": "パスワードは 8 文字以上である必要がありますにゃ",
+        "alreadyRegistered": "このメールアドレスは既に登録されています — サインインしてほしいにゃ",
+        "invalidEmail": "無効なメールアドレスにゃ",
+        "longPassword": "パスワードが長すぎますにゃ",
+        "wrongCredentials": "アカウントまたはパスワードが正しくないにゃ",
+        "wrongPassword": "現在のパスワードが正しくないにゃ",
+        "emailTaken": "このメールアドレスは既に使用されていますにゃ",
+        "avatarTooLarge": "アバターが大きすぎます。より小さい画像を選択してほしいにゃ",
+        "avatarInvalid": "アバター形式がサポートされていませんにゃ",
+        "invalidUsername": "ユーザー名は2〜32文字の英字、数字、アンダースコア、ハイフン、またはCJK文字である必要がありますにゃ",
+        "usernameTaken": "このユーザー名は既に使用されていますにゃ",
+        "codeTooFrequent": "リクエストが多すぎます。後でもう一度お試しくださいにゃ",
+        "codeSendFailed": "コードの送信に失敗しました。後でもう一度お試しくださいにゃ",
+        "codeInvalid": "認証コードが無効か期限切れだにゃ",
+        "turnstileFailed": "人間認証に失敗しました。もう一度お試しくださいにゃ"
+      },
+      "networkWarning": "認証サービスに接続できませんでした。ネットワークを確認して再試行してほしいにゃ",
+      "networkRetryHint": "ログイン情報は保持されています。接続が復旧したら確認を再試行してほしいにゃ。",
+      "manager": {
+        "description": "プロフィールとアカウントの安全を管理するにゃ。",
+        "profileTitle": "プロフィールにゃ",
+        "securityTitle": "アカウントのセキュリティにゃ",
+        "registeredAt": "登録日にゃ",
+        "passwordHint": "Tora へのログインに使うパスワードを変更するにゃ",
+        "emailPasswordHint": "本人確認のため、現在のパスワードを入力してほしいにゃ",
+        "confirmNewPassword": "新しいパスワードを確認にゃ",
+        "savePassword": "パスワードを保存にゃ",
+        "saveEmail": "メールを保存にゃ",
+        "logoutTitle": "このアカウントからログアウトにゃ",
+        "logoutHint": "次回は再度ログインが必要だにゃ。",
+        "logoutConfirmTitle": "ログアウトしますかにゃ？",
+        "logoutConfirmDescription": "Tora を引き続き使うには、再度ログインが必要だにゃ。",
+        "changeAvatar": "アバターを変更にゃ",
+        "avatarHint": "アバターをクリックして変更（PNG / JPG / WebP、自動トリミング＆圧縮）にゃ",
+        "avatarSaved": "アバターを更新したにゃ",
+        "changePassword": "パスワードを変更にゃ",
+        "changeEmail": "メールアドレスを変更にゃ",
+        "currentEmail": "現在のメールアドレス: {{email}}にゃ",
+        "newEmail": "新しいメールアドレスにゃ",
+        "currentPassword": "現在のパスワードにゃ",
+        "newPassword": "新しいパスワード（8文字以上）にゃ",
+        "save": "保存にゃ",
+        "passwordSaved": "パスワードを更新したにゃ",
+        "emailSaved": "メールアドレスを更新したにゃ"
+      },
+      "accountLabel": "ユーザー名またはメールアドレスにゃ",
+      "accountPlaceholder": "ユーザー名またはメールアドレス",
+      "usernameLabel": "ユーザー名（2〜32文字の英字、数字、またはCJK）にゃ",
+      "codeLabel": "メール認証コードにゃ",
+      "captchaTitle": "セキュリティチェックにゃ",
+      "captchaLoginDesc": "サインインするには人間認証を完了してほしいにゃ",
+      "captchaRegisterDesc": "アカウントを作成するには人間認証を完了してほしいにゃ",
+      "showPassword": "パスワードを表示にゃ",
+      "hidePassword": "パスワードを非表示にゃ",
+      "sendCode": "コードを送信にゃ",
+      "codeCooldown": "{{s}}秒後に再送信にゃ"
+    }
+  },
+  "agentSection": {
+    "title": "エージェントにゃ",
+    "desc": "エージェントの名前とシステムプロンプトを設定するにゃ。空欄なら Tora の標準プロンプトを使うにゃ。",
+    "select": "エージェントを選択にゃ",
+    "name": "名前にゃ",
+    "namePlaceholder": "エージェント名",
+    "systemPrompt": "システムプロンプトにゃ",
+    "systemPromptPlaceholder": "空欄なら Tora の標準プロンプトを使うにゃ",
+    "save": "保存にゃ",
+    "saved": "保存したにゃ",
+    "saveFailed": "保存に失敗しました: {{error}}にゃ"
+  },
+  "modelSection": {
+    "title": "モデルにゃ",
+    "subtitle": "モデル管理にゃ",
+    "desc": "APIキーを設定して利用可能なモデルを追加します。最初に有効にしたモデルがデフォルトの会話モデルになりますにゃ。",
+    "addModel": "モデルを追加にゃ",
+    "empty": "モデルがまだありません — 「モデルを追加」をクリックして最初のモデルを接続してほしいにゃ",
+    "loading": "読み込み中にゃ…",
+    "tableHeaders": {
+      "model": "モデルにゃ",
+      "provider": "プロバイダーにゃ",
+      "actions": "操作にゃ"
+    },
+    "aria": {
+      "edit": "編集にゃ",
+      "delete": "削除にゃ",
+      "close": "閉じるにゃ",
+      "back": "戻るにゃ"
+    },
+    "errors": {
+      "noModels": "プロバイダーがモデルを返しませんでしたにゃ",
+      "submitFailed": "送信に失敗しました: {{error}}にゃ",
+      "backend": "バックエンドが{{status}}を返したにゃ",
+      "loginRequired": "先に「アカウント」でサインインしてください — モデルはクラウドのアカウントに同期されますにゃ"
+    },
+    "form": {
+      "titleEdit": "モデルを編集にゃ",
+      "titleAdd": "プロバイダー経由で追加にゃ",
+      "provider": "プロバイダーにゃ",
+      "apiKey": "APIキーにゃ",
+      "apiKeyPlaceholder": "APIキーを入力",
+      "apiKeyKeepEmpty": "空にすると現在のキーが保持されますにゃ",
+      "getApiKey": "APIキーを取得にゃ",
+      "model": "モデルにゃ",
+      "modelPlaceholder": "モデルを選択",
+      "modelInputPlaceholder": "モデルIDを選択または入力（例: glm-4.6）",
+      "fetchingModels": "利用可能なモデルを取得中にゃ…",
+      "fetchHint": "APIキーを入力するとモデルが自動読み込みされます。モデルIDを直接入力することもできるにゃ",
+      "advanced": "詳細設定にゃ",
+      "vision": {
+        "title": "画像入力にゃ",
+        "auto": "自動にゃ",
+        "on": "オンにゃ",
+        "off": "オフにゃ",
+        "hint": "モデル名で自動判定されます。deepseek-flash、gpt-4o、qwen-vlなどの画像対応モデルは画像を受け付けますにゃ"
+      },
+      "baseUrl": "エンドポイント（ベースURL）にゃ",
+      "saveHint": "保存時にモデル一覧エンドポイント経由で接続を確認します。キーはローカルにのみ保存されますにゃ",
+      "reset": "リセットにゃ",
+      "saveEdit": "変更を保存にゃ",
+      "saveAdd": "モデルを追加にゃ",
+      "selectedCount": "{{count}}件選択中にゃ",
+      "selectAll": "すべて選択にゃ",
+      "deselectAll": "クリアにゃ",
+      "alreadyAdded": "追加済みにゃ",
+      "apiKeyReused": "空にすると既存のキーを再利用するにゃ",
+      "keyReusedHint": "このプロバイダーには既にAPIキーが設定されています — 空にすると再利用されます。モデルを選択して保存するだけだにゃ。"
+    },
+    "providers": {
+      "custom": "カスタムモデル",
+      "volcengine": "Volcengine",
+      "dashscope": "Alibaba Cloud",
+      "siliconflow": "SiliconFlow",
+      "stepfun": "StepFun 中国",
+      "stepfunGlobal": "StepFun グローバル",
+      "hunyuan": "Tencent Cloud",
+      "ollama": "Ollama（ローカル）"
+    }
+  },
+  "sessionImport": {
+    "title": "会話をインポートにゃ",
+    "description": "ローカルの Codex と Claude Code の会話を Tora に取り込みます。先にプレビューします。既存の会話とソースファイルは保持されますにゃ。",
+    "codex": "ローカル Codex をスキャンにゃ",
+    "claude": "ローカル Claude Code をスキャンにゃ",
+    "files": "JSON / JSONL ファイルを選択にゃ",
+    "scanHint": "Codex: ~/.codex/sessions と archived_sessions · Claude Code: ~/.claude/projectsにゃ",
+    "scanEmpty": "対応する記録が見つかりません。ファイルを手動で選択できるにゃ。",
+    "scanLimited": "最新の {{total}} 件中 {{shown}} 件のファイルを表示しています。古いファイルは手動で選択してほしいにゃ。",
+    "source": "ソースにゃ",
+    "conversation": "会話にゃ",
+    "messages": "メッセージにゃ",
+    "date": "更新日にゃ",
+    "selectAll": "すべて選択にゃ",
+    "preview": "選択項目をプレビューにゃ",
+    "import": "{{count}} 件の会話をインポートにゃ",
+    "previewTitle": "インポート内容を確認にゃ",
+    "previewHint": "テキストと元のタイムスタンプは保持されます。システム指示、思考、ツール実行、権限はインポートされません。続行時にモデルとプロジェクトフォルダーを選択してほしいにゃ。",
+    "destination": "インポート先にゃ",
+    "agent": "エージェントにゃ",
+    "duplicate": "インポート済みにゃ",
+    "samples": "メッセージプレビュー（最初と最後のメッセージ）にゃ",
+    "warnings": "スキップ: {{invalid}} 件の不正な行 · {{attachments}} 件の添付ファイル · {{process}} 件のプロセスエントリにゃ",
+    "success": "{{count}} 件の会話をインポートしました。{{skipped}} 件の重複をスキップしたにゃ。",
+    "readError": "選択したファイルを読み取れませんでしたにゃ。",
+    "failure": "インポートに失敗しました。もう一度お試しくださいにゃ。",
+    "cancel": "キャンセルにゃ",
+    "back": "戻るにゃ",
+    "close": "閉じるにゃ",
+    "selected": "{{count}} 件を選択中にゃ",
+    "loading": "記録を読み取り中にゃ…",
+    "noSelection": "会話を少なくとも 1 件選択してほしいにゃ。",
+    "fileLimit": "最大 100 ファイル、1 ファイルあたり最大 32 MB、合計最大 64 MB まで選択できるにゃ。",
+    "noAgent": "インポート前にエージェントを作成または選択してほしいにゃ。",
+    "errors": "インポートできなかったファイルにゃ",
+    "unknownDate": "日付不明にゃ",
+    "error": {
+      "empty": "ファイルが空だにゃ。",
+      "file_too_large": "ファイルが 32 MB の制限を超えていますにゃ。",
+      "batch_too_large": "選択したファイルが合計サイズ制限を超えていますにゃ。",
+      "too_many_files": "最大 100 ファイルまで選択できるにゃ。",
+      "unsupported_format": "これは対応している Codex または Claude Code のトランスクリプトではありません。",
+      "no_chat_messages": "ユーザーまたはアシスタントのテキストメッセージが見つかりませんでしたにゃ。",
+      "invalid_format": "ファイルが有効な JSON または JSONL ではありません。",
+      "source_mismatch": "選択したソースがこのファイルと一致しませんにゃ。",
+      "expired_selection": "選択の有効期限が切れました。もう一度スキャンしてほしいにゃ。",
+      "expired_preview": "プレビューの有効期限が切れました。記録を選択し直してほしいにゃ。",
+      "invalid_agent": "利用可能なエージェントを選択してほしいにゃ。",
+      "no_selection": "会話を少なくとも 1 件選択してほしいにゃ。",
+      "invalid_selection": "選択した会話はこのプレビューに属していませんにゃ。",
+      "invalid_path": "ソースファイルが変更されました。もう一度スキャンしてほしいにゃ。",
+      "too_many_messages": "メッセージが多すぎます。インポート前に記録を分割してほしいにゃ。",
+      "too_many_entries": "エントリが多すぎます。より小さいバッチに分けてインポートしてほしいにゃ。"
+    },
+    "missingTime": "{{count}} 件のメッセージにタイムスタンプがありません。インポート時刻が表示されますにゃ。",
+    "user": "ユーザーにゃ"
+  },
+  "applicationModes": {
+    "mode": "アプリのモードにゃ",
+    "chatDescription": "おしゃべり、探索、お仕事にゃ",
+    "codeDescription": "プロジェクトの構築・デバッグ・タスク実行にゃ",
+    "chat": "おしゃべりにゃ",
+    "work": "お仕事にゃ",
+    "ready": "いつでも始められるにゃ。",
+    "workReady": "何をしようかにゃ？",
+    "quota": "公式モデルの利用枠",
+    "quotaLoading": "利用枠を読み込み中…",
+    "quotaError": "利用枠は一時的に利用できません",
+    "chatRemaining": "本日の残り {{amount}} 件",
+    "workRemaining": "本日の残り {{amount}} 千 Token",
+    "chatLimit": "チャット：{{amount}} / 150 件（日）",
+    "dayLimit": "仕事：{{amount}} / 100 万 Token（日）",
+    "weekLimit": "仕事：{{amount}} / 1000 万 Token（週）",
+    "reset": "北京時間の毎日 00:00、毎週月曜日 00:00 にリセットされます。入力、出力、思考 Token は重複してカウントされません。",
+    "customQuota": "カスタムモデル · 公式利用枠を消費しません",
+    "retry": "再試行",
+    "source": "ToChat のモデルソース",
+    "sourceHelp": "新しい ToChat 会話に適用されます。既存の会話は元のモデルを保持し、カスタムモデルは公式利用枠を消費しません。",
+    "official": "公式 DeepSeek Flash（既定）",
+    "custom": "カスタムモデル",
+    "model": "DeepSeek Flash",
+    "effort": "思考の強度",
+    "low": "低",
+    "high": "高",
+    "max": "最大",
+    "search": "ウェブ検索",
+    "searchOn": "ウェブ検索が有効です",
+    "selectModel": "先にカスタムモデルを選択してください",
+    "syncError": "公式モデルの認証に接続できません",
+    "connectError": "公式モデルは一時的に利用できません。有料のカスタムモデルへ自動的に切り替わることはありません。",
+    "limitReached": "公式の利用枠を使い切りました。リセットを待つか、カスタムモデルを使用して新しい会話を開始してください。",
+    "imageError": "32 MB 以下の JPEG、PNG、GIF、WebP 画像を使用してください。",
+    "missingSession": "会話が見つかりません"
+  }
+}

@@ -43,6 +43,9 @@
 .language-picker-panel > input:focus-visible { border-color:var(--picker-muted); }
 .language-picker-panel button:focus-visible { outline:2px solid var(--picker-fg); outline-offset:-2px; }
 .language-picker-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
+.language-picker-option-name { display:flex; align-items:center; gap:8px; min-width:0; }
+.language-picker-option-name > span { min-width:0; }
+.language-picker-region { display:inline-block; white-space:nowrap; }
 .language-picker-list button { display:flex; align-items:center; justify-content:space-between; gap:16px; text-align:start; font-size:15px; line-height:24px; padding:10px 12px; border-radius:6px; }
 .language-picker-list button:hover,.language-picker-list button[aria-pressed=true],.language-picker-heading button:hover { background:var(--picker-hover); }
 .language-picker-list button:disabled { cursor:wait; opacity:.6; }

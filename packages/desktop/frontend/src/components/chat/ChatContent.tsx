@@ -74,6 +74,7 @@ function TypewriterGreeting({ text }: { text: string }) {
 	const characters = Array.from(text);
 	const interval = Math.max(18, Math.min(58, 1200 / Math.max(1, characters.length)));
 	return <h1
+		data-chat-greeting
 		className="relative mx-auto max-w-full font-sans text-[clamp(1.875rem,3vw,2.5rem)] font-normal leading-[1.18] tracking-[-0.035em] text-balance text-foreground [overflow-wrap:anywhere]"
 		aria-label={text}
 	>

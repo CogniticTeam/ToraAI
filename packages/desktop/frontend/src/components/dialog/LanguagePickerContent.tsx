@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+
+import { LanguageFlag } from './LanguageFlag';
 import './language-picker.css';
 
 export type LanguagePickerOption = { value: string; name: string };
@@ -36,7 +38,7 @@ export function LanguagePickerContent({
     <div className="language-picker-list" role="group" aria-label={searchLabel} aria-busy={busy}>
       {options.map(option => <button key={option.value} type="button" lang={option.value} dir="auto"
         aria-pressed={current === option.value} disabled={busy} onClick={() => onSelect(option.value)}>
-        <span>{option.name}</span>{current === option.value && <span aria-hidden="true">✓</span>}
+        <span className="language-picker-option-name"><LanguageFlag language={option.value} /><span>{option.name.includes('（') ? <>{option.name.slice(0, option.name.indexOf('（'))}<wbr /><span className="language-picker-region">{option.name.slice(option.name.indexOf('（'))}</span></> : option.name}</span></span>{current === option.value && <span aria-hidden="true">✓</span>}
       </button>)}
     </div>
     {!options.length && emptyLabel && <p role="status">{emptyLabel}</p>}

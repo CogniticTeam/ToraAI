@@ -16,6 +16,7 @@
     "lint": "npm run lint --prefix packages/desktop/frontend",
     "test:review": "node --test packages/core/test/review-regressions.test.mjs packages/auth-worker/test/review-regressions.test.mjs scripts/test-review-frontend.mjs scripts/test-review-window.mjs",
     "test:ui": "node scripts/test-ui-headless.mjs",
+    "test:catgirl": "node --test packages/core/test/catgirl.test.mjs && node scripts/test-catgirl-ui.mjs",
     "test:ui:critical": "node scripts/test-task-process-ui.mjs && node scripts/test-composer-ui.mjs && node scripts/test-language-dialog-ui.mjs && node scripts/test-multilingual-ui.mjs",
     "test:bundle": "node scripts/check-frontend-bundle.mjs",
     "verify:public-source": "node scripts/test-public-source-boundary.mjs",

@@ -2,20 +2,23 @@ import { useRef, useState } from 'react';
 
 import { LanguagePickerContent } from './LanguagePickerContent';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { LANGUAGE_OPTIONS, normalizeLanguage, setAppLanguage } from '@/i18n';
+import { availableLanguageOptions, normalizeLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
+import { useCatgirlSettings } from '@/lib/catgirl';
 
-const order = ['zh', 'zh-Hant', 'en', 'ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh'];
-const orderedOptions = [...LANGUAGE_OPTIONS].sort((a, b) => order.indexOf(a.value) - order.indexOf(b.value));
+const order = ['zh', 'zh-HK', 'zh-TW', 'en-GB', 'en-US', 'ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh'];
 
 export function LanguageDialog({ onClose }: { onClose: () => void }) {
   const { i18n, t } = useTranslation();
+  const { installed } = useCatgirlSettings();
+  const orderedOptions = [...availableLanguageOptions(installed)].sort((a, b) =>
+    (order.indexOf(a.value) < 0 ? order.length : order.indexOf(a.value)) - (order.indexOf(b.value) < 0 ? order.length : order.indexOf(b.value)));
   const input = useRef<HTMLInputElement>(null);
   const returnFocus = useRef(document.activeElement instanceof HTMLElement ? document.activeElement : null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
   const [search, setSearch] = useState('');
-  const current = normalizeLanguage(i18n.language) ?? 'en';
+  const current = normalizeLanguage(i18n.language) ?? 'en-US';
   const query = search.trim().normalize('NFKC').toLocaleLowerCase();
   const options = orderedOptions.filter(option =>
     `${option.value} ${option.nativeName} ${option.englishName} ${option.chineseName} ${option.aliases} ${t(`settings.general.language.${option.key}`, { defaultValue: option.nativeName })}`

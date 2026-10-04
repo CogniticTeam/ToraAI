@@ -1,6 +1,7 @@
 // 自定义下拉选择框（替代浏览器原生 <select>，样式与设置窗口统一）
 // 分层：触发按钮 z-1，浮层面板 z-10（遵循项目 z-index 规范）
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { Check, ChevronDown } from 'lucide-react';
 
@@ -10,6 +11,7 @@ import { cn } from '@/lib/utils';
 export interface DropdownOption {
 	value: string;
 	label: string;
+	icon?: ReactNode;
 	disabled?: boolean;
 }
 
@@ -61,8 +63,8 @@ export function DropdownSelect({ value, onChange, options, placeholder, disabled
 				data-disabled={disabled ? '' : undefined}
 				onClick={() => setOpen((v) => !v)}
 			>
-				<span className={cn('truncate', !current && 'text-muted-foreground')}>
-					{current?.label ?? placeholder ?? t('common.select')}
+				<span className={cn('flex min-w-0 items-center gap-2', !current && 'text-muted-foreground')}>
+					{current?.icon}<span className="truncate">{current?.label ?? placeholder ?? t('common.select')}</span>
 				</span>
 				<ChevronDown className={cn('size-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
 			</button>
@@ -92,7 +94,7 @@ export function DropdownSelect({ value, onChange, options, placeholder, disabled
 										setOpen(false);
 									}}
 								>
-									<span className="truncate">{o.label}</span>
+									<span className="flex min-w-0 items-center gap-2">{o.icon}<span className="truncate">{o.label}</span></span>
 									{selected && <Check className="size-4 shrink-0" />}
 								</button>
 							</li>

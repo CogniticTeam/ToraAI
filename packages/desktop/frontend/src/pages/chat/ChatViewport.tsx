@@ -310,6 +310,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			}
 			if (value.permission_context) {
 				setPermissionContext(value.permission_context as PermissionContext);
+				setSelectedPermissionMode((value.permission_context as PermissionContext).mode ?? 'default');
 			}
 		},
 		[sessionId],

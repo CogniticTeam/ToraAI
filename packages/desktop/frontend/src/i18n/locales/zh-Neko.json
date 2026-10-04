@@ -1,0 +1,1908 @@
+{
+  "releaseNotes": {
+    "title": "更新内容",
+    "forVersion": "{{version}} 发行说明",
+    "installedTitle": "Tora {{version}} 已更新",
+    "loading": "正在读取更新内容…",
+    "empty": "此版本未提供发行说明喵。",
+    "error": "暂时无法读取更新内容喵。",
+    "retry": "重试",
+    "open": "在 GitHub 查看完整发行说明",
+    "continue": "继续使用 Tora",
+    "view": "查看更新内容"
+  },
+  "languageDialog": {
+    "title": "选个语言喵",
+    "subtitle": "选择界面语言喵",
+    "search": "找找喜欢的语言喵",
+    "noResults": "本喵没找到这个语言呢",
+    "systemSuggestion": "当前系统语言为{{language}}，是否切换喵？",
+    "switch": "切换至{{language}}喵",
+    "later": "暂不切换喵",
+    "close": "关闭语言选择喵",
+    "switchError": "切换语言失败喵"
+  },
+  "usageMilestone": {
+    "title": "Token 里程碑达成喵",
+    "subtitle": "你在 Tora 的累计 Token 用量达到了新的里程碑喵。",
+    "total": "当前累计使用 {{count}} Token喵",
+    "more": "还有 {{count}} 个里程碑等待展示喵",
+    "continue": "继续使用 Tora喵",
+    "retry": "暂时无法保存里程碑，请重试喵。",
+    "levels": {
+      "100k": "10万喵",
+      "1m": "100万喵",
+      "10m": "1000万喵",
+      "100m": "1亿喵",
+      "500m": "5亿喵",
+      "1b": "10亿喵",
+      "2b": "20亿喵",
+      "5b": "50亿喵",
+      "10b": "100亿喵"
+    }
+  },
+  "markdown": {
+    "openExternalLink": "打开外部链接喵？",
+    "externalLinkWarning": "即将访问外部网站，请确认链接地址喵。",
+    "copyLink": "复制链接喵",
+    "copied": "已复制喵",
+    "openLink": "打开链接喵",
+    "close": "关闭喵"
+  },
+  "inbox": {
+    "translateToLanguage": "翻译为{{language}}喵",
+    "detail": "消息详情喵",
+    "translateToChinese": "翻译为中文喵",
+    "translateToEnglish": "翻译为英文喵",
+    "translating": "翻译中喵…",
+    "showOriginal": "查看原文喵",
+    "showTranslation": "查看译文喵",
+    "noTranslationNeeded": "无需翻译喵",
+    "translationError": "翻译失败，请点击翻译按钮重试喵。",
+    "translationRateLimit": "翻译请求过于频繁，请稍后重试喵。",
+    "title": "消息喵",
+    "newMessage": "收到一条 Tora 消息喵",
+    "empty": "暂无消息喵",
+    "loading": "加载中喵…",
+    "unread": "未读喵",
+    "more": "加载更多喵",
+    "back": "返回消息列表喵",
+    "retry": "重试喵",
+    "loadError": "消息加载失败喵",
+    "readError": "标记已读失败，请重试喵",
+    "blocked": "账户已被封禁喵",
+    "blockedReason": "此账户暂时无法使用 Tora喵。",
+    "unbanHint": "管理员解封后将自动恢复，无需重新登录喵。",
+    "signOut": "退出登录喵"
+  },
+  "requiredUpdate": {
+    "title": "请更新 Tora喵",
+    "description": "新版本 {{version}} 已发布，更新后即可继续使用喵。",
+    "download": "打开官网下载页喵",
+    "macHint": "自动更新暂不可用时，可从官网下载新版 DMG 手动替换喵。",
+    "downloading": "正在下载更新… {{percent}}%喵",
+    "install": "重启并安装喵",
+    "retry": "重试下载喵",
+    "error": "自动更新失败，请重试或前往官网下载喵。",
+    "quit": "退出 Tora喵"
+  },
+  "firstRun": {
+    "intro": {
+      "aria": "Tora 首次启动欢迎动画喵",
+      "welcome": "欢迎使用 Tora喵",
+      "headlineFirst": "让想法，喵",
+      "headlineSecond": "开始执行喵。",
+      "description": "接入你的模型，打开项目，开始对话。Tora 会陪你阅读、修改代码并完成任务喵。",
+      "hint": "下一步将带你熟悉主要功能喵",
+      "foot": "你的工作区，即将就绪喵。",
+      "logoAlt": "Tora Logo",
+      "enter": "开启体验喵",
+      "skip": "跳过动画喵"
+    },
+    "tour": {
+      "skip": "跳过引导喵",
+      "later": "稍后配置喵",
+      "next": "下一步喵",
+      "pauseSettings": "模型管理已打开。配置完成后关闭设置，引导会自动继续喵。",
+      "pauseFolder": "请选择项目文件夹；选完或关闭菜单后继续喵。",
+      "pausePermission": "查看或选择审批模式；关闭菜单后继续喵。",
+      "demoSend": "演示发送，不会真正提交喵",
+      "clickHint": "点击高亮控件继续喵",
+      "loading": "正在定位界面喵…",
+      "demoTag": "教学演示 · 不会执行真实命令喵",
+      "demoMessage": "请检查这个项目的构建脚本，先给出计划喵。",
+      "demoResponse": "Tora 会先理解任务，再请求必要的工具权限。你可以查看每一步并决定是否继续喵。",
+      "demoApprove": "允许本次（演示）喵",
+      "demoCheckpoint": "查看检查点（演示）喵",
+      "completeTitle": "准备好了，开始创造吧喵。",
+      "completeBody": "模型、文件夹与权限都能随时调整。遇到不确定的操作，先看过程，再决定是否继续喵。",
+      "startWorking": "进入 Tora喵",
+      "startAgain": "再看一次引导喵",
+      "steps": [
+        {
+          "chapter": "准备工作喵",
+          "title": "先选你自己的模型喵",
+          "body": "Tora 只使用你添加的模型。点击模型选择器，看看从哪里接入自己的服务喵。"
+        },
+        {
+          "chapter": "准备工作喵",
+          "title": "添加模型服务喵",
+          "body": "点击「添加模型」进入模型管理，选择服务商并填写模型信息。配置完成或暂时跳过后，引导会继续喵。"
+        },
+        {
+          "chapter": "准备工作喵",
+          "title": "划定项目范围喵",
+          "body": "点击文件夹按钮选择项目。Agent 会围绕你授权的工作区读取文件、修改代码和运行工具；也可以稍后再选喵。"
+        },
+        {
+          "chapter": "准备工作喵",
+          "title": "保持任务可控喵",
+          "body": "点击权限模式查看选项。第一次使用建议保留手动审批，高风险操作会停下来等你确认喵。"
+        },
+        {
+          "chapter": "开始任务喵",
+          "title": "把目标说具体喵",
+          "body": "点击输入框。写清要完成什么、不能碰什么，以及怎样算完成，比一句「帮我优化」更有效喵。"
+        },
+        {
+          "chapter": "开始任务喵",
+          "title": "发起第一项任务喵",
+          "body": "这里是发送按钮。接下来只演示执行流程，不会消耗模型额度，也不会发送真实消息喵。"
+        },
+        {
+          "chapter": "审查与回退喵",
+          "title": "每一步都由你把关喵",
+          "body": "这是权限确认的演示。先看清工具将做什么，再决定允许还是拒绝喵。"
+        },
+        {
+          "chapter": "审查与回退喵",
+          "title": "改错了也能回头喵",
+          "body": "检查点记录修改前的状态。真实回退前，请先核对将受影响的文件喵。"
+        },
+        {
+          "chapter": "拓展能力喵",
+          "title": "把好用的方法存成技能喵",
+          "body": "点击技能中心。你可以导入或安装可信技能，让重复的工作方式变成可复用流程喵。"
+        },
+        {
+          "chapter": "拓展能力喵",
+          "title": "在浏览器里验证成果喵",
+          "body": "点击内置浏览器。你和 Agent 可以在同一页面查看、调试并验证 Web 应用喵。"
+        },
+        {
+          "chapter": "拓展能力喵",
+          "title": "让重复工作按时发生喵",
+          "body": "点击自动化入口，为定期检查和整理任务设定计划，并查看每次运行结果喵。"
+        }
+      ]
+    }
+  },
+  "firstUseConsent": {
+    "title": "开始使用前，请确认以下事项",
+    "description": "请分别阅读并确认用户协议、隐私政策及跨境传输说明。未勾选全部项目之前，Tora 不会进入登录或工作区。",
+    "terms": "我已阅读并同意用户协议",
+    "readTerms": "查看用户协议",
+    "privacy": "我已阅读并了解隐私政策",
+    "readPrivacy": "查看隐私政策",
+    "crossBorder": "我单独同意跨境传输个人信息",
+    "crossBorderHint": "使用账号和云端功能时，必要信息可能传输至中国大陆境外。请先阅读具体范围和处理方式。",
+    "readCrossBorder": "查看跨境传输说明",
+    "decline": "暂不接受并退出",
+    "agree": "确认并继续"
+  },
+  "sponsors": {
+    "title": "本月赞助者名单喵",
+    "description": "感谢本月在爱发电支持 Tora 的用户。这里仅展示赞助者昵称，不展示金额或其他账户信息喵。",
+    "source": "数据来自爱发电喵",
+    "total": "共 {{count}} 位赞助者喵",
+    "loaded": "已显示 {{count}} 位赞助者喵",
+    "empty": "本月暂无赞助者喵",
+    "emptyMore": "当前页暂无本月赞助者，可继续加载更多喵。",
+    "loading": "正在加载赞助者喵…",
+    "loadError": "赞助者名单暂不可用，请稍后重试喵。",
+    "retry": "重试喵",
+    "more": "加载更多喵",
+    "donate": "赞助喵",
+    "leaveTitle": "前往爱发电赞助喵？",
+    "leaveDescription": "确认后将离开 Tora，在系统浏览器中打开以下外部网站喵。",
+    "confirmLeave": "确认并打开喵"
+  },
+  "polls": {
+    "title": "投票喵",
+    "subtitle": "参与投票，查看活动与结果喵",
+    "all": "全部活动喵",
+    "history": "本喵的投票记录喵",
+    "search": "搜索喵",
+    "loadMore": "加载更多喵",
+    "from": "开始日期喵",
+    "to": "结束日期喵",
+    "starts": "开始喵",
+    "ends": "截止喵",
+    "forever": "永久有效喵",
+    "refresh": "刷新投票喵",
+    "startsIn": "距开始 {{time}}喵",
+    "startingSoon": "即将开始，正在确认状态喵…",
+    "dayUnit": "天喵",
+    "state": {
+      "draft": "未发布喵",
+      "scheduled": "未开始喵",
+      "active": "进行中喵",
+      "ended": "已结束喵",
+      "archived": "已归档喵"
+    },
+    "type": {
+      "single": "单选喵",
+      "multiple": "多选喵",
+      "score": "百分制打分喵"
+    },
+    "frequency": {
+      "once": "每人一次喵",
+      "daily": "每日一次（北京时间）喵",
+      "unlimited": "不限次数喵"
+    },
+    "maxSelections": "最多选择 {{count}} 项喵",
+    "voted": "已投票喵",
+    "votedCount": "已提交 {{count}} 次喵",
+    "available": "可参与喵",
+    "choose": "选择左侧活动查看详情喵",
+    "empty": "暂无投票活动喵",
+    "loading": "正在加载投票中喵",
+    "noHistory": "暂无投票记录喵",
+    "results": "投票结果喵",
+    "participants": "{{count}} 次投票喵",
+    "countHidden": "参与人数未公开喵",
+    "detailsHidden": "选项明细未公开喵",
+    "resultsUnavailable": "结果暂未公开喵",
+    "autoRefresh": "每 5 秒自动更新喵",
+    "pieHint": "圆环显示各选项份额；多选投票的选择率之和可能超过 100%喵。",
+    "submit": "提交投票喵",
+    "submitting": "提交中喵…",
+    "confirmVote": "确认提交投票？提交后无法修改喵。",
+    "submitted": "投票已提交喵",
+    "queued": "离线投票已保存，联网后自动提交；服务端确认前不算投票成功喵。",
+    "pending": "待同步投票喵",
+    "waitingSync": "等待服务端确认喵",
+    "retry": "重试喵",
+    "remove": "移除喵",
+    "removePending": "移除这条待同步投票喵？",
+    "selectionRequired": "请选择符合规则的选项喵",
+    "scoreRequired": "请为每个选项填写 0–100 的整数分喵",
+    "submitError": "提交失败喵",
+    "loadError": "投票加载失败喵",
+    "disabled": "投票功能已由管理员关闭喵。"
+  },
+  "common": {
+    "toraModels": "Tora 模型喵",
+    "add": "添加喵",
+    "agent": "智能体喵",
+    "cancel": "先不了喵",
+    "channel": "频道喵",
+    "chat": "聊天喵",
+    "new-task": "开始新任务喵",
+    "model-switch-warning": "在任务中途切换模型会造成对话上下文丢失，token 消耗上升，历史对话内容容易被精简处理，进而影响输出效果喵。",
+    "automation": "自动化喵",
+    "close": "关闭喵",
+    "confirm": "好哒喵",
+    "create": "创建喵",
+    "creating": "创建中喵…",
+    "credential": "凭证喵",
+    "date": "日期喵",
+    "delete": "删除喵",
+    "disabled": "已禁用喵",
+    "edit": "编辑喵",
+    "error": "哎呀，出错了喵",
+    "information": "信息喵",
+    "knowledge": "知识库喵",
+    "loading": "本喵正在加载…",
+    "shownCount": "已显示 {{count}} 个喵",
+    "selectedCount": "已选中 {{selected}} 个，共 {{total}} 个喵",
+    "model": "模型喵",
+    "name": "名称喵",
+    "no": "否喵",
+    "noData": "这里还空空的喵",
+    "readOnly": "只读喵",
+    "readOnlyTooltip": "该资源以只读方式共享给你，编辑和删除均被禁用喵。",
+    "completed": "完成啦喵",
+    "failed": "已失败喵",
+    "running": "运行中喵",
+    "save": "保存好喵",
+    "saving": "本喵正在保存…",
+    "schedule": "日程喵",
+    "selectAgent": "选择智能体喵",
+    "settings": "设置喵",
+    "switchToZh": "切换为中文喵",
+    "switchToZhHant": "切換為繁體中文喵",
+    "switchToEn": "Switch to English",
+    "team": "团队喵",
+    "uploading": "上传中喵",
+    "leader": "队长喵",
+    "time": "时间喵",
+    "yes": "是喵",
+    "deleteTitle": "删除{{entity}} \"{{name}}\"喵？",
+    "deleteDescription": "此操作无法撤销喵。",
+    "mcp-hub": "MCP 中心喵",
+    "mine": "本喵的",
+    "my-mcp": "已安装的 MCP喵",
+    "skill-hub": "技能中心喵",
+    "browser": "浏览器喵",
+    "polls": "投票喵",
+    "my-skill": "本喵的技能",
+    "message": "消息喵",
+    "llm": "LLM",
+    "tts": "TTS",
+    "embedding": "向量喵",
+    "select": "请选择喵",
+    "workflow": "工作流喵"
+  },
+  "error": {
+    "description": "页面遇到意外错误。你可以重试或返回首页喵。",
+    "retry": "重试喵",
+    "home": "返回首页喵"
+  },
+  "tool": {
+    "callGeneric": "调用工具喵",
+    "read": {
+      "name": "读取喵",
+      "fileCount_one": "{{count}} 个文件喵",
+      "fileCount_other": "{{count}} 个文件喵",
+      "lineCount_one": "读取 {{formatted}} 行喵",
+      "lineCount_other": "读取 {{formatted}} 行喵"
+    },
+    "glob": {
+      "name": "Glob"
+    },
+    "taskCreate": {
+      "name": "TaskCreate"
+    },
+    "grep": {
+      "name": "Grep"
+    },
+    "summary": {
+      "bash": "{{count}} 次命令喵",
+      "read": "{{count}} 次读取喵",
+      "edit": "{{count}} 次编辑喵",
+      "search": "{{count}} 次搜索喵",
+      "todo": "{{count}} 项任务喵",
+      "mcp": "{{count}} 次 MCP 调用喵",
+      "separator": "、",
+      "fallback": "{{count}} 次工具调用喵"
+    }
+  },
+  "textInput": {
+    "toComplete": "补全喵",
+    "attach": "带上附件喵",
+    "attachNotSupported": "当前模型不支持文件附件喵",
+    "send": "发送喵",
+    "stop": "先停一下喵",
+    "stopping": "本喵正在停下来…",
+    "sendWithSkills": "携带 {{count}} 个技能发送喵",
+    "selectedSkills": "已选技能喵",
+    "removeSkill": "移除 {{name}}喵",
+    "skillOnlyPrompt": "请使用我选择的技能。",
+    "selectedElements": "已选页面元素喵",
+    "removeElement": "移除元素 {{tag}}喵",
+    "elementRefLine": "操作页面元素 `{{selector}}`",
+    "slashMenu": {
+      "selectedLabel": "已选喵",
+      "hintSelect": "Enter 选择，Space 多选喵",
+      "hintSend": "按 Enter 发送喵",
+      "clear": "清除喵",
+      "close": "关闭喵",
+      "empty": "还没有安装任何技能 — 去技能中心看看喵",
+      "emptyQuery": "没有匹配「{{query}}」的技能喵",
+      "moreMatches": "还有 {{count}} 个匹配，输入关键字继续过滤喵",
+      "selectedCount": "已选 {{count}} 个技能喵",
+      "keyboardHighlight": "+ 键盘高亮项喵",
+      "clickToMulti": "点击行多选；Esc 关闭喵"
+    },
+    "optimize": "让本喵润色提示词",
+    "optimizing": "优化中喵…",
+    "optimizeTitle": "优化后的提示词喵",
+    "optimizeFailed": "优化失败喵",
+    "optimizeApply": "应用喵",
+    "optimizeRetry": "重新优化喵",
+    "optimizeDiscard": "放弃喵",
+    "optimizeBy": "由 DeepSeek 优化"
+  },
+  "browserPanel": {
+    "newTab": "新标签页喵",
+    "createTab": "新建标签页喵",
+    "closeTab": "关闭标签页喵",
+    "back": "后退喵",
+    "forward": "前进喵",
+    "reload": "刷新喵",
+    "pickElement": "选择元素喵",
+    "pickElementHint": "选择元素：在页面上悬停高亮，点击后元素卡片附到聊天输入框（Esc 取消）喵",
+    "openInBrowser": "在浏览器打开喵",
+    "openInBrowserHint": "在系统默认浏览器中打开当前页面喵",
+    "urlPlaceholder": "输入网址或搜索内容后回车",
+    "noTabPick": "还没有打开任何标签页。先在地址栏输入网址或搜索内容并回车，再选择元素喵。",
+    "noTabAction": "还没有打开任何标签页。点右上角 + 新建一个，或在地址栏输入网址或搜索内容并回车喵。",
+    "iframeFallbackHint": "当前是浏览器兜底模式（<iframe>）：同源页面可用，跨源站点大多会被 X-Frame-Options / CSP 拒绝嵌入、内容也读不到。桌面端 App 里用的是真正的内置浏览器（<webview>），没有这些限制喵。"
+  },
+  "voice": {
+    "micTooltip": "语音输入喵",
+    "listening": "正在聆听，再次点击结束喵",
+    "transcribing": "识别中喵…",
+    "micDenied": "无法访问麦克风，请在系统设置中允许后重试喵",
+    "transcribeFailed": "语音识别失败喵",
+    "emptyTranscript": "没有识别到内容喵",
+    "keyMissing": "未配置语音识别 API Key（voice-config.json）喵"
+  },
+  "confirmCard": {
+    "toConfirm": "确认喵",
+    "yesWithRule": "是，且该次对话中都允许 {{toolName}} 执行 {{ruleContent}}喵"
+  },
+  "messageBubble": {
+    "thinking": "深度思考喵",
+    "thinkingFor": "深度思考 {{duration}}喵",
+    "taskProcess": {
+      "title": "任务过程喵",
+      "running": "已用时 {{duration}}喵",
+      "finished": "用时 {{duration}}喵",
+      "hour": "小时喵",
+      "minute": "分钟喵",
+      "second": "秒喵",
+      "noConclusion": "本轮已结束，但模型未给出结语。可展开任务过程查看详情喵。"
+    },
+    "audioGenerating": "正在生成音频喵…",
+    "playAudio": "播放音频喵",
+    "pauseAudio": "暂停音频喵",
+    "running": "运行中喵...",
+    "skillAttached": "已附加技能 {{name}}喵",
+    "changedFiles": {
+      "title": "{{count}} 个文件已更改喵",
+      "openPanel": "在面板中查看全部改动喵"
+    },
+    "processed": "已处理 {{duration}}喵",
+    "completed": "已完成 {{duration}}喵",
+    "duration": {
+      "day": "天喵",
+      "hour": "时喵",
+      "minute": "分喵",
+      "second": "秒喵"
+    },
+    "hintSource": {
+      "tool_output": "工具输出喵",
+      "team": "团队喵",
+      "team_message": "团队消息喵",
+      "schedule": "定时任务喵",
+      "system": "系统消息喵",
+      "channel": "频道喵",
+      "runtime_state": "运行状态喵"
+    },
+    "error": {
+      "title": "回复失败喵",
+      "blockedTitle": "本轮被规则阻止喵",
+      "authentication": "鉴权失败 —— 请检查模型的 API key 或凭证喵。",
+      "permission": "请求被拒绝 —— 当前凭证没有访问该模型或端点的权限喵。",
+      "rate_limit": "触发限流或额度用尽 —— 请稍后重试喵。",
+      "invalid_request": "发往模型的请求被判定为非法喵。",
+      "upstream": "上游模型服务返回了错误喵。",
+      "connection": "无法连接模型服务 —— 网络错误或超时喵。",
+      "internal": "发生了未预期的内部错误喵。",
+      "setup": "会话准备失败 —— 请检查该智能体的模型、工具和知识库配置喵。",
+      "unknown": "回复因未知错误失败喵。"
+    },
+    "copy": "复制喵"
+  },
+  "questionPanel": {
+    "supplementTitle": "是否有更多的补充信息需要提供喵？",
+    "supplementPlaceholder": "添加补充信息",
+    "optional": "可选喵",
+    "of": "of",
+    "prev": "上一步喵",
+    "next": "下一步喵",
+    "submit": "提交喵",
+    "cancel": "取消喵",
+    "other": "其他喵",
+    "otherPlaceholder": "请输入"
+  },
+  "chat": {
+    "inputPlaceholder": "想做什么，告诉本喵吧～",
+    "confirmToolCall": "可以让本喵执行这个操作吗？",
+    "subagentConfirmTitle": "{{name}} 请求确认喵",
+    "newSession": "新会话喵",
+    "newConversation": "新对话喵",
+    "greeting": "Tora要构建些什么喵？",
+    "greetingProject": "要和本喵一起在{{project}}中做些什么呀？",
+    "thinking": "本喵认真想想…",
+    "project": {
+      "label": "项目喵",
+      "unassigned": "未分配项目喵",
+      "rename": "重命名项目喵"
+    },
+    "maxItersExceeded": {
+      "title": "已达到最大迭代次数喵",
+      "description": "输入新消息可继续对话，或点击继续以完成当前任务喵。",
+      "continue": "继续喵"
+    },
+    "context": {
+      "compact": {
+        "title": "上下文已自动压缩喵",
+        "evicted": "驱逐 {{count}} 条工具输出喵",
+        "compacted": "较早历史已摘要喵",
+        "fallback": "已压缩喵",
+        "description": "{{parts}}（约 {{before}} → {{after}} tokens，上限 {{budget}}）喵"
+      }
+    },
+    "agent": {
+      "selectPlaceholder": "选择智能体",
+      "emptyTitle": "还没有智能体喵",
+      "emptyDescription": "创建一个智能体开始使用喵。",
+      "groupYours": "本喵的喵",
+      "groupShared": "共享给我喵"
+    },
+    "session": {
+      "label": "会话喵",
+      "emptyTitle": "还没有会话喵",
+      "emptyNoAgent": "请先选择一个智能体喵。",
+      "emptyHasAgent": "创建会话开始对话喵。",
+      "today": "今天喵",
+      "earlier": "更早喵"
+    }
+  },
+  "dialog-agent-create": {
+    "title": "创建智能体喵",
+    "description": "定义新智能体的身份与行为喵。"
+  },
+  "agent-form": {
+    "identity": {
+      "legend": "智能体身份喵",
+      "description": "定义此智能体行为的名称和指令喵。",
+      "name": {
+        "label": "名称喵",
+        "placeholder": "我的智能体"
+      },
+      "system-prompt": {
+        "label": "系统提示词喵"
+      }
+    },
+    "context-config": {
+      "legend": "上下文配置喵",
+      "description": "控制上下文窗口的管理和压缩方式喵。",
+      "trigger-ratio": {
+        "label": "触发比例喵"
+      },
+      "reserve-ratio": {
+        "label": "保留比例喵"
+      },
+      "tool-result-limit": {
+        "label": "工具结果限制喵"
+      },
+      "compression-prompt": {
+        "label": "压缩提示词喵"
+      },
+      "summary-template": {
+        "label": "摘要模板喵"
+      },
+      "max-image-num": {
+        "label": "最大图片数喵"
+      }
+    },
+    "react-config": {
+      "legend": "ReAct 配置喵",
+      "description": "控制推理和行动循环的行为喵。",
+      "max-iters": {
+        "label": "最大迭代次数喵"
+      },
+      "stop-on-reject": {
+        "label": "拒绝时停止喵"
+      },
+      "structured-output-grace-iters": {
+        "label": "结构化输出宽限轮数喵",
+        "description": "超过最大迭代次数后额外允许的轮数，让已经到达上限的回复仍能产出要求的结构化输出喵。"
+      },
+      "interruption-message": {
+        "label": "中断回复喵",
+        "description": "用户中断回复时，智能体给出的回复内容喵。"
+      },
+      "interruption-raise-cancelled-error": {
+        "label": "抛出 CancelledError喵",
+        "description": "处理完中断后重新抛出 asyncio.CancelledError，而不是将其吞掉喵。"
+      }
+    },
+    "invite-config": {
+      "legend": "邀请配置喵",
+      "description": "控制此智能体是否可被其他智能体通过 AgentInvite 邀请喵。",
+      "invitable": {
+        "label": "允许被邀请喵"
+      },
+      "invite-description": {
+        "label": "邀请说明喵",
+        "placeholder": "简要描述此智能体的专长；允许被邀请时必填。"
+      }
+    }
+  },
+  "dialog-agent-edit": {
+    "title": "编辑智能体喵",
+    "description": "更新此智能体的配置喵。"
+  },
+  "dialog-agent-delete": {
+    "entity": "智能体喵",
+    "confirm": "删除喵"
+  },
+  "dialog-session-delete": {
+    "entity": "会话喵",
+    "confirm": "删除喵"
+  },
+  "dialog-session-rename": {
+    "title": "重命名会话喵",
+    "description": "为该会话设置新名称喵。",
+    "label": "名称喵",
+    "placeholder": "会话名称"
+  },
+  "dialog-project-rename": {
+    "title": "重命名项目喵",
+    "description": "仅更改侧边栏与欢迎语中的项目显示名，不会修改文件夹或会话标题喵。",
+    "label": "项目名称喵",
+    "placeholder": "项目名称"
+  },
+  "session-menu": {
+    "rename": "重命名喵",
+    "delete": "删除喵"
+  },
+  "dialog-credential-create": {
+    "title": "添加凭证喵",
+    "description": "为模型提供商添加凭证喵。",
+    "selectType": "提供商喵",
+    "selectTypePlaceholder": "选择提供商"
+  },
+  "dialog-credential-edit": {
+    "title": "编辑凭证喵",
+    "description": "更新该提供商已保存的凭证喵。"
+  },
+  "dialog-knowledge-base-create": {
+    "title": "创建知识库喵",
+    "description": "使用 Embedding 模型创建新的知识库喵。",
+    "name": {
+      "label": "名称喵",
+      "placeholder": "我的知识库"
+    },
+    "descriptionField": {
+      "label": "描述喵",
+      "placeholder": "描述知识库用途"
+    },
+    "embeddingModel": {
+      "label": "Embedding 模型喵"
+    },
+    "dimension": {
+      "label": "维度喵"
+    },
+    "chunker": {
+      "label": "分块策略喵"
+    },
+    "policy": {
+      "lockedTitle": "维度已锁定为 {{dimension}}d喵",
+      "lockedDescription": "当前实例已要求所有知识库使用 {{dimension}} 维 embedding，下面仅展示兼容的模型喵。",
+      "noCompatibleTitle": "暂无可用 Embedding 模型喵",
+      "noCompatibleAny": "你的模型列表中没有任何可用的 Embedding 模型，请先在设置中添加模型喵。",
+      "noCompatibleLocked": "你的凭证中没有任何模型支持 {{dimension}} 维 embedding喵。"
+    },
+    "errors": {
+      "nameRequired": "请填写知识库名称喵。",
+      "embeddingRequired": "请选择 Embedding 模型喵。",
+      "dimensionRequired": "请选择 Embedding 维度喵。",
+      "chunkerRequired": "请选择分块策略喵。"
+    }
+  },
+  "dialog-knowledge-base-edit": {
+    "title": "编辑知识库喵",
+    "description": "修改知识库的名称与描述喵。",
+    "name": {
+      "label": "名称喵",
+      "placeholder": "我的知识库"
+    },
+    "descriptionField": {
+      "label": "描述喵",
+      "placeholder": "描述知识库用途"
+    },
+    "embeddingModel": {
+      "label": "Embedding 模型喵"
+    },
+    "chunker": {
+      "label": "分块策略喵"
+    },
+    "errors": {
+      "nameRequired": "请填写知识库名称喵。"
+    }
+  },
+  "dialog-knowledge-base-delete": {
+    "title": "删除知识库喵",
+    "description": "此操作将永久删除知识库 \"{{name}}\" 及其所有已索引文档，且无法撤销喵。"
+  },
+  "credential": {
+    "noProviders": "暂无可用提供商",
+    "selectHint": "未选择凭证喵",
+    "selectHintDescription": "从左侧选择一个凭证以查看详情喵。",
+    "availableModels": "可用模型喵",
+    "noModels": "暂无可用模型喵",
+    "noModelsDescription": "该提供商未返回任何模型喵。",
+    "deleteEntity": "凭证喵",
+    "subtitle": "模型 API 授权配置喵",
+    "configured": "已配置喵",
+    "addProvider": "添加凭证喵",
+    "reasoning": "推理模型喵",
+    "realtime": "实时喵",
+    "table": {
+      "model": "模型喵",
+      "context": "上下文喵",
+      "maxOutput": "最大输出喵",
+      "accepts": "输入喵",
+      "outputs": "输出喵",
+      "legend": "上下文与最大输出均以 token 计。REASONING 表示模型支持深度思考喵。",
+      "dimensions": "维度喵"
+    }
+  },
+  "knowledge": {
+    "subtitle": "管理智能体使用的知识库喵",
+    "selectHint": "未选择知识库喵",
+    "selectHintDescription": "从左侧选择一个知识库以查看详情喵。",
+    "list": {
+      "label": "知识库喵",
+      "emptyTitle": "暂无知识库喵",
+      "emptyDescription": "创建知识库以开始索引文档喵。",
+      "createButton": "创建知识库喵"
+    },
+    "document": {
+      "emptyTitle": "暂无文档喵",
+      "emptyDescription": "上传文档以索引到该知识库中喵。",
+      "uploadButton": "上传文档喵",
+      "uploadButtonShort": "上传喵",
+      "chunkCount_one": "{{count}} 个分块喵",
+      "chunkCount_other": "{{count}} 个分块喵",
+      "deleteConfirmTitle": "删除文档喵",
+      "deleteConfirmDescription": "确认删除 \"{{name}}\"？该操作将一并移除文档及其全部已索引分块，且不可撤销喵。",
+      "deleteError": "删除文档失败喵。",
+      "dropHintIdle": "或拖拽文件到此处喵",
+      "unsupportedExtension": "\"{{name}}\" 已跳过——不支持该文件类型喵。",
+      "status": {
+        "queued": "排队中喵",
+        "uploading": "上传中喵",
+        "pending": "等待处理喵",
+        "parsing": "解析中喵",
+        "chunking": "分块中喵",
+        "indexing": "建立索引喵",
+        "ready": "已就绪喵",
+        "error": "失败喵",
+        "cancelled": "已取消喵"
+      },
+      "actions": {
+        "cancel": "取消喵",
+        "dismiss": "关闭喵",
+        "remove": "删除喵",
+        "clearFinished": "清除已完成喵"
+      },
+      "title": "文档喵",
+      "chunkCount": "{{count}} 个分块喵"
+    },
+    "test": {
+      "button": "测试喵",
+      "title": "检索测试喵",
+      "description": "在 \"{{name}}\" 上发起一次临时检索喵。",
+      "queryLabel": "查询喵",
+      "queryPlaceholder": "输入自然语言问题…",
+      "topKLabel": "Top K",
+      "searchButton": "搜索喵",
+      "score": "分值喵",
+      "chunkPosition": "第 {{index}} / {{total}} 段喵",
+      "emptyTitle": "无匹配喵",
+      "emptyDescription": "本次查询没有返回任何分块喵。"
+    },
+    "config": {
+      "title": "配置信息喵",
+      "embeddingModel": "嵌入模型喵",
+      "dimensions": "向量维度喵",
+      "credential": "凭证喵",
+      "chunker": "分块器喵",
+      "counts": "内容喵",
+      "countsValue": "{{documents}} 个文档 · {{chunks}} 个分块喵",
+      "status": "索引状态喵",
+      "statusValue": "{{ready}} 就绪 · {{indexing}} 处理中 · {{failed}} 失败喵",
+      "createdAt": "创建时间喵"
+    },
+    "documentDetail": {
+      "description": "已索引 {{count}} 个分块喵",
+      "chunksTab": "分块喵",
+      "previewTab": "预览喵",
+      "chunksEmptyTitle": "暂无分块喵",
+      "chunksEmptyDescription": "该文档尚未产生已索引的分块喵。",
+      "chunksUnsupportedTitle": "无法浏览分块喵",
+      "chunksUnsupportedDescription": "当前配置的向量数据库不支持分块列表喵。",
+      "previousPage": "上一页喵",
+      "nextPage": "下一页喵",
+      "pageIndicator": "第 {{page}} / {{pageCount}} 页喵",
+      "previewUnavailableTitle": "无法在线预览喵",
+      "previewUnavailableDescription": "该文件类型无法在浏览器中预览喵。",
+      "previewTooLargeTitle": "文件过大,无法预览喵",
+      "previewTooLargeDescription": "该文件超出在线预览大小限制,请下载后查看源文件喵。",
+      "downloadButton": "下载源文件喵"
+    }
+  },
+  "llm-select": {
+    "placeholder": "选择模型",
+    "loading": "加载中喵…",
+    "empty": {
+      "title": "暂无可用模型喵",
+      "description": "请先在设置中添加模型喵。"
+    },
+    "addCredential": "添加模型喵",
+    "clear": "清除选择喵",
+    "noFallback": "无兜底模型喵",
+    "pickForDetails": "选择模型查看详情喵",
+    "vision": "视觉喵",
+    "contextBadge": "{{size}} 上下文喵",
+    "thinking": "思考强度喵",
+    "contextWindow": "上下文窗口喵",
+    "hintSmallContext": "该模型为小上下文模型，不支持 1M喵",
+    "level": {
+      "off": "关闭喵",
+      "low": "低喵",
+      "high": "高喵",
+      "max": "极致喵"
+    }
+  },
+  "embedding-select": {
+    "placeholder": "选择 Embedding 模型",
+    "loading": "加载中喵…",
+    "empty": {
+      "title": "暂无可用的 Embedding 模型喵",
+      "description": "请先在设置中添加支持 Embedding 的模型喵。"
+    },
+    "addCredential": "添加模型喵"
+  },
+  "chunker-select": {
+    "placeholder": "选择分块策略",
+    "loading": "加载中喵…",
+    "empty": "暂无可用分块策略喵"
+  },
+  "chunker-types": {
+    "approx_token": {
+      "label": "近似 Token 数喵",
+      "params": {
+        "chunk_size": {
+          "label": "块大小喵",
+          "description": "每个分块的最大近似 Token 数量喵。"
+        },
+        "overlap": {
+          "label": "重叠大小喵",
+          "description": "相邻分块之间共享的近似 Token 数量喵。"
+        }
+      }
+    }
+  },
+  "dimension-select": {
+    "placeholder": "选择维度",
+    "pickModelFirst": "请先选择 Embedding 模型喵"
+  },
+  "permission-mode": {
+    "placeholder": "选择权限模式",
+    "trigger-tooltip": "权限模式喵",
+    "panel-title": "如何批准 Agent 的操作喵？",
+    "learn-more": "了解更多喵",
+    "default": "手动审批喵",
+    "default-desc": "重要操作由你确认，最安全喵",
+    "accept_edits": "自动审批喵",
+    "accept_edits-desc": "自动允许工作区内的文件读写，其余操作仍会询问你喵",
+    "explore": "只读探索喵",
+    "explore-desc": "仅允许读取与搜索，禁止写入和执行命令喵",
+    "bypass": "完全访问喵",
+    "bypass-desc": "不经审批直接在本机运行，仅建议在可信或沙箱环境使用喵",
+    "dont_ask": "无人值守喵",
+    "dont_ask-desc": "需要询问的操作一律拒绝，适合定时任务与后台执行喵"
+  },
+  "dialog-mcp-create": {
+    "configLabel": "MCP 配置喵",
+    "keepAlive": "保持连接喵",
+    "keepAliveDesc": "在交互间保持状态。适用于浏览器操作或其他长时间运行的 MCP喵。",
+    "parseError": "JSON 配置无效：{{message}}喵",
+    "missingMcpServers": "配置中必须包含 \"mcpServers\" 对象喵。",
+    "emptyMcpServers": "配置中未找到 MCP 服务器喵。"
+  },
+  "dialog-mcp-delete": {
+    "entity": "MCP 服务器喵",
+    "skillEntity": "技能喵",
+    "skillDescription": "确定要将该技能从工作区中移除吗喵？"
+  },
+  "schedule": {
+    "subtitle": "配置和管理自动化任务，让 Tora 按计划执行工作流喵",
+    "calendar": "日历喵",
+    "createSchedule": {
+      "description": "设置定时或一次性的自动化任务，让智能体按计划执行工作流喵。",
+      "descriptionLabel": "描述喵",
+      "descriptionPlaceholder": "描述这个自动化任务的用途...",
+      "namePlaceholder": "例如：每日报告",
+      "title": "创建自动化任务喵"
+    },
+    "deleteSchedule": {
+      "entity": "自动化任务喵"
+    },
+    "endAt": "结束日期喵",
+    "end_at": "结束时间喵",
+    "executionHistory": "执行历史喵",
+    "freqDaily": "每天喵",
+    "freqMonthly": "每月喵",
+    "freqOnce": "一次喵",
+    "freqWeekly": "每周喵",
+    "frequency": "频率喵",
+    "friday": "周五喵",
+    "list": "列表喵",
+    "monday": "周一喵",
+    "more": "更多喵",
+    "nextMonth": "下个月喵",
+    "nextYear": "下一年喵",
+    "noSchedules": "暂无自动化任务喵",
+    "noSchedulesDescription": "新建一个自动化任务，让 Tora 按计划执行工作流喵。",
+    "pickDate": "选择日期喵",
+    "permissionMode": "权限模式喵",
+    "timezone": "时区喵",
+    "triggerTime": "触发时间喵",
+    "createdAt": "创建时间喵",
+    "dayOfMonthSuffix": "日喵",
+    "stateful": "有状态喵",
+    "statefulDesc": "开启后，每次触发复用同一个会话以累积上下文；关闭则每次触发都创建新会话喵。",
+    "previousMonth": "上个月喵",
+    "previousYear": "上一年喵",
+    "saturday": "周六喵",
+    "sunday": "周日喵",
+    "thursday": "周四喵",
+    "today": "今天喵",
+    "tuesday": "周二喵",
+    "wednesday": "周三喵"
+  },
+  "model-parameters": {
+    "title": "模型参数喵",
+    "description": "调整所选模型的推理参数喵。",
+    "empty": "暂无可配置参数喵。",
+    "fallbackLabel": "兜底模型喵",
+    "fallbackLabelWithModel": "兜底模型（{{model}}）喵",
+    "parametersLabel": "参数喵",
+    "ttsLabel": "语音合成喵",
+    "ttsEmpty": "暂无可用的语音合成模型喵。",
+    "ttsParameters": "参数喵",
+    "ttsParametersDescription": "调整所选语音合成模型的参数喵。",
+    "noTts": "不使用语音合成喵"
+  },
+  "setup": {
+    "title": "连接到服务器喵",
+    "description": "请输入服务器地址和用户名以开始使用喵。",
+    "serverUrl": "服务器地址喵",
+    "serverUrlPlaceholder": "https://...",
+    "username": "用户名喵",
+    "usernamePlaceholder": "请输入用户名",
+    "submit": "开始使用喵",
+    "checking": "连接中喵...",
+    "errorUnreachable": "无法连接到该服务器。请检查地址是否正确、服务是否已启动，以及是否允许跨域请求喵。",
+    "errorTimeout": "服务器已建立连接，但在超时时间内没有响应。可能负载过高或启动卡住了喵。",
+    "errorNotAgentScope": "地址可以访问，但它不是 AgentScope 服务。请检查地址，或升级尚未提供健康检查接口的旧版本后端喵。",
+    "errorUnauthorized": "服务器拒绝了该用户名，请填写有效的用户名喵。",
+    "errorNotReady": "服务器可以连接，但尚未就绪。以下子系统启动失败：喵",
+    "hint": "此应用仅提供前端服务，所有数据均来自填写的服务器地址，用户名仅用于服务端鉴权喵。"
+  },
+  "task-panel": {
+    "blockedBy": "依赖喵"
+  },
+  "panel": {
+    "plan": {
+      "title": "计划喵",
+      "completed": "已完成：{{count}}喵",
+      "total": "总计：{{count}}喵",
+      "emptyTitle": "暂无任务喵",
+      "emptyDescription": "智能体规划的任务会显示在这里喵。"
+    },
+    "mcp": {
+      "description": "工作区中配置的 MCP 服务器喵。",
+      "searchPlaceholder": "在工作区中搜索 MCP",
+      "add": "添加 MCP喵",
+      "addDescription": "复用已安装的 MCP，或粘贴一份配置喵。",
+      "fromConfig": "从 configuration 导入喵",
+      "tools": "{{count}} 个工具喵",
+      "unhealthy": "该 MCP 无法连接喵",
+      "healthy": "连接正常喵",
+      "emptyTitle": "暂无 MCP 服务器喵",
+      "emptyDescription": "添加 MCP 服务器为工作区配备工具喵。",
+      "fromInstalled": "导入已安装的 MCP喵",
+      "installedEmptyTitle": "还没有安装任何 MCP喵",
+      "installedEmptyDescription": "去 MCP 中心安装一个，或在这里粘贴配置喵。"
+    },
+    "skill": {
+      "title": "技能喵",
+      "description": "工作区中配置的技能喵。",
+      "searchPlaceholder": "在工作区中搜索技能",
+      "add": "添加技能喵",
+      "emptyTitle": "暂无技能喵",
+      "emptyDescription": "添加技能为工作区配备能力喵。",
+      "addDescription": "从已安装的 Skill 中选择，或上传本地文件夹喵。",
+      "fromInstalled": "导入已安装 Skill喵",
+      "fromFolder": "从文件夹上传喵",
+      "installedEmptyTitle": "还没有已安装的 Skill喵",
+      "installedEmptyDescription": "先到 Skill 市场安装，再从这里加入工作区喵。",
+      "pickFolderTitle": "选择一个 Skill 文件夹喵",
+      "pickFolderDescription": "文件夹根目录需要包含 SKILL.md喵。",
+      "pickFolder": "选择文件夹喵",
+      "importLocal": "从本地文件夹导入喵",
+      "pickAnother": "重新选择喵",
+      "fileCount": "{{count}} 个文件喵"
+    },
+    "workspace": {
+      "checkpoint": "检查点喵",
+      "diff": "变更预览喵",
+      "browser": "浏览器喵",
+      "terminal": "终端喵",
+      "hooks": "钩子喵"
+    },
+    "knowledge": {
+      "title": "知识库喵",
+      "description": "智能体可检索的知识库喵。",
+      "searchPlaceholder": "搜索知识库",
+      "emptyTitle": "暂无知识库喵",
+      "emptyDescription": "请先在「知识库」页面创建一个喵。",
+      "parametersTitle": "检索配置喵",
+      "parametersDescription": "知识库检索参数设置喵"
+    },
+    "permission": {
+      "title": "权限喵",
+      "description": "本会话应用的权限喵。",
+      "mode": "模式：{{mode}}喵",
+      "workingDirectories": "工作目录喵",
+      "noWorkingDirectories": "暂无工作目录喵。",
+      "allow": "允许喵",
+      "deny": "拒绝喵",
+      "ask": "询问喵",
+      "anyInvocation": "任意调用喵",
+      "rulesTitle": "规则（对所有会话生效）喵",
+      "addButton": "添加喵",
+      "contentPlaceholder": "匹配内容，留空 = 任意调用",
+      "deleteRule": "删除这条规则喵",
+      "loadFailed": "规则加载失败：{{detail}}喵",
+      "emptyTitle": "暂无规则喵",
+      "emptyDescription": "允许 / 拒绝 / 询问规则会在添加后显示在这里喵。"
+    },
+    "search": {
+      "emptyTitle": "无结果喵",
+      "emptyDescription": "没有匹配 “{{query}}” 的结果喵。"
+    },
+    "loading": "加载中喵…",
+    "team": {
+      "membersHeading": "成员喵",
+      "noMembers": "还没有成员——让队长用 AgentCreate 添加一个喵。",
+      "emptyTitle": "没有团队喵",
+      "emptyDescription": "当前会话不属于任何团队。agent 会用 TeamCreate 建立团队喵。",
+      "running": "运行中喵",
+      "idle": "空闲喵",
+      "missingSession": "（无会话）喵"
+    }
+  },
+  "channel": {
+    "credentialBinding": {
+      "tab": "扫码授权喵",
+      "manualTab": "手动填写喵",
+      "scanHint": "用平台 App 扫码并确认，凭据将自动生成喵。",
+      "authorized": "已确认，凭据已就绪喵。",
+      "failed": "授权未能完成喵。",
+      "unsafeUrl": "平台返回的链接无法安全展示喵。",
+      "retry": "重新生成喵"
+    },
+    "title": "频道喵",
+    "subtitle": "接入飞书、Discord 等外部平台，让智能体在群聊里工作喵",
+    "status": "状态喵",
+    "connected": "已连接喵",
+    "enable": "启用喵",
+    "disable": "停用喵",
+    "deleteEntity": "频道喵",
+    "routing": "路由喵",
+    "routingDesc": "将入站消息匹配到某个智能体和会话粒度。最后一条规则匹配其余所有消息喵。",
+    "sectionActive": "已接入喵",
+    "sectionAdd": "添加频道喵",
+    "rules": "{{count}} 条规则喵",
+    "empty": {
+      "title": "暂无频道喵",
+      "description": "创建一个频道，将智能体连接到飞书、钉钉等外部平台喵。"
+    },
+    "create": {
+      "title": "创建频道喵",
+      "titleFor": "接入 {{name}}喵",
+      "description": "将智能体连接到外部消息平台喵。",
+      "channelType": "平台喵",
+      "nameLabel": "名称喵",
+      "namePlaceholder": "如：客服值班",
+      "nameDesc": "便于区分同平台的多个频道喵",
+      "modelDesc": "新会话创建时的初始模型喵",
+      "permissionMode": "权限模式喵",
+      "permissionModeDesc": "新会话创建时的初始权限模式喵",
+      "showToolMessages": "显示工具消息喵",
+      "showToolMessagesDesc": "在频道中展示工具调用和返回消息喵。",
+      "showThinking": "显示思维过程喵",
+      "showThinkingDesc": "在频道中展示模型推理过程喵。"
+    },
+    "fields": {
+      "app_id": {
+        "title": "应用 ID喵",
+        "description": "飞书应用 ID喵"
+      },
+      "app_secret": {
+        "title": "应用密钥喵",
+        "description": "飞书应用密钥喵"
+      },
+      "bot_token": {
+        "title": "机器人令牌喵"
+      },
+      "application_id": {
+        "title": "应用 ID喵"
+      },
+      "only_at_reply": {
+        "title": "仅在被提及时回复喵",
+        "description": "在群聊中，仅当机器人被 @提及时回复喵"
+      },
+      "show_tool_process": {
+        "title": "显示工具过程喵",
+        "description": "在回复中显示工具调用和返回结果喵"
+      },
+      "show_thinking": {
+        "title": "显示思考过程喵",
+        "description": "在回复中显示模型的推理过程喵"
+      }
+    },
+    "edit": {
+      "title": "编辑频道喵",
+      "description": "修改路由、模型与回复设置。平台与凭据不可修改喵。"
+    },
+    "sessionScope": {
+      "per_chat": "按聊天喵",
+      "per_chat_user": "按聊天+用户喵"
+    },
+    "sessions": {
+      "title": "派生会话喵",
+      "empty": "还没有会话喵",
+      "openInChat": "在对话中打开喵"
+    },
+    "detail": {
+      "config": "配置喵",
+      "configDesc": "新会话创建时应用的初始配置喵",
+      "configItem": "配置项喵",
+      "configValue": "值喵",
+      "condition": "条件喵",
+      "created": "创建时间喵",
+      "deleteChannel": "删除频道喵",
+      "routingDesc": "入站消息如何匹配到智能体与会话粒度喵",
+      "sessionsDesc": "该频道派生出的会话喵",
+      "selectHint": "选择一个频道查看详情喵"
+    },
+    "state": {
+      "stopped": "已停止喵",
+      "connecting": "连接中喵",
+      "retrying": "重连中喵",
+      "connected": "已连接喵",
+      "failed": "连接失败喵"
+    },
+    "binding": {
+      "rule": "匹配规则喵",
+      "matchKey": "匹配字段喵",
+      "matchValue": "匹配值喵",
+      "matchValuePlaceholder": "如某个 chat_id",
+      "routeTo": "路由到喵",
+      "scope": "会话粒度喵",
+      "fallback": "兜底规则喵",
+      "fallbackDesc": "未命中上面任何规则的消息，都路由到这里喵",
+      "catchAll": "其余所有消息喵",
+      "addRule": "添加规则喵"
+    }
+  },
+  "mcp": {
+    "subtitle": "浏览并安装 MCP 服务喵",
+    "hubsLabel": "来源喵",
+    "searchPlaceholder": "在该来源中搜索",
+    "mineSearchPlaceholder": "搜索你的 MCP",
+    "noHubsTitle": "暂无可用来源喵",
+    "noHubsDescription": "请联系管理员添加喵。",
+    "noCardsTitle": "没有找到内容喵",
+    "noCardsDescription": "换个关键词试试喵。",
+    "mineDescription": "你已安装的 MCP 服务喵",
+    "mineEmptyTitle": "还没有 MCP 服务喵",
+    "mineEmptyDescription": "从左侧的来源中安装一个喵。",
+    "needsConfig": "需要配置喵",
+    "stateful": "有状态喵",
+    "configLabel": "配置喵",
+    "install": "安装喵",
+    "installed": "已安装喵",
+    "installTitle": "安装 {{name}}喵",
+    "installDescription": "添加到你的 MCP 中，之后可在会话里启用喵。",
+    "editTitle": "编辑 {{name}}喵",
+    "editDescription": "密钥留空则沿用已保存的值喵。",
+    "nameLabel": "名称喵",
+    "loadFailedTitle": "无法连接服务喵",
+    "loadFailedDescription": "请检查服务地址，以及服务是否已启动喵。",
+    "retry": "重试喵"
+  },
+  "skill": {
+    "category": {
+      "testing": "测试调试喵",
+      "security": "安全合规喵",
+      "devops": "部署运维喵",
+      "writing": "写作内容喵",
+      "office-efficiency": "办公提效喵",
+      "knowledge-management": "知识管理喵",
+      "content-creation": "内容创作喵",
+      "ai-agent": "AI 智能体喵",
+      "dev-programming": "开发编程喵",
+      "design-media": "设计媒体喵",
+      "data-analysis": "数据分析喵",
+      "life-service": "生活服务喵",
+      "professional": "专业领域喵",
+      "design-creative": "设计创意喵",
+      "coding-agents": "编程智能体喵",
+      "agent-skills": "智能体技能喵",
+      "development": "研发工程喵",
+      "agent-frameworks": "智能体框架喵",
+      "browser-automation": "浏览器自动化喵",
+      "productivity": "效率工具喵",
+      "rag-knowledge": "RAG 与知识库喵",
+      "automation": "自动化喵",
+      "document-processing": "文档处理喵",
+      "education": "教育喵",
+      "finance": "金融喵",
+      "legal-compliance": "法律合规喵",
+      "media-automation": "媒体自动化喵",
+      "Personal AI": "个人 AI喵",
+      "research": "研究喵",
+      "web-automation": "网页自动化喵"
+    },
+    "allCategories": "全部喵",
+    "matchButton": "按任务匹配喵",
+    "matchHint": "请先在搜索框里描述任务喵",
+    "matchRecommends": "为这个任务推荐喵",
+    "matchAlternatives": "备选喵",
+    "matchScore": "匹配度 {{score}}喵",
+    "matchSearched": "已检索 {{count}} 个技能喵",
+    "matchFailed": "未能匹配到技能喵",
+    "matchDismiss": "关闭喵",
+    "matchPolicy": "来源策略：{{policy}}喵",
+    "subtitle": "浏览并安装技能喵",
+    "hubsLabel": "来源喵",
+    "searchPlaceholder": "在该来源中搜索",
+    "mineSearchPlaceholder": "搜索你的技能",
+    "noHubsTitle": "暂无可用来源喵",
+    "noHubsDescription": "请联系管理员添加喵。",
+    "noCardsTitle": "没有找到内容喵",
+    "noCardsDescription": "换个关键词试试喵。",
+    "mineDescription": "你已安装的技能喵",
+    "mineEmptyTitle": "还没有技能喵",
+    "mineEmptyDescription": "从左侧的来源中安装一个喵。",
+    "install": "安装喵",
+    "installed": "已安装喵",
+    "versionLabel": "版本喵",
+    "hubLabel": "来源喵",
+    "updatedLabel": "更新于喵",
+    "updatedAgo": "{{ago}}前更新喵",
+    "updatedRecently": "刚刚更新喵",
+    "installsLabel": "安装量喵",
+    "downloadsLabel": "下载量喵",
+    "linkLabel": "页面喵",
+    "viewOnHub": "在来源站点查看喵",
+    "noReadme": "该技能没有提供 SKILL.md 正文喵。",
+    "loadFailedTitle": "无法连接服务喵",
+    "loadFailedDescription": "请检查服务地址，以及服务是否已启动喵。",
+    "retry": "重试喵"
+  },
+  "agent-menu": {
+    "settings": "设置喵",
+    "delete": "删除智能体喵"
+  },
+  "workdir": {
+    "title": "工作目录喵",
+    "description": "选择智能体的工作目录喵。",
+    "root": "工作区根目录喵",
+    "parent": "上一级喵",
+    "errorTitle": "无法列出该文件夹喵",
+    "pathPlaceholder": "输入或粘贴路径",
+    "empty": "此文件夹为空喵",
+    "pressEnter": "先按回车校验该路径喵",
+    "pickerPlaceholder": "选择文件夹以执行工具",
+    "recent": "最近喵",
+    "recentEmpty": "暂无最近使用的文件夹喵",
+    "browse": "选择文件夹喵",
+    "gitTooltip": "{{staged}} 已暂存 · {{unstaged}} 已修改 · {{untracked}} 未跟踪\n行数不含未跟踪文件喵"
+  },
+  "settings": {
+    "title": "设置喵",
+    "backToApp": "返回 Tora喵",
+    "close": "关闭喵",
+    "loadFailed": "读取设置失败（可能是后端没起或端口不对）：{{error}}喵",
+    "loadingRuntime": "正在加载运行时配置喵…",
+    "sections": {
+      "general": "通用喵",
+      "theme": "主题喵",
+      "agent": "智能体喵",
+      "model": "模型喵",
+      "memory": "记忆喵",
+      "data": "数据管理喵",
+      "about": "关于喵",
+      "usage": "使用统计喵",
+      "account": "账号喵",
+      "developer": "开发者&调试喵"
+    },
+    "memory": {
+      "title": "记忆喵",
+      "desc": "跨会话的长期记忆：会话开始时注入相关条目，会话结束后可选自动提炼喵",
+      "inject": "会话注入喵",
+      "injectDesc": "会话开始时按当前项目把相关记忆注入系统提示喵",
+      "distill": "自动提炼喵",
+      "distillDesc": "会话正常结束后用模型回顾本轮对话，沉淀 0-3 条值得长期记住的内容喵",
+      "searchPh": "搜索记忆（回车检索）喵",
+      "contentPh": "记忆内容，例如：本项目测试统一用 node --test喵",
+      "projectKeyPh": "项目绝对路径（留空则落到全局）喵",
+      "scopeGlobal": "全局喵",
+      "scopeProject": "项目喵",
+      "add": "新增记忆喵",
+      "save": "保存喵",
+      "cancel": "取消喵",
+      "edit": "编辑喵",
+      "delete": "删除喵",
+      "confirmDelete": "确认删除喵？",
+      "pin": "置顶喵",
+      "unpin": "取消置顶喵",
+      "dedupedToast": "内容相近的记忆已存在，未重复保存喵",
+      "projectGroup": "项目记忆喵",
+      "globalGroup": "全局记忆喵",
+      "empty": "还没有记忆。对话中让助手「记住…」或在此手动添加喵。",
+      "emptySearch": "没有匹配的记忆喵",
+      "kinds": {
+        "preference": "偏好喵",
+        "fact": "事实喵",
+        "pitfall": "坑点喵",
+        "convention": "约定喵"
+      },
+      "sources": {
+        "manual": "手动喵",
+        "tool": "工具喵",
+        "distill": "提炼喵"
+      }
+    },
+    "theme": {
+      "title": "主题喵",
+      "subtitle": "选择外观、动画和工作区背景喵",
+      "modeTitle": "外观喵",
+      "modeDesc": "浅色、深色或跟随系统喵",
+      "light": "浅色喵",
+      "dark": "深色喵",
+      "system": "跟随系统喵",
+      "motionTitle": "交互动画喵",
+      "motionDesc": "设置点击反馈和页面切换的节奏。系统的“减少动态效果”设置始终优先喵。",
+      "motionModeTitle": "动画节奏喵",
+      "motion": {
+        "system": "跟随系统喵",
+        "off": "关闭喵",
+        "gentle": "柔和喵",
+        "standard": "标准喵",
+        "fast": "快速喵"
+      },
+      "motionReduced": "系统已启用减少动态效果，当前以无动画方式呈现喵。",
+      "motionClickTitle": "点击反馈喵",
+      "motionClickDesc": "按钮、链接和菜单项的短促按下反馈喵",
+      "motionPageTitle": "页面切换喵",
+      "motionPageDesc": "在工作区页面之间平滑过渡喵",
+      "backgroundTitle": "背景喵",
+      "backgroundDesc": "工作区、设置和登录界面共用背景喵",
+      "lavender": "柔紫喵",
+      "mist": "雾蓝喵",
+      "stone": "暖灰喵",
+      "midnight": "深夜喵",
+      "none": "无背景喵",
+      "custom": "自定义喵",
+      "import": "导入图片喵",
+      "replace": "更换图片喵",
+      "remove": "移除自定义背景喵",
+      "localOnly": "自定义背景仅保存在当前设备，不会上传。支持 PNG、JPEG、WebP，最大 16 MB喵。",
+      "invalidType": "请选择 PNG、JPEG 或 WebP 图片喵",
+      "tooLarge": "图片不能超过 16 MB喵",
+      "processFailed": "无法读取这张图片，请更换文件重试喵",
+      "storageFailed": "保存背景失败，可能是本机存储空间不足喵"
+    },
+    "general": {
+      "title": "通用喵",
+      "common": "常规喵",
+      "language": {
+        "title": "语言喵",
+        "desc": "界面显示语言喵",
+        "zh": "简体中文",
+        "zhHant": "繁體中文",
+        "zhHK": "繁體中文（中國香港）",
+        "zhTW": "繁體中文（中國台灣）",
+        "en": "English",
+        "enGB": "English (UK)",
+        "enUS": "English (US)",
+        "ja": "日语",
+        "ko": "韩语",
+        "fr": "法语",
+        "de": "德语",
+        "it": "意大利语",
+        "ar": "阿拉伯语",
+        "es": "西班牙语",
+        "pt": "葡萄牙语",
+        "ru": "俄语",
+        "hi": "印地语",
+        "lzh": "文言文"
+      },
+      "searchEngine": {
+        "title": "搜索引擎喵",
+        "desc": "地址栏输入非网址内容时使用喵",
+        "engines": {
+          "360": "360 搜索喵",
+          "baidu": "百度喵",
+          "google": "谷歌喵",
+          "sogou": "搜狗喵",
+          "yahoo": "Yahoo",
+          "duckduckgo": "DuckDuckGo",
+          "ecosia": "Ecosia",
+          "bing": "必应喵"
+        }
+      },
+      "systemNotifications": {
+        "title": "系统消息通知喵",
+        "desc": "新消息使用系统通知提醒；锁屏通知不显示标题和正文。系统设置也需允许 Tora 通知喵。",
+        "test": "测试通知喵",
+        "testing": "正在测试喵…",
+        "shown": "系统已接收通知；若没有横幅，请检查 macOS 通知设置或专注模式喵。",
+        "failed": "系统拒绝显示通知。macOS 请在正式签名版中测试，并检查通知权限喵。",
+        "unsupported": "当前系统不支持原生通知喵。",
+        "unconfirmed": "已请求系统通知，但未收到显示确认；请检查通知权限喵。"
+      },
+      "sound": {
+        "title": "提示音喵",
+        "desc": "任务事件的声音提醒喵",
+        "replyDoneTitle": "回复完成喵",
+        "replyDoneDesc": "Agent 回答完成时播放喵",
+        "needConfirmTitle": "需要确认喵",
+        "needConfirmDesc": "弹出确认请求或向您提问时播放喵",
+        "kindTitle": "音效喵",
+        "kindDesc": "选择提示音喵",
+        "kindDing": "叮喵",
+        "kindCrisp": "清脆喵",
+        "kindSoft": "柔和喵",
+        "kindCustom": "自定义喵",
+        "preview": "试听喵",
+        "customTitle": "自定义音效喵",
+        "customDesc": "使用本地音频文件（mp3 / wav / ogg 等）喵",
+        "customChoose": "选择文件喵",
+        "customClear": "清除喵",
+        "volumeTitle": "音量喵",
+        "volumeDesc": "提示音播放音量喵",
+        "tooLarge": "文件过大（上限 10MB）喵",
+        "saveFailed": "保存失败，请重试喵"
+      },
+      "behavior": "行为喵"
+    },
+    "developer": {
+      "title": "开发者&调试喵",
+      "desc": "Agent 运行行为、钩子、代码索引与语言服务。改完即时生效，下次运行读取新配置喵。",
+      "behavior": "行为喵"
+    },
+    "behavior": {
+      "presets": {
+        "title": "执行配置档喵",
+        "desc": "一键应用经过验证的运行配置；需要时仍可在下方逐项微调喵。",
+        "fast": {
+          "title": "快速喵",
+          "desc": "适合短任务，降低成本喵"
+        },
+        "balanced": {
+          "title": "均衡喵",
+          "desc": "推荐用于日常开发喵"
+        },
+        "deep": {
+          "title": "深入喵",
+          "desc": "适合复杂任务，提供更多迭代空间喵"
+        }
+      },
+      "context": {
+        "title": "上下文 token 上限喵",
+        "desc": "对话超此值时自动压缩较早历史（默认 24000）。越小越省 token，但会丢历史细节喵。",
+        "suffix": "tokens"
+      },
+      "toolOutput": {
+        "title": "单工具输出上限喵",
+        "desc": "单个工具调用返回的最大字符数（默认 6000），超过会被截断喵。",
+        "suffix": "字符喵"
+      },
+      "maxTurns": {
+        "title": "最大 Agent 迭代轮数喵",
+        "desc": "单次任务最大 Agent 循环轮数（默认 40），超过会强制结束喵。",
+        "suffix": "轮喵"
+      },
+      "shellSandbox": {
+        "title": "命令进程沙箱喵",
+        "desc": "限制 Agent 的 Bash 和 Git 命令写入工作目录；关闭后命令拥有当前用户的文件权限喵。"
+      },
+      "shellNetwork": {
+        "title": "允许沙箱命令联网喵",
+        "desc": "默认关闭。开启后命令可访问外网和本机服务；仅在需要联网安装等操作时开启喵。"
+      }
+    },
+    "data": {
+      "title": "数据管理喵",
+      "subtitle": "清除本地与服务端的会话数据喵",
+      "wipe": {
+        "title": "清空所有会话喵",
+        "desc": "删除全部会话记录、智能体与凭证，此操作不可撤销喵",
+        "button": "清空喵",
+        "confirm": "确认清空喵",
+        "cancel": "取消喵",
+        "processing": "处理中喵…",
+        "error": "清空失败：{{error}}喵"
+      }
+    },
+    "about": {
+      "title": "关于喵",
+      "tora": "本地 Agent 工作台 · 版本 {{version}}喵",
+      "runtime": "Electron 桌面端 · 本地 ASAPI 服务 · 自接入模型喵",
+      "runtimeTitle": "运行方式喵",
+      "update": {
+        "title": "软件更新喵",
+        "desc": "检查 Tora 新版本。macOS 和 Windows 均会在后台下载，并在下载完成后提示重启安装喵。",
+        "check": "检查更新喵",
+        "checking": "检查中喵…",
+        "upToDate": "当前已是最新版本喵。",
+        "available": "发现 Tora {{version}}，请按更新提示继续喵。",
+        "downloading": "发现 Tora {{version}}，正在后台下载喵。",
+        "ready": "Tora {{version}} 已下载，等待重启安装喵。",
+        "development": "开发环境无法检测正式发布版本喵。",
+        "unavailable": "此平台暂不支持自动更新喵。",
+        "desktopOnly": "请在 Tora 桌面应用中检查更新喵。",
+        "failed": "检查更新失败：{{error}}喵"
+      }
+    },
+    "errors": {
+      "backend": "后端返回 {{status}}喵",
+      "runtimeSave": "保存失败 ({{status}})：{{text}}喵",
+      "saveFailed": "保存失败:{{error}}喵",
+      "wipeFailed": "清空失败：{{error}}喵"
+    },
+    "advanced": {
+      "title": "高级喵",
+      "subtitle": "钩子、代码索引与语言服务。改完即时生效，下次运行读取新配置喵。",
+      "hooks": {
+        "title": "生命周期钩子喵",
+        "desc": "允许在 UserPromptSubmit / PreToolUse / PostToolUse / Stop 四个点执行你自己的命令。关闭后完全不跑钩子喵。"
+      },
+      "changes": {
+        "title": "变更感知上下文喵",
+        "desc": "把「最近改动的文件 + git 未提交文件」注入系统提示词，让模型知道磁盘上的文件可能已经变了喵。"
+      },
+      "lsp": {
+        "title": "语言服务（LSP）喵",
+        "desc": "配置后 Lsp 工具的跳定义/找引用/诊断走真 LSP，能拿到类型信息；不配则用本地符号索引（够用，但没有类型）喵。",
+        "none": "未检测到已安装的 language server喵",
+        "enable": "启用喵",
+        "enabled": "已启用喵",
+        "disable": "停用喵",
+        "probeFailed": "探测失败：{{error}}喵"
+      },
+      "index": {
+        "title": "代码索引喵",
+        "desc": "符号索引与语义倒排索引（Search 工具用）。按文件 mtime 增量更新，通常不需要手动重建喵。",
+        "rebuild": "重建索引喵",
+        "rebuilding": "重建中喵…",
+        "done": "索引已重建：{{files}} 个文件 / {{symbols}} 个符号 / {{tokens}} 个词条喵",
+        "noWorkspace": "先在一个会话里选好工作目录，才能重建索引喵",
+        "stats": "当前：{{files}} 个文件 / {{symbols}} 个符号喵"
+      },
+      "mcp": {
+        "title": "MCP 服务器喵",
+        "desc": "stdio 传输的 Model Context Protocol 服务器。配置的工具会以 mcp__服务器__工具 的名字进入会话。改动保存后下次运行生效喵。",
+        "add": "添加喵",
+        "namePlaceholder": "名称（字母数字-_）",
+        "commandPlaceholder": "命令，如 npx",
+        "argsPlaceholder": "参数（空格分隔，可空）",
+        "probe": "探测喵",
+        "probing": "探测中喵…",
+        "toolsCount": "{{count}} 个工具喵",
+        "noServers": "还没有配置 MCP 服务器喵",
+        "delete": "删除这台服务器喵",
+        "probeFailed": "探测失败：{{error}}喵"
+      },
+      "trust": {
+        "title": "信任项目钩子喵",
+        "desc": "工作目录里的 .tora/hooks.json 来自仓库内容。信任它等于允许该仓库执行命令，请先看过里面的内容再决定喵。",
+        "trusted": "已信任此目录的项目钩子喵",
+        "trust": "信任当前工作目录喵",
+        "revoke": "撤销信任喵",
+        "none": "还没有工作目录喵"
+      },
+      "saveFailed": "保存失败：{{error}}喵"
+    },
+    "usage": {
+      "title": "使用统计喵",
+      "desc": "基于本地会话与用量数据聚合（Token 用量、聊天时长、连续天数、工具使用）喵",
+      "cards": {
+        "totalTokens": "累计 Token 数喵",
+        "peakTokens": "峰值 Token 数喵",
+        "longestChat": "最长聊天时长喵",
+        "currentStreak": "当前连续天数喵",
+        "longestStreak": "最长连续天数喵"
+      },
+      "activity": {
+        "title": "Token 活动喵",
+        "daily": "每日喵",
+        "weekly": "每周喵",
+        "cumulative": "累计喵",
+        "tipDaily": "使用了 {{tokens}} 个 Token喵",
+        "tipWeekly": "该周合计 {{tokens}} 个 Token喵",
+        "tipCumulative": "累计已使用 {{tokens}} 个 Token喵"
+      },
+      "insights": {
+        "title": "活动洞察喵",
+        "chats": "聊天总数喵",
+        "runs": "运行总数喵",
+        "activeDays": "活跃天数喵",
+        "toolRuns": "工具运行总数喵",
+        "topModel": "最常用的模型喵"
+      },
+      "topTools": {
+        "title": "最常用的工具喵",
+        "empty": "暂无工具使用记录喵",
+        "runs": "{{count}} 次运行喵"
+      },
+      "loading": "加载中喵…",
+      "loadFailed": "读取使用统计失败：{{error}}喵",
+      "days": "{{count}} 天喵",
+      "refresh": "刷新喵"
+    },
+    "account": {
+      "title": "账号喵",
+      "homeTitle": "登录 Tora喵",
+      "homeDesc": "输入用户名或邮箱，本喵和你来看看你是要登录还是注册喵",
+      "continue": "登录/注册喵",
+      "nextStep": "继续喵",
+      "otherWays": "使用其他方式登录喵",
+      "register": "注册喵",
+      "emailTitle": "登录或注册喵",
+      "registerTitle": "创建账号喵",
+      "emailDesc": "你将获得更加智能的回复并使用云端能力喵。",
+      "emailLabel": "电子邮件地址喵",
+      "emailPlaceholder": "电子邮件地址",
+      "passwordTitle": "输入密码喵",
+      "createPasswordTitle": "创建密码喵",
+      "passwordLabel": "密码（至少 8 位）喵",
+      "confirmLabel": "确认密码喵",
+      "login": "登录喵",
+      "createAccount": "创建账号喵",
+      "or": "或喵",
+      "terms": "继续即表示你同意 Tora 的使用条款和隐私政策喵。",
+      "back": "返回喵",
+      "logout": "退出登录喵",
+      "since": "注册于 {{date}}喵",
+      "errors": {
+        "confirmMismatch": "两次输入的密码不一致喵",
+        "shortPassword": "密码至少 8 位喵",
+        "alreadyRegistered": "该邮箱已注册，请直接登录喵",
+        "invalidEmail": "邮箱格式不正确喵",
+        "longPassword": "密码过长喵",
+        "wrongCredentials": "账号或密码错误喵",
+        "wrongPassword": "当前密码错误喵",
+        "emailTaken": "该邮箱已被使用喵",
+        "avatarTooLarge": "头像过大，请换一张小图喵",
+        "avatarInvalid": "头像格式不支持喵",
+        "invalidUsername": "用户名需为 2-32 位字母、数字、下划线、连字符或中文喵",
+        "usernameTaken": "该用户名已被使用喵",
+        "codeTooFrequent": "发送过于频繁，请稍后再试喵",
+        "codeSendFailed": "验证码发送失败，请稍后重试喵",
+        "codeInvalid": "验证码错误或已过期喵",
+        "turnstileFailed": "人机验证失败，请重试喵"
+      },
+      "networkWarning": "认证服务暂时无法连接，请检查网络后重试喵",
+      "networkRetryHint": "登录信息已保留。请在网络恢复后重试验证喵。",
+      "manager": {
+        "description": "管理你的个人资料与账户安全喵。",
+        "profileTitle": "个人资料喵",
+        "securityTitle": "账户安全喵",
+        "registeredAt": "注册时间喵",
+        "passwordHint": "更新用于登录 Tora 的密码喵",
+        "emailPasswordHint": "输入当前密码以确认是你本人操作喵",
+        "confirmNewPassword": "确认新密码喵",
+        "savePassword": "保存密码喵",
+        "saveEmail": "保存邮箱喵",
+        "logoutTitle": "退出当前账号喵",
+        "logoutHint": "下次使用时需要重新登录喵。",
+        "logoutConfirmTitle": "退出登录喵？",
+        "logoutConfirmDescription": "退出后，你需要重新登录才能继续使用 Tora喵。",
+        "changeAvatar": "更换头像喵",
+        "avatarHint": "点击头像更换（支持 PNG / JPG / WebP，自动裁剪压缩）喵",
+        "avatarSaved": "头像已更新喵",
+        "changePassword": "修改密码喵",
+        "changeEmail": "修改邮箱喵",
+        "currentEmail": "当前邮箱：{{email}}喵",
+        "newEmail": "新邮箱地址喵",
+        "currentPassword": "当前密码喵",
+        "newPassword": "新密码（至少 8 位）喵",
+        "save": "保存喵",
+        "passwordSaved": "密码已更新喵",
+        "emailSaved": "邮箱已更新喵"
+      },
+      "accountLabel": "用户名或邮箱喵",
+      "accountPlaceholder": "用户名或邮箱",
+      "usernameLabel": "用户名（2-32 位字母、数字或中文）喵",
+      "codeLabel": "邮箱验证码喵",
+      "captchaTitle": "安全验证喵",
+      "captchaLoginDesc": "完成人机验证以登录喵",
+      "captchaRegisterDesc": "完成人机验证以创建账号喵",
+      "showPassword": "显示密码喵",
+      "hidePassword": "隐藏密码喵",
+      "sendCode": "发送验证码喵",
+      "codeCooldown": "{{s}}s 后重发喵"
+    }
+  },
+  "agentSection": {
+    "title": "智能体喵",
+    "desc": "给智能体取个名字、写下系统提示词喵。留空时本喵会使用 Tora 内置提示词。",
+    "select": "选择智能体喵",
+    "name": "名称喵",
+    "namePlaceholder": "智能体名称",
+    "systemPrompt": "系统提示词喵",
+    "systemPromptPlaceholder": "留空就用 Tora 内置提示词喵",
+    "save": "保存喵",
+    "saved": "已保存喵",
+    "saveFailed": "保存失败:{{error}}喵"
+  },
+  "modelSection": {
+    "title": "模型喵",
+    "subtitle": "模型管理喵",
+    "desc": "配置 API key 添加更多可用模型，启用的第一个模型为默认对话模型喵。",
+    "addModel": "添加模型喵",
+    "empty": "还没有可用模型，点击「添加模型」接入你的第一个模型喵",
+    "loading": "加载中喵…",
+    "tableHeaders": {
+      "model": "模型喵",
+      "provider": "服务商喵",
+      "actions": "操作喵"
+    },
+    "aria": {
+      "edit": "编辑喵",
+      "delete": "删除喵",
+      "close": "关闭喵",
+      "back": "返回喵"
+    },
+    "errors": {
+      "noModels": "服务商未返回任何模型喵",
+      "submitFailed": "提交失败：{{error}}喵",
+      "backend": "返回 {{status}}喵",
+      "loginRequired": "请先在「账号」板块登录，模型列表按账号云端同步喵"
+    },
+    "form": {
+      "titleEdit": "编辑模型喵",
+      "titleAdd": "通过服务商添加喵",
+      "provider": "服务商喵",
+      "apiKey": "API 密钥喵",
+      "apiKeyPlaceholder": "请输入 API Key",
+      "apiKeyKeepEmpty": "不修改则留空喵",
+      "getApiKey": "获取 API 密钥喵",
+      "model": "模型喵",
+      "modelPlaceholder": "选择模型",
+      "modelInputPlaceholder": "选择或输入模型 ID（如 glm-4.6）",
+      "fetchingModels": "正在获取可用模型列表喵…",
+      "fetchHint": "输入 API 密钥后自动拉取模型列表；也可直接输入模型 ID喵",
+      "advanced": "高级配置喵",
+      "vision": {
+        "title": "视觉输入喵",
+        "auto": "自动喵",
+        "on": "支持喵",
+        "off": "不支持喵",
+        "hint": "自动 = 按模型名判断；支持视觉输入的模型（如 deepseek-flash、gpt-4o、qwen-vl）可上传图片喵"
+      },
+      "baseUrl": "接口地址（Base URL）喵",
+      "saveHint": "保存后会用模型列表接口验证连通性，密钥仅保存在本机喵",
+      "reset": "重置喵",
+      "saveEdit": "保存修改喵",
+      "saveAdd": "添加模型喵",
+      "selectedCount": "已选 {{count}} 个喵",
+      "selectAll": "全选喵",
+      "deselectAll": "取消全选喵",
+      "alreadyAdded": "已添加喵",
+      "apiKeyReused": "留空则复用已配置的 Key喵",
+      "keyReusedHint": "检测到该供应商已配置过 API Key，留空即可复用，直接选模型添加喵。"
+    },
+    "providers": {
+      "custom": "自定义模型",
+      "volcengine": "火山引擎",
+      "dashscope": "阿里云",
+      "siliconflow": "硅基流动",
+      "stepfun": "阶跃星辰（中国）",
+      "stepfunGlobal": "阶跃星辰（国际）",
+      "hunyuan": "腾讯云",
+      "ollama": "Ollama（本地）"
+    }
+  },
+  "sessionImport": {
+    "title": "导入聊天记录喵",
+    "description": "将本机 Codex 和 Claude Code 会话导入 Tora。先预览再导入，保留已有会话与源文件喵。",
+    "codex": "扫描本机 Codex喵",
+    "claude": "扫描本机 Claude Code喵",
+    "files": "选择 JSON / JSONL 文件喵",
+    "scanHint": "Codex：~/.codex/sessions 与 archived_sessions · Claude Code：~/.claude/projects喵",
+    "scanEmpty": "未找到支持的记录，也可以手动选择文件喵。",
+    "scanLimited": "显示最近 {{shown}} 个文件，共 {{total}} 个；较早记录可手动选择喵。",
+    "source": "来源喵",
+    "conversation": "会话喵",
+    "messages": "消息数喵",
+    "date": "更新时间喵",
+    "selectAll": "全选喵",
+    "preview": "预览所选记录喵",
+    "import": "导入 {{count}} 段会话喵",
+    "previewTitle": "确认导入内容喵",
+    "previewHint": "保留文字和原始时间，不迁移系统指令、思考、工具执行状态与权限。继续聊天时，请选择当前模型和项目目录喵。",
+    "destination": "导入到喵",
+    "agent": "智能体喵",
+    "duplicate": "已导入过喵",
+    "samples": "消息预览（开头与末尾）喵",
+    "warnings": "已跳过：{{invalid}} 行损坏记录 · {{attachments}} 个附件 · {{process}} 条过程记录喵",
+    "success": "已导入 {{count}} 段会话，跳过 {{skipped}} 段重复记录喵。",
+    "readError": "无法读取所选文件喵。",
+    "failure": "导入失败，请重试喵。",
+    "cancel": "取消喵",
+    "back": "返回喵",
+    "close": "关闭喵",
+    "selected": "已选 {{count}} 段喵",
+    "loading": "正在读取记录喵…",
+    "noSelection": "请至少选择一段会话喵。",
+    "fileLimit": "一次最多 100 个文件，单文件不超过 32 MB，总计不超过 64 MB喵。",
+    "noAgent": "请先创建或选择智能体喵。",
+    "errors": "无法导入的文件喵",
+    "unknownDate": "时间未知喵",
+    "error": {
+      "empty": "文件为空喵。",
+      "file_too_large": "单个文件超过 32 MB 限制喵。",
+      "batch_too_large": "本批文件超过总大小限制喵。",
+      "too_many_files": "一次最多选择 100 个文件喵。",
+      "unsupported_format": "该文件不是支持的 Codex 或 Claude Code 记录。",
+      "no_chat_messages": "没有可导入的用户或助手文字消息喵。",
+      "invalid_format": "文件不是有效的 JSON 或 JSONL。",
+      "source_mismatch": "选择的来源与文件格式不符喵。",
+      "expired_selection": "选择已过期，请重新扫描喵。",
+      "expired_preview": "预览已过期，请重新选择记录喵。",
+      "invalid_agent": "请选择有效的智能体喵。",
+      "no_selection": "请至少选择一段会话喵。",
+      "invalid_selection": "选择的记录不属于本次预览喵。",
+      "invalid_path": "源文件路径已变化，请重新扫描喵。",
+      "too_many_messages": "消息过多，请拆分后导入喵。",
+      "too_many_entries": "记录条目过多，请分批导入喵。"
+    },
+    "missingTime": "{{count}} 条消息缺少时间，将显示导入时间喵。",
+    "user": "用户喵"
+  },
+  "applicationModes": {
+    "mode": "应用模式喵",
+    "chatDescription": "聊天、探索与工作喵",
+    "codeDescription": "构建、调试与执行项目任务喵",
+    "chat": "聊天喵",
+    "work": "工作喵",
+    "ready": "本喵随时可以开始喵。",
+    "workReady": "我们要做些什么喵？",
+    "quota": "官方模型额度",
+    "quotaLoading": "正在读取额度…",
+    "quotaError": "额度暂不可用",
+    "chatRemaining": "今日剩余 {{amount}} 条",
+    "workRemaining": "今日剩余 {{amount}} 千 Token",
+    "chatLimit": "聊天：{{amount}} / 150 条（日）",
+    "dayLimit": "工作：{{amount}} / 100 万 Token（日）",
+    "weekLimit": "工作：{{amount}} / 1000 万 Token（周）",
+    "reset": "北京时间每日 00:00、每周一 00:00 重置。输入、输出与思考 Token 不重复计量。",
+    "customQuota": "自定义模型 · 不占官方额度",
+    "retry": "重试",
+    "source": "ToChat 模型来源",
+    "sourceHelp": "新 ToChat 会话生效，已有会话保留原模型；自定义模型不占官方额度。",
+    "official": "官方 DeepSeek Flash（默认）",
+    "custom": "自定义模型",
+    "model": "DeepSeek Flash",
+    "effort": "思考强度",
+    "low": "低",
+    "high": "高",
+    "max": "最大",
+    "search": "联网搜索",
+    "searchOn": "已开启联网搜索",
+    "selectModel": "请先选择自定义模型",
+    "syncError": "官方模型身份连接失败",
+    "connectError": "官方模型暂不可用，不会自动改用你的付费自定义模型。",
+    "limitReached": "官方额度已用完，请等待重置，或使用自定义模型开启新会话。",
+    "imageError": "支持 32 MB 以内的 JPEG、PNG、GIF、WebP 图片。",
+    "missingSession": "会话不存在"
+  }
+}

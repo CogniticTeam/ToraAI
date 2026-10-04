@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import vm from 'node:vm';
 import { randomUUID } from 'node:crypto';
@@ -36,6 +36,7 @@ function harness(mocks = {}, globals = {}) {
     '@/i18n/useI18n.ts': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
     '@/context/AudioContext': { useAudioManager: () => audio, AudioProvider: 'AudioProvider' },
     '@/lib/utils': { cn: (...values) => values.filter(Boolean).join(' ') },
+    '@/lib/catgirl': { useCatgirlSettings: () => ({ installed: false, enabled: false }), catgirlTrigger: () => null, catgirlCopy: () => ({}) },
     '@agentscope-ai/agentscope/event': { EventType: new Proxy({}, { get: (_, key) => key }) },
     '@agentscope-ai/agentscope/message': { UserMsg: data => ({ id: randomUUID(), role: 'user', ...data }), AssistantMsg: data => ({ id: randomUUID(), role: 'assistant', ...data }), appendEvent() {} },
     mime: { getType: () => 'image/png', getExtension: () => 'png' },
@@ -266,4 +267,58 @@ test('显式新任务入口跳过旧会话恢复，普通启动仍恢复；新�
     }
     h.dispose();
   }
+});
+
+test('ToChat 工作任务运行中权限选择保持可用并提交修改',async()=>{
+  const writes=[];
+  const h=harness({
+    'react-router-dom':{useNavigate:()=>()=>{},useParams:()=>({agentId:'agent',sessionId:'session'}),useSearchParams:()=>[new URLSearchParams('task=work')]},
+    '@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},
+    '@/hooks/useSessions':{useSessions:()=>({sessions:[{session:{id:'session',state:{permission_context:{mode:'default'}},config:{application_mode:'tochat',task_mode:'work',model_source:'custom',chat_model_config:{model:'fixture'}}}}],loading:false,refetch:async()=>{}})},
+    '@/hooks/useMessages':{useMessages:()=>({msgs:[],loading:false,phase:'streaming'})},
+    '@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})},
+    '@/lib/applicationModes':{readToChatSource:()=> 'custom',modeCopy:()=>key=>key},
+    '@/utils/authStore':{getToken:()=>''},
+    '@/api':{sessionApi:{update:async(...args)=>writes.push(args)}},
+    'framer-motion':{motion:{span:'span'}},
+  });
+  const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');
+  const tree=h.render(()=>ToChatConversation());
+  const control=find(tree,node=>node.type==='ChatContent').props.permissionControl;
+  assert.equal(control.props.disabled,false);
+  await control.props.onChange('bypass');
+  assert.equal(writes.length,1);assert.equal(writes[0][2].permission_mode,'bypass');h.dispose();
+});
+
+test('网页工作中切为允许修改会恢复待审批并让同轮后续调用使用新模式', {skip: !existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
+  let round=0,approved=0,opts={mode:'work',effort:'high',search:false,confirmWrites:true,onUpdate(){},onQuota(){}};
+  const h=harness({
+    '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',INTERRUPTED:'interrupted',ERROR:'error',EXCEED_MAX_ITERS:'exceed_max_iters'}},
+    './i18n.ts':{webText:value=>value},
+    './api':{webFetch:async()=>({})},
+    './storage':{saveConversation:async()=>{}},
+    './stream':{readChatStream:async()=>({content:'done',reasoning:'',tools:++round===1?['a','b'].map(id=>({id,function:{name:'Write',arguments:'{}'}})):[]})},
+    './localFiles':{selectedDirectory:()=>({}),localToolDefinitions:[{function:{name:'Write'}}],executeLocalTool:async(_name,_args,confirm)=>{if(await confirm())approved++;return {ok:true};}},
+  },{structuredClone});
+  const {useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+  const render=()=>h.render(()=>useWebConversation('fixture',null,opts));
+  const sending=render().send([{type:'text',text:'work'}]);await tick();assert.equal(approved,0);
+  opts={...opts,confirmWrites:false};render();await sending;
+  assert.equal(approved,2,'待审批和后续修改均使用最新设置');h.dispose();
+});
+
+test('网页工作中重新启用确认会阻止尚未开始的写入', {skip: !existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
+  let round=0,release,approved=0,opts={mode:'work',effort:'high',search:false,confirmWrites:false,onUpdate(){},onQuota(){}};
+  const h=harness({
+    '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},
+    './i18n.ts':{webText:value=>value},'./api':{webFetch:async()=>({})},'./storage':{saveConversation:async()=>{}},
+    './stream':{readChatStream:()=>++round===1?new Promise(resolve=>{release=()=>resolve({content:'',tools:[{id:'write',function:{name:'Write',arguments:'{}'}}]});}):{content:'done',tools:[]}},
+    './localFiles':{selectedDirectory:()=>({}),localToolDefinitions:[{function:{name:'Write'}}],executeLocalTool:async(_name,_args,confirm)=>{if(await confirm())approved++;return {ok:true};}},
+  },{structuredClone});
+  const {useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+  const render=()=>h.render(()=>useWebConversation('fixture',null,opts));
+  const sending=render().send([{type:'text',text:'work'}]);await tick();
+  opts={...opts,confirmWrites:true};render();release();await tick();
+  assert.equal(approved,0,'新模式要求确认，未作答前不写入');
+  await render().onUserConfirm({},true);await sending;assert.equal(approved,1);h.dispose();
 });

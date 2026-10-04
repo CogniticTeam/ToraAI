@@ -21,6 +21,8 @@ export const DEFAULT_CONFIG = {
   maxTurns: 40,                // 单次任务最大 Agent 循环轮数
   temperature: null,           // null = 不发送
   systemPrompt: null,          // null = 使用内置默认（紧凑型）
+  catgirlLanguagePackInstalled: false,
+  catgirlPersonaEnabled: false,
   // ---- 安全 ----
   // 路径沙箱默认只允许工作目录；确需额外目录时在这里显式放行（绝对路径数组）
   allowedRoots: [],

@@ -129,7 +129,7 @@ function ToChatConversation() {
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
 	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !!quotaError || !!limitReached));
 	const patch = async (config: UpdateSessionRequest) => {
-		if (busy) return false;
+		if (busy && !(Object.keys(config).length === 1 && 'permission_mode' in config)) return false;
 		setConfigPending(true);
 		try {
 			if (sessionId && agentId) { await sessionApi.update(sessionId, agentId, config); await refetch(); }
@@ -199,7 +199,7 @@ function ToChatConversation() {
 					onCwdChange={async (next) => { if (await patch({ cwd: next })) setCwd(next); }}
 					onSend={(content, context, skills) => { if (!model) { toast.error(copy('selectModel')); return; } void send(content, context, skills); }}
 					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={['image']} fileProcessor={fileProcessor}
-					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={busy} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
+					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
 						<DropdownMenu><DropdownMenuTrigger disabled={busy} aria-label={copy('effort')} className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm hover:bg-muted"><DeepSeekLogo data-testid="official-deepseek-logo" className="size-4 shrink-0" aria-hidden="true" /><span>{copy('model')}</span><span className="text-muted-foreground">{copy(selectedEffort)}</span><ChevronDown className="size-3.5 text-muted-foreground" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuRadioGroup value={selectedEffort} onValueChange={(next) => void chooseEffort(next as Effort)}>{(['low', 'high', 'max'] as const).map((level) => <DropdownMenuRadioItem key={level} value={level}>{copy(level)}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>}
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}

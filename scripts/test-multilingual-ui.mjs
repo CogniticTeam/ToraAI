@@ -14,7 +14,7 @@ const server = await startASAPIServer({ port: 0 });
 const browser = await chromium.launch({ headless: true, executablePath: chrome, args: ['--no-sandbox'] });
 const base = `http://127.0.0.1:${server.address().port}`;
 const languages = process.env.TORA_TEST_LANGUAGE === 'dynamic' ? [] : process.env.TORA_TEST_LANGUAGE ? [process.env.TORA_TEST_LANGUAGE]
-  : ['ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh'];
+  : ['en-GB', 'en-US', 'zh-HK', 'zh-TW', 'ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh'];
 const locale = (name) => JSON.parse(readFileSync(new URL(`../packages/desktop/frontend/src/i18n/locales/${name}.json`, import.meta.url), 'utf8'));
 
 try {
@@ -53,7 +53,7 @@ try {
       await dialog.waitFor({ state: 'visible' });
       const search = dialog.getByRole('searchbox', { name: expected.languageDialog.search });
       assert.equal(await search.isVisible(), true);
-      assert.equal(await dialog.locator('button[aria-pressed]').count(), 14);
+      assert.equal(await dialog.locator('button[aria-pressed]').count(), 16);
       await search.fill('日本語');
       assert.equal(await dialog.locator('button[aria-pressed]').count(), 1, `${language} 的跨语言搜索失效`);
       if (['ja', 'ar', 'lzh'].includes(language)) await page.screenshot({ path: join(tmpdir(), `tora-language-${language}.png`) });
@@ -83,7 +83,7 @@ try {
       const page = await context.newPage();
       await page.goto(base, { waitUntil: 'domcontentloaded' });
       await page.getByRole('button', { name: 'Language' }).click();
-      const dialog = page.getByRole('dialog', { name: 'Language' });
+      const dialog = page.getByRole('dialog', { name: locale('en').languageDialog.title });
       await dialog.getByRole('searchbox', { name: 'Search languages' }).fill('日本語');
       await dialog.getByRole('button', { name: /日本語/ }).click();
       await dialog.waitFor({ state: 'hidden' });
@@ -129,7 +129,7 @@ try {
       await page.locator('h3').filter({ hasText: locale('ar').settings.general.title }).waitFor();
       const row = page.getByText(locale('ar').settings.general.language.desc, { exact: true }).locator('..').locator('..');
       await row.getByRole('button').click();
-      assert.equal(await page.getByRole('listbox').getByRole('option').count(), 14);
+      assert.equal(await page.getByRole('listbox').getByRole('option').count(), 16);
       await page.getByRole('option', { name: locale('ar').settings.general.language.ja }).click();
       await page.waitForFunction(() => document.documentElement.lang === 'ja' && document.documentElement.dir === 'ltr');
       console.log('阿拉伯语工作区、设置页及切换到日语：通过');

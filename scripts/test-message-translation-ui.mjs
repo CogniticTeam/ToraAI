@@ -42,7 +42,7 @@ try {
     await page.goto(base);
     await page.getByRole('button', { name: /TranslationTest/ }).click();
     await page.getByRole('menuitem', { name: language === 'zh' ? /消息/ : /Messages/ }).click();
-    const translate = page.getByRole('button', { name: language === 'zh' ? '翻译为简体中文' : 'Translate to English', exact: true });
+    const translate = page.getByRole('button', { name: language === 'zh' ? '翻译为简体中文' : 'Translate to English (US)', exact: true });
     await page.getByRole('button', { name: language === 'zh' ? /中文通知/ : /English notice/ }).click();
     assert.equal(await page.getByRole('button', { name: language === 'zh' ? '无需翻译' : 'No translation needed' }).isDisabled(), true);
     await page.getByRole('button', { name: language === 'zh' ? /返回消息列表/ : /Back to messages/ }).click();
@@ -68,9 +68,10 @@ try {
     await page.close();
   }
   // 其余界面语言必须发送各自的目标代码，不能再统一退回英文。
-  for (const language of ['zh-Hant', 'ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh']) {
+  for (const language of ['en-GB', 'en-US', 'zh-HK', 'zh-TW', 'ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh']) {
     const locale = JSON.parse(readFileSync(new URL(`../packages/desktop/frontend/src/i18n/locales/${language}.json`, import.meta.url), 'utf8'));
-    const optionKey = language === 'zh-Hant' ? 'zhHant' : language;
+    const apiLanguage = {'en-GB':'en','en-US':'en','zh-HK':'zh-Hant','zh-TW':'zh-Hant'}[language] ?? language;
+    const optionKey = language === 'en-GB' ? 'enGB' : language === 'en-US' ? 'enUS' : language === 'zh-HK' ? 'zhHK' : language === 'zh-TW' ? 'zhTW' : language;
     const label = locale.inbox.translateToLanguage.replace('{{language}}', locale.settings.general.language[optionKey]);
     const page = await browser.newPage();
     let calls = 0;
@@ -87,7 +88,7 @@ try {
       if (path === '/account/messages/translate') {
         calls++;
         assert.deepEqual(route.request().postDataJSON(), { id: 'unknown', targetLanguage: language });
-        return reply({ translated: true, targetLanguage: language, title: `Translated ${language}`, body: `Body ${language}` });
+        return reply({ translated: true, targetLanguage: apiLanguage, title: `Translated ${language}`, body: `Body ${language}` });
       }
       if (path === '/models') return reply({ models: [] });
       return route.fulfill({ status: 503, contentType: 'application/json', body: '{}' });
@@ -107,7 +108,7 @@ try {
     assert.equal(calls, 1);
     assert.deepEqual(errors, []);
     assert.equal(await page.locator('html').getAttribute('lang'), language);
-    if (['zh-Hant', 'ja', 'ar'].includes(language)) await page.screenshot({ path: `/private/tmp/tora-translation-${language}.png` });
+    if (['en-GB', 'en-US', 'zh-HK', 'zh-TW', 'ja', 'ar'].includes(language)) await page.screenshot({ path: `/private/tmp/tora-translation-${language}.png` });
     console.log(`通过 ${language}：本地化目标文案、未知原文可翻译、目标代码和译文缓存正确。`);
     await page.close();
   }

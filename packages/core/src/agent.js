@@ -24,6 +24,7 @@ import { builtinTools, canonicalToolName, toolCategory } from './tools/builtin.j
 import { createToolRegistry, runToolPipeline } from './tools/registry.js';
 import { evictToolOutputs, compactMessages, estimateMessagesTokens, contentToText } from './context.js';
 import { buildSystemPrompt, loadProjectContext } from './prompt.js';
+import { appendCatgirlPersona } from './catgirl.js';
 import { loadMemoryConfig, renderMemoryContext, MEMORY_GUIDE } from './asapi/memory.js';
 import { createRoots, realpathAllowMissing } from './security.js';
 import { homedir } from 'node:os';
@@ -532,7 +533,7 @@ async function _runAgentImpl(opts, ch) {
 
   // 调用方遗漏权限模式时采用 default，而非 bypass；桌面与 REPL 有确认通道，
   // 一次性 CLI 则仍在调用处明确选择 bypass，语义不被这个兜底悄悄改变。
-  const permissionMode = opts.permissionMode ?? cfg.permissionMode ?? 'default';
+  let permissionMode = opts.permissionMode ?? cfg.permissionMode ?? 'default';
   const rules = [...permissionRules];
   const sandboxRoots = cwd ? createRoots(cwd, cfg.allowedRoots) : [];
   const toolCtx = {
@@ -567,6 +568,16 @@ async function _runAgentImpl(opts, ch) {
       onCwdChange?.(next);
     }
   };
+  // 每次权限闸口读取会话的最新模式；正在执行的调用使用已确认的上下文。
+  const refreshPermissionMode = () => {
+    const next = typeof opts.readPermissionMode === 'function' ? opts.readPermissionMode() : permissionMode;
+    permissionMode = ['default', 'accept_edits', 'explore', 'bypass', 'dont_ask'].includes(next) ? next : 'default';
+    toolCtx.permissionMode = permissionMode;
+    toolCtx.askUser = typeof opts.askUser === 'function' && permissionMode !== 'dont_ask'
+      ? payload => opts.askUser({ ...payload, emit }) : null;
+    return permissionMode;
+  };
+  toolCtx.readPermissionMode = refreshPermissionMode;
   const budget = cfg.maxTokensBudget ?? 24000;
 
   // 项目钩子的信任解析：全局信任，或这个工作目录在信任列表里。
@@ -631,7 +642,7 @@ async function _runAgentImpl(opts, ch) {
       hookContext
     });
     // prompt.js 不动：记忆块与使用指引拼在其返回值之后（有记忆才加，不占空会话 token）
-    return memoryBlock ? `${base}\n\n${memoryBlock}\n\n${MEMORY_GUIDE}` : base;
+    return appendCatgirlPersona(memoryBlock ? `${base}\n\n${memoryBlock}\n\n${MEMORY_GUIDE}` : base, cfg);
   };
 
   // 确保首条是 system（已存在则刷新内容，保证项目指令是最新的）
@@ -690,80 +701,91 @@ async function _runAgentImpl(opts, ch) {
     // 用户确认后 granted=true，本会话内直接放行且不受权限模式约束
     // （explore/dont_ask 也允许）。用户显式 deny 规则与钩子仍然优先 ——
     // 它们是用户亲手写下的闸，不该被同意状态绕过。
-    let decision = decidePermission(permissionMode, name, effectiveArgs, rules);
-    // Explicit deny/ask rules remain monotonic even after session consent.
-    if (canonical === 'Computer' && !hookDenied && !hookAsk &&
-        (!decision.matchedRule || decision.matchedRule.behavior === 'allow')) {
-      if (opts.computerConsent?.granted) {
-        decision = { ...decision, behavior: 'allow' };
-      } else {
-        decision = {
-          ...decision,
-          behavior: typeof permissionAsk === 'function' ? 'ask' : 'deny',
-          reason: '首次使用电脑控制，需要用户确认',
-          // 不提供"以后都允许"规则建议：同意本就是会话级的，每个新会话
-          // 首次使用都会再确认一次。
-          suggestedRules: []
-        };
+    let rechecking = false;
+    while (true) {
+      refreshPermissionMode();
+      let decision = decidePermission(permissionMode, name, effectiveArgs, rules);
+      // Explicit deny/ask rules remain monotonic even after session consent.
+      if (canonical === 'Computer' && !hookDenied && !hookAsk &&
+          (!decision.matchedRule || decision.matchedRule.behavior === 'allow')) {
+        if (opts.computerConsent?.granted) {
+          decision = { ...decision, behavior: 'allow' };
+        } else {
+          decision = {
+            ...decision,
+            behavior: typeof permissionAsk === 'function' ? 'ask' : 'deny',
+            reason: '首次使用电脑控制，需要用户确认',
+            // 不提供"以后都允许"规则建议：同意本就是会话级的，每个新会话
+            // 首次使用都会再确认一次。
+            suggestedRules: []
+          };
+        }
       }
-    }
-    const pack = (behavior, extra = {}) => ({ behavior, decision, args: effectiveArgs, hookContext, ...extra });
-    if (hookDenied) return pack('deny', { hookDenied });
-    // 钩子要求确认时，即使权限模式本该放行也走询问（用户可以在卡片上看清再决定）
-    if (decision.behavior === 'allow' && !hookAsk) return pack('allow');
-    if (decision.behavior === 'deny') return pack('deny');
-    // ask
-    if (typeof permissionAsk !== 'function') {
-      return pack('deny', { noChannel: true, decision: { ...decision } });
-    }
-    emit({
-      type: 'require-confirm',
-      id: tc.id,
-      name: canonical,
-      args: effectiveArgs,
-      suggestedRules: decision.suggestedRules,
-      reason: hookAsk ? 'PreToolUse 钩子要求人工确认这次调用' : decision.reason
-    });
-    let answer = null;
-    try {
-      answer = await permissionAsk({
+      const pack = (behavior, extra = {}) => ({ behavior, decision, args: effectiveArgs, hookContext, ...extra });
+      if (hookDenied) return pack('deny', { hookDenied });
+      // 钩子要求确认时，即使权限模式本该放行也走询问（用户可以在卡片上看清再决定）
+      if (decision.behavior === 'allow' && !hookAsk) {
+        if (rechecking) emit({ type: 'confirm-resolved', id: tc.id, confirmed: true, policyChanged: true });
+        return pack('allow');
+      }
+      if (decision.behavior === 'deny') {
+        if (rechecking) emit({ type: 'confirm-resolved', id: tc.id, confirmed: false, policyChanged: true });
+        return pack('deny');
+      }
+      // ask
+      if (typeof permissionAsk !== 'function') {
+        return pack('deny', { noChannel: true, decision: { ...decision } });
+      }
+      emit({
+        type: 'require-confirm',
         id: tc.id,
         name: canonical,
         args: effectiveArgs,
         suggestedRules: decision.suggestedRules,
-        category: decision.category,
-        mode: permissionMode
+        reason: hookAsk ? 'PreToolUse 钩子要求人工确认这次调用' : decision.reason
       });
-    } catch (e) {
-      answer = { confirmed: false, error: e?.message || String(e) };
-    }
-    emit({ type: 'confirm-resolved', id: tc.id, confirmed: !!answer?.confirmed });
-    // Computer 首次确认成功：记住本会话同意（onGranted 负责落盘），
-    // 后续 Computer 调用直接放行、不再询问。
-    if (answer?.confirmed && canonical === 'Computer' && opts.computerConsent && !opts.computerConsent.granted) {
-      opts.computerConsent.granted = true;
-      try { opts.computerConsent.onGranted?.(); } catch { /* ignore */ }
-    }
-    if (Array.isArray(answer?.rules) && answer.rules.length) {
-      for (const r of answer.rules) {
-        if (!r || typeof r !== 'object') continue;
-        const rule = {
-          tool_name: canonicalToolName(r.tool_name || name),
-          rule_content: r.rule_content ?? null,
-          behavior: r.behavior || 'allow',
-          source: r.source || 'userSettings'
-        };
-        // 去重后持久化
-        const dup = rules.some((x) => x.tool_name === rule.tool_name && x.rule_content === rule.rule_content && x.behavior === rule.behavior);
-        if (!dup) {
-          rules.push(rule);
-          try { onRuleAdded?.(rule); } catch { /* ignore */ }
-          // 让上层（CLI / 前端）能提示"已记住这条规则"
-          emit({ type: 'rule-added', rule });
+      let answer = null;
+      try {
+        answer = await permissionAsk({
+          id: tc.id,
+          name: canonical,
+          args: effectiveArgs,
+          suggestedRules: decision.suggestedRules,
+          category: decision.category,
+          mode: permissionMode
+        });
+      } catch (e) {
+        answer = { confirmed: false, error: e?.message || String(e) };
+      }
+      if (answer?.recheck) { rechecking = true; continue; }
+      emit({ type: 'confirm-resolved', id: tc.id, confirmed: !!answer?.confirmed });
+      // Computer 首次确认成功：记住本会话同意（onGranted 负责落盘），
+      // 后续 Computer 调用直接放行、不再询问。
+      if (answer?.confirmed && canonical === 'Computer' && opts.computerConsent && !opts.computerConsent.granted) {
+        opts.computerConsent.granted = true;
+        try { opts.computerConsent.onGranted?.(); } catch { /* ignore */ }
+      }
+      if (Array.isArray(answer?.rules) && answer.rules.length) {
+        for (const r of answer.rules) {
+          if (!r || typeof r !== 'object') continue;
+          const rule = {
+            tool_name: canonicalToolName(r.tool_name || name),
+            rule_content: r.rule_content ?? null,
+            behavior: r.behavior || 'allow',
+            source: r.source || 'userSettings'
+          };
+          // 去重后持久化
+          const dup = rules.some((x) => x.tool_name === rule.tool_name && x.rule_content === rule.rule_content && x.behavior === rule.behavior);
+          if (!dup) {
+            rules.push(rule);
+            try { onRuleAdded?.(rule); } catch { /* ignore */ }
+            // 让上层（CLI / 前端）能提示"已记住这条规则"
+            emit({ type: 'rule-added', rule });
+          }
         }
       }
+      return pack(answer?.confirmed ? 'allow' : 'deny', { userDenied: !answer?.confirmed });
     }
-    return pack(answer?.confirmed ? 'allow' : 'deny', { userDenied: !answer?.confirmed });
   }
 
   /**
@@ -1191,7 +1213,7 @@ async function _runAgentImpl(opts, ch) {
     // 4) 并发判定：全是只读且无需询问时可以并发跑（多个独立读操作）
     const canParallel = calls.length > 1 && calls.every((c) => {
       if (c.category !== 'read') return false;
-      return decidePermission(permissionMode, c.tc.function?.name, c.args, rules).behavior === 'allow';
+      return decidePermission(refreshPermissionMode(), c.tc.function?.name, c.args, rules).behavior === 'allow';
     });
 
     if (canParallel) {

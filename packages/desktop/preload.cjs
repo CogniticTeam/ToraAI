@@ -33,6 +33,10 @@ contextBridge.exposeInMainWorld('toraWindow', {
 	// 渲染层无权访问更新源或直接执行安装。
 	checkForUpdates: () => ipcRenderer.invoke('updates:check'),
 	getAppVersion: () => ipcRenderer.sendSync('app:get-version'),
+	getReleaseNotes: (version) => ipcRenderer.invoke('updates:release-notes', version),
+	getInstalledReleaseNotes: () => ipcRenderer.invoke('updates:installed-notes'),
+	acknowledgeReleaseNotes: (version) => ipcRenderer.invoke('updates:acknowledge-notes', version),
+	openReleaseNotes: (version) => ipcRenderer.invoke('updates:open-release', version),
 	getRequiredUpdate: () => ipcRenderer.sendSync('updates:state'),
 	onRequiredUpdate: (cb) => {
 		const handler = (_event, state) => cb(state);

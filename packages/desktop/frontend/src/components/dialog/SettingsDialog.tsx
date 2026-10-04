@@ -12,6 +12,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { agentApi, type AgentView } from '@/api';
 import { AccountSection } from '@/components/dialog/AccountSection';
+import { CatgirlPersonaSection } from '@/components/dialog/CatgirlPersonaSection';
+import { LanguageFlag } from '@/components/dialog/LanguageFlag';
 import { MemorySection } from '@/components/dialog/MemorySection';
 import { ThemeSection } from '@/components/dialog/ThemeSection';
 import { ToChatModelSource } from '@/components/dialog/ToChatModelSource';
@@ -22,11 +24,14 @@ import { Button } from '@/components/ui/button';
 import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { ReleaseNotesDialog } from '@/components/updates/ReleaseNotesDialog';
 import { AVAILABLE_MODELS_KEY } from '@/hooks/useAvailableModels';
-import i18n, { LANGUAGE_OPTIONS, normalizeLanguage, setAppLanguage } from '@/i18n';
+import i18n, { availableLanguageOptions, normalizeLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
+import { useCatgirlSettings } from '@/lib/catgirl';
 import { PROVIDER_ICONS } from '@/lib/providerIcons';
 import { queryClient } from '@/lib/query-client';
+import { releaseNotesBridge, type ReleaseNotes } from '@/lib/releaseNotes';
 import {
 	getSearchEngine,
 	isSearchEngineId,
@@ -1017,6 +1022,7 @@ function AgentSection() {
 	return (
 		<>
 			<h3 className="text-lg font-semibold">{t('agentSection.title')}</h3>
+			<CatgirlPersonaSection />
 			<div className="mt-2 text-xs text-muted-foreground">
 				{t('agentSection.desc')}
 			</div>
@@ -1583,6 +1589,7 @@ function AdvancedSection() {
 
 export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: Props) {
 	const { t } = useTranslation();
+	const { installed: catgirlInstalled } = useCatgirlSettings();
 	const [section, setSection] = useState<Section>(initialTab);
 
 	const [lang, setLang] = useState(i18n.language);
@@ -1597,6 +1604,16 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 	const [runtimeErr, setRuntimeErr] = useState<string | null>(null);
 	const [checkingUpdate, setCheckingUpdate] = useState(false);
 	const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+	const [releaseNotes, setReleaseNotes] = useState<ReleaseNotes | null>(null);
+	const showReleaseNotes = async () => {
+		const version = getUpdateBridge()?.getAppVersion?.();
+		if (!version) return;
+		setReleaseNotes({ version, notes: '', url: '', status: 'loading' });
+		try {
+			const value = await releaseNotesBridge()?.getReleaseNotes?.(version);
+			setReleaseNotes(current => current?.version === version ? value ?? { ...current, status: 'error' } : current);
+		} catch { setReleaseNotes(current => current?.version === version ? { ...current, status: 'error' } : current); }
+	};
 
 	// 打开时重置到初始板块（外部可用 key 重挂载强制指定）
 	useEffect(() => {
@@ -1607,6 +1624,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 		setConfirmWipe(false);
 		setWipeError(null);
 		setUpdateMessage(null);
+		setReleaseNotes(null);
 	}, [open, initialTab]);
 
 	async function handleCheckForUpdates() {
@@ -1799,12 +1817,13 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 <div className="mt-3 space-y-3">
 							<Row title={t('settings.general.language.title')} description={t('settings.general.language.desc')}>
 										<DropdownSelect
-											className="w-36"
-											value={normalizeLanguage(lang) ?? 'en'}
+											className="w-64 max-w-full"
+											value={normalizeLanguage(lang) ?? 'en-US'}
 											onChange={handleLang}
-											options={LANGUAGE_OPTIONS.map((option) => ({
+											options={availableLanguageOptions(catgirlInstalled).map((option) => ({
 												value: option.value,
 												label: t(`settings.general.language.${option.key}`, { defaultValue: option.nativeName }),
+												icon: <LanguageFlag language={option.value} />,
 											}))}
 										/>
 									</Row>
@@ -1912,6 +1931,8 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 										</Button>
 									</Row>
 									{updateMessage && <div className="px-1 text-xs text-muted-foreground">{updateMessage}</div>}
+									{releaseNotesBridge()?.getReleaseNotes && <Button variant="outline" size="sm" onClick={() => void showReleaseNotes()}>{t('releaseNotes.view')}</Button>}
+									{releaseNotes && <ReleaseNotesDialog notes={releaseNotes} onClose={() => setReleaseNotes(null)} onRetry={() => void showReleaseNotes()} />}
 								</div>
 							</>
 						)}

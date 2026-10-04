@@ -76,6 +76,23 @@ export function isAwaitingConfirm(sessionId) {
   return !!b?.running && b.pending.size > 0;
 }
 
+
+/** PATCH 已持久化后通知运行中的任务与在线视图，待审批调用重新过权限闸口。 */
+export function updateRunningPermissionMode(sessionId, state) {
+  const bus = buses.get(sessionId);
+  if (!bus) return;
+  if (bus.activeSession) bus.activeSession.state = { ...bus.activeSession.state, ...state };
+  push(bus, E.custom('state_updated', state));
+  for (const finish of [...bus.pending.values()]) finish({ recheck: true });
+  for (const [key, rec] of [...bus.subagentPending]) {
+    bus.subagentPending.delete(key);
+    rec.finish({ recheck: true });
+    push(bus, E.custom('subagent_user_confirm_result', {
+      worker_session_id: rec.entry.worker_session_id, reply_id: rec.entry.reply_id,
+    }));
+  }
+}
+
 // ---------- 子代理 HITL / team 通知（供 tools/team.js 使用） ----------
 
 /**
@@ -256,6 +273,7 @@ export function startChatRun(sessionId, agent, payload) {
     // 同时复位运行态，避免 _runImpl 启动前抛错时该会话永久卡在"运行中"，
     // 后续所有请求都会命中 409。_finishRun 若已跑过，此处赋值是幂等无副作用。
     bus.running = false;
+    bus.activeSession = null;
     bus.replyId = null;
     push(bus, E.replyEnd(sessionId, `reply-err-${Date.now().toString(36)}`, 'error', { type: 'internal', message: e?.message || String(e) }));
   });
@@ -277,6 +295,7 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   const replyId = `reply-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   bus.replyId = replyId;
   bus.running = true;
+  bus.activeSession = session;
   bus.pending = new Map();
   bus.subagentPending = new Map();
   bus.parked = false;
@@ -433,6 +452,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
       const finish = (answer) => {
         if (!bus.pending.has(id)) return;
         bus.pending.delete(id);
+        ac.signal.removeEventListener('abort', onAbort);
         resolve(answer);
       };
       bus.pending.set(id, finish);
@@ -517,6 +537,10 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
         // 旧会话、损坏状态或第三方写入遗漏权限字段时，不得意外扩大为完全访问。
         // 用户显式选中的 bypass 仍原样保留；缺失值一律回到可确认的 default。
         ?? 'default',
+      readPermissionMode: () => {
+        const state = loadSessionRecord(sessionId)?.state;
+        return state?.permission_mode ?? state?.permission_context?.mode ?? 'default';
+      },
       // 电脑控制（Computer）会话级同意：agent.gate 对 Computer 特判 ——
       // 未确认时强制弹一次确认卡（不受权限模式影响），确认后写入
       // session.state.computer_confirmed 落盘持久；本会话后续 Computer
@@ -634,6 +658,10 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
           // 不翻的话落盘 display 里该块永远是 asking —— 刷新/重启后"已答复"
           // 的卡片会复活成可点状态，再作答就撞 409。
           const blk = replyBlocks.find((b) => b.type === 'tool_call' && b.id === e.id);
+          if (e.policyChanged && blk) push(bus, {
+            type: 'USER_CONFIRM_RESULT', id: randomUUID(), created_at: ts(), reply_id: replyId,
+            confirm_results: [{ confirmed: e.confirmed, tool_call: { ...blk }, rules: [] }],
+          });
           if (blk && blk.state === 'asking') blk.state = e.confirmed ? 'allowed' : 'finished';
           // 更新快照，让刷新后的状态与实时一致
           if (bus.parked) syncReplyDisplay(session, replyId, replyBlocks);
@@ -815,6 +843,7 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
 
   // 结束：清理运行状态；保留订阅者供下次运行复用
   bus.running = false;
+  bus.activeSession = null;
   bus.ac = null;
   bus.parked = false;
   for (const [, finish] of bus.pending) finish({ confirmed: false, error: 'run-ended' });

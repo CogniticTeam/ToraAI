@@ -4,11 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useAccountPresence } from '@/components/auth/AccountPresence';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { LANGUAGE_OPTIONS, normalizeLanguage, type AppLanguage } from '@/i18n/languages';
+import { LANGUAGE_OPTIONS, messageTranslationLanguage, normalizeLanguage } from '@/i18n/languages';
 import { useTranslation } from '@/i18n/useI18n';
 import { cloudFetch } from '@/utils/modelSync';
 
-type Message = { id: string; title: string; body: string; created_at: string; read_at: string | null; source_language?: AppLanguage | null };
+type Message = { id: string; title: string; body: string; created_at: string; read_at: string | null; source_language?: string | null };
 type TranslationState = { loading?: boolean; show?: boolean; skipped?: boolean; error?: string; result?: { title: string; body: string } };
 function messagePreview(body: string) {
   const characters = Array.from(body.replace(/\s+/g, ' ').trim());
@@ -16,7 +16,8 @@ function messagePreview(body: string) {
 }
 export function MessagesDialog({ onClose }: { onClose: () => void }) {
   const { t, i18n } = useTranslation();
-  const targetLanguage = normalizeLanguage(i18n.language) ?? 'en';
+  const targetLanguage = normalizeLanguage(i18n.language) ?? 'en-US';
+  const translationLanguage = messageTranslationLanguage(targetLanguage)!;
   const languageOption = LANGUAGE_OPTIONS.find(option => option.value === targetLanguage)!;
   const { revision } = useAccountPresence();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -38,7 +39,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   async function translate(message: Message) {
     const key = translationKey(message);
     const state = translations[key];
-    if (inFlight.current.has(key) || message.source_language === targetLanguage) return;
+    if (inFlight.current.has(key) || messageTranslationLanguage(message.source_language) === translationLanguage) return;
     if (state?.result) {
       setTranslations(previous => ({ ...previous, [key]: { ...previous[key], show: !previous[key]?.show } }));
       return;
@@ -47,12 +48,12 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
     setTranslations(previous => ({ ...previous, [key]: { loading: true } }));
     try {
       const response = await cloudFetch('/account/messages/translate', {
-        method: 'POST', body: JSON.stringify({ id: message.id, targetLanguage }), signal: AbortSignal.timeout(75000),
+        method: 'POST', body: JSON.stringify({ id: message.id, targetLanguage: translationLanguage }), signal: AbortSignal.timeout(75000),
       });
       const data = await response.json();
       if (recalled.current.has(message.id)) return;
       if (!response.ok) throw new Error(data.code === 'TRANSLATION_RATE_LIMIT' ? 'translationRateLimit' : 'translationError');
-      if (data.translated && (data.targetLanguage !== targetLanguage || typeof data.title !== 'string' || typeof data.body !== 'string')) throw new Error('translationError');
+      if (data.translated && (data.targetLanguage !== translationLanguage || typeof data.title !== 'string' || typeof data.body !== 'string')) throw new Error('translationError');
       setTranslations(previous => ({ ...previous, [key]: data.translated ? { result: { title: data.title, body: data.body }, show: true } : { skipped: true } }));
     } catch (error) {
       setTranslations(previous => ({ ...previous, [key]: { error: error instanceof Error && error.message === 'translationRateLimit' ? 'translationRateLimit' : 'translationError' } }));
@@ -61,7 +62,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
   function translationControl(message: Message) {
     const state = translations[translationKey(message)];
     // 不确定语言不禁用翻译，服务端模型会核对原文是否已是目标语言。
-    const unnecessary = message.source_language === targetLanguage || state?.skipped;
+    const unnecessary = messageTranslationLanguage(message.source_language) === translationLanguage || state?.skipped;
     return <div className="space-y-1">
       <Button variant="ghost" size="sm" className="h-7 gap-1.5 px-2 text-xs text-muted-foreground" disabled={!!unnecessary || state?.loading} onClick={() => void translate(message)}>
         {state?.loading ? <Loader2 className="size-3.5 animate-spin" /> : <Languages className="size-3.5" />}

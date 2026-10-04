@@ -81,9 +81,9 @@ try {
 	await consent.getByRole('button', { name: /确认并继续/ }).click();
 	assert.equal(JSON.parse(await page.evaluate(() => localStorage.getItem('tora:first-use-consent:v1'))).crossBorder, true, '跨境同意须单独记录');
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
-	const greeting = page.getByRole('heading', { name: '与Tora工作和编程' }).first();
+	const greeting = page.getByRole('heading', { name: 'Tora要构建些什么？' }).first();
 	await greeting.waitFor({ state: 'visible' });
-	assert.equal(await greeting.locator('.chat-greeting-character').count(), Array.from('与Tora工作和编程').length, '空会话标题应按字拆分播放动画');
+	assert.equal(await greeting.locator('.chat-greeting-character').count(), Array.from('Tora要构建些什么？').length, '空会话标题应按字拆分播放动画');
 	const characterDelays = await greeting.locator('.chat-greeting-character').evaluateAll(elements => elements.map(element => Number.parseFloat(getComputedStyle(element).animationDelay)));
 	assert.ok(characterDelays.every((delay, index) => index === 0 || delay > characterDelays[index - 1]), '标题动画应按文字顺序逐字播放');
 	assert.ok(characterDelays.at(-1) > 0.5, '标题应保留之前较从容的逐字节奏');
@@ -150,10 +150,10 @@ try {
 	await page.getByRole('button', { name: /进入 Tora/ }).click();
 	await greeting.waitFor({ state: 'visible' });
 	await page.waitForFunction(() => {
-		const endings = [...document.querySelectorAll('h1[aria-label="与Tora工作和编程"] .chat-greeting-character:last-child')];
+		const endings = [...document.querySelectorAll('h1[aria-label="Tora要构建些什么？"] .chat-greeting-character:last-child')];
 		return endings.length > 0 && endings.every(element => getComputedStyle(element).opacity === '1');
 	});
-	assert.ok(await page.locator('h1[aria-label="与Tora工作和编程"] .chat-greeting-character').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1')), '逐字动画结束后不得缺字');
+	assert.ok(await page.locator('h1[aria-label="Tora要构建些什么？"] .chat-greeting-character').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1')), '逐字动画结束后不得缺字');
 	await page.screenshot({ path: '/tmp/tora-greeting-typewriter-complete.png' });
 	assert.equal(await page.evaluate(() => localStorage.getItem('tora:first-run:tour:v1')), '1');
 	await page.route('https://tora.ohfun.online/supporters?page=*', route => {
@@ -204,7 +204,7 @@ try {
 	assert.equal(await page.locator('.first-launch-logo').evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时不应播放入场动画');
 	await page.getByRole('button', { name: /Skip animation/ }).click();
 	await page.locator('#tour-llm-select').first().waitFor({ state: 'visible' });
-	const englishGreeting = page.getByRole('heading', { name: 'Work and Code with Tora' }).first();
+	const englishGreeting = page.getByRole('heading', { name: 'What should Tora build?' }).first();
 	await englishGreeting.waitFor({ state: 'visible' });
 	assert.equal(await englishGreeting.locator('.chat-greeting-character').first().evaluate(element => getComputedStyle(element).animationName), 'none', '减少动态效果时标题应直接完整显示');
 	await page.getByRole('heading', { name: 'Choose your own model' }).waitFor({ state: 'visible' });

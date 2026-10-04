@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import { useTranslation } from '@/i18n/useI18n';
+import { releaseNotesBridge, type ReleaseNotes } from '@/lib/releaseNotes';
 
-type State = { version: string; platform: string; status: 'available' | 'downloading' | 'ready' | 'error'; percent?: number };
+const NotesView = lazy(() => import('@/components/updates/ReleaseNotesView'));
+type State = { version: string; platform: string; status: 'available' | 'downloading' | 'ready' | 'error'; percent?: number; releaseNotes?: ReleaseNotes | null };
 type Bridge = { getRequiredUpdate: () => State | null; onRequiredUpdate: (cb: (value: State | null) => void) => () => void; updateAction: (action: string) => Promise<unknown> };
 const bridge = () => (window as unknown as { toraWindow?: Bridge }).toraWindow;
 
@@ -17,8 +19,15 @@ export function RequiredUpdate({ children }: { children: React.ReactNode }) {
   }, []);
   if (!state) return <>{children}</>;
   const action = (name: string) => void bridge()?.updateAction(name);
-  return <div className="fixed inset-0 z-[300] grid place-items-center bg-background/95 p-8" role="alertdialog" aria-modal="true" aria-labelledby="required-update-title">
-    <div className="w-full max-w-md space-y-5 rounded-2xl border border-border bg-card p-7 shadow-xl">
+  const retryNotes = async () => {
+    const version = state.version;
+    try {
+      const notes = await releaseNotesBridge()?.getReleaseNotes?.(version);
+      if (notes) setState(current => current?.version === version ? { ...current, releaseNotes: notes } : current);
+    } catch { /* Keep download progress and allow another notes retry. */ }
+  };
+  return <div className="fixed inset-0 z-[300] grid place-items-center overflow-y-auto bg-background/95 p-8" role="alertdialog" aria-modal="true" aria-labelledby="required-update-title">
+    <div className="app-no-drag w-full max-w-2xl space-y-5 rounded-2xl border border-border bg-card p-7 shadow-xl">
       <h1 id="required-update-title" className="text-xl font-medium">{t('requiredUpdate.title')}</h1>
       <p className="text-sm text-muted-foreground">{t('requiredUpdate.description', { version: state.version })}</p>
       {state.platform === 'darwin' && state.status === 'error' && <p className="text-sm leading-6 text-muted-foreground">{t('requiredUpdate.macHint')}</p>}
@@ -27,6 +36,7 @@ export function RequiredUpdate({ children }: { children: React.ReactNode }) {
         <progress className="w-full accent-current" value={state.percent || 0} max="100" />
       </div>}
       {state.status === 'error' && <p role="alert" className="text-sm text-destructive">{t('requiredUpdate.error')}</p>}
+      {state.releaseNotes?.version === state.version && <Suspense fallback={<p role="status" className="text-sm">{t('releaseNotes.loading')}</p>}><NotesView notes={state.releaseNotes} onRetry={() => void retryNotes()} /></Suspense>}
       <div className="flex flex-wrap gap-2">
         {state.status === 'ready' && <button autoFocus onClick={() => action('install')} className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground">{t('requiredUpdate.install')}</button>}
         {state.status === 'error' && <button onClick={() => action('retry')} className="rounded-xl bg-primary px-4 py-2 text-sm text-primary-foreground">{t('requiredUpdate.retry')}</button>}

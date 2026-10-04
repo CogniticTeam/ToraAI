@@ -53,6 +53,7 @@ function pushPending(agentId, message) {
 const MODE_RANK = { explore: 0, default: 1, accept_edits: 2, bypass: 3 };
 
 function resolveWorkerMode(captainMode, requested) {
+  if (captainMode === 'dont_ask') return 'dont_ask';
   const capRank = MODE_RANK[captainMode] ?? 3; // 未知队长模式 → 宽松处理（实际不会遇到）
   const reqRank = MODE_RANK[requested] ?? 0;  // 未知请求 → 保守 explore
   const finalRank = Math.min(capRank, reqRank);
@@ -160,7 +161,7 @@ function notifyTeamUpdated(ctx) {
 // bridge.resolveConfirm 的子代理分支唤醒这里的 resolver。
 async function runWorker({
   cfg, messages, permissionMode, sessionId, cwd,
-  leaderSessionId, workerAgentId, workerAgentName, signal, computerConsent
+  leaderSessionId, workerAgentId, workerAgentName, signal, computerConsent, readCaptainPermissionMode
 }) {
   const start = Date.now();
   let text = '';
@@ -220,6 +221,8 @@ async function runWorker({
       signal: signal ?? null,
       computerConsent: computerConsent ?? null,
       permissionMode,
+      readPermissionMode: typeof readCaptainPermissionMode === 'function'
+        ? () => resolveWorkerMode(readCaptainPermissionMode(), permissionMode) : undefined,
       spawnDepth: 1,
       sessionId,
       checkpoint: workerCheckpoint,
@@ -526,6 +529,7 @@ export const agentRunTool = {
       cfg: ctx.cfg,
       messages,
       permissionMode: effectiveMode,
+      readCaptainPermissionMode: ctx.readPermissionMode,
       sessionId: workerSession.id,
       cwd: workerSession.config?.cwd || ctx.cwd,
       leaderSessionId: ctx.sessionId,

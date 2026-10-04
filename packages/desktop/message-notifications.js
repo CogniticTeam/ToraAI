@@ -5,8 +5,7 @@ export function createAccountMessageNotification({ Notification, window, languag
   if (!window || window.isDestroyed() || !Notification.isSupported()) return null;
   const notice = new Notification({
     title: 'Tora',
-    body: normalizeNativeLanguage(language) === 'zh-Hant' ? '收到一則 Tora 訊息'
-	  : normalizeNativeLanguage(language) === 'zh' ? '收到一条 Tora 消息'
+    body: normalizeNativeLanguage(language) === 'zh' ? '收到一条 Tora 消息'
 	  : nativeText(language, 'You have a new message'),
   });
   notice.on('click', () => {

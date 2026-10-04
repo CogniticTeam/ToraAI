@@ -27,6 +27,7 @@ import {
 	type SlashCommandMenuHandle,
 } from './SlashCommandMenu';
 import { VoiceRecorder } from './VoiceRecorder';
+import { CatgirlPackDialog } from '../dialog/CatgirlPackDialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -44,6 +45,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { ReplyPhase } from '@/hooks/useMessages';
 import { useTranslation } from '@/i18n/useI18n.ts';
+import { catgirlTrigger, useCatgirlSettings } from '@/lib/catgirl';
 import {
 	INSERT_CHAT_TEXT_EVENT,
 	INSERT_ELEMENT_REF_EVENT,
@@ -164,7 +166,15 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		},
 		ref,
 	) => {
-		const { t } = useTranslation();
+		const { t, i18n } = useTranslation();
+		const { installed: catgirlInstalled } = useCatgirlSettings();
+		const [catgirlDialog, setCatgirlDialog] = useState<'zh' | 'ja' | null>(null);
+		const composing = useRef(false);
+		const detectCatgirl = (text: string) => {
+			const trigger = catgirlTrigger(text, i18n.language);
+			if (!catgirlInstalled && trigger && !disabled) { setCatgirlDialog(trigger); return true; }
+			return false;
+		};
 		const defaultPlaceholder = placeholder || t('chat.inputPlaceholder');
 		const [value, setValue] = useState('');
 		const [files, setFiles] = useState<ProcessedFile[]>([]);
@@ -410,6 +420,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		};
 
 		const handleSend = () => {
+			if (composing.current || catgirlDialog || detectCatgirl(value)) return;
 			// While the slash menu is showing, the leading "/" is a command trigger,
 			// not message content. Sending with the menu still open (clicking the
 			// button instead of pressing Esc) used to leak a bare "/" into the
@@ -725,7 +736,9 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 								id="tour-chat-textarea"
 								ref={textareaRef}
 								value={value}
-								onChange={(e) => setValue(e.target.value)}
+								onChange={(e) => { setValue(e.target.value); if (!composing.current) detectCatgirl(e.target.value); }}
+								onCompositionStart={() => { composing.current = true; }}
+								onCompositionEnd={e => { composing.current = false; detectCatgirl(e.currentTarget.value); }}
 								onKeyDown={handleKeyDown}
 								onFocus={() => setIsFocused(true)}
 								onBlur={() => setIsFocused(false)}
@@ -825,6 +838,9 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 
 				</div>
 
+					{catgirlDialog && <CatgirlPackDialog language={catgirlDialog}
+						onClose={() => setCatgirlDialog(null)}
+						onAdded={() => { setValue(''); setCatgirlDialog(null); }} />}
 					{/* Slash command menu — anchored ``absolute bottom-full`` so it floats *above*
 					    the pill. Only mounts when there's something to show. */}
 					{commandItems && commandItems.length > 0 && (

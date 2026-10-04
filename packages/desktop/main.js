@@ -14,6 +14,7 @@ import { normalizeNativeLanguage, nativeText } from './native-i18n.js';
 import { createAccountMessageNotification } from './message-notifications.js';
 import { desktopStorageName } from './brand-compat.js';
 import { createWindowIpc } from './window-ipc.js';
+import { createReleaseNotesService, releasePage, releaseVersion } from './release-notes.js';
 
 app.setName(desktopStorageName(app.getPath('appData')));
 
@@ -103,13 +104,50 @@ ipcMain.on('app:quit', () => app.quit());
 
 // macOS 和 Windows 均由 electron-updater 下载、校验并安装 GitHub Release。
 // macOS 更新元数据不可用时，再通过公开 Release 检测新版并提供官网下载兜底。
-const RELEASES_API_URL = 'https://api.github.com/repos/ToraAgent/Tora/releases/latest';
-const OFFICIAL_DOWNLOAD_URL = 'https://ohfun.online/#download';
+const RELEASES_API_URL = 'https://api.github.com/repos/CogniticTeam/ToraAI/releases/latest';
+const OFFICIAL_DOWNLOAD_URL = 'https://ohfun.online/products/tora/#download';
 const UPDATE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 let updaterReady = false;
 let updateCheckPromise = null;
 let updateChecksScheduled = false;
 let requiredUpdate = null;
+const releaseNotesService = createReleaseNotesService({
+  currentVersion: () => app.getVersion(),
+  readState: () => JSON.parse(readFileSync(join(app.getPath('userData'), 'release-notes-state.json'), 'utf8')),
+  writeState: state => writeFileSync(join(app.getPath('userData'), 'release-notes-state.json'), JSON.stringify(state)),
+  fetchRelease: url => net.fetch(url, { credentials: 'omit', bypassCustomProtocolHandlers: true,
+    headers: { Accept: 'application/vnd.github+json', 'User-Agent': `Tora/${app.getVersion()}` }, signal: AbortSignal.timeout(10_000) }),
+});
+const allowedReleaseVersion = value => {
+  const version = releaseVersion(value ?? app.getVersion());
+  return version && (version === app.getVersion() || version === requiredUpdate?.version) ? version : null;
+};
+ipcMain.handle('updates:release-notes', async (event, version) => {
+  const allowed = allowedReleaseVersion(version);
+  if (!isMainWindowSender(event) || !allowed) return null;
+  const notes = await releaseNotesService.get(allowed);
+  if (requiredUpdate?.version === allowed) publishRequiredUpdate({ releaseNotes: notes });
+  return notes;
+});
+ipcMain.handle('updates:installed-notes', event => isMainWindowSender(event) && app.isPackaged ? releaseNotesService.installed() : null);
+ipcMain.handle('updates:acknowledge-notes', (event, version) => isMainWindowSender(event) && releaseNotesService.acknowledge(version));
+ipcMain.handle('updates:open-release', async (event, version) => {
+  const allowed = allowedReleaseVersion(version);
+  if (!isMainWindowSender(event) || !allowed) return false;
+  const notes = await releaseNotesService.get(allowed);
+  return openSafeExternal(notes?.url ?? releasePage(allowed));
+});
+
+function loadRequiredReleaseNotes(info) {
+  const version = releaseVersion(info.version);
+  if (!version) return;
+  // Cache the GitHub updater feed immediately, even if the user restarts before REST returns.
+  const immediate = releaseNotesService.prime?.(info);
+  publishRequiredUpdate({ releaseNotes: immediate ?? { version, status: 'loading', notes: '', url: releasePage(version) } });
+  void releaseNotesService.get(version, info, { refresh: !!immediate }).then(notes => {
+    if (requiredUpdate?.version === version) publishRequiredUpdate({ releaseNotes: notes });
+  });
+}
 
 function observeUpdateDownload(result) {
   // checkForUpdates 启动后台下载后立即返回；订阅 Promise 防止网络错误成为未处理拒绝。
@@ -200,7 +238,7 @@ async function checkMacForUpdateFallback() {
   if (!version || compareVersions(version, app.getVersion()) <= 0) {
     return { status: 'up-to-date', currentVersion: app.getVersion() };
   }
-  return { status: 'available', version, url: OFFICIAL_DOWNLOAD_URL, currentVersion: app.getVersion() };
+  return { status: 'available', version, url: OFFICIAL_DOWNLOAD_URL, currentVersion: app.getVersion(), releaseInfo: { version, releaseNotes: release.body } };
 }
 
 function setupUpdater() {
@@ -212,9 +250,15 @@ function setupUpdater() {
     console.warn('[updater] Update failed:', error?.message || error);
     if (requiredUpdate) publishRequiredUpdate({ status: 'error' });
   });
-  autoUpdater.on('update-available', info => publishRequiredUpdate({ version: info.version, status: 'downloading', percent: 0, platform: process.platform }));
+  autoUpdater.on('update-available', info => {
+    publishRequiredUpdate({ version: info.version, status: 'downloading', percent: 0, platform: process.platform, releaseNotes: null });
+    loadRequiredReleaseNotes(info);
+  });
   autoUpdater.on('download-progress', progress => publishRequiredUpdate({ status: 'downloading', percent: Math.round(progress.percent) }));
-  autoUpdater.on('update-downloaded', info => publishRequiredUpdate({ version: info.version, status: 'ready', percent: 100, platform: process.platform }));
+  autoUpdater.on('update-downloaded', info => {
+    publishRequiredUpdate({ version: info.version, status: 'ready', percent: 100, platform: process.platform });
+    if (requiredUpdate.releaseNotes?.version !== info.version) loadRequiredReleaseNotes(info);
+  });
 }
 
 async function checkDesktopForUpdate() {
@@ -247,6 +291,7 @@ async function checkForUpdates() {
           const fallback = await checkMacForUpdateFallback();
           if (fallback.status === 'available') {
             publishRequiredUpdate({ version: fallback.version, status: 'error', platform: 'darwin' });
+            loadRequiredReleaseNotes(fallback.releaseInfo);
             return fallback;
           }
         } catch (fallbackError) {
@@ -306,11 +351,10 @@ function installApplicationMenu(language = app.getLocale()) {
       if (['available', 'downloading', 'ready'].includes(result.status)) return;
       const selected = normalizeNativeLanguage(language);
       const zh = selected === 'zh';
-      const hant = selected === 'zh-Hant';
       await dialog.showMessageBox(win, { type: result.status === 'error' ? 'warning' : 'info', title: 'Tora',
-		message: result.status === 'up-to-date' ? (hant ? '目前已是最新版本' : zh ? '当前已是最新版本' : nativeText(selected, 'Tora is up to date'))
-		  : result.status === 'development' ? (hant ? '開發版本不檢查更新' : zh ? '开发版本不检查更新' : nativeText(selected, 'Updates are disabled in development'))
-		  : (hant ? '暫時無法檢查更新' : zh ? '暂时无法检查更新' : nativeText(selected, 'Unable to check for updates')),
+		message: result.status === 'up-to-date' ? (zh ? '当前已是最新版本' : nativeText(selected, 'Tora is up to date'))
+		  : result.status === 'development' ? (zh ? '开发版本不检查更新' : nativeText(selected, 'Updates are disabled in development'))
+		  : (zh ? '暂时无法检查更新' : nativeText(selected, 'Unable to check for updates')),
       });
     },
     openWebsite: () => openSafeExternal('https://ohfun.online'),

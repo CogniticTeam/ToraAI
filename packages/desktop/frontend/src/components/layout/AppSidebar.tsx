@@ -3,6 +3,7 @@ import {
 	BookText,
 	BotMessageSquare,
 	CalendarClock,
+	Cat,
 	Globe,
 	ChevronUp,
 	Heart,
@@ -42,7 +43,9 @@ import {
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useMacFullscreen } from '@/hooks/useMacFullscreen';
+import { disableCatgirlLanguagePack } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
+import { catgirlCopy, useCatgirlSettings } from '@/lib/catgirl';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import { signOutAccount } from '@/utils/authLogout';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
@@ -96,7 +99,17 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	const navigate = useNavigate();
 	const location = useLocation();
 	const newTaskActive = /^\/(?:chat|tochat)(?:\/[\w-]+)?\/?$/.test(location.pathname);
-	const { t } = useTranslation();
+	const { t, i18n } = useTranslation();
+	const { installed: catgirlInstalled } = useCatgirlSettings();
+	const [catgirlBusy, setCatgirlBusy] = useState(false);
+	const catgirlLabels = catgirlCopy(i18n.language);
+	const disableCatgirl = async () => {
+		if (catgirlBusy) return;
+		setCatgirlBusy(true);
+		try { await disableCatgirlLanguagePack(); }
+		catch { toast.error(catgirlLabels.disableError); }
+		finally { setCatgirlBusy(false); }
+	};
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [messagesOpen, setMessagesOpen] = useState(false);
 	const [languageOpen, setLanguageOpen] = useState(false);
@@ -345,6 +358,11 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							<Languages />
 							<span>{t('settings.general.language.title')}</span>
 						</DropdownMenuItem>
+						{catgirlInstalled && <DropdownMenuItem className="py-1 text-[13px]"
+							data-testid="disable-catgirl-language-pack" disabled={catgirlBusy}
+							onSelect={() => void disableCatgirl()}>
+							<Cat /><span className="whitespace-normal">{catgirlBusy ? catgirlLabels.disabling : catgirlLabels.disable}</span>
+						</DropdownMenuItem>}
 						<DropdownMenuSeparator />
 						<DropdownMenuItem className="py-1 text-[13px]" data-testid="open-session-import" onSelect={() => setImportOpen(true)}>
 							<Import /><span>{t('sessionImport.title')}</span>

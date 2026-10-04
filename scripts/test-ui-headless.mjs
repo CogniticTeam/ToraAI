@@ -150,7 +150,7 @@ async function main() {
       '手动切换应持久化明确语言偏好');
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForSelector('textarea', { timeout: 15000 });
-    assert.equal(await page.evaluate(() => document.documentElement.lang), 'en',
+    assert.equal(await page.evaluate(() => document.documentElement.lang), 'en-US',
       '手动语言偏好应在刷新后覆盖系统语言');
     out.push('手动语言偏好持久化: true（zh-CN 系统保持 en）');
     await page.waitForFunction(() => {
