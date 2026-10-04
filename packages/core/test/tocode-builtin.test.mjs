@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {mkdtempSync,mkdirSync,existsSync,rmSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';
 const home=mkdtempSync(join(tmpdir(),'tora-tocode-official-'));process.env.TORA_HOME=home;
-const {loadConfig,saveConfig}=await import('../src/config.js');const {startASAPIServer}=await import('../src/asapi/server.js');const {resolveRunCfg,isRunning}=await import('../src/asapi/bridge.js');const {BUILTIN_MODELS}=await import('../src/builtin-models.js');
+const {loadConfig,saveConfig}=await import('../src/config.js');const {startASAPIServer}=await import('../src/asapi/server.js');const {resolveRunCfg,isRunning,subscribe}=await import('../src/asapi/bridge.js');const {BUILTIN_MODELS}=await import('../src/builtin-models.js');
 const originalFetch=globalThis.fetch;const server=await startASAPIServer({port:0});const base='http://127.0.0.1:'+server.address().port;
 const headers={'content-type':'application/json','x-user-id':'builtin-fixture'};
 const post=(path,body)=>originalFetch(base+path,{method:'POST',headers,body:JSON.stringify(body)});
@@ -25,6 +25,7 @@ try {
    outgoing=[];globalThis.fetch=async(url,init)=>{assert.equal(String(url),'https://builtin-fixture.invalid/tochat/v1/chat/completions');outgoing.push({headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{content:'actual '+model.id},finish_reason:'stop'}],usage:{total_tokens:10}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
    const session=await (await post('/sessions/',{agent_id:agent.id,chat_model_config:mc,cwd:project})).json();const run=await post('/chat/',{agent_id:agent.id,session_id:session.session_id,input:{role:'user',content:[{type:'text',text:'Say hello'}]}});assert.equal(run.status,200);
    for(let n=0;n<200&&isRunning(session.session_id);n++)await new Promise(resolve=>setTimeout(resolve,10));assert.equal(isRunning(session.session_id),false);
+   let status;const unsubscribe=subscribe(session.session_id,()=>assert.fail('completed reply must not be replayed'),null,value=>{status=value;});unsubscribe();assert.equal(status.mode,'reset','late initial subscribers must reload the completed reply');
    assert.equal(outgoing.length,1,'automatic naming must not make another paid request');assert.equal(outgoing[0].body.model,model.id);assert.equal(outgoing[0].headers['x-tochat-mode'],'work');assert.equal(outgoing[0].headers.authorization,'Bearer account-token-only');assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Bash'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Write'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Subagent'));
   }
  });

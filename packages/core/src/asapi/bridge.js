@@ -880,7 +880,11 @@ export function subscribe(sessionId, send, afterCursor = null, onStatus = () => 
   const after = parts ? Number(parts[2]) : null;
   const gap = after !== null && after < bus.sequence &&
     (!bus.events.length || bus.events[0].sequence > after + 1);
-  const mode = !afterCursor ? 'initial'
+  // A fast reply may finish between the history request and this subscription.
+  // Its events have already been cleared, so ask the client to reload history.
+  const completedHistory = !bus.running && !bus.events.length &&
+    (bus.sequence > 0 || loadSessionRecord(sessionId)?.display?.some(message => message.role === 'assistant'));
+  const mode = !afterCursor ? (completedHistory ? 'reset' : 'initial')
     : parts?.[1] === bus.streamId && after <= bus.sequence && !gap ? 'resume' : 'reset';
   onStatus({ mode, streamId: bus.streamId });
   for (const frame of bus.events) {
