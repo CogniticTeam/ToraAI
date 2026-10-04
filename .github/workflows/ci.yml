@@ -57,6 +57,8 @@ jobs:
           npm test
       - name: Verify code-review regression cases
         run: npm run test:review
+      - name: Verify ToChat built-in models and reasoning transport
+        run: npm run test:tochat
       - name: Verify isolated work-execution evaluation fixtures
         run: npm run eval:baseline
       - name: Verify desktop navigation security policy

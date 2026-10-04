@@ -5,6 +5,8 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { sessionApi, type ChatModelConfig, type ContentBlock, type UpdateSessionRequest } from '@/api';
+import GeminiLogo from '@/assets/providers/lobe-gemini-color.svg?react';
+import OpenAILogo from '@/assets/providers/openai-black-monoblossom.svg?react';
 import DeepSeekLogo from '@/assets/providers/si-deepseek.svg?react';
 import { ChatContent } from '@/components/chat/ChatContent';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
@@ -12,7 +14,7 @@ import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { LlmSelect } from '@/components/select/LlmSelect';
 import { PermissionModeSelect } from '@/components/select/PermissionModeSelect';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AudioProvider } from '@/context/AudioContext';
@@ -23,11 +25,12 @@ import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n';
 import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from '@/lib/applicationModes';
 import { openSettings } from '@/lib/openSettings';
+import { TOCHAT_MODELS, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type ToChatModelAvailability } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { cloudApi, cloudFetch } from '@/utils/modelSync';
 
-type Effort = 'low' | 'high' | 'max';
-type Quota = { enabled: boolean; chatRemaining: number; workDailyRemaining: number; workWeeklyRemaining: number };
+type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+type Quota = { models?: ToChatModelAvailability[]; enabled: boolean; chatRemaining: number; workDailyRemaining: number; workWeeklyRemaining: number };
 const localApi = () => (localStorage.getItem('server_url') || 'http://127.0.0.1:3210').replace(/\/+$/, '');
 const TAB_TRANSITIONS = {
 	off: { duration: 0 },
@@ -54,6 +57,7 @@ function ToChatConversation() {
 	const [preference, setPreference] = useState(readToChatSource);
 	const source = view?.session.config.model_source ?? preference;
 	const [effort, setEffort] = useState<Effort>('high');
+	const [officialModelId, setOfficialModelId] = useState<ToChatModelId>('deepseek-flash');
 	const [customModel, setCustomModel] = useState<ChatModelConfig | null>(null);
 	const [cwd, setCwd] = useState<string | null>(null);
 	const [permission, setPermission] = useState('default');
@@ -66,8 +70,9 @@ function ToChatConversation() {
 	const permissionContext = view?.session.state.permission_context as { mode?: string } | undefined;
 	const selectedPermission = permissionContext?.mode ?? permission;
 	const storedEffort = view?.session.config.chat_model_config?.parameters?.thinkingEffort;
-	const selectedEffort: Effort = storedEffort === 'low' || storedEffort === 'high' || storedEffort === 'max' ? storedEffort : effort;
-	const officialModel: ChatModelConfig = { type: 'openai_compatible', credential_id: 'tora-tochat-official', model: 'deepseek-flash', parameters: { thinking: true, thinkingEffort: selectedEffort } };
+	const selectedOfficial = toChatModel(view ? view.session.config.chat_model_config?.model : officialModelId);
+	const selectedEffort = toChatEffort(selectedOfficial.id, typeof storedEffort === 'string' ? storedEffort : effort);
+	const officialModel: ChatModelConfig = { type: 'openai_compatible', credential_id: 'tora-tochat-official', model: selectedOfficial.id, parameters: { thinking: true, thinkingEffort: selectedEffort } };
 	const model = source === 'official' ? officialModel : view?.session.config.chat_model_config ?? customModel;
 
 	const refreshQuota = useCallback(async (signal?: AbortSignal) => {
@@ -127,7 +132,7 @@ function ToChatConversation() {
 	const busy = phase !== 'idle' || configPending;
 	const limitReached = source === 'official' && quota && (work ? quota.workDailyRemaining <= 0 || quota.workWeeklyRemaining <= 0 : quota.chatRemaining <= 0);
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
-	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !!quotaError || !!limitReached));
+	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || !!limitReached));
 	const patch = async (config: UpdateSessionRequest) => {
 		if (busy && !(Object.keys(config).length === 1 && 'permission_mode' in config)) return false;
 		setConfigPending(true);
@@ -143,6 +148,10 @@ function ToChatConversation() {
 	};
 	const chooseEffort = async (next: Effort) => {
 		if (await patch({ chat_model_config: { ...officialModel, parameters: { thinking: true, thinkingEffort: next } } })) setEffort(next);
+	};
+	const chooseOfficialModel = async (id: ToChatModelId) => {
+		const nextEffort = toChatEffort(id, selectedEffort);
+		if (await patch({ chat_model_config: { ...officialModel, model: id, parameters: { thinking: true, thinkingEffort: nextEffort } } })) { setOfficialModelId(id); setEffort(nextEffort); }
 	};
 	const fileProcessor = async (file: File): Promise<ContentBlock | null> => {
 		if (!/^image\/(png|jpeg|gif|webp)$/i.test(file.type) || file.size > 32 * 1024 * 1024) { toast.error(copy('imageError')); return null; }
@@ -201,11 +210,11 @@ function ToChatConversation() {
 					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={['image']} fileProcessor={fileProcessor}
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
-						<DropdownMenu><DropdownMenuTrigger disabled={busy} aria-label={copy('effort')} className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm hover:bg-muted"><DeepSeekLogo data-testid="official-deepseek-logo" className="size-4 shrink-0" aria-hidden="true" /><span>{copy('model')}</span><span className="text-muted-foreground">{copy(selectedEffort)}</span><ChevronDown className="size-3.5 text-muted-foreground" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuRadioGroup value={selectedEffort} onValueChange={(next) => void chooseEffort(next as Effort)}>{(['low', 'high', 'max'] as const).map((level) => <DropdownMenuRadioItem key={level} value={level}>{copy(level)}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>}
+						<DropdownMenu><DropdownMenuTrigger disabled={busy} aria-label={copy('effort')} className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm hover:bg-muted"><span aria-hidden="true">{selectedOfficial.id === 'deepseek-flash' ? <DeepSeekLogo data-testid="official-deepseek-logo" className="size-4 shrink-0" /> : selectedOfficial.id === 'gemini-3.8-flash' ? <GeminiLogo className="size-4 shrink-0" /> : <OpenAILogo className="size-4 shrink-0 dark:invert" />}</span><span>{selectedOfficial.name}</span><span className="text-muted-foreground">{copy(selectedEffort)}</span><ChevronDown className="size-3.5 text-muted-foreground" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuRadioGroup value={selectedOfficial.id} onValueChange={(id) => void chooseOfficialModel(id as ToChatModelId)}>{TOCHAT_MODELS.map((item) => <DropdownMenuRadioItem key={item.id} value={item.id} disabled={!modelAvailable(item.id, quota?.models)}><span aria-hidden="true">{item.id === 'deepseek-flash' ? <DeepSeekLogo className="size-4" /> : item.id === 'gemini-3.8-flash' ? <GeminiLogo className="size-4" /> : <OpenAILogo className="size-4 dark:invert" />}</span>{item.name}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup><DropdownMenuSeparator /><DropdownMenuRadioGroup value={selectedEffort} onValueChange={(next) => void chooseEffort(next as Effort)}>{selectedOfficial.efforts.map((level) => <DropdownMenuRadioItem key={level} value={level}>{copy(level)}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>}
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>
-			{(missingSession || (source === 'official' && (quotaError || (quota && !quota.enabled) || limitReached))) && <p role="status" className="shrink-0 px-5 pb-2 text-center text-xs text-muted-foreground">{copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError')}</p>}
+			{(missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached))) && <p role="status" className="shrink-0 px-5 pb-2 text-center text-xs text-muted-foreground">{copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError')}</p>}
 		</main>
 	);
 }

@@ -838,6 +838,7 @@
     "level": {
       "off": "オフ",
       "low": "低",
+      "medium": "中",
       "high": "高",
       "max": "最大"
     }
@@ -1789,7 +1790,7 @@
         "hint": "モデル名で自動判定されます。deepseek-flash、gpt-4o、qwen-vlなどの画像対応モデルは画像を受け付けます"
       },
       "baseUrl": "エンドポイント（ベースURL）",
-      "saveHint": "保存時にモデル一覧エンドポイント経由で接続を確認します。キーはローカルにのみ保存されます",
+      "saveHint": "モデル設定と API キーは Tora アカウントに同期され、同じアカウントの端末間で利用できます。",
       "reset": "リセット",
       "saveEdit": "変更を保存",
       "saveAdd": "モデルを追加",
@@ -1805,6 +1806,7 @@
       "volcengine": "Volcengine",
       "dashscope": "Alibaba Cloud",
       "siliconflow": "SiliconFlow",
+      "shuliuyun": "Shuliuyun",
       "stepfun": "StepFun 中国",
       "stepfunGlobal": "StepFun グローバル",
       "hunyuan": "Tencent Cloud",
@@ -1889,12 +1891,14 @@
     "retry": "再試行",
     "source": "ToChat のモデルソース",
     "sourceHelp": "新しい ToChat 会話に適用されます。既存の会話は元のモデルを保持し、カスタムモデルは公式利用枠を消費しません。",
-    "official": "公式 DeepSeek Flash（既定）",
+    "official": "内蔵モデル（既定）",
     "custom": "カスタムモデル",
     "model": "DeepSeek Flash",
     "effort": "思考の強度",
     "low": "低",
+    "medium": "中",
     "high": "高",
+    "xhigh": "非常に高い",
     "max": "最大",
     "search": "ウェブ検索",
     "searchOn": "ウェブ検索が有効です",

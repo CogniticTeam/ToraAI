@@ -144,6 +144,7 @@ const PROVIDER_DEFS: ProviderDefBase[] = [
 	{ key: 'zai', baseURL: 'https://api.z.ai/api/paas/v4', keyUrl: 'https://z.ai', icon: Zap, color: 'bg-zinc-800 text-white' },
 	{ key: 'openrouter', baseURL: 'https://openrouter.ai/api/v1', keyUrl: 'https://openrouter.ai/keys', icon: Shuffle, color: 'bg-blue-600 text-white' },
 	{ key: 'apiyi', baseURL: 'https://api.apiyi.com/v1', keyUrl: 'https://api.apiyi.com/token', icon: Layers, color: 'bg-blue-600 text-white' },
+	{ key: 'shuliuyun', baseURL: 'https://shuliuyun.com/v1', keyUrl: 'https://shuliuyun.com/console', icon: Layers, color: 'bg-blue-600 text-white' },
 	{ key: 'kimi-cn', baseURL: 'https://api.moonshot.cn/v1', keyUrl: 'https://platform.moonshot.cn/console/api-keys', icon: Moon, color: 'bg-neutral-800 text-white' },
 	{ key: 'kimi-global', baseURL: 'https://api.moonshot.ai/v1', keyUrl: 'https://platform.moonshot.ai/console/api-keys', icon: Moon, color: 'bg-neutral-700 text-white' },
 	{ key: 'byteplus', baseURL: 'https://ark.ap-southeast.bytepluses.com/api/v3', keyUrl: 'https://www.byteplus.com', icon: Repeat, color: 'bg-blue-700 text-white' },
@@ -160,6 +161,7 @@ const BRAND_LABEL_KEYS: Record<string, string | null> = {
 	volcengine: 'modelSection.providers.volcengine',
 	dashscope: 'modelSection.providers.dashscope',
 	siliconflow: 'modelSection.providers.siliconflow',
+	shuliuyun: 'modelSection.providers.shuliuyun',
 	stepfun: 'modelSection.providers.stepfun',
 	'stepfun-global': 'modelSection.providers.stepfunGlobal',
 	hunyuan: 'modelSection.providers.hunyuan',
@@ -222,8 +224,8 @@ interface ModelItem {
 	vision?: boolean | null;
 }
 
-function ProviderIcon({ p, size = 'size-7' }: { p: ProviderDef; size?: string }) {
-	const src = PROVIDER_ICONS[p.key];
+function ProviderIcon({ p, size = 'size-7', model }: { p: ProviderDef; size?: string; model?: string }) {
+	const src = PROVIDER_ICONS[model && /gemini/i.test(model) ? 'gemini' : p.key];
 	if (src) {
 		// 服务商品牌图：白底圆角方块，黑白配色
 		return (
@@ -700,7 +702,7 @@ export function ModelSection() {
 									<tr key={it.id} className={`border-b border-border last:border-b-0 ${it.enabled ? '' : 'opacity-50'}`}>
 										<td className="px-4 py-3">
 											<div className="flex items-center gap-2.5">
-												<ProviderIcon p={def} />
+												<ProviderIcon p={def} model={it.model} />
 												<span className="truncate font-medium">{it.model}</span>
 											</div>
 										</td>

@@ -861,7 +861,7 @@ async function route(req, res) {
       } else if (provider === 'stepfun' || provider === 'stepfun-global') {
         ids = ids.filter((id) => /^step-/i.test(id)
           && !/(?:^|[-_.])(?:audio|asr|tts|music|image|realtime)(?:[-_.]|$)/i.test(id));
-      } else if (provider === 'apiyi') {
+      } else if (provider === 'apiyi' || provider === 'shuliuyun') {
         // 网关目录还含图像、视频、音频与向量模型；Tora 当前使用 Chat Completions。
         ids = ids.filter((id) => !/(?:^|[-_.])(?:audio|asr|tts|image|realtime|transcribe|embedding|rerank|moderation)(?:[-_.]|$)/i.test(id)
           && !/^(?:sora|veo|wan|seedance|seedream|flux|dall-e|ideogram|recraft|whisper|(?:nano-)?banana)(?:[-_.\d]|$)/i.test(id)

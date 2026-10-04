@@ -51,7 +51,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   return { load, render(fn) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); for (const run of effects.splice(0)) run(); return result; },
@@ -321,4 +321,48 @@ test('网页工作中重新启用确认会阻止尚未开始的写入', {skip: !
   opts={...opts,confirmWrites:true};render();release();await tick();
   assert.equal(approved,0,'新模式要求确认，未作答前不写入');
   await render().onUserConfirm({},true);await sending;assert.equal(approved,1);h.dispose();
+});
+
+test('内置 Gemini 新会话保存所选模型，旧会话继续 DeepSeek，切换保留思考设置',async()=>{
+  let params={agentId:'agent'},extras;
+  const sessions=[{session:{id:'legacy',state:{},config:{application_mode:'tochat',model_source:'official',chat_model_config:{model:'deepseek-flash',parameters:{thinkingEffort:'max'}}}}}];
+  const h=harness({
+    'react-router-dom':{useNavigate:()=>()=>{},useParams:()=>params,useSearchParams:()=>[new URLSearchParams()]},
+    '@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},
+    '@/hooks/useSessions':{useSessions:()=>({sessions,loading:false,refetch:async()=>{}})},
+    '@/hooks/useMessages':{useMessages:(_agent,_session,options)=>{extras=options.newSessionExtras;return {msgs:[],loading:false,phase:'idle'};}},
+    '@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})},
+    '@/lib/applicationModes':{readToChatSource:()=> 'official',modeCopy:()=>key=>key},
+    '@/utils/authStore':{getToken:()=> 'synthetic-token'},
+    '@/utils/modelSync':{cloudApi:()=> 'https://synthetic.invalid',cloudFetch:async()=>Response.json({enabled:true,chatRemaining:150,models:[{id:'deepseek-flash',enabled:true},{id:'gemini-3.8-flash',enabled:true}]})},
+    'framer-motion':{motion:{span:'span'}},
+  },{fetch:async()=>Response.json({})});
+  const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');
+  const render=()=>h.render(()=>ToChatConversation());let tree=render();await tick();tree=render();
+  const menu=find(tree,node=>node.type==='ChatContent').props.modelControl;
+  await find(menu,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='deepseek-flash').props.onValueChange('gemini-3.8-flash');
+  tree=render();assert.equal(extras().chat_model_config.model,'gemini-3.8-flash');
+  await find(find(tree,node=>node.type==='ChatContent').props.modelControl,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='high').props.onValueChange('medium');render();assert.equal(extras().chat_model_config.parameters.thinkingEffort,'medium');
+  params={agentId:'agent',sessionId:'legacy'};render();assert.equal(extras().chat_model_config.model,'deepseek-flash');assert.equal(extras().chat_model_config.parameters.thinkingEffort,'max');
+  params={agentId:'agent'};render();assert.equal(extras().chat_model_config.model,'gemini-3.8-flash');h.dispose();
+});
+
+
+test('自定义 Gemini 保存 medium 后选择器仍显示 medium',()=>{
+ const h=harness();const {thinkingLevelOf}=h.load('components/select/LlmSelect.tsx','\nexport {thinkingLevelOf};');
+ assert.equal(thinkingLevelOf({thinking:true,thinkingEffort:'medium'}),'medium');h.dispose();
+});
+
+test('网页 Gemini medium 随新对话保存并按原值发送', {skip: !existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
+ const sent=[],saved=[];
+ const h=harness({
+  '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},
+  './i18n.ts':{webText:value=>value},'./api':{webFetch:async(_path,init)=>{sent.push(JSON.parse(init.body));return {}; }},
+  './storage':{saveConversation:async value=>saved.push(structuredClone(value))},
+  './stream':{readChatStream:async()=>({content:'OK',reasoning:'',tools:[]})},
+ },{structuredClone});
+ const {useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+ const options={mode:'chat',model:'gemini-3.8-flash',effort:'medium',search:false,confirmWrites:true,onUpdate(){},onQuota(){}};
+ await h.render(()=>useWebConversation('fixture',null,options)).send([{type:'text',text:'hello'}]);
+ assert.equal(sent[0].reasoning_effort,'medium');assert.equal(saved.at(-1).model,'gemini-3.8-flash');assert.equal(saved.at(-1).effort,'medium');h.dispose();
 });

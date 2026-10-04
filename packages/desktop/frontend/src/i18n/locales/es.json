@@ -838,6 +838,7 @@
     "level": {
       "off": "Desactivado",
       "low": "Bajo",
+      "medium": "Medio",
       "high": "Alto",
       "max": "Máx."
     }
@@ -1789,7 +1790,7 @@
         "hint": "Detección automática por nombre de modelo; los modelos de visión como deepseek-flash, gpt-4o y qwen-vl aceptan imágenes"
       },
       "baseUrl": "Endpoint (URL base)",
-      "saveHint": "La conectividad se verifica mediante el endpoint de lista de modelos al guardar; la clave se almacena solo localmente",
+      "saveHint": "La configuración de modelos y las claves API se sincronizan con tu cuenta de Tora para usarlas en tus dispositivos.",
       "reset": "Restablecer",
       "saveEdit": "Guardar cambios",
       "saveAdd": "Añadir modelo",
@@ -1805,6 +1806,7 @@
       "volcengine": "Volcengine",
       "dashscope": "Alibaba Cloud",
       "siliconflow": "SiliconFlow",
+      "shuliuyun": "Shuliuyun",
       "stepfun": "StepFun China",
       "stepfunGlobal": "StepFun Global",
       "hunyuan": "Tencent Cloud",
@@ -1889,12 +1891,14 @@
     "retry": "Reintentar",
     "source": "Origen del modelo de ToChat",
     "sourceHelp": "Se aplica a las nuevas conversaciones de ToChat. Las existentes conservan su modelo; los modelos personalizados no consumen la cuota oficial.",
-    "official": "DeepSeek Flash oficial (predeterminado)",
+    "official": "Modelos integrados (predeterminados)",
     "custom": "Modelo personalizado",
     "model": "DeepSeek Flash",
     "effort": "Intensidad de razonamiento",
     "low": "Bajo",
+    "medium": "Medio",
     "high": "Alto",
+    "xhigh": "Muy alto",
     "max": "Máximo",
     "search": "Búsqueda web",
     "searchOn": "Búsqueda web activada",

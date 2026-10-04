@@ -12,6 +12,7 @@ const toolSupport = new Map();
 
 const capabilityKey = (cfg) => `${String(cfg?.baseURL || '').replace(/\/+$/, '')}|${cfg?.model || ''}`;
 const isAPIYI = (cfg) => cfg?.provider === 'apiyi' || /^https:\/\/(?:api|b|vip|api-cf)\.apiyi\.com\/v1\/?$/i.test(String(cfg?.baseURL || ''));
+const isShuliuyun = (cfg) => cfg?.provider === 'shuliuyun' || /^https:\/\/shuliuyun\.com\/v1\/?$/i.test(String(cfg?.baseURL || ''));
 
 export function getToolSupport(cfg) {
   return toolSupport.get(capabilityKey(cfg)) ?? true;
@@ -187,6 +188,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
 				},
 			}));
 		}
+		if(client.provider==='tochat-official'&&client.model==='gpt-6.1-sol'&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
 		if (m.name) out.name = sanitizeLoneSurrogates(m.name);
 		if(typeof m.reasoning_content==='string') out.reasoning_content=sanitizeLoneSurrogates(m.reasoning_content);
 		return out;
@@ -201,14 +203,14 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
   // 同一端点后续请求直接用对的那一档）。
   const thinkingKey = `${client.baseURL}|${client.model}`;
   const officialOpenAI = /^https:\/\/api\.openai\.com\/v1\/?$/i.test(client.baseURL);
-  const nativeDeepSeek = client.provider==='tochat-official'||/^https:\/\/api\.deepseek\.com(?:\/v1)?\/?$/i.test(client.baseURL);
-  // APIYI 的 GPT/o 系模型遵从 OpenAI 参数规则；其他家族仍按端点自适应。
-  const openAICompatible = officialOpenAI || (isAPIYI(client) && /^(?:gpt-|o[1-9](?:[.-]|$))/i.test(client.model));
-  const officialGoogle = /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/openai\/?$/i.test(client.baseURL);
+  const nativeDeepSeek = (client.provider==='tochat-official'&&client.model==='deepseek-flash')||/^https:\/\/api\.deepseek\.com(?:\/v1)?\/?$/i.test(client.baseURL);
+  // 已知兼容网关的 GPT/o 系模型遵从 OpenAI 参数规则；其他家族仍按端点自适应。
+  const openAICompatible = officialOpenAI || (client.provider==='tochat-official'&&client.model==='gpt-6.1-sol') || ((isAPIYI(client) || isShuliuyun(client)) && /^(?:gpt-|o[1-9](?:[.-]|$))/i.test(client.model));
+  const officialGoogle = (client.provider==='tochat-official'&&client.model==='gemini-3.8-flash')||(isShuliuyun(client)&&/^gemini(?:-|$)/i.test(client.model))||/^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/openai\/?$/i.test(client.baseURL);
   const openAIReasoningModel = openAICompatible && /^(?:o[1-9](?:[.-]|$)|gpt-[5-9](?:[.-]|$))/i.test(client.model);
   const thinkingVariants = [
     { key: 'enable_thinking', extra: { enable_thinking: true } },
-    { key: 'reasoning_effort', extra: { reasoning_effort: client.thinkingEffort === 'max' ? 'high' : (client.thinkingEffort ?? 'high') } },
+    { key: 'reasoning_effort', extra: { reasoning_effort: client.thinkingEffort === 'max' && client.model!=='gpt-6.1-sol' ? 'high' : (client.thinkingEffort ?? 'high') } },
     { key: 'none', extra: {} }
   ];
   // Google 的兼容接口使用 reasoning_effort；这些端点不接受 enable_thinking。
@@ -329,6 +331,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
           if (payload === '[DONE]') continue;
           let ev;
           try { ev = JSON.parse(payload); } catch { continue; }
+          if(Array.isArray(ev.tora_response_items))message.tora_response_items=ev.tora_response_items;
           if (ev.usage) usage = normalizeUsage(ev.usage);
           const choice = ev.choices?.[0];
           if (!choice) continue;

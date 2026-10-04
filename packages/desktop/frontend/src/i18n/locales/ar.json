@@ -850,6 +850,7 @@
     "level": {
       "off": "إيقاف",
       "low": "منخفض",
+      "medium": "متوسط",
       "high": "مرتفع",
       "max": "أقصى"
     }
@@ -1801,7 +1802,7 @@
         "hint": "يكتشف تلقائيًا حسب اسم النموذج؛ نماذج الرؤية مثل deepseek-flash و gpt-4o و qwen-vl تقبل الصور"
       },
       "baseUrl": "نقطة النهاية (عنوان URL الأساسي)",
-      "saveHint": "يتم التحقق من الاتصال عبر نقطة نهاية قائمة النماذج عند الحفظ؛ يتم تخزين المفتاح محليًا فقط",
+      "saveHint": "تتم مزامنة إعدادات النماذج ومفاتيح API مع حساب Tora لاستخدامها عبر أجهزتك.",
       "reset": "إعادة تعيين",
       "saveEdit": "حفظ التغييرات",
       "saveAdd": "إضافة نموذج",
@@ -1817,6 +1818,7 @@
       "volcengine": "Volcengine",
       "dashscope": "Alibaba Cloud",
       "siliconflow": "SiliconFlow",
+      "shuliuyun": "Shuliuyun",
       "stepfun": "StepFun الصين",
       "stepfunGlobal": "StepFun العالمية",
       "hunyuan": "Tencent Cloud",
@@ -1901,12 +1903,14 @@
     "retry": "إعادة المحاولة",
     "source": "مصدر نموذج ToChat",
     "sourceHelp": "ينطبق على محادثات ToChat الجديدة. تحتفظ المحادثات الحالية بنموذجها، ولا تستهلك النماذج المخصصة الحصة الرسمية.",
-    "official": "DeepSeek Flash الرسمي (الافتراضي)",
+    "official": "النماذج المدمجة (افتراضي)",
     "custom": "نموذج مخصص",
     "model": "DeepSeek Flash",
     "effort": "جهد التفكير",
     "low": "منخفض",
+    "medium": "متوسط",
     "high": "مرتفع",
+    "xhigh": "مرتفع جدًا",
     "max": "الأقصى",
     "search": "البحث في الويب",
     "searchOn": "البحث على الويب مفعّل",

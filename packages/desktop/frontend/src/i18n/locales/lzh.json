@@ -838,6 +838,7 @@
     "level": {
       "off": "闭",
       "low": "低",
+      "medium": "中",
       "high": "高",
       "max": "极"
     }
@@ -1789,7 +1790,7 @@
         "hint": "自动 = 按模型名判断；支持视觉输入之模型（如 deepseek-flash、gpt-4o、qwen-vl）可上传图片"
       },
       "baseUrl": "接口地址（Base URL）",
-      "saveHint": "保存后将以模型列表接口验连通性，密钥仅存于本机",
+      "saveHint": "模型設定與 API 密鑰同步於今之 Tora 帳戶，同帳戶可於諸裝置共用。",
       "reset": "重置",
       "saveEdit": "保存修改",
       "saveAdd": "添加模型",
@@ -1805,6 +1806,7 @@
       "volcengine": "火山引擎",
       "dashscope": "阿里云",
       "siliconflow": "硅基流动",
+      "shuliuyun": "樞流雲",
       "stepfun": "階躍星辰（中國）",
       "stepfunGlobal": "階躍星辰（國際）",
       "hunyuan": "騰訊雲",
@@ -1889,12 +1891,14 @@
     "retry": "再試",
     "source": "ToChat 模型來源",
     "sourceHelp": "僅用於新建 ToChat 對話；舊對話仍用原模型，自定模型不耗官方配額。",
-    "official": "官方 DeepSeek Flash（預設）",
+    "official": "內建模型（預設）",
     "custom": "自定模型",
     "model": "DeepSeek Flash",
     "effort": "思力",
     "low": "低",
+    "medium": "中",
     "high": "高",
+    "xhigh": "極高",
     "max": "最大",
     "search": "網搜",
     "searchOn": "聯網搜查已啟",

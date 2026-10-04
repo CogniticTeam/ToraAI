@@ -27,7 +27,7 @@ interface ModelEntry {
 	model: ModelCard;
 }
 
-type ThinkingLevel = 'off' | 'low' | 'high' | 'max';
+type ThinkingLevel = 'off' | 'low' | 'medium' | 'high' | 'max';
 type ContextWindow = '300k' | '1m';
 
 // 思考档位 label 走 i18n（llm-select.level.*），这里只存档位键
@@ -131,13 +131,14 @@ function SubmenuRow({ label, current, currentLabel, options, onSelect }: {
 	);
 }
 
-/** 从 parameters 读出当前思考档（旧数据里的 medium 归入 高）。 */
+/** 从 parameters 读出当前思考档（保留用户保存的 medium 档位）。 */
 function thinkingLevelOf(parameters: Record<string, unknown> | undefined): ThinkingLevel {
 	if (!parameters || parameters.thinking === false) return 'off';
 	const effort = parameters.thinkingEffort;
 	if (effort === 'low') return 'low';
+	if (effort === 'medium') return 'medium';
 	if (effort === 'max') return 'max';
-	return 'high'; // high / medium / 未设置（默认开、高强度）
+	return 'high'; // high / 未设置（默认开、高强度）
 }
 
 function contextWindowOf(parameters: Record<string, unknown> | undefined, model: ModelCard): ContextWindow {
@@ -155,6 +156,7 @@ function contextWindowOf(parameters: Record<string, unknown> | undefined, model:
  * providers fall through to `custom`, which renders the generic cube.
  */
 function providerKeyOf(credential: CredentialView, modelName: string): string {
+	if (/gemini/i.test(modelName)) return 'gemini';
 	const data = credential.data as Record<string, unknown>;
 	const map = data.model_providers as Record<string, unknown> | undefined;
 	const mapped = map?.[modelName];
@@ -414,7 +416,7 @@ export function LlmSelect({
 									label={t('llm-select.thinking')}
 									current={currentLevel}
 									currentLabel={t(`llm-select.level.${currentLevel}`)}
-									options={THINKING_LEVELS.map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
+									options={(/(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
 									onSelect={(v) => handleThinking(v as ThinkingLevel)}
 								/>
 

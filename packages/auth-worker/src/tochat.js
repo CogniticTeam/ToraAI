@@ -1,5 +1,14 @@
+import { toResponsesBody, responsesChatStream } from './tochat-responses.js';
+
 // Shared official key never crosses this server boundary.
 export const TOCHAT_LIMITS = { chatDaily:150, workDaily:1000000, workWeekly:10000000 };
+const MODELS = Object.freeze({
+  'deepseek-flash': {name:'DeepSeek Flash',secret:'DEEPSEEK_API_KEY',url:'https://api.deepseek.com/v1/chat/completions'},
+  'gemini-3.8-flash': {name:'Gemini 3.8 Flash',secret:'SHULIUYUN_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
+  'gpt-6.1-sol': {name:'GPT-6.1 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
+});
+const modelConfig = id => Object.hasOwn(MODELS,id) ? MODELS[id] : null;
+export const toChatModels = env => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,input_modalities:['text','image'],enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','access-control-allow-origin':'*','cache-control':'no-store'}});
 const fail = (detail,status=400) => json({detail},status);
 export function quotaPeriods(now=Date.now()) {
@@ -17,9 +26,10 @@ export async function readToChatQuota(db,userId,now=Date.now()) {
   return {...p,limits:TOCHAT_LIMITS,chatUsed:Number(chat.n),workDailyUsed:Number(day.n),workWeeklyUsed:Number(week.n),chatRemaining:Math.max(0,150-chat.n),workDailyRemaining:Math.max(0,1000000-day.n),workWeeklyRemaining:Math.max(0,10000000-week.n)};
 }
 export function validateToChatBody(body,kind) {
-  if (!body || body.model!=='deepseek-flash' || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
+  if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
   const effort=body.reasoning_effort||'high';
-  if (!['low','high','max'].includes(effort)) throw Error('思考强度必须为 low/high/max');
+  const efforts=body.model==='gpt-6.1-sol'?['low','medium','high','xhigh','max']:body.model==='gemini-3.8-flash'?['low','medium','high','max']:['low','high','max'];
+  if (!efforts.includes(effort)) throw Error('此模型不支持该思考强度');
   if (body.tools && (!Array.isArray(body.tools)||body.tools.length>100)) throw Error('工具格式无效');
   if (kind==='chat' && (body.tools||[]).some(tool=>!['WebSearch','WebFetch'].includes(tool?.function?.name))) throw Error('聊天模式只允许联网搜索工具');
   let images=0;
@@ -68,10 +78,9 @@ export async function handleToChat(request,env,ctx,user) {
   if(!user) return fail('请先登录',401);
   if(user.banned) return fail('账户已被封禁',403);
   const path=new URL(request.url).pathname;
-  if(path==='/tochat/quota'&&request.method==='GET') return json({...await readToChatQuota(env.DB,user.id),enabled:!!env.DEEPSEEK_API_KEY&&env.TOCHAT_ENABLED!=='0',model:'deepseek-flash'});
-  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:[{id:'deepseek-flash',input_modalities:['text','image']}]});
+  if(path==='/tochat/quota'&&request.method==='GET') {const models=toChatModels(env);return json({...await readToChatQuota(env.DB,user.id),enabled:models.some(model=>model.enabled),model:'deepseek-flash',models});}
+  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env).filter(model=>model.enabled)});
   if(path!=='/tochat/v1/chat/completions'||request.method!=='POST') return fail('Not Found',404);
-  if(!env.DEEPSEEK_API_KEY||env.TOCHAT_ENABLED==='0') return fail('官方模型暂不可用，请稍后重试或在设置中主动切换为自定义模型',503);
   const kind=request.headers.get('x-tochat-mode');
   const messageId=request.headers.get('x-tochat-message-id');
   const requestId=request.headers.get('x-tochat-request-id');
@@ -80,6 +89,10 @@ export async function handleToChat(request,env,ctx,user) {
   if(new TextEncoder().encode(raw).length>48*1024*1024) return fail('请求体过大',413);
   let body,checked;
   try{body=JSON.parse(raw);checked=validateToChatBody(body,kind);}catch(error){return fail(error.message);}
+  const selected=modelConfig(body.model);
+  if(!env[selected.secret]||env.TOCHAT_ENABLED==='0') return fail('官方模型暂不可用，请稍后重试或在设置中主动切换为自定义模型',503);
+  let upstreamBody;
+  try{if(selected.protocol==='responses')upstreamBody=toResponsesBody(body,checked.effort,checked.output);}catch(error){return fail(error.message);}
   const lastUser=[...body.messages].reverse().find(m=>m.role==='user');
   if(!lastUser) return fail('缺少用户消息');
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(kind==='work'?messageId:JSON.stringify(lastUser.content)));
@@ -103,11 +116,12 @@ export async function handleToChat(request,env,ctx,user) {
   const settle=(options)=>settleToChat(env.DB,{userId:user.id,messageId,requestId,...options});
   const abort=new AbortController();
   let upstream;
-  try{upstream=await fetch('https://api.deepseek.com/v1/chat/completions',{
-    method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env.DEEPSEEK_API_KEY}`},signal:abort.signal,
-    body:JSON.stringify({model:'deepseek-flash',messages:body.messages,tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,thinking:{type:'enabled'},reasoning_effort:checked.effort,max_tokens:output,stream:true,stream_options:{include_usage:true}}),
+  try{upstream=await fetch(selected.url,{
+    method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env[selected.secret]}`},signal:abort.signal,
+    body:JSON.stringify(selected.protocol==='responses'?{...upstreamBody,max_output_tokens:output}:{model:body.model,messages:body.messages.map(({tora_response_items,...message})=>message),tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,...(body.model==='deepseek-flash'?{thinking:{type:'enabled'}}:{}),reasoning_effort:body.model==='gemini-3.8-flash'&&checked.effort==='max'?'high':checked.effort,max_tokens:output,stream:true,stream_options:{include_usage:true}}),
   });}catch{await settle({unknown:true});return fail('官方模型连接失败，请稍后重试',502);}
   if(!upstream.ok){await settle({failed:true});return fail(`官方模型请求失败（HTTP ${upstream.status}）`,upstream.status===429?429:502);}
+  if(selected.protocol==='responses'){try{upstream=responsesChatStream(upstream,body.model);}catch{await settle({unknown:true});return fail('模型未返回有效的流式响应',502);}}
   const reader=upstream.body.getReader();
   const decoder=new TextDecoder();let buffer='',usage=null,finish='',expected=new Set(),cancelled=false;
   const stream=new ReadableStream({
