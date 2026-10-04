@@ -145,7 +145,7 @@ async function main() {
     // 用户主动切换后写入独立偏好键；刷新后不得再被系统语言覆盖。
     await page.getByRole('button', { name: /ui-smoke/i }).first().click({ timeout: 5000 });
     await page.getByRole('menuitem', { name: /^(语言|Language)$/ }).click({ timeout: 5000 });
-    await page.getByRole('dialog', { name: /语言|Language/ }).getByRole('button', { name: /^English \(US\)$/ }).click({ timeout: 5000 });
+    await page.getByRole('dialog', { name: /语言|Language/ }).getByRole('button', { name: 'English (US)', exact: true }).click({ timeout: 5000 });
     assert.equal(await page.evaluate(() => localStorage.getItem('tora_language_preference')), 'en-US',
       '手动切换应持久化明确语言偏好');
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
