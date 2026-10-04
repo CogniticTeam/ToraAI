@@ -2,7 +2,7 @@
 // 运行：node scripts/test-ui-headless.mjs
 import { createRequire } from 'node:module';
 import { strict as assert } from 'node:assert';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -164,7 +164,8 @@ async function main() {
 
     // 3. 当前主任务页的关键可交互入口（不再假设旧版侧栏有 Agent/设置按钮）。
     const pageText = await page.locator('body').innerText();
-    const hasTaskShell = /与Tora工作和编程|Work and Code with Tora/i.test(pageText);
+    const expectedGreeting = JSON.parse(readFileSync(new URL('../packages/desktop/frontend/src/i18n/locales/en-US.json', import.meta.url), 'utf8')).chat.greeting;
+    const hasTaskShell = pageText.includes(expectedGreeting);
     const hasWorkspacePicker = /选择文件夹|Select a folder/i.test(pageText);
     assert.ok(hasTaskShell, '主任务页标题未渲染');
     assert.ok(hasWorkspacePicker, '工作目录选择入口未渲染');
