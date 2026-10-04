@@ -70,7 +70,8 @@ try {
   await search.fill('繁體');
   assert.equal(await dialog.getByRole('button', { name: /繁體中文/ }).count(), 2, '繁简中文名称都应可搜索');
   await search.fill('hong kong');
-  assert.equal(await dialog.getByRole('button', { name: '繁體中文（中國香港）', exact: true }).count(), 1);
+  await dialog.locator('button[lang="zh-TW"]').waitFor({ state: 'detached' });
+  assert.equal(await dialog.getByRole('button', { name: /繁體中文.*中國香港/ }).count(), 1);
   assert.equal(await dialog.locator('button[aria-pressed]').count(), 1);
   await search.fill('not-a-language');
   assert.equal(await dialog.getByRole('status').getByText('没有匹配的语言').isVisible(), true);
