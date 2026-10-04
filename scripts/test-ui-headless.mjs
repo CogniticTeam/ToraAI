@@ -86,7 +86,7 @@ async function main() {
       contentType: 'application/json',
       body: JSON.stringify({ id: 'ui-smoke', username: 'ui-smoke' })
     }));
-    await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+    await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
 await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',

@@ -21,7 +21,7 @@ CLI 可通过 `tora config` 填写相同基础地址、自己的 API Key 和模�
 
 ## ToChat 内置 Gemini
 
-ToChat 的模型菜单提供 `Gemini 3.8 Flash`（模型 ID：`gemini-3.8-flash`），由枢流云的 OpenAI 兼容接口提供流式回复及工具调用。保留原有 DeepSeek Flash，可在任务空闲时切换模型，所选模型记录在该对话中。旧对话仍使用 DeepSeek；聊天与工作额度由同一账号共享。
+ToChat 的模型菜单提供 `Gemini 3.8 Flash`（模型 ID：`gemini-3.8-flash`），由枢流云的 OpenAI 兼容接口提供流式回复及工具调用。保留原有 DeepSeek Flash，可在任务空闲时切换模型，所选模型记录在该对话中。旧对话仍使用 DeepSeek；普通聊天不扣工作额度；工作模式与 ToCode 共用当前账号的订阅工作额度。
 
 Gemini 提供低（`low`）、中（`medium`）、高（`high`）三个思考档位；兼容旧请求中的 `max` 时映射为 `high`。不会传送 DeepSeek 的专用 `thinking` 字段，也不会在失败时自动回退到另一个模型。
 

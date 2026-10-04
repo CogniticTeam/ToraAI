@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "Integrierte Modelle",
-    "builtinQuotaHint": "Teilt tägliche und wöchentliche Token-Kontingente mit dem ToChat-Arbeitsmodus.",
+    "builtinQuotaHint": "ToChat-Arbeit und ToCode teilen dieses Kontingent.",
     "placeholder": "Modell auswählen",
     "loading": "Wird geladen…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "Offizielles Modell nicht verfügbar. Dein bezahltes benutzerdefiniertes Modell wird nicht automatisch verwendet.",
     "limitReached": "Offizielles Kontingent aufgebraucht. Bitte warte auf die nächste Zurücksetzung.",
     "imageError": "Verwenden Sie ein JPEG-, PNG-, GIF- oder WebP-Bild unter 32 MB.",
-    "missingSession": "Unterhaltung nicht gefunden"
+    "missingSession": "Unterhaltung nicht gefunden",
+    "chatUnlimited": "Normale ToChat-Chats verbrauchen kein Arbeitskontingent."
+  },
+  "subscription": {
+    "title": "Abonnement und Nutzung",
+    "none": "Kein Abonnement",
+    "remaining": "Verbleibend",
+    "fiveHour": "Letzte 5 Stunden",
+    "week": "Letzte 7 Tage",
+    "month": "Letzte 30 Tage",
+    "nextRelease": "Nächste Freigabe: {{time}}",
+    "shared": "ToChat-Arbeit und ToCode teilen dieses Kontingent.",
+    "manage": "Abonnement verwalten",
+    "expires": "Läuft ab: {{time}}",
+    "perMonth": "/Monat",
+    "buy": "Über Afdian abonnieren",
+    "renew": "Verlängern",
+    "awaiting": "Zahlungsbestätigung ausstehend; automatische Synchronisierung.",
+    "checkPayment": "Zahlung prüfen",
+    "unavailable": "Abonnementdienst nicht verfügbar",
+    "chatFree": "Normale ToChat-Chats verbrauchen kein Arbeitskontingent."
   }
 }

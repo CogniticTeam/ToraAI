@@ -108,6 +108,10 @@ jobs:
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/test-tocode-builtin-ui.mjs
+      - name: Verify subscription checkout and percentage usage
+        env:
+          TORA_CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/test-subscription-ui.mjs
       - name: Verify critical chat and composer interactions
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome

@@ -47,6 +47,8 @@ import { editMessage, ensureMessageCampaigns, listSentMessages, recallMessage, s
 import { handleAdminPoll, handleUserPoll } from './polls.js';
 import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
 import { handleToChat } from './tochat.js';
+import subscriptionSchemaSql from '../migrations/0003_subscriptions.sql';
+import {handleSubscriptions} from './subscriptions.js';
 export { AccountEvents } from './account-events.js';
 
 const SESSION_TTL_MS = 30 * 24 * 3600 * 1000;
@@ -329,6 +331,8 @@ async function ensureSchema(db) {
   const pollStatements = pollSchemaSql.split('\n').filter(line => !line.trim().startsWith('--'))
     .join(' ').split(';').map(statement => statement.trim()).filter(Boolean);
   await db.exec(pollStatements.join(';\n') + ';');
+  // Each subscription migration statement occupies one line, including trigger bodies.
+  await db.exec(subscriptionSchemaSql);
   // 旧版本自动发放的官方模型是生成数据；自定义模型模式下直接清理。
   await db.prepare(
     "DELETE FROM user_models WHERE id LIKE 'official-%' OR base_url LIKE '%/official/v1%'"
@@ -459,7 +463,7 @@ async function handle(request, env, ctx) {
         headers: {
           'access-control-allow-origin': '*',
           'access-control-allow-methods': 'GET, POST, PATCH, DELETE, OPTIONS',
-          'access-control-allow-headers': 'content-type, authorization, x-tochat-mode, x-tochat-message-id, x-tochat-request-id',
+          'access-control-allow-headers': 'content-type, authorization, x-tochat-mode, x-tochat-message-id, x-tochat-request-id, x-tora-feature',
         },
       });
     }
@@ -619,6 +623,7 @@ async function handle(request, env, ctx) {
       return handleAsrGateway(env, request, url.pathname.slice('/asr/v1/'.length));
     }
     if (p.startsWith('/official/v1/')) return bad('Not Found', 404);
+    if (p.startsWith('/billing/')) return handleSubscriptions(request,env,ctx,p==='/billing/afdian/webhook'?null:await userFromRequest(env.DB,request,true));
     if (p.startsWith('/tochat/')) return handleToChat(request,env,ctx,await userFromRequest(env.DB,request,true));
 
     // 「登录或注册」第一步：查账号是否已注册。只回 registered 布尔——

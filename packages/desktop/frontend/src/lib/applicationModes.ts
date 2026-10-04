@@ -10,7 +10,7 @@ export function readToChatSource(): ToChatSource {
 	return localStorage.getItem(TOCHAT_SOURCE_KEY) === 'custom' ? 'custom' : 'official';
 }
 
-export const MODE_COPY_KEYS = ["mode","chatDescription","codeDescription","chat","work","ready","workReady","quota","quotaLoading","quotaError","chatRemaining","workRemaining","chatLimit","dayLimit","weekLimit","reset","customQuota","retry","source","sourceHelp","official","custom","model","effort","low","medium","high","xhigh","max","search","searchOn","selectModel","syncError","connectError","limitReached","imageError","missingSession"] as const;
+export const MODE_COPY_KEYS = ["chatUnlimited","mode","chatDescription","codeDescription","chat","work","ready","workReady","quota","quotaLoading","quotaError","chatRemaining","workRemaining","chatLimit","dayLimit","weekLimit","reset","customQuota","retry","source","sourceHelp","official","custom","model","effort","low","medium","high","xhigh","max","search","searchOn","selectModel","syncError","connectError","limitReached","imageError","missingSession"] as const;
 export type ModeCopyKey = typeof MODE_COPY_KEYS[number];
 
 /** Uses the loaded locale for all mode text, including both ToChat greetings. */

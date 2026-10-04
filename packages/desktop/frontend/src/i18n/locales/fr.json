@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "Modèles intégrés",
-    "builtinQuotaHint": "Partage les quotas de tokens quotidiens et hebdomadaires avec le mode Travail de ToChat.",
+    "builtinQuotaHint": "ToChat travail et ToCode partagent ce quota.",
     "placeholder": "Sélectionner un modèle",
     "loading": "Chargement…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "Le modèle officiel est temporairement indisponible. Votre modèle personnalisé payant ne sera pas utilisé automatiquement.",
     "limitReached": "Le quota officiel est épuisé. Veuillez attendre la réinitialisation ou utiliser un modèle personnalisé pour démarrer une nouvelle conversation.",
     "imageError": "Utilisez une image JPEG, PNG, GIF ou WebP de moins de 32 Mo.",
-    "missingSession": "Conversation introuvable"
+    "missingSession": "Conversation introuvable",
+    "chatUnlimited": "Les discussions ToChat ordinaires ne consomment pas le quota de travail."
+  },
+  "subscription": {
+    "title": "Abonnement et utilisation",
+    "none": "Aucun abonnement",
+    "remaining": "Disponible",
+    "fiveHour": "5 heures glissantes",
+    "week": "7 jours glissants",
+    "month": "30 jours glissants",
+    "nextRelease": "Prochaine libération : {{time}}",
+    "shared": "ToChat travail et ToCode partagent ce quota.",
+    "manage": "Gérer l’abonnement",
+    "expires": "Expiration : {{time}}",
+    "perMonth": "/mois",
+    "buy": "S’abonner via Afdian",
+    "renew": "Renouveler",
+    "awaiting": "Confirmation du paiement en attente, synchronisation automatique.",
+    "checkPayment": "Vérifier le paiement",
+    "unavailable": "Service d’abonnement indisponible",
+    "chatFree": "Les discussions ToChat ordinaires ne consomment pas le quota de travail."
   }
 }

@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "기본 제공 모델",
-    "builtinQuotaHint": "ToChat 작업 모드와 일일 및 주간 토큰 한도를 공유합니다.",
+    "builtinQuotaHint": "ToChat 작업과 ToCode는 한도를 공유합니다.",
     "placeholder": "모델 선택",
     "loading": "로딩 중…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "공식 모델을 일시적으로 사용할 수 없습니다. 유료 사용자 지정 모델로 자동 전환되지 않습니다.",
     "limitReached": "공식 할당량이 모두 소진되었습니다. 다음 초기화를 기다려 주세요.",
     "imageError": "32 MB 이하의 JPEG, PNG, GIF 또는 WebP 이미지를 사용하세요.",
-    "missingSession": "대화를 찾을 수 없습니다"
+    "missingSession": "대화를 찾을 수 없습니다",
+    "chatUnlimited": "일반 ToChat 채팅은 작업 한도를 사용하지 않습니다."
+  },
+  "subscription": {
+    "title": "구독 및 사용량",
+    "none": "구독 없음",
+    "remaining": "남은 사용량",
+    "fiveHour": "최근 5시간",
+    "week": "최근 7일",
+    "month": "최근 30일",
+    "nextRelease": "다음 한도 복원: {{time}}",
+    "shared": "ToChat 작업과 ToCode는 한도를 공유합니다.",
+    "manage": "구독 관리",
+    "expires": "만료: {{time}}",
+    "perMonth": "/월",
+    "buy": "Afdian에서 구독",
+    "renew": "갱신",
+    "awaiting": "결제 확인 후 자동 동기화됩니다.",
+    "checkPayment": "결제 확인",
+    "unavailable": "구독 서비스를 사용할 수 없습니다",
+    "chatFree": "일반 ToChat 채팅은 작업 한도를 사용하지 않습니다."
   }
 }

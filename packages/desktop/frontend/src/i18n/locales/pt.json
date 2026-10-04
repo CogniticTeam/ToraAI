@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "Modelos integrados",
-    "builtinQuotaHint": "Partilha as quotas diárias e semanais de tokens com o modo de trabalho do ToChat.",
+    "builtinQuotaHint": "ToChat trabalho e ToCode compartilham esta cota.",
     "placeholder": "Selecione um modelo",
     "loading": "Carregando…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "Modelo oficial indisponível. Seu modelo personalizado pago não será usado automaticamente.",
     "limitReached": "Cota oficial atingida. Aguarde a próxima redefinição.",
     "imageError": "Use uma imagem JPEG, PNG, GIF ou WebP com menos de 32 MB.",
-    "missingSession": "Conversa não encontrada"
+    "missingSession": "Conversa não encontrada",
+    "chatUnlimited": "O chat comum do ToChat não consome a cota de trabalho."
+  },
+  "subscription": {
+    "title": "Assinatura e uso",
+    "none": "Sem assinatura",
+    "remaining": "Disponível",
+    "fiveHour": "Últimas 5 horas",
+    "week": "Últimos 7 dias",
+    "month": "Últimos 30 dias",
+    "nextRelease": "Próxima liberação: {{time}}",
+    "shared": "ToChat trabalho e ToCode compartilham esta cota.",
+    "manage": "Gerenciar assinatura",
+    "expires": "Expira: {{time}}",
+    "perMonth": "/mês",
+    "buy": "Assinar pelo Afdian",
+    "renew": "Renovar",
+    "awaiting": "Aguardando confirmação; sincronização automática.",
+    "checkPayment": "Verificar pagamento",
+    "unavailable": "Serviço de assinatura indisponível",
+    "chatFree": "O chat comum do ToChat não consome a cota de trabalho."
   }
 }

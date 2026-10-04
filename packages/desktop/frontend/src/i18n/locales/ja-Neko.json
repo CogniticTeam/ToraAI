@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "内蔵モデルにゃ",
-    "builtinQuotaHint": "ToChat の作業モードと日次・週次のトークン枠を共有するにゃ。",
+    "builtinQuotaHint": "ToChatの作業とToCodeは利用枠を共有します。",
     "placeholder": "モデルを選択",
     "loading": "読み込み中にゃ…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "公式モデルは一時的に利用できません。有料のカスタムモデルへ自動的に切り替わることはありません。",
     "limitReached": "公式の利用枠を使い切りました。リセットを待つか、カスタムモデルを使用して新しい会話を開始してください。",
     "imageError": "32 MB 以下の JPEG、PNG、GIF、WebP 画像を使用してください。",
-    "missingSession": "会話が見つかりません"
+    "missingSession": "会話が見つかりません",
+    "chatUnlimited": "チャットは利用枠を消費しません"
+  },
+  "subscription": {
+    "title": "サブスクリプションと利用枠",
+    "none": "未契約",
+    "remaining": "残り利用枠",
+    "fiveHour": "直近5時間",
+    "week": "直近7日間",
+    "month": "直近30日間",
+    "nextRelease": "次の利用枠解放：{{time}}",
+    "shared": "ToChatの作業とToCodeは利用枠を共有します。",
+    "manage": "契約を管理",
+    "expires": "有効期限：{{time}}",
+    "perMonth": "/月",
+    "buy": "愛発電で契約",
+    "renew": "更新",
+    "awaiting": "支払い確認待ち。確認後に自動同期します。",
+    "checkPayment": "支払いを確認",
+    "unavailable": "契約サービスを利用できません",
+    "chatFree": "通常のToChatチャットは作業枠を消費しません。"
   }
 }

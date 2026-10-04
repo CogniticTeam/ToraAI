@@ -25,6 +25,7 @@ import type {
 } from '@/api';
 import { sessionApi, skillApi } from '@/api';
 import MCPSvg from '@/assets/images/mcp.svg?react';
+import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent.tsx';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { SubagentHitlCard } from '@/components/chat/SubagentHitlCard';
@@ -204,7 +205,8 @@ function closePanelInLayout(layout: PanelKey[][], key: PanelKey): PanelKey[][] {
 export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionCreated }: ChatViewportProps) {
 	const { t } = useTranslation();
 	const { sessions, refetch: refetchSessions } = useSessions(agentId);
-	const { groups, builtinQuota, builtinUnavailable, refetch: refreshAvailableModels } = useAvailableModels();
+	const [quotaLive,setQuotaLive] = useState(false);
+	const { groups, builtinQuota, builtinUnavailable, refetch: refreshAvailableModels } = useAvailableModels(quotaLive);
 
 	// 还没有会话时，模型/工作目录/权限模式先记在这里；第一条消息发送、
 	// 会话被自动创建时经 newSessionExtras 一起带过去 —— 否则三个控件在
@@ -212,7 +214,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(null);
 	const builtinAccountToken = getToken();
 	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
-	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || builtinQuota.workDailyRemaining <= 0 || builtinQuota.workWeeklyRemaining <= 0);
+	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !builtinQuota.canUseAgent);
 	const [selectedKnowledgeConfig, setSelectedKnowledgeConfig] =
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>('default');
@@ -496,6 +498,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// working tree, and it is why nothing polls for git status. Watching
 	// `phase` rather than the REPLY_END event also covers the interrupt
 	// timeout, which reaches idle without one.
+	useEffect(()=>setQuotaLive(phase!=='idle'),[phase]);
 	const prevPhaseRef = useRef(phase);
 	// Checkpoints / diff / hooks move for the same reason git status
 	// does: a reply just finished. One trigger drives all of them.
@@ -1105,7 +1108,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									// 	}}
 									// }
 									footerSlot={<>
-										{builtinSelected && <p role="status" className="px-3 text-center text-xs text-muted-foreground">{builtinBlocked ? t(builtinQuota && (builtinQuota.workDailyRemaining <= 0 || builtinQuota.workWeeklyRemaining <= 0) ? 'applicationModes.limitReached' : 'applicationModes.connectError') : t('applicationModes.workRemaining', { amount: ((builtinQuota?.workDailyRemaining ?? 0) / 1000).toFixed(1) })}</p>}
+										{builtinSelected && <div role="status" className="mx-auto w-40 px-3 text-center text-xs text-muted-foreground">{builtinBlocked ? t(builtinQuota && (!builtinQuota.canUseAgent) ? 'applicationModes.limitReached' : 'applicationModes.connectError') : <AgentQuotaMeter quota={builtinQuota} compact />}</div>}
 										{userQuestion ? (
 											<QuestionPanel
 												key={userQuestion.ask_id}

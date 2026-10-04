@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "內建模型",
-    "builtinQuotaHint": "與 ToChat 工作模式共用每日、每週詞元額度。",
+    "builtinQuotaHint": "ToChat工作與ToCode共用其額。",
     "placeholder": "择模型",
     "loading": "载入中…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "官模暫不可用，不自動改用爾之付費自定模。",
     "limitReached": "官額已盡，請待重置。",
     "imageError": "可用 JPEG、PNG、GIF、WebP 圖，大小不得逾 32 MB。",
-    "missingSession": "未見此對話"
+    "missingSession": "未見此對話",
+    "chatUnlimited": "聊天不扣額度"
+  },
+  "subscription": {
+    "title": "訂閱與額",
+    "none": "未訂",
+    "remaining": "餘額",
+    "fiveHour": "近五時之額",
+    "week": "近七日之額",
+    "month": "近卅日之額",
+    "nextRelease": "下次釋額：{{time}}",
+    "shared": "ToChat工作與ToCode共用其額。",
+    "manage": "掌訂閱",
+    "expires": "期至：{{time}}",
+    "perMonth": "/月",
+    "buy": "由愛發電訂閱",
+    "renew": "續訂",
+    "awaiting": "候付訖，自動同步。",
+    "checkPayment": "核付款",
+    "unavailable": "訂閱之務暫不可用",
+    "chatFree": "尋常ToChat閒談不耗工作之額。"
   }
 }

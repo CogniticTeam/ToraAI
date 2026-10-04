@@ -833,7 +833,7 @@
   },
   "llm-select": {
     "builtinModels": "النماذج المدمجة",
-    "builtinQuotaHint": "يشارك حصص الرموز اليومية والأسبوعية مع وضع العمل في ToChat.",
+    "builtinQuotaHint": "يشترك عمل ToChat وToCode في هذه الحصة.",
     "placeholder": "اختر نموذجًا",
     "loading": "جارٍ التحميل…",
     "empty": {
@@ -1922,6 +1922,26 @@
     "connectError": "النموذج الرسمي غير متاح. لن يتم استخدام نموذجك المخصص المدفوع تلقائيًا.",
     "limitReached": "تم الوصول إلى الحصة الرسمية. يرجى الانتظار حتى إعادة الضبط التالية.",
     "imageError": "استخدم صورة JPEG أو PNG أو GIF أو WebP يقل حجمها عن 32 ميغابايت.",
-    "missingSession": "المحادثة غير موجودة"
+    "missingSession": "المحادثة غير موجودة",
+    "chatUnlimited": "دردشة ToChat العادية لا تستهلك حصة العمل."
+  },
+  "subscription": {
+    "title": "الاشتراك والاستخدام",
+    "none": "لا يوجد اشتراك",
+    "remaining": "المتبقي",
+    "fiveHour": "آخر 5 ساعات",
+    "week": "آخر 7 أيام",
+    "month": "آخر 30 يومًا",
+    "nextRelease": "تحرير السعة القادم: {{time}}",
+    "shared": "يشترك عمل ToChat وToCode في هذه الحصة.",
+    "manage": "إدارة الاشتراك",
+    "expires": "تنتهي الصلاحية: {{time}}",
+    "perMonth": "/شهر",
+    "buy": "الاشتراك عبر Afdian",
+    "renew": "تجديد",
+    "awaiting": "بانتظار تأكيد الدفع؛ تتم المزامنة تلقائيًا.",
+    "checkPayment": "التحقق من الدفع",
+    "unavailable": "خدمة الاشتراك غير متاحة",
+    "chatFree": "دردشة ToChat العادية لا تستهلك حصة العمل."
   }
 }

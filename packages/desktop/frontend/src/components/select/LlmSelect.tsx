@@ -10,6 +10,7 @@ import { Ban, Box, Check, ChevronDown, ChevronRight, PlusCircle } from 'lucide-r
 import { useEffect, useRef, useState } from 'react';
 
 import type { ChatModelConfig, CredentialView, ModelCard } from '@/api';
+import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { FIRST_RUN_CLOSE_MODEL_EVENT } from '@/components/onboarding/constants';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -413,7 +414,7 @@ export function LlmSelect({
 									</span>
 								</div>
 
-								{isBuiltinCredential(detail.credential.id) && <div className="space-y-1 text-xs text-muted-foreground"><p>{t('llm-select.builtinQuotaHint')}</p>{builtinQuota && <><p>{t('applicationModes.workRemaining', { amount: (builtinQuota.workDailyRemaining / 1000).toFixed(1) })}</p><p>{t('applicationModes.weekLimit', { amount: builtinQuota.workWeeklyRemaining.toLocaleString() })}</p></>}</div>}
+								{isBuiltinCredential(detail.credential.id) && <div className="space-y-1 text-xs text-muted-foreground"><p>{t('llm-select.builtinQuotaHint')}</p>{builtinQuota && <AgentQuotaMeter quota={builtinQuota} />}</div>}
 								<div className="flex-1" />
 
 								{/* 思考强度：子菜单行（与上下文窗口同款设计） */}

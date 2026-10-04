@@ -8,6 +8,7 @@ import { sessionApi, type ChatModelConfig, type ContentBlock, type UpdateSession
 import GeminiLogo from '@/assets/providers/lobe-gemini-color.svg?react';
 import OpenAILogo from '@/assets/providers/openai-black-monoblossom.svg?react';
 import DeepSeekLogo from '@/assets/providers/si-deepseek.svg?react';
+import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
@@ -25,12 +26,12 @@ import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n';
 import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from '@/lib/applicationModes';
 import { openSettings } from '@/lib/openSettings';
-import { TOCHAT_MODELS, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type ToChatModelAvailability } from '@/lib/tochatModels';
+import { TOCHAT_MODELS, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { cloudFetch, syncBuiltinModelAuth } from '@/utils/modelSync';
 
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
-type Quota = { models?: ToChatModelAvailability[]; enabled: boolean; chatRemaining: number; workDailyRemaining: number; workWeeklyRemaining: number };
+type Quota = BuiltinQuota;
 const TAB_TRANSITIONS = {
 	off: { duration: 0 },
 	gentle: { type: 'spring' as const, stiffness: 250, damping: 30, mass: 0.7 },
@@ -131,9 +132,10 @@ function ToChatConversation() {
 	});
 	useEffect(() => { if (phase === 'idle') void refreshQuota(); }, [phase, refreshQuota]);
 	const busy = phase !== 'idle' || configPending;
-	const limitReached = source === 'official' && quota && (work ? quota.workDailyRemaining <= 0 || quota.workWeeklyRemaining <= 0 : quota.chatRemaining <= 0);
+	const limitReached = source === 'official' && work && quota && !quota.canUseAgent;
+	useEffect(() => {if(source !== 'official' || !work)return;const timer=window.setInterval(()=>void refreshQuota(),phase==='idle'?30000:2000);return()=>window.clearInterval(timer);},[source,work,phase,refreshQuota]);
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
-	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || !!limitReached));
+	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || (phase==='idle'&&!!limitReached)));
 	const patch = async (config: UpdateSessionRequest) => {
 		if (busy && !(Object.keys(config).length === 1 && 'permission_mode' in config)) return false;
 		setConfigPending(true);
@@ -191,12 +193,11 @@ function ToChatConversation() {
 				<WindowDragRegion className="min-w-6 flex-1 self-stretch" />
 				<Popover>
 					<PopoverTrigger className="flex max-w-[45%] items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-label={copy('quota')}>
-						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? copy('workRemaining', (quota.workDailyRemaining / 1000).toFixed(1)) : copy('chatRemaining', quota.chatRemaining)}</span><ChevronDown className="size-3 shrink-0" />
+						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? `${(quota.remainingPercent??0).toFixed(1)}%` : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
 					</PopoverTrigger>
 					<PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-2 text-sm">
 						<h3 className="font-medium">{copy('quota')}</h3>
-						<p>{copy('chatLimit', quota?.chatRemaining)}</p><p>{copy('dayLimit', quota?.workDailyRemaining?.toLocaleString())}</p><p>{copy('weekLimit', quota?.workWeeklyRemaining?.toLocaleString())}</p>
-						<p className="text-xs text-muted-foreground">{copy('reset')}</p>
+						{work ? <AgentQuotaMeter quota={quota} /> : <p>{copy('chatUnlimited')}</p>}
 						{quotaError && <p className="text-xs text-destructive">{quotaError}</p>}
 						<Button variant="ghost" size="sm" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}><RotateCw />{copy('retry')}</Button>
 					</PopoverContent>

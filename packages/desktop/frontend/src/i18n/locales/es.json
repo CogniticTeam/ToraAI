@@ -821,7 +821,7 @@
   },
   "llm-select": {
     "builtinModels": "Modelos integrados",
-    "builtinQuotaHint": "Comparte las cuotas diarias y semanales de tokens con el modo de trabajo de ToChat.",
+    "builtinQuotaHint": "ToChat trabajo y ToCode comparten esta cuota.",
     "placeholder": "Seleccionar un modelo",
     "loading": "Cargando…",
     "empty": {
@@ -1910,6 +1910,26 @@
     "connectError": "El modelo oficial no está disponible temporalmente. No se cambiará automáticamente a tu modelo personalizado de pago.",
     "limitReached": "Se agotó la cuota oficial. Espera al restablecimiento o usa un modelo personalizado para iniciar una nueva conversación.",
     "imageError": "Usa una imagen JPEG, PNG, GIF o WebP de menos de 32 MB.",
-    "missingSession": "No se encontró la conversación"
+    "missingSession": "No se encontró la conversación",
+    "chatUnlimited": "El chat normal de ToChat no consume la cuota de trabajo."
+  },
+  "subscription": {
+    "title": "Suscripción y uso",
+    "none": "Sin suscripción",
+    "remaining": "Disponible",
+    "fiveHour": "Últimas 5 horas",
+    "week": "Últimos 7 días",
+    "month": "Últimos 30 días",
+    "nextRelease": "Próxima liberación: {{time}}",
+    "shared": "ToChat trabajo y ToCode comparten esta cuota.",
+    "manage": "Gestionar suscripción",
+    "expires": "Caduca: {{time}}",
+    "perMonth": "/mes",
+    "buy": "Suscribirse por Afdian",
+    "renew": "Renovar",
+    "awaiting": "Esperando confirmación; sincronización automática.",
+    "checkPayment": "Verificar pago",
+    "unavailable": "Servicio de suscripción no disponible",
+    "chatFree": "El chat normal de ToChat no consume la cuota de trabajo."
   }
 }

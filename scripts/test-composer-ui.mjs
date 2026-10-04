@@ -51,7 +51,7 @@ try {
 	await page.goto(base + '/', { waitUntil: 'commit' });
 	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'composer-test', username: 'composer-test' }) }));
 	let cloudModels = [];
-	await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+	await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
 await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: cloudModels }) }));
 	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
 	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
@@ -153,6 +153,7 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	await page.goto(`${base}/chat/${agentId}/${sessionId}`, { waitUntil: 'domcontentloaded' });
 	await page.locator('#tour-chat-input').first().waitFor({ state: 'visible' });
 	await page.locator('.composer-context').waitFor({ state: 'visible' });
+	await page.locator('#tour-workspace-picker').waitFor({ state: 'visible' });
 	assert.equal(await page.locator('#tour-workspace-picker').count(), 1, '已有 ID 但尚无消息的欢迎页仍应显示项目状态栏');
 	await page.screenshot({ path: '/tmp/tora-composer-empty-session.png' });
 	const record = loadSessionRecord(sessionId);

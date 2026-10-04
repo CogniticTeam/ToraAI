@@ -67,25 +67,27 @@ async function fetchGroups(): Promise<Record<string, CredentialWithModels[]>> {
  */
 export const AVAILABLE_MODELS_KEY = ['available-models'];
 
-export function useAvailableModels() {
+export function useAvailableModels(live = false) {
 	const { data, isPending, error, refetch } = useQuery({
 		queryKey: AVAILABLE_MODELS_KEY,
 		queryFn: fetchGroups,
 	});
 	useEffect(() => {
-		const changed = () => { void queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY }); };
+		const changed = () => { void queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY }); void queryClient.invalidateQueries({queryKey:['builtin-quota']}); };
 		window.addEventListener('tora-auth-changed', changed);
-		return () => window.removeEventListener('tora-auth-changed', changed);
+		window.addEventListener('tora-subscription-changed', changed);
+		return () => {window.removeEventListener('tora-auth-changed', changed);window.removeEventListener('tora-subscription-changed', changed);};
 	}, []);
 	const refresh = useCallback(() => { void refetch(); }, [refetch]);
 	const builtin = Object.values(data ?? {}).flat().find(item => isBuiltinCredential(item.credential.id));
+	const liveQuota=useQuery({queryKey:['builtin-quota'],enabled:!!builtin,refetchInterval:live?2000:30000,queryFn:async()=>{const response=await cloudFetch('/tochat/quota',{signal:AbortSignal.timeout(10000)});if(!response.ok)throw Error('Built-in models unavailable');return await response.json() as BuiltinQuota;}});
 
 	return {
 		groups: data ?? {},
 		loading: isPending,
 		error: error as Error | null,
 		refetch: refresh,
-		builtinQuota: builtin?.quota,
-		builtinUnavailable: builtin?.unavailable ?? false,
+		builtinQuota: liveQuota.data ?? builtin?.quota,
+		builtinUnavailable: liveQuota.isError || (builtin?.unavailable ?? false),
 	};
 }

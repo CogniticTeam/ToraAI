@@ -66,6 +66,7 @@ export function createClient(cfg) {
     model: cfg.model,
     provider: cfg.provider,
     tochatMode: cfg.tochatMode,
+    appMode: cfg.appMode,
     tochatMessageId: cfg.tochatMessageId,
     temperature: cfg.temperature,
     maxTurns: cfg.maxTurns ?? 40,
@@ -253,7 +254,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
             'content-type': 'application/json',
             ...(client.apiKey ? { authorization: `Bearer ${client.apiKey}` } : {}),
             ...(officialGoogle ? { 'x-goog-api-client': 'tora-desktop/1.0.0' } : {}),
-            ...(client.provider==='tochat-official'?{'x-tochat-mode':client.tochatMode||'chat','x-tochat-message-id':client.tochatMessageId||randomUUID(),'x-tochat-request-id':randomUUID()}:{}),
+            ...(client.provider==='tochat-official'?{'x-tora-feature':client.appMode==='tocode'?'tocode':'work','x-tochat-mode':client.tochatMode||'chat','x-tochat-message-id':client.tochatMessageId||randomUUID(),'x-tochat-request-id':randomUUID()}:{}),
             // 任务模式声明（ask|craft），网关按模式倍率差异化计费；非官方端点会忽略此头
             'x-tora-mode': client.mode || 'craft'
           },

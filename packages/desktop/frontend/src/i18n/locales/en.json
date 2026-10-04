@@ -680,7 +680,7 @@
 	},
 	"llm-select": {
 		"builtinModels": "Built-in models",
-		"builtinQuotaHint": "Shares daily and weekly token quotas with ToChat work mode.",
+		"builtinQuotaHint": "ToChat work and ToCode share this allowance.",
 		"placeholder": "Select a model",
 		"loading": "Loading…",
 		"empty": {
@@ -1732,6 +1732,7 @@
     "user": "User"
   },
   "applicationModes": {
+    "chatUnlimited": "Ordinary ToChat chat does not consume work allowance.",
     "mode": "Application mode",
     "chatDescription": "Chat, explore and work",
     "codeDescription": "Build, debug and execute project tasks",
@@ -1769,5 +1770,24 @@
     "limitReached": "Official quota reached. Wait for the reset or start a new conversation using a custom model.",
     "imageError": "Use a JPEG, PNG, GIF or WebP image under 32 MB.",
     "missingSession": "Conversation not found"
+  },
+  "subscription": {
+    "title": "Subscription and usage",
+    "none": "No subscription",
+    "remaining": "Remaining",
+    "fiveHour": "Rolling 5 hours",
+    "week": "Rolling 7 days",
+    "month": "Rolling 30 days",
+    "nextRelease": "Next capacity release: {{time}}",
+    "shared": "ToChat work and ToCode share this allowance.",
+    "manage": "Manage subscription",
+    "expires": "Expires: {{time}}",
+    "perMonth": "/month",
+    "buy": "Subscribe via Afdian",
+    "renew": "Renew",
+    "awaiting": "Awaiting payment; confirmation syncs automatically.",
+    "checkPayment": "Check payment",
+    "unavailable": "Subscription service unavailable",
+    "chatFree": "Ordinary ToChat chat does not consume work allowance."
   }
 }

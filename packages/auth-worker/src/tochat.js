@@ -1,7 +1,8 @@
 import { toResponsesBody, responsesChatStream } from './tochat-responses.js';
+import {readAgentQuota,publicQuota,reserveCreditStatement,progressCredit,settleCredit} from './agent-credits.js';
+import {modelRates} from './subscription-plans.js';
 
 // Shared official key never crosses this server boundary.
-export const TOCHAT_LIMITS = { chatDaily:150, workDaily:1000000, workWeekly:10000000 };
 const MODELS = Object.freeze({
   'deepseek-flash': {name:'DeepSeek Flash',secret:'DEEPSEEK_API_KEY',url:'https://api.deepseek.com/v1/chat/completions'},
   'gemini-3.8-flash': {name:'Gemini 3.8 Flash',secret:'SHULIUYUN_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
@@ -19,11 +20,8 @@ export function quotaPeriods(now=Date.now()) {
   return {day,week:new Date(monday).toISOString().slice(0,10),dailyReset:new Date(midnight+86400000-8*3600000).toISOString(),weeklyReset:new Date(monday+7*86400000-8*3600000).toISOString()};
 }
 export async function readToChatQuota(db,userId,now=Date.now()) {
-  const p=quotaPeriods(now);
-  const chat=await db.prepare("SELECT COALESCE(SUM(counted),0) AS n FROM tochat_turns WHERE user_id=? AND day=? AND kind='chat'").bind(userId,p.day).first();
-  const day=await db.prepare("SELECT COALESCE(SUM(charged),0) AS n FROM tochat_requests WHERE user_id=? AND day=? AND kind='work'").bind(userId,p.day).first();
-  const week=await db.prepare("SELECT COALESCE(SUM(charged),0) AS n FROM tochat_requests WHERE user_id=? AND week=? AND kind='work'").bind(userId,p.week).first();
-  return {...p,limits:TOCHAT_LIMITS,chatUsed:Number(chat.n),workDailyUsed:Number(day.n),workWeeklyUsed:Number(week.n),chatRemaining:Math.max(0,150-chat.n),workDailyRemaining:Math.max(0,1000000-day.n),workWeeklyRemaining:Math.max(0,10000000-week.n)};
+  const quota=await readAgentQuota(db,userId,now);
+  return {...publicQuota(quota),chatUnlimited:true};
 }
 export function validateToChatBody(body,kind) {
   if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
@@ -48,14 +46,16 @@ export function validateToChatBody(body,kind) {
     }
   }
   // UTF-8 byte count is a conservative text-token bound, plus chat framing.
-  const inputBound=new TextEncoder().encode(JSON.stringify({messages:clean.messages,tools:clean.tools})).length+1024*images+128*clean.messages.length+512;
+  const inputBound=new TextEncoder().encode(JSON.stringify({messages:clean.messages,tools:clean.tools})).length+32768*images+128*clean.messages.length+512;
   const output=Math.min(16384,Math.max(256,Number.isFinite(Number(body.max_tokens))?Math.floor(Number(body.max_tokens)):8192));
   return {effort,inputBound,output};
 }
 export async function reserveToChat(db,params) {
   const {userId,messageId,requestId,kind,fingerprint,reserved,now=Date.now()}=params;
   const p=quotaPeriods(now);
+  const credit=params.credit;
   await db.batch([
+    ...(credit?[reserveCreditStatement(db,{userId,requestId,now,...credit})]:[]),
     db.prepare('INSERT INTO tochat_turns(user_id,message_id,day,kind,fingerprint,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,message_id) DO NOTHING').bind(userId,messageId,p.day,kind,fingerprint,now),
     db.prepare("UPDATE tochat_turns SET state='active',current_request=?,rounds=rounds+1 WHERE user_id=? AND message_id=? AND kind=? AND fingerprint=? AND (state IN ('new','waiting_tools') OR (kind='work' AND state='done')) AND rounds<?").bind(requestId,userId,messageId,kind,fingerprint,kind==='chat'?6:120),
     db.prepare('INSERT INTO tochat_requests(user_id,request_id,message_id,day,week,kind,charged,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(userId,requestId,messageId,p.day,p.week,kind,kind==='work'?reserved:0,now),
@@ -100,6 +100,7 @@ export async function handleToChat(request,env,ctx,user) {
   // An abandoned stream retains its conservative reservation, never refunds unknown usage.
   await env.DB.batch([
     env.DB.prepare("UPDATE tochat_requests SET status='unknown',finished_at=? WHERE user_id=? AND status='pending' AND created_at<?").bind(Date.now(),user.id,Date.now()-300000),
+    env.DB.prepare("UPDATE usage_log SET credit_micro=credit_micro+held_micro,held_micro=0,status='unknown',finished_at=? WHERE user_id=? AND status='pending' AND created_at<?").bind(Date.now(),user.id,Date.now()-300000),
     env.DB.prepare("UPDATE tochat_turns SET state='done' WHERE user_id=? AND state='active' AND current_request IN (SELECT request_id FROM tochat_requests WHERE user_id=? AND status='unknown')").bind(user.id,user.id),
   ]);
   const existing=await env.DB.prepare('SELECT * FROM tochat_turns WHERE user_id=? AND message_id=?').bind(user.id,messageId).first();
@@ -107,23 +108,26 @@ export async function handleToChat(request,env,ctx,user) {
     const expected=JSON.parse(existing.expected_tools||'[]');
     if(!expected.every(id=>body.messages.some(m=>m.role==='tool'&&m.tool_call_id===id))) return fail('缺少对应的联网工具结果');
   }
-  const quota=await readToChatQuota(env.DB,user.id);
-  const available=Math.min(quota.workDailyRemaining,quota.workWeeklyRemaining);
-  const output=kind==='work'?Math.min(checked.output,available-checked.inputBound):checked.output;
-  if(output<256) return fail('官方工作额度不足以覆盖当前上下文，请缩短上下文或等待重置',429);
-  try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:checked.inputBound+output});}
-  catch(error){return fail(/LIMIT/.test(error.message)?'官方模型额度或并发限制已达到，请等待重置或结束当前请求':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT/.test(error.message)?429:409);}
-  const settle=(options)=>settleToChat(env.DB,{userId:user.id,messageId,requestId,...options});
+  const quota=kind==='work'?await readAgentQuota(env.DB,user.id):null;
+  const rate=modelRates(body.model,checked.inputBound,env);
+  const available=quota?.availableMicro??Infinity;
+  const inputCost=checked.inputBound*rate.input;
+  const output=kind==='work'?Math.min(checked.output,Math.floor((available-inputCost)/rate.output)):checked.output;
+  if(output<1) return json({detail:quota?.subscription?'官方工作额度已耗尽或无法覆盖当前上下文，请等待滚动窗口释放额度':'请先订阅后使用官方工作模型',quota:quota?publicQuota(quota):null},429);
+  const reserved=inputCost+output*rate.output;
+  try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,credit:kind==='work'?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
+  catch(error){return fail(/LIMIT|SUBSCRIPTION/.test(error.message)?'官方工作额度或并发限制已达到，请等待额度释放':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT|SUBSCRIPTION/.test(error.message)?429:409);}
+  const settle=async options=>{await settleToChat(env.DB,{userId:user.id,messageId,requestId,...options});if(kind==='work')await settleCredit(env.DB,{userId:user.id,requestId,model:body.model,env,...options});};
   const abort=new AbortController();
   let upstream;
   try{upstream=await fetch(selected.url,{
-    method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env[selected.secret]}`},signal:abort.signal,
+    method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env[selected.secret]}`},signal:AbortSignal.any([abort.signal,AbortSignal.timeout(300000)]),
     body:JSON.stringify(selected.protocol==='responses'?{...upstreamBody,max_output_tokens:output}:{model:body.model,messages:body.messages.map(({tora_response_items,...message})=>message),tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,...(body.model==='deepseek-flash'?{thinking:{type:'enabled'}}:{}),reasoning_effort:body.model==='gemini-3.8-flash'&&checked.effort==='max'?'high':checked.effort,max_tokens:output,stream:true,stream_options:{include_usage:true}}),
   });}catch{await settle({unknown:true});return fail('官方模型连接失败，请稍后重试',502);}
   if(!upstream.ok){await settle({failed:true});return fail(`官方模型请求失败（HTTP ${upstream.status}）`,upstream.status===429?429:502);}
   if(selected.protocol==='responses'){try{upstream=responsesChatStream(upstream,body.model);}catch{await settle({unknown:true});return fail('模型未返回有效的流式响应',502);}}
   const reader=upstream.body.getReader();
-  const decoder=new TextDecoder();let buffer='',usage=null,finish='',expected=new Set(),cancelled=false;
+  const decoder=new TextDecoder();let buffer='',usage=null,finish='',expected=new Set(),cancelled=false,outputBytes=0,lastProgress=0;
   const stream=new ReadableStream({
     start(controller){
       let broken=false;
@@ -132,8 +136,9 @@ export async function handleToChat(request,env,ctx,user) {
           buffer+=decoder.decode(value,{stream:true});
           const lines=buffer.split('\n');buffer=lines.pop();
           for(const line of lines){if(!line.startsWith('data: '))continue;try{const data=JSON.parse(line.slice(6));if(data.usage)usage=data.usage;
-            for(const choice of data.choices||[]){if(choice.finish_reason)finish=choice.finish_reason;for(const tool of choice.delta?.tool_calls||[])if(tool.id)expected.add(tool.id);}
+            for(const choice of data.choices||[]){const delta=choice.delta||{};outputBytes+=new TextEncoder().encode((delta.content||'')+(delta.reasoning_content||'')+(delta.tool_calls||[]).map(tool=>tool.function?.arguments||'').join('')).length;if(choice.finish_reason)finish=choice.finish_reason;for(const tool of choice.delta?.tool_calls||[])if(tool.id)expected.add(tool.id);}
           }catch{/* delta fragments are not complete JSON payloads */}}
+          if(kind==='work'&&Date.now()-lastProgress>=1000){lastProgress=Date.now();await progressCredit(env.DB,user.id,requestId,Math.min(reserved,inputCost+Math.ceil(outputBytes/3)*rate.output));}
           if(buffer.length>1024*1024)throw Error('invalid stream');
           if(!cancelled)controller.enqueue(value);
         }
