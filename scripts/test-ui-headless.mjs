@@ -145,14 +145,14 @@ async function main() {
     // 用户主动切换后写入独立偏好键；刷新后不得再被系统语言覆盖。
     await page.getByRole('button', { name: /ui-smoke/i }).first().click({ timeout: 5000 });
     await page.getByRole('menuitem', { name: /^(语言|Language)$/ }).click({ timeout: 5000 });
-    await page.getByRole('dialog', { name: /语言|Language/ }).getByRole('button', { name: /^English$/ }).click({ timeout: 5000 });
-    assert.equal(await page.evaluate(() => localStorage.getItem('tora_language_preference')), 'en',
+    await page.getByRole('dialog', { name: /语言|Language/ }).getByRole('button', { name: /^English \(US\)$/ }).click({ timeout: 5000 });
+    assert.equal(await page.evaluate(() => localStorage.getItem('tora_language_preference')), 'en-US',
       '手动切换应持久化明确语言偏好');
     await page.reload({ waitUntil: 'domcontentloaded', timeout: 15000 });
     await page.waitForSelector('textarea', { timeout: 15000 });
     assert.equal(await page.evaluate(() => document.documentElement.lang), 'en-US',
       '手动语言偏好应在刷新后覆盖系统语言');
-    out.push('手动语言偏好持久化: true（zh-CN 系统保持 en）');
+    out.push('手动语言偏好持久化: true（zh-CN 系统保持 en-US）');
     await page.waitForFunction(() => {
       const last = document.querySelector('.chat-greeting-character:last-child');
       return !last || getComputedStyle(last).opacity === '1';
@@ -227,7 +227,7 @@ async function main() {
     out.push('设置按需加载并打开: true');
     const languageRow = page.getByText('Interface language', { exact: true }).locator('..').locator('..');
     await languageRow.getByRole('button').click();
-    assert.equal(await page.getByRole('listbox').getByRole('option').count(), 14, '设置页应列出全部语言');
+    assert.equal(await page.getByRole('listbox').getByRole('option').count(), 16, '设置页应列出包含英语和繁体地区变体的全部常规语言');
     await page.keyboard.press('Escape');
     await page.getByText(/^(返回 Tora|Back to Tora)$/).click({ timeout: 5000 });
     await page.waitForTimeout(300);
