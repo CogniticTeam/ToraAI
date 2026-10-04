@@ -39,7 +39,7 @@ jobs:
           npm sbom --sbom-format cyclonedx --package-lock-only > artifacts/tora.cdx.json
           node -e "const s=require('./artifacts/tora.cdx.json'); if (s.bomFormat !== 'CycloneDX' || !Array.isArray(s.components) || !s.components.length) process.exit(1); console.log('SBOM verified:', s.specVersion, s.components.length, 'components')"
       - name: Preserve SBOM for release and security review
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tora-sbom-${{ github.sha }}
           path: artifacts/tora.cdx.json
@@ -118,7 +118,7 @@ jobs:
         run: npm run test:ui:critical
       - name: Save subscription interface screenshots
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: subscription-ui-screenshots
           path: |
