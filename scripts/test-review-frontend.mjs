@@ -386,3 +386,10 @@ test('model groups expose only available built-ins and keep personal credentials
  const {fetchGroups}=h.load('hooks/useAvailableModels.ts','\nexport {fetchGroups};');let groups=await fetchGroups();assert.deepEqual(Array.from(groups.tora_official[0].models,model=>model.name),['deepseek-flash','gemini-3.8-flash']);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');
  online=false;groups=await fetchGroups();assert.equal(groups.tora_official[0].models.length,0);assert.equal(groups.tora_official[0].unavailable,true);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');h.dispose();
 });
+
+test('fresh-session adoption recovers a fast reply already persisted before its SSE attachment',async()=>{
+ let sessionId=null,fresh=false;const history=[{id:'server-user',role:'user',content:[]},{id:'fast-reply',role:'assistant',content:[{type:'text',text:'instant result'}],finished_at:'2026-10-04T00:00:00Z'}];
+ const h=harness({'@/api':{takeFreshlyCreated:()=>{const value=fresh;fresh=false;return value;},sessionApi:{create:async()=>{fresh=true;return {session_id:'fast-session'};},messages:async()=>({messages:history,is_running:false}),async *streamEvents(){yield{kind:'status',mode:'initial',streamId:'fast-stream'};}},chatApi:{trigger:async()=>{}}}});
+ const {useMessages}=h.load('hooks/useMessages.ts');const render=()=>h.render(()=>useMessages('agent',sessionId,{onSessionCreated:id=>{sessionId=id;}}));
+ await render().send([{type:'text',text:'hello'}]);render();await tick();const result=render();assert.deepEqual(Array.from(result.msgs,message=>message.id),['server-user','fast-reply']);assert.equal(result.phase,'idle');h.dispose();
+});

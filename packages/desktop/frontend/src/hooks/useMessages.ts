@@ -476,7 +476,7 @@ export function useMessages(
 		const controller = new AbortController();
 		abortRef.current = controller;
 		let cancelled = false;
-		let historyLoaded = adopted;
+		let historyLoaded = false;
 
 		(async () => {
 			// 1. Fetch persisted history — skipped for an adopted session
@@ -534,6 +534,7 @@ export function useMessages(
 							if (frame.mode === 'reset' || !historyLoaded) {
 								const { messages, is_running } = await sessionApi.messages(sessionId, agentId);
 								if (cancelled) break;
+								if (adopted && frame.mode === 'initial' && messages.length === 0) { historyLoaded = true; continue; }
 								cursor = null;
 								startedRepliesRef.current = new Set();
 								currentReplyRef.current = null;
