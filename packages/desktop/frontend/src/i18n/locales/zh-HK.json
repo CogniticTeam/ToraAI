@@ -1930,6 +1930,25 @@
     "awaiting": "等待付款確認，付款後自動同步。",
     "checkPayment": "確認付款",
     "unavailable": "訂閱服務暫時無法使用",
-    "chatFree": "一般 ToChat 聊天不占用工作額度。"
+    "chatFree": "一般 ToChat 聊天不占用工作額度。",
+    "redeem": "兌換權益",
+    "orderHelp": "輸入愛發電訂單詳情中的完整訂單號碼。每筆訂單僅能兌換一次。",
+    "orderNumber": "愛發電訂單號碼",
+    "checking": "正在確認…",
+    "redeemed": "權益兌換成功。",
+    "alreadyRedeemed": "此訂單已兌換或已綁定其他帳號。",
+    "invalidOrder": "找不到可兌換的訂閱訂單，請確認訂單號碼。",
+    "tooManyAttempts": "兌換嘗試過多，請稍後再試。",
+    "upgradeTo": "升級至 {{plan}}",
+    "back": "返回 Tora",
+    "upgradeTitle": "升級方案",
+    "current": "目前方案",
+    "recommended": "推薦",
+    "planplus": "日常工作助手",
+    "planpro": "專注小型專案",
+    "planmax5": "更高工作額度",
+    "planmax20": "適合重度工作",
+    "planultra": "建構大型專案",
+    "planultrax": "滿足超大專案"
   }
 }

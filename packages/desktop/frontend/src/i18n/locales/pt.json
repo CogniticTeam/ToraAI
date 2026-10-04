@@ -1930,6 +1930,25 @@
     "awaiting": "Aguardando confirmação; sincronização automática.",
     "checkPayment": "Verificar pagamento",
     "unavailable": "Serviço de assinatura indisponível",
-    "chatFree": "O chat comum do ToChat não consome a cota de trabalho."
+    "chatFree": "O chat comum do ToChat não consome a cota de trabalho.",
+    "redeem": "Resgatar benefícios",
+    "orderHelp": "Insira o número completo do pedido Afdian. Cada pedido pode ser resgatado uma vez.",
+    "orderNumber": "Número do pedido Afdian",
+    "checking": "Verificando…",
+    "redeemed": "Benefícios resgatados.",
+    "alreadyRedeemed": "Pedido já resgatado ou vinculado a outra conta.",
+    "invalidOrder": "Pedido elegível não encontrado. Verifique o número.",
+    "tooManyAttempts": "Muitas tentativas. Tente novamente mais tarde.",
+    "upgradeTo": "Atualizar para {{plan}}",
+    "back": "Voltar ao Tora",
+    "upgradeTitle": "Atualizar plano",
+    "current": "Plano atual",
+    "recommended": "Recomendado",
+    "planplus": "Assistente diário",
+    "planpro": "Para projetos menores",
+    "planmax5": "Mais capacidade de trabalho",
+    "planmax20": "Para trabalho intenso",
+    "planultra": "Crie projetos maiores",
+    "planultrax": "Para grandes projetos"
   }
 }

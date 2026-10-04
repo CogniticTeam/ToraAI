@@ -40,6 +40,25 @@ export async function handleSubscriptions(request,env,ctx,user){
  }
  if(!user)return json({detail:'请先登录'},401);if(user.banned)return json({detail:'账户已被封禁'},403);
  if(path==='/billing/subscription'&&request.method==='GET')return json({...publicQuota(await readAgentQuota(env.DB,user.id)),plans:PLANS.map(({id,name,price,usd,rank,limits})=>({id,name,price,usd,rank,windows:Object.keys(limits)})),extraPurchasesEnabled:false});
+ if(path==='/billing/redeem'&&request.method==='POST'){
+  let body;try{body=await request.json();}catch{return json({code:'invalid_order',detail:'订单号无效'},400);}
+  const orderNo=String(body.orderNo||'').trim();if(!/^[0-9]{16,40}$/.test(orderNo))return json({code:'invalid_order',detail:'请输入完整爱发电订单号'},400);
+  const redeemed=await env.DB.prepare('SELECT user_id FROM subscription_orders WHERE order_no=?').bind(orderNo).first();
+  if(redeemed)return redeemed.user_id===user.id?json({redeemed:true,alreadyRedeemed:true,...publicQuota(await readAgentQuota(env.DB,user.id))}):json({code:'already_redeemed',detail:'此订单已兑换'},409);
+  const now=Date.now();const attempt=await env.DB.prepare('INSERT INTO subscription_redemption_attempt(user_id,created_at) SELECT ?,? WHERE (SELECT COUNT(*) FROM subscription_redemption_attempt WHERE user_id=? AND created_at>?)<5').bind(user.id,now,user.id,now-3600000).run();if(!attempt.meta.changes)return json({code:'too_many_attempts',detail:'兑换尝试过多，请稍后重试'},429);
+  try{
+   const order=(await afdianQuery(env,{out_trade_no:orderNo})).find(item=>item.out_trade_no===orderNo);
+   if(!order||!PLANS.some(plan=>plan.afdianId===order.plan_id)||order.status!==2)return json({code:'invalid_order',detail:'未找到可兑换的订阅订单'},400);
+   if(order.custom_order_id){const intent=await env.DB.prepare('SELECT user_id FROM subscription_checkout WHERE id=?').bind(order.custom_order_id).first();if(!intent||intent.user_id!==user.id)return json({code:'wrong_account',detail:'此订单绑定了另一个账号'},409);}
+   else{
+    const plan=PLANS.find(item=>item.afdianId===order.plan_id),id='redeem_'+orderNo;
+    await env.DB.prepare('INSERT INTO subscription_checkout(id,user_id,plan_id,created_at,expires_at) VALUES(?,?,?,?,?) ON CONFLICT(id) DO NOTHING').bind(id,user.id,plan.id,now,now+86400000).run();
+    const intent=await env.DB.prepare('SELECT user_id FROM subscription_checkout WHERE id=?').bind(id).first();if(intent.user_id!==user.id)return json({code:'already_redeemed',detail:'此订单已兑换'},409);order.custom_order_id=id;
+   }
+   if(!await applyVerifiedOrder(env.DB,order))return json({code:'invalid_order',detail:'此订单暂不能兑换，请核对商品和付款金额'},400);
+   return json({redeemed:true,...publicQuota(await readAgentQuota(env.DB,user.id))});
+  }catch{return json({code:'unavailable',detail:'订单核验暂不可用，请稍后重试'},502);}
+ }
  if(path==='/billing/checkout'&&request.method==='POST'){
   let body;try{body=await request.json();}catch{return json({detail:'无效请求'},400);}
   const plan=PLANS.find(item=>item.id===body.planId);if(!plan)return json({detail:'未知订阅方案'},400);

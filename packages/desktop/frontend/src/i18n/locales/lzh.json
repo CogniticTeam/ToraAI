@@ -1930,6 +1930,25 @@
     "awaiting": "候付訖，自動同步。",
     "checkPayment": "核付款",
     "unavailable": "訂閱之務暫不可用",
-    "chatFree": "尋常ToChat閒談不耗工作之額。"
+    "chatFree": "尋常ToChat閒談不耗工作之額。",
+    "redeem": "兌權益",
+    "orderHelp": "填愛發電訂單全號。每單僅兌一次。",
+    "orderNumber": "愛發電訂單號",
+    "checking": "核驗中…",
+    "redeemed": "權益已兌。",
+    "alreadyRedeemed": "此單已兌或屬他戶。",
+    "invalidOrder": "未得可兌之訂单，請核其號。",
+    "tooManyAttempts": "嘗試過繁，稍後再試。",
+    "upgradeTo": "升至 {{plan}}",
+    "back": "返回 Tora",
+    "upgradeTitle": "升級套餐",
+    "current": "現行套餐",
+    "recommended": "薦",
+    "planplus": "佐日常之務",
+    "planpro": "專於小型之業",
+    "planmax5": "增工作之額",
+    "planmax20": "供重度之務",
+    "planultra": "建大型之業",
+    "planultrax": "供超大之業"
   }
 }

@@ -1930,6 +1930,25 @@
     "awaiting": "Zahlungsbestätigung ausstehend; automatische Synchronisierung.",
     "checkPayment": "Zahlung prüfen",
     "unavailable": "Abonnementdienst nicht verfügbar",
-    "chatFree": "Normale ToChat-Chats verbrauchen kein Arbeitskontingent."
+    "chatFree": "Normale ToChat-Chats verbrauchen kein Arbeitskontingent.",
+    "redeem": "Vorteile einlösen",
+    "orderHelp": "Vollständige Afdian-Bestellnummer eingeben. Jede Bestellung ist einmal einlösbar.",
+    "orderNumber": "Afdian-Bestellnummer",
+    "checking": "Wird geprüft…",
+    "redeemed": "Vorteile eingelöst.",
+    "alreadyRedeemed": "Bestellung bereits eingelöst oder mit anderem Konto verknüpft.",
+    "invalidOrder": "Keine passende Bestellung gefunden. Nummer prüfen.",
+    "tooManyAttempts": "Zu viele Versuche. Später erneut versuchen.",
+    "upgradeTo": "Auf {{plan}} upgraden",
+    "back": "Zurück zu Tora",
+    "upgradeTitle": "Tarif upgraden",
+    "current": "Aktueller Tarif",
+    "recommended": "Empfohlen",
+    "planplus": "Assistent für den Alltag",
+    "planpro": "Für kleinere Projekte",
+    "planmax5": "Mehr Arbeitskapazität",
+    "planmax20": "Für intensive Arbeit",
+    "planultra": "Größere Projekte erstellen",
+    "planultrax": "Für sehr große Projekte"
   }
 }

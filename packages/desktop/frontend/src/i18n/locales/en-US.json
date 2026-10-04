@@ -1930,6 +1930,25 @@
     "awaiting": "Awaiting payment; confirmation syncs automatically.",
     "checkPayment": "Check payment",
     "unavailable": "Subscription service unavailable",
-    "chatFree": "Ordinary ToChat chat does not consume work allowance."
+    "chatFree": "Ordinary ToChat chat does not consume work allowance.",
+    "redeem": "Redeem benefits",
+    "orderHelp": "Enter the complete order number from your Afdian receipt. Each order can be redeemed once.",
+    "orderNumber": "Afdian order number",
+    "checking": "Verifying…",
+    "redeemed": "Benefits redeemed.",
+    "alreadyRedeemed": "This order has been redeemed or belongs to another account.",
+    "invalidOrder": "No eligible subscription order found. Check the order number.",
+    "tooManyAttempts": "Too many attempts. Try again later.",
+    "upgradeTo": "Upgrade to {{plan}}",
+    "back": "Back to Tora",
+    "upgradeTitle": "Upgrade your plan",
+    "current": "Current plan",
+    "recommended": "Recommended",
+    "planplus": "Everyday work assistant",
+    "planpro": "Focus on smaller projects",
+    "planmax5": "More capacity for work",
+    "planmax20": "For intensive work",
+    "planultra": "Build larger projects",
+    "planultrax": "Capacity for major projects"
   }
 }

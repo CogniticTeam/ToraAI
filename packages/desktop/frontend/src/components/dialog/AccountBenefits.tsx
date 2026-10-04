@@ -1,0 +1,15 @@
+import {lazy,Suspense,useState} from 'react';
+
+import {Button} from '@/components/ui/button';
+import {Dialog,DialogContent,DialogDescription,DialogHeader,DialogTitle} from '@/components/ui/dialog';
+import {useTranslation} from '@/i18n/useI18n';
+import {openSubscription} from '@/lib/subscription';
+import {cloudFetch} from '@/utils/modelSync';
+const SponsorsDialog=lazy(async()=>({default:(await import('./SponsorsDialog')).SponsorsDialog}));
+export function AccountBenefits(){
+ const {t}=useTranslation();const [open,setOpen]=useState(false),[orderNo,setOrderNo]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState(false),[sponsors,setSponsors]=useState<'list'|'donate'|null>(null);
+ async function redeem(event:React.FormEvent){event.preventDefault();setBusy(true);setMessage('');setError(false);try{const response=await cloudFetch('/billing/redeem',{method:'POST',body:JSON.stringify({orderNo:orderNo.trim()}),signal:AbortSignal.timeout(15000)});const body=await response.json();if(!response.ok)throw Error(t(response.status===429?'subscription.tooManyAttempts':body.code==='already_redeemed'||body.code==='wrong_account'?'subscription.alreadyRedeemed':response.status===400?'subscription.invalidOrder':'subscription.unavailable'));setMessage(t('subscription.redeemed'));window.dispatchEvent(new Event('tora-subscription-changed'));}catch(e){setError(true);setMessage((e as Error).message);}finally{setBusy(false);}}
+ return <><section className="space-y-3 rounded-2xl border border-border p-5"><h3 className="text-sm font-semibold">{t('subscription.title')}</h3><div className="flex flex-wrap gap-2"><Button onClick={()=>{setMessage('');setOrderNo('');setOpen(true);}}>{t('subscription.redeem')}</Button><Button variant="outline" onClick={openSubscription}>{t('subscription.manage')}</Button><Button variant="ghost" onClick={()=>setSponsors('list')}>{t('sponsors.title')}</Button><Button variant="ghost" onClick={()=>setSponsors('donate')}>{t('sponsors.donate')}</Button></div></section>
+ <Dialog open={open} onOpenChange={value=>{if(!busy)setOpen(value);}}><DialogContent><DialogHeader><DialogTitle>{t('subscription.redeem')}</DialogTitle><DialogDescription>{t('subscription.orderHelp')}</DialogDescription></DialogHeader><form onSubmit={event=>void redeem(event)} className="space-y-4"><label className="block space-y-2 text-sm"><span>{t('subscription.orderNumber')}</span><input value={orderNo} onChange={event=>setOrderNo(event.target.value)} autoComplete="off" inputMode="numeric" maxLength={40} required disabled={busy} className="w-full rounded-lg border border-input bg-background px-3 py-2" placeholder={t('subscription.orderNumber')}/></label>{message&&<p role={error?'alert':'status'} className={`text-sm ${error?'text-destructive':'text-muted-foreground'}`}>{message}</p>}<Button type="submit" disabled={busy||!/^\d{16,40}$/.test(orderNo.trim())} className="w-full">{busy?t('subscription.checking'):t('subscription.redeem')}</Button></form></DialogContent></Dialog>
+ {sponsors&&<Suspense fallback={null}><SponsorsDialog mode={sponsors} onClose={()=>setSponsors(null)}/></Suspense>}</>;
+}

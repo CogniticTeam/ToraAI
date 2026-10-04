@@ -1930,6 +1930,25 @@
     "awaiting": "Confirmation du paiement en attente, synchronisation automatique.",
     "checkPayment": "Vérifier le paiement",
     "unavailable": "Service d’abonnement indisponible",
-    "chatFree": "Les discussions ToChat ordinaires ne consomment pas le quota de travail."
+    "chatFree": "Les discussions ToChat ordinaires ne consomment pas le quota de travail.",
+    "redeem": "Activer les avantages",
+    "orderHelp": "Saisissez le numéro complet du reçu Afdian. Chaque commande est utilisable une seule fois.",
+    "orderNumber": "Numéro de commande Afdian",
+    "checking": "Vérification…",
+    "redeemed": "Avantages activés.",
+    "alreadyRedeemed": "Commande déjà utilisée ou liée à un autre compte.",
+    "invalidOrder": "Commande admissible introuvable. Vérifiez le numéro.",
+    "tooManyAttempts": "Trop de tentatives. Réessayez plus tard.",
+    "upgradeTo": "Passer à {{plan}}",
+    "back": "Retour à Tora",
+    "upgradeTitle": "Changer de forfait",
+    "current": "Forfait actuel",
+    "recommended": "Recommandé",
+    "planplus": "Assistant au quotidien",
+    "planpro": "Pour les petits projets",
+    "planmax5": "Plus de capacité de travail",
+    "planmax20": "Pour un usage intensif",
+    "planultra": "Créer de grands projets",
+    "planultrax": "Pour les projets majeurs"
   }
 }

@@ -1930,6 +1930,25 @@
     "awaiting": "결제 확인 후 자동 동기화됩니다.",
     "checkPayment": "결제 확인",
     "unavailable": "구독 서비스를 사용할 수 없습니다",
-    "chatFree": "일반 ToChat 채팅은 작업 한도를 사용하지 않습니다."
+    "chatFree": "일반 ToChat 채팅은 작업 한도를 사용하지 않습니다.",
+    "redeem": "혜택 교환",
+    "orderHelp": "Afdian 주문 내역의 전체 주문 번호를 입력하세요. 주문당 한 번 교환할 수 있습니다.",
+    "orderNumber": "Afdian 주문 번호",
+    "checking": "확인 중…",
+    "redeemed": "혜택을 교환했습니다.",
+    "alreadyRedeemed": "이미 교환되었거나 다른 계정에 연결된 주문입니다.",
+    "invalidOrder": "사용 가능한 구독 주문이 없습니다. 번호를 확인하세요.",
+    "tooManyAttempts": "시도 횟수가 너무 많습니다. 나중에 다시 시도하세요.",
+    "upgradeTo": "{{plan}}로 업그레이드",
+    "back": "Tora로 돌아가기",
+    "upgradeTitle": "요금제 업그레이드",
+    "current": "현재 요금제",
+    "recommended": "추천",
+    "planplus": "일상 업무 도우미",
+    "planpro": "소규모 프로젝트에 집중",
+    "planmax5": "더 많은 작업 용량",
+    "planmax20": "집중적인 작업을 위해",
+    "planultra": "대규모 프로젝트 구축",
+    "planultrax": "아주 큰 프로젝트를 위한 용량"
   }
 }

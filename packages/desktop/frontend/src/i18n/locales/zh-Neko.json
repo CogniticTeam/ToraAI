@@ -1930,6 +1930,25 @@
     "awaiting": "等待支付确认，支付后自动同步。",
     "checkPayment": "核验支付",
     "unavailable": "订阅服务暂不可用",
-    "chatFree": "普通 ToChat 聊天不占用工作额度。"
+    "chatFree": "普通 ToChat 聊天不占用工作额度。",
+    "redeem": "兑换权益",
+    "orderHelp": "输入爱发电订单详情中的完整订单号。每个订单只能兑换一次。",
+    "orderNumber": "爱发电订单号",
+    "checking": "正在核验…",
+    "redeemed": "权益兑换成功。",
+    "alreadyRedeemed": "此订单已兑换或已绑定其他账号。",
+    "invalidOrder": "未找到可兑换的订阅订单，请核对订单号。",
+    "tooManyAttempts": "兑换尝试过多，请稍后再试。",
+    "upgradeTo": "升级到 {{plan}}",
+    "back": "返回 Tora",
+    "upgradeTitle": "升级套餐",
+    "current": "当前套餐",
+    "recommended": "推荐",
+    "planplus": "日常工作助手",
+    "planpro": "专注小型项目",
+    "planmax5": "更高工作额度",
+    "planmax20": "面向重度工作",
+    "planultra": "构建大型项目",
+    "planultrax": "满足超大项目"
   }
 }

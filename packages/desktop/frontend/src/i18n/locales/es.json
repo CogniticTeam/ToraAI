@@ -1930,6 +1930,25 @@
     "awaiting": "Esperando confirmación; sincronización automática.",
     "checkPayment": "Verificar pago",
     "unavailable": "Servicio de suscripción no disponible",
-    "chatFree": "El chat normal de ToChat no consume la cuota de trabajo."
+    "chatFree": "El chat normal de ToChat no consume la cuota de trabajo.",
+    "redeem": "Canjear beneficios",
+    "orderHelp": "Introduce el número completo del pedido Afdian. Cada pedido se canjea una sola vez.",
+    "orderNumber": "Número de pedido Afdian",
+    "checking": "Verificando…",
+    "redeemed": "Beneficios canjeados.",
+    "alreadyRedeemed": "Pedido ya canjeado o vinculado a otra cuenta.",
+    "invalidOrder": "No se encontró un pedido válido. Comprueba el número.",
+    "tooManyAttempts": "Demasiados intentos. Inténtalo más tarde.",
+    "upgradeTo": "Mejorar a {{plan}}",
+    "back": "Volver a Tora",
+    "upgradeTitle": "Mejorar plan",
+    "current": "Plan actual",
+    "recommended": "Recomendado",
+    "planplus": "Asistente para el día a día",
+    "planpro": "Para proyectos pequeños",
+    "planmax5": "Más capacidad de trabajo",
+    "planmax20": "Para trabajo intensivo",
+    "planultra": "Crea proyectos grandes",
+    "planultrax": "Para proyectos de gran escala"
   }
 }

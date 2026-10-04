@@ -6,13 +6,13 @@ import {
 	Cat,
 	Globe,
 	ChevronUp,
-	Heart,
+	
 	Import,
 	Languages,
 	LogOut,
 	Mail,
 	Settings,
-	UsersRound,
+	
 	Vote,
 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
@@ -20,6 +20,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useAccountPresence } from '@/components/auth/AccountPresence';
+import {AccountUsageMenu} from '@/components/chat/AccountUsageMenu';
 import { ApplicationModeSwitcher } from '@/components/layout/ApplicationModeSwitcher';
 import { SessionListSection } from '@/components/layout/SessionListSection';
 import { FIRST_RUN_CLOSE_SETTINGS_EVENT, FIRST_RUN_SETTINGS_CLOSED_EVENT } from '@/components/onboarding/constants';
@@ -47,11 +48,12 @@ import { disableCatgirlLanguagePack } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { catgirlCopy, useCatgirlSettings } from '@/lib/catgirl';
 import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
+import {OPEN_SUBSCRIPTION_EVENT} from '@/lib/subscription';
 import { signOutAccount } from '@/utils/authLogout';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
-const SponsorsDialog = lazy(async () => ({ default: (await import('@/components/dialog/SponsorsDialog')).SponsorsDialog }));
+const SubscriptionDialog = lazy(async () => ({ default: (await import('@/components/dialog/SubscriptionDialog')).SubscriptionDialog }));
 const LanguageDialog = lazy(async () => ({ default: (await import('@/components/dialog/LanguageDialog')).LanguageDialog }));
 const SessionImportDialog = lazy(async () => ({ default: (await import('@/components/dialog/SessionImportDialog')).SessionImportDialog }));
 
@@ -115,7 +117,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	const [languageOpen, setLanguageOpen] = useState(false);
 	const [importOpen, setImportOpen] = useState(false);
 	useEffect(() => getWindowBridge()?.onOpenMessagesFromNotification?.(() => setMessagesOpen(true)), []);
-	const [sponsorsMode, setSponsorsMode] = useState<'list' | 'donate' | null>(null);
+	const [subscriptionOpen,setSubscriptionOpen]=useState(false);
 	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
 	const handleSettingsOpenChange = useCallback((open: boolean) => {
@@ -155,6 +157,8 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 		window.addEventListener('focus', refresh);
 		return () => { alive = false; window.clearInterval(timer); window.removeEventListener('tora-auth-changed', refresh); window.removeEventListener('focus', refresh); };
 	}, []);
+
+	useEffect(()=>{const open=()=>setSubscriptionOpen(true);window.addEventListener(OPEN_SUBSCRIPTION_EVENT,open);return()=>window.removeEventListener(OPEN_SUBSCRIPTION_EVENT,open);},[]);
 
 	// 全局事件桥：任意页面 openSettings('model') → 此处打开设置窗口并定位板块
 	useEffect(() => {
@@ -333,16 +337,10 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							<ChevronUp className="size-4 text-muted-foreground" />
 						</SidebarMenuButton>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent side="top" align="start" className="w-52 p-1">
+					<DropdownMenuContent side="top" align="start" className="w-64 p-1">
 						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setMessagesOpen(true)}>
 							<Mail /><span className="flex-1">{t('inbox.title')}</span>
 							{unread > 0 && <span className="text-xs text-muted-foreground">{unread}</span>}
-						</DropdownMenuItem>
-						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setSponsorsMode('list')}>
-							<UsersRound /><span>{t('sponsors.title')}</span>
-						</DropdownMenuItem>
-						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setSponsorsMode('donate')}>
-							<Heart /><span>{t('sponsors.donate')}</span>
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							className="py-1 text-[13px]"
@@ -363,6 +361,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							onSelect={() => void disableCatgirl()}>
 							<Cat /><span className="whitespace-normal">{catgirlBusy ? catgirlLabels.disabling : catgirlLabels.disable}</span>
 						</DropdownMenuItem>}
+						<AccountUsageMenu />
 						<DropdownMenuSeparator />
 						<DropdownMenuItem className="py-1 text-[13px]" data-testid="open-session-import" onSelect={() => setImportOpen(true)}>
 							<Import /><span>{t('sessionImport.title')}</span>
@@ -379,7 +378,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
 			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
 			{importOpen && <Suspense fallback={null}><SessionImportDialog onClose={() => setImportOpen(false)} /></Suspense>}
-			{sponsorsMode && <Suspense fallback={null}><SponsorsDialog mode={sponsorsMode} onClose={() => setSponsorsMode(null)} /></Suspense>}
+			{subscriptionOpen && <Suspense fallback={null}><SubscriptionDialog open={subscriptionOpen} onClose={() => setSubscriptionOpen(false)} /></Suspense>}
 			{settingsOpen && (
 				<Suspense fallback={null}>
 					<SettingsDialog

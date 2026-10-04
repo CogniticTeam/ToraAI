@@ -1930,6 +1930,25 @@
     "awaiting": "In attesa del pagamento; sincronizzazione automatica.",
     "checkPayment": "Verifica pagamento",
     "unavailable": "Servizio abbonamenti non disponibile",
-    "chatFree": "Le chat normali ToChat non consumano la quota di lavoro."
+    "chatFree": "Le chat normali ToChat non consumano la quota di lavoro.",
+    "redeem": "Riscatta vantaggi",
+    "orderHelp": "Inserisci il numero completo dell’ordine Afdian. Ogni ordine si può riscattare una volta.",
+    "orderNumber": "Numero ordine Afdian",
+    "checking": "Verifica…",
+    "redeemed": "Vantaggi riscattati.",
+    "alreadyRedeemed": "Ordine già riscattato o associato a un altro account.",
+    "invalidOrder": "Ordine idoneo non trovato. Verifica il numero.",
+    "tooManyAttempts": "Troppi tentativi. Riprova più tardi.",
+    "upgradeTo": "Passa a {{plan}}",
+    "back": "Torna a Tora",
+    "upgradeTitle": "Aggiorna il piano",
+    "current": "Piano attuale",
+    "recommended": "Consigliato",
+    "planplus": "Assistente quotidiano",
+    "planpro": "Per piccoli progetti",
+    "planmax5": "Più capacità di lavoro",
+    "planmax20": "Per lavoro intensivo",
+    "planultra": "Crea progetti più grandi",
+    "planultrax": "Per progetti di grande portata"
   }
 }

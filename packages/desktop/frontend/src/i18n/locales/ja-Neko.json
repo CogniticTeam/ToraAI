@@ -1930,6 +1930,25 @@
     "awaiting": "支払い確認待ち。確認後に自動同期します。",
     "checkPayment": "支払いを確認",
     "unavailable": "契約サービスを利用できません",
-    "chatFree": "通常のToChatチャットは作業枠を消費しません。"
+    "chatFree": "通常のToChatチャットは作業枠を消費しません。",
+    "redeem": "特典を引き換え",
+    "orderHelp": "愛発電の注文詳細にある注文番号を入力してください。各注文は一度だけ引き換えできます。",
+    "orderNumber": "愛発電の注文番号",
+    "checking": "確認中…",
+    "redeemed": "特典を引き換えました。",
+    "alreadyRedeemed": "この注文は引き換え済み、または別のアカウントに紐付いています。",
+    "invalidOrder": "対象の注文が見つかりません。番号をご確認ください。",
+    "tooManyAttempts": "試行回数が多すぎます。後でお試しください。",
+    "upgradeTo": "{{plan}} にアップグレード",
+    "back": "Tora に戻る",
+    "upgradeTitle": "プランをアップグレード",
+    "current": "現在のプラン",
+    "recommended": "おすすめ",
+    "planplus": "日々の作業を支援",
+    "planpro": "小規模プロジェクトに集中",
+    "planmax5": "より多くの作業容量",
+    "planmax20": "集中的な作業に",
+    "planultra": "大規模プロジェクトを構築",
+    "planultrax": "さらに大きなプロジェクトに"
   }
 }

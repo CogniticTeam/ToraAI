@@ -17,7 +17,7 @@ import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 
 import '../auth/login-surface.css';
 
-import {SubscriptionSection} from './SubscriptionSection';
+import {AccountBenefits} from './AccountBenefits';
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
@@ -953,7 +953,7 @@ function AccountManager({
 				{error && panel === 'none' && <div role="alert" className="mt-3 rounded-[8px] bg-destructive-soft px-3 py-2 text-xs text-destructive">{error}</div>}
 			</section>
 
-			<div className="mb-8"><SubscriptionSection /></div>
+			<div className="mb-8"><AccountBenefits /></div>
 			<section aria-labelledby="account-security-heading" className="mb-8">
 				<h4 id="account-security-heading" className="mb-3 text-[13px] font-semibold">{t('settings.account.manager.securityTitle')}</h4>
 				<div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
