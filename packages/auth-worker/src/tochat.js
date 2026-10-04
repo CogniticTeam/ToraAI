@@ -1,5 +1,5 @@
 import { toResponsesBody, responsesChatStream } from './tochat-responses.js';
-import {readAgentQuota,publicQuota,reserveCreditStatement,progressCredit,settleCredit} from './agent-credits.js';
+import {readAgentQuota,publicQuota,reserveCreditStatement,progressCredit,settleCreditStatement} from './agent-credits.js';
 import {modelRates} from './subscription-plans.js';
 
 // Shared official key never crosses this server boundary.
@@ -70,6 +70,7 @@ export async function settleToChat(db,params) {
   const {userId,requestId,messageId,usage,failed=false,unknown=false,tools=[]}=params;
   const tokens=totalUsage(usage);
   await db.batch([
+    ...(params.creditStatement?[params.creditStatement]:[]),
     db.prepare("UPDATE tochat_requests SET charged=CASE WHEN ? THEN 0 WHEN kind='work' AND ? IS NOT NULL THEN ? ELSE charged END,status=?,finished_at=? WHERE user_id=? AND request_id=? AND status='pending'").bind(failed?1:0,tokens,tokens,failed?'failed':unknown||tokens===null?'unknown':'settled',Date.now(),userId,requestId),
     db.prepare("UPDATE tochat_turns SET state=?,expected_tools=?,counted=CASE WHEN ? AND rounds=1 THEN 0 ELSE counted END WHERE user_id=? AND message_id=? AND current_request=? AND state='active'").bind(failed?'failed':tools.length&&!unknown?'waiting_tools':'done',JSON.stringify(tools),failed?1:0,userId,messageId,requestId),
   ]);
@@ -117,7 +118,7 @@ export async function handleToChat(request,env,ctx,user) {
   const reserved=inputCost+output*rate.output;
   try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,credit:kind==='work'?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
   catch(error){return fail(/LIMIT|SUBSCRIPTION/.test(error.message)?'官方工作额度或并发限制已达到，请等待额度释放':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT|SUBSCRIPTION/.test(error.message)?429:409);}
-  const settle=async options=>{await settleToChat(env.DB,{userId:user.id,messageId,requestId,...options});if(kind==='work')await settleCredit(env.DB,{userId:user.id,requestId,model:body.model,env,...options});};
+  const settle=options=>settleToChat(env.DB,{userId:user.id,messageId,requestId,...options,creditStatement:kind==='work'?settleCreditStatement(env.DB,{userId:user.id,requestId,model:body.model,env,...options}):null});
   const abort=new AbortController();
   let upstream;
   try{upstream=await fetch(selected.url,{
@@ -143,7 +144,7 @@ export async function handleToChat(request,env,ctx,user) {
           if(!cancelled)controller.enqueue(value);
         }
         }catch{broken=true;if(!cancelled)controller.error(Error('官方模型流式响应中断'));}
-        finally{await settle({usage,unknown:!usage||cancelled||broken,tools:finish==='tool_calls'?[...expected]:[]});if(!cancelled&&!broken)controller.close();}
+        finally{try{await settle({usage,unknown:!usage||cancelled||broken,tools:finish==='tool_calls'?[...expected]:[]});}catch{broken=true;if(!cancelled)controller.error(Error('额度结算暂时失败，请稍后重试'));}if(!cancelled&&!broken)controller.close();}
       })();ctx.waitUntil(pump);
     },
     async cancel(){cancelled=true;abort.abort();await reader.cancel().catch(()=>{});},
