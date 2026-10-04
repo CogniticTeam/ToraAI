@@ -820,6 +820,8 @@
     }
   },
   "llm-select": {
+    "builtinModels": "Modelli integrati",
+    "builtinQuotaHint": "Condivide le quote giornaliere e settimanali di token con la modalità lavoro di ToChat.",
     "placeholder": "Seleziona un modello",
     "loading": "Caricamento…",
     "empty": {
@@ -840,6 +842,7 @@
       "low": "Basso",
       "medium": "Medio",
       "high": "Alto",
+      "xhigh": "Molto alto",
       "max": "Max"
     }
   },

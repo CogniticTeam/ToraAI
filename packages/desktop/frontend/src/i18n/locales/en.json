@@ -679,6 +679,8 @@
 		}
 	},
 	"llm-select": {
+		"builtinModels": "Built-in models",
+		"builtinQuotaHint": "Shares daily and weekly token quotas with ToChat work mode.",
 		"placeholder": "Select a model",
 		"loading": "Loading…",
 		"empty": {
@@ -699,6 +701,7 @@
 			"low": "Low",
 			"medium": "Medium",
 			"high": "High",
+			"xhigh": "Extra high",
 			"max": "Max"
 		}
 	},

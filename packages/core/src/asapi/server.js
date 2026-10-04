@@ -12,6 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { discoverSessionImports, previewSessionImports, commitSessionImports, readSessionImportBody } from './session-import.js';
 import { loadConfig, saveConfig, syncEffectiveModel, DEFAULT_CONFIG } from '../config.js';
+import { BUILTIN_CREDENTIAL_ID, BUILTIN_PROVIDER_TYPE, BUILTIN_MODELS, builtinAuth, setBuiltinAuth } from '../builtin-models.js';
 import { catgirlSettings } from '../catgirl.js';
 import {
   listAgents, getAgent, createAgent, updateAgent, deleteAgent,
@@ -419,7 +420,8 @@ async function route(req, res) {
     const body=await readBody(req);
     const baseURL=String(body.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'');
     if(!/^https:\/\//.test(baseURL)&&!/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseURL)) return apiError(res,422,'官方服务地址必须使用 HTTPS');
-    saveConfig({tochat:{baseURL,authToken:String(body.authToken||'')}});
+    setBuiltinAuth({baseURL,authToken:String(body.authToken||'')});
+    saveConfig({tochat:{baseURL}}); // Account token lives in memory; Electron keeps its persistent copy encrypted.
     return json(res,200,{status:'ok'});
   }
   if (p === '/admin/config' && method === 'POST') {
@@ -1305,7 +1307,8 @@ async function route(req, res) {
   // 合并手动凭证 + 设置窗口模型列表合成的 cocode-models（仅在有启用模型时出现）
   if (p === '/credential/' && method === 'GET') {
     const cfg = loadConfig();
-    const credentials = [...listCredentials(), ...(enabledModels(cfg).length ? [toraCredential(cfg)] : [])];
+    const builtin=builtinAuth(cfg).authToken?[{id:BUILTIN_CREDENTIAL_ID,user_id:'local',editable:false,created_at:0,updated_at:0,data:{type:BUILTIN_PROVIDER_TYPE,name:'Tora',source:'builtin-models',model_providers:Object.fromEntries(BUILTIN_MODELS.map(model=>[model.id,model.provider]))}}]:[];
+    const credentials = [...listCredentials(), ...(enabledModels(cfg).length ? [toraCredential(cfg)] : []),...builtin];
     return json(res, 200, { credentials, total: credentials.length });
   }
   if (p === '/credential/schemas' && method === 'GET') {
@@ -1334,6 +1337,10 @@ async function route(req, res) {
   // 优先用设置窗口模型列表的启用项；为空时退回内置默认
   if (p === '/model/' && method === 'GET') {
     const cfg = loadConfig();
+    if(q.provider===BUILTIN_PROVIDER_TYPE) {
+      const cards=builtinAuth(cfg).authToken?BUILTIN_MODELS.map(model=>({type:'chat_model',name:model.id,label:model.name,status:'active',deprecated_at:null,input_types:inputTypesFor(model.id,true),output_types:['text'],context_size:300000,output_size:16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}})):[];
+      return json(res,200,{models:cards,total:cards.length});
+    }
     const enabled = enabledModels(cfg);
     const cards = enabled.length
       ? enabled.map((x) => ({

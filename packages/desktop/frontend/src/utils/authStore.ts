@@ -68,6 +68,7 @@ export async function setUsername(v: string): Promise<void> {
 export async function delToken(): Promise<void> {
 	if (bridge) await bridge.delToken(); else localStorage.removeItem(LS_TOKEN);
 	emitAuthChanged();
+	try { const { syncBuiltinModelAuth } = await import('./modelSync'); await syncBuiltinModelAuth(); } catch { /* Local backend may already be stopped. */ }
 }
 export async function delEmail(): Promise<void> {
 	if (bridge) return bridge.delEmail();

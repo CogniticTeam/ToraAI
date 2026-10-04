@@ -820,6 +820,8 @@
     }
   },
   "llm-select": {
+    "builtinModels": "기본 제공 모델",
+    "builtinQuotaHint": "ToChat 작업 모드와 일일 및 주간 토큰 한도를 공유합니다.",
     "placeholder": "모델 선택",
     "loading": "로딩 중…",
     "empty": {
@@ -840,6 +842,7 @@
       "low": "낮음",
       "medium": "중간",
       "high": "높음",
+      "xhigh": "매우 높음",
       "max": "최대"
     }
   },

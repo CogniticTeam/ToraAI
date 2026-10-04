@@ -59,6 +59,9 @@ import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_PANEL_EVENT } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
+import { isBuiltinCredential } from '@/lib/tochatModels';
+import { getToken } from '@/utils/authStore';
+import { syncBuiltinModelAuth } from '@/utils/modelSync';
 
 // 侧栏内容不属于首屏；只在用户真正打开时下载和解析对应模块。
 const BrowserPanel = lazy(async () => ({ default: (await import('@/components/panel/BrowserPanel')).BrowserPanel }));
@@ -201,12 +204,15 @@ function closePanelInLayout(layout: PanelKey[][], key: PanelKey): PanelKey[][] {
 export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionCreated }: ChatViewportProps) {
 	const { t } = useTranslation();
 	const { sessions, refetch: refetchSessions } = useSessions(agentId);
-	const { groups } = useAvailableModels();
+	const { groups, builtinQuota, builtinUnavailable, refetch: refreshAvailableModels } = useAvailableModels();
 
 	// 还没有会话时，模型/工作目录/权限模式先记在这里；第一条消息发送、
 	// 会话被自动创建时经 newSessionExtras 一起带过去 —— 否则三个控件在
 	// 空状态下要么禁用、要么选了被静默丢掉。
 	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(null);
+	const builtinAccountToken = getToken();
+	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
+	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || builtinQuota.workDailyRemaining <= 0 || builtinQuota.workWeeklyRemaining <= 0);
 	const [selectedKnowledgeConfig, setSelectedKnowledgeConfig] =
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>('default');
@@ -338,6 +344,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		// `selectedModel` — hand it to the session auto-created on the
 		// first send, so the pick survives into the conversation.
 		// 工作目录与权限模式同理：无会话时先记本地，建会话时一并带上。
+		beforeSend: async () => {
+			if (!builtinSelected) return;
+			if (!builtinAccountToken || builtinAccountToken !== getToken()) throw new Error(t('modelSection.errors.loginRequired'));
+			await syncBuiltinModelAuth();
+			if (builtinAccountToken !== getToken()) throw new Error(t('modelSection.errors.loginRequired'));
+		},
 		newSessionExtras: () => ({
 			...(selectedModel ? { chat_model_config: selectedModel } : {}),
 			...(selectedCwd ? { cwd: selectedCwd } : {}),
@@ -497,10 +509,11 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		const wasRunning = prevPhaseRef.current !== 'idle';
 		prevPhaseRef.current = phase;
 		if (wasRunning && phase === 'idle') {
+			if (builtinSelected) refreshAvailableModels();
 			void refetchWorkspaceStatus();
 			void refreshTora();
 		}
-	}, [phase, refetchWorkspaceStatus, refreshTora]);
+	}, [phase, refetchWorkspaceStatus, refreshTora, builtinSelected, refreshAvailableModels]);
 
 	// Build the panel descriptors with live data. Rebuilt on every
 	// data change so the dock always renders the latest state — the
@@ -1080,7 +1093,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								//（R3 行为），避免"没有会话就输不进字"。
 								// 模型是否可用由 TextInput 内部的 send 按钮
 								// 单独判定（无模型时禁发，不锁 textarea）。
-								disabled={!agentId}
+								disabled={!agentId || (phase === 'idle' && builtinBlocked)}
 									onSend={send}
 									onUserConfirm={onUserConfirm}
 									onInterrupt={interrupt}
@@ -1091,8 +1104,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									// 		addition: 0,
 									// 	}}
 									// }
-									footerSlot={
-										userQuestion ? (
+									footerSlot={<>
+										{builtinSelected && <p role="status" className="px-3 text-center text-xs text-muted-foreground">{builtinBlocked ? t(builtinQuota && (builtinQuota.workDailyRemaining <= 0 || builtinQuota.workWeeklyRemaining <= 0) ? 'applicationModes.limitReached' : 'applicationModes.connectError') : t('applicationModes.workRemaining', { amount: ((builtinQuota?.workDailyRemaining ?? 0) / 1000).toFixed(1) })}</p>}
+										{userQuestion ? (
 											<QuestionPanel
 												key={userQuestion.ask_id}
 												entry={userQuestion}
@@ -1121,6 +1135,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 											/>
 										) : null
 									}
+									</>}
 									allowedInputTypes={(
 										selectedModelCard?.input_types ?? []
 									).filter(

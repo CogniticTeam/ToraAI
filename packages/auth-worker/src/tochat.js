@@ -57,7 +57,7 @@ export async function reserveToChat(db,params) {
   const p=quotaPeriods(now);
   await db.batch([
     db.prepare('INSERT INTO tochat_turns(user_id,message_id,day,kind,fingerprint,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,message_id) DO NOTHING').bind(userId,messageId,p.day,kind,fingerprint,now),
-    db.prepare("UPDATE tochat_turns SET state='active',current_request=?,rounds=rounds+1 WHERE user_id=? AND message_id=? AND kind=? AND fingerprint=? AND state IN ('new','waiting_tools') AND rounds<?").bind(requestId,userId,messageId,kind,fingerprint,kind==='chat'?6:120),
+    db.prepare("UPDATE tochat_turns SET state='active',current_request=?,rounds=rounds+1 WHERE user_id=? AND message_id=? AND kind=? AND fingerprint=? AND (state IN ('new','waiting_tools') OR (kind='work' AND state='done')) AND rounds<?").bind(requestId,userId,messageId,kind,fingerprint,kind==='chat'?6:120),
     db.prepare('INSERT INTO tochat_requests(user_id,request_id,message_id,day,week,kind,charged,created_at) VALUES(?,?,?,?,?,?,?,?)').bind(userId,requestId,messageId,p.day,p.week,kind,kind==='work'?reserved:0,now),
   ]);
 }

@@ -1,11 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect } from 'react';
 
 import { credentialApi, modelApi } from '@/api';
 import type { CredentialView, ModelCard } from '@/api';
+import { queryClient } from '@/lib/query-client';
+import { TOCHAT_MODELS, isBuiltinCredential, modelAvailable, type BuiltinQuota } from '@/lib/tochatModels';
+import { cloudFetch, syncBuiltinModelAuth } from '@/utils/modelSync';
 
 export interface CredentialWithModels {
 	credential: CredentialView;
 	models: ModelCard[];
+	quota?: BuiltinQuota;
+	unavailable?: boolean;
 }
 
 /**
@@ -19,6 +25,7 @@ export interface CredentialWithModels {
  * `refetch`, which is what the "credential just added" trigger calls.
  */
 async function fetchGroups(): Promise<Record<string, CredentialWithModels[]>> {
+	await syncBuiltinModelAuth().catch(() => {});
 	const { credentials } = await credentialApi.list();
 	const result: Record<string, CredentialWithModels[]> = {};
 
@@ -29,17 +36,24 @@ async function fetchGroups(): Promise<Record<string, CredentialWithModels[]>> {
 			if (!result[type]) result[type] = [];
 			try {
 				const { models } = await modelApi.list(type);
+				let quota: BuiltinQuota | undefined;
+				if (isBuiltinCredential(credential.id)) {
+					const response = await cloudFetch('/tochat/quota', { signal: AbortSignal.timeout(10000) });
+					if (!response.ok) throw new Error('Built-in models unavailable');
+					quota = await response.json() as BuiltinQuota;
+				}
 				// Reverse-alphabetical, which is how the providers' naming
 				// schemes rank themselves — gpt-5 before gpt-4, qwen3 before
 				// qwen2 — so the strongest models sit at the top of the picker.
 				result[type].push({
 					credential,
-					models: [...models].sort((a, b) =>
-						b.name.localeCompare(a.name, undefined, { numeric: true }),
+					quota,
+					models: models.filter(model => !quota || (quota.enabled && modelAvailable(model.name, quota.models))).sort((a, b) =>
+						isBuiltinCredential(credential.id) ? TOCHAT_MODELS.findIndex(model => model.id === a.name) - TOCHAT_MODELS.findIndex(model => model.id === b.name) : b.name.localeCompare(a.name, undefined, { numeric: true }),
 					),
 				});
 			} catch {
-				result[type].push({ credential, models: [] });
+				result[type].push({ credential, models: [], unavailable: true });
 			}
 		}),
 	);
@@ -58,11 +72,20 @@ export function useAvailableModels() {
 		queryKey: AVAILABLE_MODELS_KEY,
 		queryFn: fetchGroups,
 	});
+	useEffect(() => {
+		const changed = () => { void queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY }); };
+		window.addEventListener('tora-auth-changed', changed);
+		return () => window.removeEventListener('tora-auth-changed', changed);
+	}, []);
+	const refresh = useCallback(() => { void refetch(); }, [refetch]);
+	const builtin = Object.values(data ?? {}).flat().find(item => isBuiltinCredential(item.credential.id));
 
 	return {
 		groups: data ?? {},
 		loading: isPending,
 		error: error as Error | null,
-		refetch: () => void refetch(),
+		refetch: refresh,
+		builtinQuota: builtin?.quota,
+		builtinUnavailable: builtin?.unavailable ?? false,
 	};
 }

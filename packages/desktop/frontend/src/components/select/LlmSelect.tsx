@@ -17,6 +17,7 @@ import { ProviderIcon } from '@/components/ui/provider-icon';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTranslation } from '@/i18n/useI18n.ts';
 import { OPEN_SETTINGS_EVENT } from '@/lib/openSettings';
+import { isBuiltinCredential, toChatEffort, toChatModel } from '@/lib/tochatModels';
 import { cn } from '@/lib/utils';
 import { credentialLabel } from '@/utils/common';
 
@@ -27,7 +28,7 @@ interface ModelEntry {
 	model: ModelCard;
 }
 
-type ThinkingLevel = 'off' | 'low' | 'medium' | 'high' | 'max';
+type ThinkingLevel = 'off' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 type ContextWindow = '300k' | '1m';
 
 // 思考档位 label 走 i18n（llm-select.level.*），这里只存档位键
@@ -137,6 +138,7 @@ function thinkingLevelOf(parameters: Record<string, unknown> | undefined): Think
 	const effort = parameters.thinkingEffort;
 	if (effort === 'low') return 'low';
 	if (effort === 'medium') return 'medium';
+	if (effort === 'xhigh') return 'xhigh';
 	if (effort === 'max') return 'max';
 	return 'high'; // high / 未设置（默认开、高强度）
 }
@@ -185,6 +187,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onC
 	allowClear?: boolean;
 	/** Override the label of the "clear selection" item. */
 	clearLabel?: string;
+	includeBuiltin?: boolean;
 }
 
 export function LlmSelect({
@@ -196,14 +199,15 @@ export function LlmSelect({
 	placeholder,
 	allowClear = false,
 	clearLabel,
+	includeBuiltin = true,
 	className,
 	...props
 }: Props) {
-	const { groups, loading, refetch } = useAvailableModels();
+	const { groups, loading, refetch, builtinQuota } = useAvailableModels();
 	const { t } = useTranslation();
 	// 凭证的模型列表加载失败会带回空 models 数组；丢弃避免渲染死行
 	const groupEntries = Object.entries(groups)
-		.map(([type, items]) => [type, items.filter((i) => i.models.length > 0)] as const)
+		.map(([type, items]) => [type, items.filter((i) => i.models.length > 0 && (includeBuiltin || !isBuiltinCredential(i.credential.id)))] as const)
 		.filter(([, usable]) => usable.length > 0);
 
 	const allEntries: ModelEntry[] = groupEntries.flatMap(([type, usable]) =>
@@ -233,7 +237,7 @@ export function LlmSelect({
 			type: entry.type,
 			credential_id: entry.credential.id,
 			model: entry.model.name,
-			parameters: { ...(value?.parameters ?? {}) },
+			parameters: isBuiltinCredential(entry.credential.id) ? { ...(value?.parameters ?? {}), thinking: true, thinkingEffort: toChatEffort(entry.model.name, String(value?.parameters?.thinkingEffort ?? 'high')) } : { ...(value?.parameters ?? {}) },
 		});
 	};
 
@@ -252,7 +256,7 @@ export function LlmSelect({
 	};
 
 	const displayLabel = value?.model
-		? value.model
+		? isBuiltinCredential(value.credential_id) ? toChatModel(value.model).name : value.model
 		: loading
 			? t('llm-select.loading')
 			: (placeholder ?? t('llm-select.placeholder'));
@@ -260,7 +264,7 @@ export function LlmSelect({
 	const detail = selectedEntry;
 	const detailModel = detail?.model;
 	const currentCtx: ContextWindow | null = detailModel ? contextWindowOf(value?.parameters, detailModel) : null;
-	const currentLevel = thinkingLevelOf(value?.parameters);
+	const currentLevel = value && isBuiltinCredential(value.credential_id) ? toChatEffort(value.model, String(value.parameters?.thinkingEffort ?? 'high')) : thinkingLevelOf(value?.parameters);
 
 	// 受控开关 + 文档级兜底：radix 自带外点关闭，但个别空白区域的事件可能被
 	// 业务层吞掉，这里在 capture 阶段再兜一道 —— 点在 popover/触发器之外即关。
@@ -330,7 +334,7 @@ export function LlmSelect({
 									<div key={`${credential.id}:${model.name}`}>
 										{showHeader && (
 											<div className="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground first:pt-1">
-												{credentialLabel(credential, t('common.toraModels'))}
+												{isBuiltinCredential(credential.id) ? t('llm-select.builtinModels') : credentialLabel(credential, t('common.toraModels'))}
 											</div>
 										)}
 										<button
@@ -346,7 +350,7 @@ export function LlmSelect({
 												size="size-5"
 												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
 											/>
-											<span className="min-w-0 flex-1 truncate">{model.name}</span>
+											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name).name : model.name}</span>
 											{selected && <Check className="size-4 shrink-0 text-primary" />}
 										</button>
 									</div>
@@ -394,7 +398,7 @@ export function LlmSelect({
 										size="size-7"
 										fallback={<Box className="size-5 shrink-0 text-muted-foreground" />}
 									/>
-									<span className="min-w-0 truncate text-base font-semibold">{detail.model.name}</span>
+									<span className="min-w-0 truncate text-base font-semibold">{isBuiltinCredential(detail.credential.id) ? toChatModel(detail.model.name).name : detail.model.name}</span>
 								</div>
 
 								{/* 能力标签：多模态输入 / 上下文规模 */}
@@ -409,6 +413,7 @@ export function LlmSelect({
 									</span>
 								</div>
 
+								{isBuiltinCredential(detail.credential.id) && <div className="space-y-1 text-xs text-muted-foreground"><p>{t('llm-select.builtinQuotaHint')}</p>{builtinQuota && <><p>{t('applicationModes.workRemaining', { amount: (builtinQuota.workDailyRemaining / 1000).toFixed(1) })}</p><p>{t('applicationModes.weekLimit', { amount: builtinQuota.workWeeklyRemaining.toLocaleString() })}</p></>}</div>}
 								<div className="flex-1" />
 
 								{/* 思考强度：子菜单行（与上下文窗口同款设计） */}
@@ -416,7 +421,7 @@ export function LlmSelect({
 									label={t('llm-select.thinking')}
 									current={currentLevel}
 									currentLabel={t(`llm-select.level.${currentLevel}`)}
-									options={(/(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
+									options={(isBuiltinCredential(value?.credential_id) ? toChatModel(value?.model).efforts : /(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
 									onSelect={(v) => handleThinking(v as ThinkingLevel)}
 								/>
 

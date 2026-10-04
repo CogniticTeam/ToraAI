@@ -13,12 +13,28 @@ const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 const SERVER_URL_KEY = 'server_url';
 const DEFAULT_SERVER_URL = 'http://127.0.0.1:3210';
 let mirrorWrites: Promise<unknown> = Promise.resolve();
+let builtinWrites: Promise<unknown> = Promise.resolve();
 
 export const cloudApi = () =>
 	(localStorage.getItem(AUTH_API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
 const localApi = () =>
 	(localStorage.getItem(SERVER_URL_KEY) || DEFAULT_SERVER_URL).replace(/\/+$/, '');
+
+/** Sync account auth for built-in models in both modes; no upstream provider keys. */
+export function syncBuiltinModelAuth(): Promise<void> {
+	const token = getToken() || '', baseURL = cloudApi(), server = localApi();
+	const write = builtinWrites.then(async () => {
+		if (token !== (getToken() || '')) return;
+		const response = await fetch(`${server}/admin/tochat-config`, {
+			method: 'POST', headers: { 'content-type': 'application/json' },
+			body: JSON.stringify({ baseURL, authToken: token }), signal: AbortSignal.timeout(5000),
+		});
+		if (!response.ok) throw new Error('Built-in model auth update failed');
+	});
+	builtinWrites = write.catch(() => {});
+	return write;
+}
 
 /** 带 Bearer token 的云端请求 */
 export async function cloudFetch(path: string, init?: RequestInit): Promise<Response> {
@@ -53,6 +69,7 @@ export async function syncModelsFromCloud(): Promise<void> {
 	const token = getToken();
 	if (!token) return;
 	try {
+		await syncBuiltinModelAuth();
 		const res = await fetch(`${cloudApi()}/models`, {
 			headers: { authorization: `Bearer ${token}` },
 		});

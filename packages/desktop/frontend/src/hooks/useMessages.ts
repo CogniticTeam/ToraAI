@@ -182,6 +182,7 @@ export function useMessages(
 		 * default model.
 		 */
 		newSessionExtras?: () => Partial<CreateSessionRequest>;
+		beforeSend?: () => Promise<void>;
 	},
 ) {
 	const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -677,6 +678,7 @@ export function useMessages(
 			}
 
 			try {
+				await sendOptions?.beforeSend?.();
 				await chatApi.trigger({
 					agent_id: agentId,
 					session_id: realSessionId,

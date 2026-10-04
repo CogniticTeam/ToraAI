@@ -85,3 +85,11 @@ test('GPT Sol uses only dedicated Codex Secret and Responses; missing secret nev
  assert.ok(sent.every(item=>item.url==='https://shuliuyun.com/v1/responses'));assert.deepEqual(sent.map(item=>item.body.reasoning.effort),['low','medium','high','xhigh','max']);assert.ok(sent.every(item=>item.body.tools[0].name==='Read'&&item.body.thinking===undefined));assert.equal((await readToChatQuota(db,1)).workDailyUsed,150);
  }finally{globalThis.fetch=before;sqlite.close();}
 });
+
+test('official work permits review after a completed reply, charges actual tokens and keeps chat closed',async()=>{
+ const {db,sqlite}=database();
+ await reserveToChat(db,{userId:31,messageId:'code-review-turn',requestId:'code-answer',kind:'work',fingerprint:'work',reserved:100,now});await settleToChat(db,{userId:31,messageId:'code-review-turn',requestId:'code-answer',usage:{total_tokens:50}});
+ await reserveToChat(db,{userId:31,messageId:'code-review-turn',requestId:'code-review',kind:'work',fingerprint:'work',reserved:100,now});await settleToChat(db,{userId:31,messageId:'code-review-turn',requestId:'code-review',usage:{total_tokens:30}});assert.equal((await readToChatQuota(db,31,now)).workDailyUsed,80);
+ await reserveToChat(db,{userId:32,messageId:'chat-answer',requestId:'chat-first',kind:'chat',fingerprint:'chat',reserved:1,now});await settleToChat(db,{userId:32,messageId:'chat-answer',requestId:'chat-first',usage:{total_tokens:10}});
+ await assert.rejects(reserveToChat(db,{userId:32,messageId:'chat-answer',requestId:'chat-repeat',kind:'chat',fingerprint:'chat',reserved:1,now}),/BUSY_OR_DONE/);sqlite.close();
+});

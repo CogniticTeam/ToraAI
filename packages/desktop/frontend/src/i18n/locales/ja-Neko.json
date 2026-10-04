@@ -820,6 +820,8 @@
     }
   },
   "llm-select": {
+    "builtinModels": "内蔵モデルにゃ",
+    "builtinQuotaHint": "ToChat の作業モードと日次・週次のトークン枠を共有するにゃ。",
     "placeholder": "モデルを選択",
     "loading": "読み込み中にゃ…",
     "empty": {
@@ -840,6 +842,7 @@
       "low": "低にゃ",
       "medium": "中にゃ",
       "high": "高にゃ",
+      "xhigh": "非常に高いにゃ",
       "max": "最大にゃ"
     }
   },

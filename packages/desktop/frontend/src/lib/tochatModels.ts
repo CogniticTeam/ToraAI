@@ -5,6 +5,9 @@ export const TOCHAT_MODELS = [
 	{ id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
 ] as const;
 export type ToChatModelId = (typeof TOCHAT_MODELS)[number]['id'];
+export const BUILTIN_CREDENTIAL_ID = 'tora-official';
+export const isBuiltinCredential = (id?: string) => id === BUILTIN_CREDENTIAL_ID || id === 'tora-tochat-official';
+export type BuiltinQuota = { enabled: boolean; models?: ToChatModelAvailability[]; chatRemaining: number; workDailyRemaining: number; workWeeklyRemaining: number };
 export type ToChatModelAvailability = { id: string; enabled: boolean };
 export const toChatModel = (id?: string) => TOCHAT_MODELS.find(model => model.id === id) ?? TOCHAT_MODELS[0];
 export const modelAvailable = (id: string, models?: ToChatModelAvailability[]) => models ? models.some(model => model.id === id && model.enabled) : id === 'deepseek-flash';

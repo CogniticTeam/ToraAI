@@ -679,6 +679,8 @@
     }
   },
   "llm-select": {
+    "builtinModels": "内置模型",
+    "builtinQuotaHint": "与 ToChat 工作模式共用每日、每周 Token 额度。",
     "placeholder": "选择模型",
     "loading": "加载中…",
     "empty": {
@@ -699,6 +701,7 @@
       "low": "低",
       "medium": "中",
       "high": "高",
+      "xhigh": "极高",
       "max": "极致"
     }
   },

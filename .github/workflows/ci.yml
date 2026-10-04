@@ -104,6 +104,10 @@ jobs:
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome
         run: npm run test:ui
+      - name: Verify ToCode built-in model selection and first-message routing
+        env:
+          TORA_CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/test-tocode-builtin-ui.mjs
       - name: Verify critical chat and composer interactions
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome

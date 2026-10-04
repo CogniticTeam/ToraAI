@@ -820,6 +820,8 @@
     }
   },
   "llm-select": {
+    "builtinModels": "Integrierte Modelle",
+    "builtinQuotaHint": "Teilt tägliche und wöchentliche Token-Kontingente mit dem ToChat-Arbeitsmodus.",
     "placeholder": "Modell auswählen",
     "loading": "Wird geladen…",
     "empty": {
@@ -840,6 +842,7 @@
       "low": "Niedrig",
       "medium": "Mittel",
       "high": "Hoch",
+      "xhigh": "Sehr hoch",
       "max": "Max"
     }
   },

@@ -86,7 +86,8 @@ async function main() {
       contentType: 'application/json',
       body: JSON.stringify({ id: 'ui-smoke', username: 'ui-smoke' })
     }));
-    await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
+    await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       // 官方模型下架后，测试环境必须显式提供一条自定义模型；仅对自建临时服务注入。

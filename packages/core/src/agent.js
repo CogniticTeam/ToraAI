@@ -516,7 +516,7 @@ async function _runAgentImpl(opts, ch) {
   if (defaultFullDisk) cwd = homedir();
   if (cwd) cwd = realpathAllowMissing(cwd);
 
-  const client = createClient(cfg);
+  const client = createClient(cfg.provider==='tochat-official'&&cfg.tochatMode==='work'&&spawnDepth>0?{...cfg,tochatMessageId:randomUUID()}:cfg);
   // MCP 服务器工具：并行逐台拉 tools/list（各自短超时），挂了的服务器跳过
   // 并留一个"不可用"占位工具 —— 模型能看见原因，不会对着不存在的工具瞎猜。
   const mcpTools = chatOnly ? [] : await buildMcpTools(cfg);

@@ -68,6 +68,7 @@ test('迟到的旧账号模型响应不覆盖当前账号；镜像 PUT 按顺序
   let token = 'A'; const a = deferred(), writes = [], firstWrite = deferred();
   let blockWrite = false;
   const h = harness({ './authStore': { getToken: () => token } }, { fetch: async (url, init) => {
+    if (url.endsWith('/admin/tochat-config')) return Response.json({});
     if (url.endsWith('/models')) return init.headers.authorization === 'Bearer A' ? a.promise : Response.json({ models: [{ apiKey: token }] });
     if (blockWrite && JSON.parse(init.body).models[0].apiKey === 'B') await firstWrite.promise;
     writes.push(JSON.parse(init.body).models[0].apiKey); return Response.json({});
@@ -365,4 +366,23 @@ test('网页 Gemini medium 随新对话保存并按原值发送', {skip: !exists
  const options={mode:'chat',model:'gemini-3.8-flash',effort:'medium',search:false,confirmWrites:true,onUpdate(){},onQuota(){}};
  await h.render(()=>useWebConversation('fixture',null,options)).send([{type:'text',text:'hello'}]);
  assert.equal(sent[0].reasoning_effort,'medium');assert.equal(saved.at(-1).model,'gemini-3.8-flash');assert.equal(saved.at(-1).effort,'medium');h.dispose();
+});
+
+test('built-in account sync serializes token changes and clears the local runtime on sign-out',async()=>{
+ let token='A';const first=deferred(),writes=[];const h=harness({'./authStore':{getToken:()=>token}},{fetch:async(url,init)=>{assert.ok(url.endsWith('/admin/tochat-config'));const value=JSON.parse(init.body).authToken;if(value==='A')await first.promise;writes.push(value);return Response.json({});}});
+ const {syncBuiltinModelAuth}=h.load('utils/modelSync.ts');const old=syncBuiltinModelAuth();await tick();token='B';const current=syncBuiltinModelAuth();first.resolve();await Promise.all([old,current]);assert.deepEqual(writes,['A','B']);token='';await syncBuiltinModelAuth();assert.equal(writes.at(-1),'');
+});
+
+test('ToCode picker offers model-specific built-in efforts and keeps custom mode separate',()=>{
+ const h=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official',source:'builtin-models',name:'Tora'}},models:[{name:'gpt-6.1-sol',input_types:['text','image/png'],context_size:300000}]}]},loading:false,refetch(){},builtinQuota:{enabled:true,workDailyRemaining:900000,workWeeklyRemaining:9500000}})}});
+ const {LlmSelect}=h.load('components/select/LlmSelect.tsx');const props={value:{type:'tora_official',credential_id:'tora-official',model:'gpt-6.1-sol',parameters:{thinking:true,thinkingEffort:'xhigh'}}};
+ const tree=h.render(()=>LlmSelect(props));const submenu=find(tree,node=>node.type?.name==='SubmenuRow'&&node.props.label==='llm-select.thinking');assert.equal(submenu.props.current,'xhigh');assert.deepEqual(Array.from(submenu.props.options,option=>option.value),['low','medium','high','xhigh','max']);
+ const hidden=h.render(()=>LlmSelect({...props,includeBuiltin:false}));assert.equal(find(hidden,node=>node.type?.name==='SubmenuRow'&&node.props.label==='llm-select.thinking'),null);assert.ok(find(hidden,node=>node.type==='p'&&node.props.children==='llm-select.empty.title'));h.dispose();
+});
+
+test('model groups expose only available built-ins and keep personal credentials usable during quota outages',async()=>{
+ let online=true;const quota={enabled:true,models:[{id:'deepseek-flash',enabled:true},{id:'gemini-3.8-flash',enabled:true},{id:'gpt-6.1-sol',enabled:false}],workDailyRemaining:1000000,workWeeklyRemaining:10000000};
+ const h=harness({'@/api':{credentialApi:{list:async()=>({credentials:[{id:'personal',data:{type:'openai_compatible'}},{id:'tora-official',data:{type:'tora_official'}}]})},modelApi:{list:async type=>({models:(type==='tora_official'?['gpt-6.1-sol','gemini-3.8-flash','deepseek-flash']:['own-model']).map(name=>({name}))})}},'@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},cloudFetch:async()=>online?Response.json(quota):Response.json({detail:'unavailable'},{status:503})}});
+ const {fetchGroups}=h.load('hooks/useAvailableModels.ts','\nexport {fetchGroups};');let groups=await fetchGroups();assert.deepEqual(Array.from(groups.tora_official[0].models,model=>model.name),['deepseek-flash','gemini-3.8-flash']);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');
+ online=false;groups=await fetchGroups();assert.equal(groups.tora_official[0].models.length,0);assert.equal(groups.tora_official[0].unavailable,true);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');h.dispose();
 });

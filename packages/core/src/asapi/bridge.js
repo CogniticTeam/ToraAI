@@ -14,6 +14,7 @@ import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
+import { builtinAuth, isBuiltinCredential, isBuiltinModel } from '../builtin-models.js';
 import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import { recordUsage } from './usage-store.js';
@@ -178,17 +179,22 @@ export function resolveRunCfg(session, agent) {
     thinking: mc.parameters?.thinking !== false,
     thinkingEffort: typeof mc.parameters?.thinkingEffort === 'string' ? mc.parameters.thinkingEffort : undefined
   };
+  cfg.appMode=session.config?.application_mode==='tochat'?'tochat':'tocode';
   if(session.config?.application_mode==='tochat') {
     cfg.appMode='tochat';cfg.tochatMode=session.config.task_mode==='work'?'work':'chat';
     // ToChat exposes public web tools automatically; the model chooses when to use them.
     // Legacy sessions with web_search=false must not silently lose this capability.
     cfg.webSearch=true;
     cfg.injectProjectContext=cfg.tochatMode==='work';cfg.defaultScopeFullDisk=false;
-    if(session.config.model_source!=='custom') {
-      cfg.baseURL=String(toraCfg.tochat?.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
-      cfg.apiKey=toraCfg.tochat?.authToken||'';cfg.model='deepseek-flash';cfg.provider='tochat-official';cfg.vision=true;
-      cfg.thinking=true;
-    }
+  }
+  const builtin=isBuiltinCredential(mc.credential_id)||(cfg.appMode==='tochat'&&session.config.model_source!=='custom');
+  if(builtin) {
+    const model=mc.model||'deepseek-flash';
+    if(!isBuiltinModel(model))throw Error('不支持的内置模型');
+    const auth=builtinAuth(toraCfg);
+    cfg.baseURL=String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
+    cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=true;cfg.thinking=true;
+    if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
   }
   if (visionOverride !== undefined && cfg.provider!=='tochat-official') cfg.vision = visionOverride;
   if (agent?.data?.system_prompt) cfg.systemPrompt = agent.data.system_prompt;
@@ -347,7 +353,7 @@ async function _startChatRunAsync(sessionId, agent, payload) {
     if (!session.config.name || session.config.name === ph) {
       session.config.name = session.config.name || ph;
       saveSessionRecord(session);
-      (cfg.appMode==='tochat' ? Promise.resolve(null) : generateTitle(cfg, { userText }))
+      (cfg.appMode==='tochat'||cfg.provider==='tochat-official' ? Promise.resolve(null) : generateTitle(cfg, { userText }))
         .then((t) => {
           if (!t) return;
           session.config.name = t;

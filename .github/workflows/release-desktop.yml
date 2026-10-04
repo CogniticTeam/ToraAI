@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   windows:
-    if: github.event_name == 'workflow_dispatch' || (github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2' && github.ref_name != 'v1.0.3' && github.ref_name != 'v1.0.4' && github.ref_name != 'v1.0.5')
+    if: github.event_name == 'workflow_dispatch' || (github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2' && github.ref_name != 'v1.0.3' && github.ref_name != 'v1.0.4' && github.ref_name != 'v1.0.5' && github.ref_name != 'v1.0.6')
     name: Build and verify Windows x64
     runs-on: windows-latest
     timeout-minutes: 25
@@ -48,7 +48,7 @@ jobs:
 
   macos:
     # These versions are notarized locally and published only after both platforms pass.
-    if: github.event_name == 'push' && github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2' && github.ref_name != 'v1.0.3' && github.ref_name != 'v1.0.4' && github.ref_name != 'v1.0.5'
+    if: github.event_name == 'push' && github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2' && github.ref_name != 'v1.0.3' && github.ref_name != 'v1.0.4' && github.ref_name != 'v1.0.5' && github.ref_name != 'v1.0.6'
     needs: windows
     name: Publish signed macOS and verified Windows installers
     runs-on: macos-latest
