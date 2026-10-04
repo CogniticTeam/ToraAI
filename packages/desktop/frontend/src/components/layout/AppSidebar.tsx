@@ -163,6 +163,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	// 全局事件桥：任意页面 openSettings('model') → 此处打开设置窗口并定位板块
 	useEffect(() => {
 		const handler = (e: Event) => {
+			setSubscriptionOpen(false);
 			setSettingsTab((e as CustomEvent<SettingsSection>).detail ?? 'general');
 			setSettingsOpen(true);
 		};

@@ -4,6 +4,7 @@ import {useCallback,useEffect,useState} from 'react';
 import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import {Button} from '@/components/ui/button';
 import {useTranslation} from '@/i18n/useI18n';
+import {openSettings} from '@/lib/openSettings';
 import {nextUpgrade,planLabel} from '@/lib/subscription';
 import type {AgentQuota} from '@/lib/tochatModels';
 import {cloudFetch} from '@/utils/modelSync';
@@ -16,7 +17,7 @@ export function SubscriptionSection(){
  useEffect(()=>{void refresh();},[refresh]);
  const sync=useCallback(async()=>{if(!pending)return;try{const response=await cloudFetch('/billing/sync',{method:'POST',body:JSON.stringify({checkoutId:pending}),signal:AbortSignal.timeout(15000)});const body=await response.json();if(!response.ok)throw Error(body.detail||t('subscription.unavailable'));if(body.paid){localStorage.removeItem(CHECKOUT_KEY);setPending(null);window.dispatchEvent(new Event('tora-subscription-changed'));await refresh();}setError('');}catch(e){setError((e as Error).message);}},[pending,refresh,t]);
  useEffect(()=>{if(!pending)return;void sync();const timer=window.setInterval(()=>void sync(),30000);return()=>window.clearInterval(timer);},[pending,sync]);
- async function buy(planId:string){setBusy(true);setError('');const popup='toraWindow' in window?null:window.open('about:blank','_blank');if(popup)popup.opener=null;try{const response=await cloudFetch('/billing/checkout',{method:'POST',body:JSON.stringify({planId})});const body=await response.json();if(!response.ok)throw Error(body.detail||t('subscription.unavailable'));localStorage.setItem(CHECKOUT_KEY,body.id);setPending(body.id);const target=new URL(body.url);if(target.protocol!=='https:'||target.hostname!=='afdian.com')throw Error(t('subscription.unavailable'));setPaymentUrl(body.url);if(popup)popup.location.href=body.url;else window.open(body.url,'_blank','noopener,noreferrer');}catch(e){popup?.close();setError((e as Error).message);}finally{setBusy(false);}}
+ async function buy(planId:string){setBusy(true);setError('');const popup='toraWindow' in window?null:window.open('about:blank','_blank');if(popup)popup.opener=null;try{const response=await cloudFetch('/billing/checkout',{method:'POST',body:JSON.stringify({planId})});const body=await response.json();if(!response.ok)throw Error(body.detail||t('subscription.unavailable'));if(body.requiresRedemption){localStorage.removeItem(CHECKOUT_KEY);setPending(null);}else{localStorage.setItem(CHECKOUT_KEY,body.id);setPending(body.id);}const target=new URL(body.url);if(target.protocol!=='https:'||target.hostname!=='afdian.com')throw Error(t('subscription.unavailable'));setPaymentUrl(body.url);if(popup)popup.location.href=body.url;else window.open(body.url,'_blank','noopener,noreferrer');}catch(e){popup?.close();setError((e as Error).message);}finally{setBusy(false);}}
  return <section className="space-y-6" aria-label={t('subscription.title')}><div className="mx-auto max-w-lg"><AgentQuotaMeter quota={data}/></div>{data?.subscription&&<p className="text-xs text-muted-foreground">{t('subscription.expires',{time:new Date(data.subscription.expiresAt).toLocaleDateString()})}</p>}
  <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{data?.plans.map(plan=>{
  const recommended=nextUpgrade(data.subscription?.planId)===plan.id,current=data.subscription?.planId===plan.id;
@@ -28,7 +29,7 @@ export function SubscriptionSection(){
  <ul className="mt-6 space-y-4 text-sm leading-6"><li className="flex items-start gap-3"><Terminal className="mt-1 size-4 shrink-0"/><span>{t('subscription.shared')}</span></li><li className="flex items-start gap-3"><MessageCircle className="mt-1 size-4 shrink-0"/><span>{t('subscription.chatFree')}</span></li><li className="flex items-start gap-3"><Check className="mt-1 size-4 shrink-0"/><span>DeepSeek Flash · Gemini 3.8 Flash · GPT-6.1 Sol</span></li></ul>
  </article>;
  })}</div>
- {paymentUrl&&<a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="block text-sm underline">{t('subscription.buy')}</a>}
+ {paymentUrl&&<><p className="text-sm text-muted-foreground">{t('subscription.orderHelp')}</p><Button variant="outline" onClick={()=>openSettings('account')}>{t('subscription.redeem')}</Button><a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="block text-sm underline">{t('subscription.buy')}</a></>}
  {pending&&<p className="text-xs text-muted-foreground">{t('subscription.awaiting')} <button type="button" className="underline" onClick={()=>void sync()}>{t('subscription.checkPayment')}</button></p>}
  {error&&<p role="alert" className="text-xs text-destructive">{error}</p>}<p className="text-xs text-muted-foreground">{t('subscription.chatFree')}</p><Button variant="ghost" size="sm" onClick={()=>void refresh()}>{t('applicationModes.retry')}</Button></section>;
 }

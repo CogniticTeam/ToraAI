@@ -65,7 +65,7 @@ export async function handleSubscriptions(request,env,ctx,user){
   const quota=await readAgentQuota(env.DB,user.id);const active=PLANS.find(item=>item.id===quota.subscription?.planId);if(active&&active.rank>plan.rank)return json({detail:'请在当前订阅到期后再选择较低档位'},409);
   const now=Date.now(),count=await env.DB.prepare("SELECT COUNT(*) AS n FROM subscription_checkout WHERE user_id=? AND created_at>? AND status='pending'").bind(user.id,now-3600000).first();if(count.n>=10)return json({detail:'待支付订单较多，请稍后再试'},429);
   const id='tora_'+crypto.randomUUID().replaceAll('-','');await env.DB.prepare('INSERT INTO subscription_checkout(id,user_id,plan_id,created_at,expires_at) VALUES(?,?,?,?,?)').bind(id,user.id,plan.id,now,now+86400000).run();
-  const url=new URL('https://afdian.com/order/create');url.searchParams.set('product_type','1');url.searchParams.set('plan_id',plan.afdianId);url.searchParams.set('custom_order_id',id);return json({id,url:url.toString()});
+  const url=new URL('https://afdian.com/item/'+plan.afdianId);return json({id,url:url.toString(),requiresRedemption:true});
  }
  if(path==='/billing/sync'&&request.method==='POST'){
   let body;try{body=await request.json();}catch{return json({detail:'无效请求'},400);}

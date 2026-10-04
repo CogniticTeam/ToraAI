@@ -121,6 +121,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: subscription-ui-screenshots
-          path: /tmp/tora-subscriptions-ui.png
+          path: |
+            /tmp/tora-subscriptions-ui.png
+            /tmp/tora-account-usage-menu.png
           if-no-files-found: ignore
           retention-days: 7
