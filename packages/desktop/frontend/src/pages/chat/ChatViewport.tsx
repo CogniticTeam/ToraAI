@@ -1097,6 +1097,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								// 模型是否可用由 TextInput 内部的 send 按钮
 								// 单独判定（无模型时禁发，不锁 textarea）。
 								disabled={!agentId || (phase === 'idle' && builtinBlocked)}
+									composerNotice={phase === 'idle' && builtinBlocked ? t(builtinQuota && !builtinQuota.canUseAgent ? 'applicationModes.limitReached' : 'applicationModes.connectError') : undefined}
 									onSend={send}
 									onUserConfirm={onUserConfirm}
 									onInterrupt={interrupt}
@@ -1108,7 +1109,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									// 	}}
 									// }
 									footerSlot={<>
-										{builtinSelected && <div role="status" className="mx-auto w-40 px-3 text-center text-xs text-muted-foreground">{builtinBlocked ? t(builtinQuota && (!builtinQuota.canUseAgent) ? 'applicationModes.limitReached' : 'applicationModes.connectError') : <AgentQuotaMeter quota={builtinQuota} compact />}</div>}
+										{builtinSelected && !builtinBlocked && <div className="mx-auto w-40 px-3 text-center text-xs text-muted-foreground"><AgentQuotaMeter quota={builtinQuota} compact /></div>}
 										{userQuestion ? (
 											<QuestionPanel
 												key={userQuestion.ask_id}

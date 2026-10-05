@@ -76,6 +76,7 @@
     "signOut": "Sair"
   },
   "requiredUpdate": {
+    "downloadLabel": "Baixando",
     "title": "Atualizar o Tora",
     "description": "A versão {{version}} está disponível. Atualize para continuar.",
     "download": "Abrir página oficial de download",
@@ -1950,5 +1951,21 @@
     "planmax20": "Para trabalho intenso",
     "planultra": "Crie projetos maiores",
     "planultrax": "Para grandes projetos"
+  },
+  "quotaSettings": {
+    "title": "Cota",
+    "usage": "Uso",
+    "currentPlan": "Plano atual",
+    "viewPlans": "Ver planos",
+    "allowance": "Limites do plano",
+    "cards": "Redefinições",
+    "available": "Disponíveis",
+    "history": "Histórico",
+    "use": "Usar cartão",
+    "expired": "Expirado",
+    "noCards": "Nenhum cartão disponível",
+    "busy": "Encerre primeiro a tarefa do modelo integrado",
+    "resetSuccess": "Cota redefinida",
+    "cardsInfo": "Os cartões do administrador vencem após 30 dias. Restauram todas as cotas móveis e reiniciam a contagem."
   }
 }

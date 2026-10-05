@@ -21,6 +21,7 @@ function harness(mocks = {}, globals = {}) {
   };
   const react = {
     useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
+    useId() { const i = cursor++; return slots[i] ??= `fixture-${i}`; },
     useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial }; },
     useMemo(fn, deps) { const i = cursor++; if (changed(slots[i]?.deps, deps)) slots[i] = { deps, value: fn() }; return slots[i].value; },
     useCallback(fn, deps) { return react.useMemo(() => fn, deps); },

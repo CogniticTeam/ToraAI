@@ -12,6 +12,7 @@ import mime from 'mime';
 import React, {
 	useCallback,
 	useState,
+	useId,
 	useRef,
 	useMemo,
 	useLayoutEffect,
@@ -70,6 +71,8 @@ interface TextInputProps {
 	variant?: 'default' | 'capsule';
 	onSend: (blocks: ContentBlock[], commands: SlashItem[]) => void;
 	placeholder?: string;
+	/** Status displayed inside the composer without replacing a draft. */
+	notice?: string;
 	autoComplete?: (input: string) => string | null;
 	disabled?: boolean;
 	className?: string;
@@ -150,6 +153,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		{
 			onSend,
 			placeholder,
+			notice,
 			variant = 'default',
 			autoComplete,
 			disabled = false,
@@ -175,6 +179,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			if (!catgirlInstalled && trigger && !disabled) { setCatgirlDialog(trigger); return true; }
 			return false;
 		};
+		const noticeId = useId();
 		const defaultPlaceholder = placeholder || t('chat.inputPlaceholder');
 		const [value, setValue] = useState('');
 		const [files, setFiles] = useState<ProcessedFile[]>([]);
@@ -728,6 +733,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						</AttachmentGroup>
 					)}
 
+					{notice && <p id={noticeId} role="status" className="px-6 pb-2 pt-3 text-sm leading-6 text-muted-foreground">{notice}</p>}
 					<div className="composer-body relative z-10 flex min-w-0 flex-col">
 						<div className="composer-editor relative min-w-0">
 							{/* ``block`` — inline-block would sit on the text baseline and
@@ -742,10 +748,12 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 								onKeyDown={handleKeyDown}
 								onFocus={() => setIsFocused(true)}
 								onBlur={() => setIsFocused(false)}
-								placeholder={voiceBusy ? '' : defaultPlaceholder}
+								placeholder={voiceBusy || notice ? '' : defaultPlaceholder}
+								aria-label={t('chat.inputPlaceholder')}
+								aria-describedby={notice ? noticeId : undefined}
 								disabled={disabled || voiceBusy}
 								rows={1}
-								className="block w-full resize-none border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-70"
+								className={cn(notice && !value ? 'hidden' : 'block', 'w-full resize-none border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-70')}
 								style={{
 									minHeight: `${variant === 'capsule' ? 40 : TEXTAREA_MIN_HEIGHT_PX}px`,
 									maxHeight: `${MAX_HEIGHT_PX}px`,

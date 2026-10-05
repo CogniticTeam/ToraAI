@@ -15,6 +15,7 @@ import { AccountSection } from '@/components/dialog/AccountSection';
 import { CatgirlPersonaSection } from '@/components/dialog/CatgirlPersonaSection';
 import { LanguageFlag } from '@/components/dialog/LanguageFlag';
 import { MemorySection } from '@/components/dialog/MemorySection';
+import {QuotaSection} from '@/components/dialog/QuotaSection';
 import { ThemeSection } from '@/components/dialog/ThemeSection';
 import { ToChatModelSource } from '@/components/dialog/ToChatModelSource';
 import { UsageSection } from '@/components/dialog/UsageSection';
@@ -63,7 +64,7 @@ interface Props {
 const apiBase = () => (localStorage.getItem('server_url') || 'http://127.0.0.1:3210').replace(/\/+$/, '');
 const apiUrl = (p: string) => `${apiBase()}${p}`;
 
-type Section = 'general' | 'theme' | 'usage' | 'account' | 'agent' | 'model' | 'memory' | 'data' | 'about' | 'developer';
+type Section = 'quota' | 'general' | 'theme' | 'usage' | 'account' | 'agent' | 'model' | 'memory' | 'data' | 'about' | 'developer';
 
 type RuntimeBehavior = {
 	maxTokensBudget: number;
@@ -102,6 +103,7 @@ const SECTIONS: { key: Section; label: string; icon: typeof Settings2 }[] = [
 	{ key: 'account', label: 'settings.sections.account', icon: UserRound },
 	{ key: 'general', label: 'settings.sections.general', icon: Settings2 },
 	{ key: 'theme', label: 'settings.sections.theme', icon: Palette },
+	{ key: 'quota', label: 'quotaSettings.title', icon: ChartColumn },
 	{ key: 'usage', label: 'settings.sections.usage', icon: ChartColumn },
 	{ key: 'agent', label: 'settings.sections.agent', icon: BotMessageSquare },
 	{ key: 'model', label: 'settings.sections.model', icon: Cpu },
@@ -1848,6 +1850,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 						)}
 						{section === 'theme' && <ThemeSection />}
 
+						{section === 'quota' && <QuotaSection/>}
 						{section === 'usage' && (
 							<>
 								<h3 className="text-lg font-semibold">{t('settings.usage.title')}</h3>

@@ -52,6 +52,7 @@
     "unbanHint": "Access will resume automatically when an administrator lifts the suspension.", "signOut": "Sign out"
   },
   "requiredUpdate": {
+    "downloadLabel": "Downloading",
     "title": "Update Tora", "description": "Version {{version}} is available. Update to continue.",
     "download": "Open official download page", "macHint": "If automatic updating is unavailable, download the latest DMG from the official site and replace the app manually.",
     "downloading": "Downloading update… {{percent}}%", "install": "Restart and install", "retry": "Retry download",
@@ -1808,5 +1809,21 @@
     "planmax20": "For intensive work",
     "planultra": "Build larger projects",
     "planultrax": "Capacity for major projects"
+  },
+  "quotaSettings": {
+    "title": "Allowance",
+    "usage": "Usage",
+    "currentPlan": "Current plan",
+    "viewPlans": "View plans",
+    "allowance": "Plan limits",
+    "cards": "Usage resets",
+    "available": "Available",
+    "history": "History",
+    "use": "Use reset card",
+    "expired": "Expired",
+    "noCards": "No reset cards available",
+    "busy": "Finish the active built-in model task before resetting",
+    "resetSuccess": "Allowance reset",
+    "cardsInfo": "Admin-issued cards expire after 30 days. Using one restores all rolling-window allowances and starts their timing again."
   }
 }

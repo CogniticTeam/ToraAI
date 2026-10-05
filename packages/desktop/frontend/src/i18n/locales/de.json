@@ -76,6 +76,7 @@
     "signOut": "Abmelden"
   },
   "requiredUpdate": {
+    "downloadLabel": "Download läuft",
     "title": "Tora aktualisieren",
     "description": "Version {{version}} ist verfügbar. Aktualisiere, um fortzufahren.",
     "download": "Offizielle Downloadseite öffnen",
@@ -1950,5 +1951,21 @@
     "planmax20": "Für intensive Arbeit",
     "planultra": "Größere Projekte erstellen",
     "planultrax": "Für sehr große Projekte"
+  },
+  "quotaSettings": {
+    "title": "Kontingent",
+    "usage": "Nutzung",
+    "currentPlan": "Aktueller Tarif",
+    "viewPlans": "Tarife ansehen",
+    "allowance": "Tariflimits",
+    "cards": "Nutzung zurücksetzen",
+    "available": "Verfügbar",
+    "history": "Verlauf",
+    "use": "Reset-Karte verwenden",
+    "expired": "Abgelaufen",
+    "noCards": "Keine Reset-Karten verfügbar",
+    "busy": "Beenden Sie zuerst die laufende Modellaufgabe",
+    "resetSuccess": "Kontingent zurückgesetzt",
+    "cardsInfo": "Administratorkarten sind 30 Tage gültig. Sie stellen alle rollierenden Kontingente wieder her und starten die Zeitberechnung neu."
   }
 }

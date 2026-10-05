@@ -76,6 +76,7 @@
     "signOut": "Se déconnecter"
   },
   "requiredUpdate": {
+    "downloadLabel": "Téléchargement",
     "title": "Mettre à jour Tora",
     "description": "La version {{version}} est disponible. Mettez à jour pour continuer.",
     "download": "Ouvrir la page de téléchargement officielle",
@@ -1950,5 +1951,21 @@
     "planmax20": "Pour un usage intensif",
     "planultra": "Créer de grands projets",
     "planultrax": "Pour les projets majeurs"
+  },
+  "quotaSettings": {
+    "title": "Quota",
+    "usage": "Utilisation",
+    "currentPlan": "Forfait actuel",
+    "viewPlans": "Voir les forfaits",
+    "allowance": "Limites du forfait",
+    "cards": "Réinitialisations",
+    "available": "Disponibles",
+    "history": "Historique",
+    "use": "Utiliser une carte",
+    "expired": "Expirée",
+    "noCards": "Aucune carte disponible",
+    "busy": "Terminez la tâche du modèle intégré avant la réinitialisation",
+    "resetSuccess": "Quota réinitialisé",
+    "cardsInfo": "Les cartes administrateur expirent après 30 jours. Elles rétablissent tous les quotas glissants et relancent leur calcul."
   }
 }

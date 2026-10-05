@@ -76,6 +76,7 @@
     "signOut": "Esci"
   },
   "requiredUpdate": {
+    "downloadLabel": "Download in corso",
     "title": "Aggiorna Tora",
     "description": "La versione {{version}} è disponibile. Aggiorna per continuare.",
     "download": "Apri la pagina di download ufficiale",
@@ -1950,5 +1951,21 @@
     "planmax20": "Per lavoro intensivo",
     "planultra": "Crea progetti più grandi",
     "planultrax": "Per progetti di grande portata"
+  },
+  "quotaSettings": {
+    "title": "Quota",
+    "usage": "Utilizzo",
+    "currentPlan": "Piano attuale",
+    "viewPlans": "Vedi piani",
+    "allowance": "Limiti del piano",
+    "cards": "Ripristini",
+    "available": "Disponibili",
+    "history": "Cronologia",
+    "use": "Usa carta di ripristino",
+    "expired": "Scaduta",
+    "noCards": "Nessuna carta disponibile",
+    "busy": "Termina prima il lavoro del modello integrato",
+    "resetSuccess": "Quota ripristinata",
+    "cardsInfo": "Le carte dell’amministratore scadono dopo 30 giorni. Ripristinano tutte le quote mobili e riavviano il conteggio."
   }
 }

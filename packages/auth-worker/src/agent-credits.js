@@ -2,10 +2,11 @@ import {CREDIT_SCALE,WINDOWS,PLANS,usageCost,usageTokens} from './subscription-p
 export async function readAgentQuota(db,userId,now=Date.now()){
  const subscription=await db.prepare('SELECT * FROM user_subscription WHERE user_id=? AND expires_at>?').bind(userId,now).first();
  const windows=[];
+ const reset=await db.prepare('SELECT * FROM quota_reset_state WHERE user_id=?').bind(userId).first();
  if(subscription)for(const [key,column] of [['fiveHour','five_hour_limit'],['week','week_limit'],['month','month_limit']]){
   const limit=subscription[column];if(!limit)continue;const span=WINDOWS[key];
-  const row=await db.prepare('SELECT COALESCE(SUM(credit_micro),0) AS used,COALESCE(SUM(credit_micro+held_micro),0) AS committed,MIN(CASE WHEN credit_micro+held_micro>0 THEN created_at END) AS oldest FROM usage_log WHERE user_id=? AND created_at>?').bind(userId,now-span).first();
-  windows.push({key,remainingPercent:Math.max(0,Math.min(100,(limit-row.used)/limit*100)),resetAt:row.oldest?new Date(row.oldest+span).toISOString():null,availableMicro:Math.max(0,limit-row.committed),limitMicro:limit});
+  const row=await db.prepare('SELECT COALESCE(SUM(credit_micro),0) AS used,COALESCE(SUM(credit_micro+held_micro),0) AS committed,MIN(CASE WHEN credit_micro+held_micro>0 THEN created_at END) AS oldest FROM usage_log WHERE user_id=? AND rowid>? AND created_at>?').bind(userId,reset?.reset_seq??0,now-span).first();
+  windows.push({key,remainingPercent:Math.max(0,Math.min(100,(limit-row.used)/limit*100)),resetAt:row.oldest?new Date(row.oldest+span).toISOString():reset?new Date(reset.reset_at+Math.max(1,Math.floor((now-reset.reset_at)/span)+1)*span).toISOString():null,availableMicro:Math.max(0,limit-row.committed),limitMicro:limit});
  }
  const availableMicro=windows.length?Math.min(...windows.map(window=>window.availableMicro)):0;
  return {subscription:subscription?{planId:subscription.plan_id,name:PLANS.find(plan=>plan.id===subscription.plan_id)?.name,expiresAt:new Date(subscription.expires_at).toISOString()}:null,remainingPercent:windows.length?Math.min(...windows.map(window=>window.remainingPercent)):0,canUseAgent:availableMicro>0,windows,availableMicro};

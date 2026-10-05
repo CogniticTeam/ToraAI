@@ -205,6 +205,7 @@ function ToChatConversation() {
 			</header>
 			<div className="canvas-glow relative flex min-h-0 flex-1 justify-center overflow-hidden [--chat-content-w:54rem]">
 				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled}
+					composerNotice={missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached)) ? copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
 					greetingOverride={copy(work ? 'workReady' : 'ready')} showWorkspace={work} cwd={work ? selectedCwd : null}
 					composerVariant={work ? 'default' : 'capsule'}
 					onCwdChange={async (next) => { if (await patch({ cwd: next })) setCwd(next); }}
@@ -216,7 +217,6 @@ function ToChatConversation() {
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>
-			{(missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached))) && <p role="status" className="shrink-0 px-5 pb-2 text-center text-xs text-muted-foreground">{copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError')}</p>}
 		</main>
 	);
 }

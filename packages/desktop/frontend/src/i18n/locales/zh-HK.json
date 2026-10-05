@@ -76,6 +76,7 @@
     "signOut": "退出登錄"
   },
   "requiredUpdate": {
+    "downloadLabel": "正在下載",
     "title": "請更新 Tora",
     "description": "新版本 {{version}} 已發佈，更新後即可繼續使用。",
     "download": "打開官網下載頁",
@@ -1950,5 +1951,21 @@
     "planmax20": "適合重度工作",
     "planultra": "建構大型專案",
     "planultrax": "滿足超大專案"
+  },
+  "quotaSettings": {
+    "title": "額度",
+    "usage": "使用情況",
+    "currentPlan": "目前方案",
+    "viewPlans": "查看方案",
+    "allowance": "方案限額",
+    "cards": "使用限額重置",
+    "available": "可用",
+    "history": "歷史紀錄",
+    "use": "使用重置卡",
+    "expired": "已過期",
+    "noCards": "沒有可用重置卡",
+    "busy": "請先結束正在執行的內建模型工作，再使用重置卡",
+    "resetSuccess": "額度已重置",
+    "cardsInfo": "管理員發放的重置卡有效期30天，使用後恢復所有滾動視窗額度並重新計時。"
   }
 }

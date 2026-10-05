@@ -52,6 +52,7 @@
     "unbanHint": "管理员解封后将自动恢复，无需重新登录。", "signOut": "退出登录"
   },
   "requiredUpdate": {
+    "downloadLabel": "正在下载",
     "title": "请更新 Tora", "description": "新版本 {{version}} 已发布，更新后即可继续使用。",
     "download": "打开官网下载页", "macHint": "自动更新暂不可用时，可从官网下载新版 DMG 手动替换。",
     "downloading": "正在下载更新… {{percent}}%", "install": "重启并安装", "retry": "重试下载",
@@ -1808,5 +1809,21 @@
     "planmax20": "面向重度工作",
     "planultra": "构建大型项目",
     "planultrax": "满足超大项目"
+  },
+  "quotaSettings": {
+    "title": "额度",
+    "usage": "使用情况",
+    "currentPlan": "当前套餐",
+    "viewPlans": "查看套餐",
+    "allowance": "套餐限额",
+    "cards": "使用限额重置",
+    "available": "可用",
+    "history": "历史记录",
+    "use": "使用重置卡",
+    "expired": "已过期",
+    "noCards": "暂无可用重置卡",
+    "busy": "请先结束正在运行的官方模型任务，再使用重置卡",
+    "resetSuccess": "额度已重置",
+    "cardsInfo": "管理员发放的重置卡有效期30天，使用后恢复所有滚动窗口额度并重新计时。"
   }
 }

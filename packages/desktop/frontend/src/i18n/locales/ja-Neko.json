@@ -76,6 +76,7 @@
     "signOut": "サインアウトにゃ"
   },
   "requiredUpdate": {
+    "downloadLabel": "ダウンロード中にゃ",
     "title": "Tora を更新にゃ",
     "description": "バージョン {{version}} が利用可能です。続行するには更新してほしいにゃ。",
     "download": "公式ダウンロードページを開くにゃ",
@@ -1950,5 +1951,21 @@
     "planmax20": "集中的な作業に",
     "planultra": "大規模プロジェクトを構築",
     "planultrax": "さらに大きなプロジェクトに"
+  },
+  "quotaSettings": {
+    "title": "利用枠",
+    "usage": "利用状況",
+    "currentPlan": "現在のプラン",
+    "viewPlans": "プランを見る",
+    "allowance": "プランの上限",
+    "cards": "利用枠のリセット",
+    "available": "利用可能",
+    "history": "履歴",
+    "use": "リセットカードを使用",
+    "expired": "期限切れ",
+    "noCards": "利用可能なカードはありません",
+    "busy": "実行中の内蔵モデルの作業を終了してください",
+    "resetSuccess": "利用枠をリセットしました",
+    "cardsInfo": "管理者のカードは30日間有効です。使用するとすべての移動期間の利用枠を回復し、計時を再開します。"
   }
 }

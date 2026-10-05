@@ -48,6 +48,8 @@ import { handleAdminPoll, handleUserPoll } from './polls.js';
 import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
 import { handleToChat } from './tochat.js';
 import subscriptionSchemaSql from '../migrations/0003_subscriptions.sql';
+import quotaResetSchemaSql from '../migrations/0004_quota_resets.sql';
+import {handleAdminQuota,handleUserQuota} from './quota-management.js';
 import {handleSubscriptions} from './subscriptions.js';
 export { AccountEvents } from './account-events.js';
 
@@ -332,7 +334,8 @@ async function ensureSchema(db) {
     .join(' ').split(';').map(statement => statement.trim()).filter(Boolean);
   await db.exec(pollStatements.join(';\n') + ';');
   // Each subscription migration statement occupies one line, including trigger bodies.
-  await db.exec(subscriptionSchemaSql);
+  await db.exec(subscriptionSchemaSql.split('\n').filter(line=>!line.startsWith('CREATE TRIGGER IF NOT EXISTS agent_credit_quota ')).join('\n'));
+  await db.exec(quotaResetSchemaSql);
   // 旧版本自动发放的官方模型是生成数据；自定义模型模式下直接清理。
   await db.prepare(
     "DELETE FROM user_models WHERE id LIKE 'official-%' OR base_url LIKE '%/official/v1%'"
@@ -474,6 +477,7 @@ async function handle(request, env, ctx) {
     if (p.startsWith('/admin/')) {
       const key = request.headers.get('authorization')?.replace(/^Bearer /, '') || '';
       if (!env.ADMIN_TOKEN || !timingSafeEqual(key, env.ADMIN_TOKEN)) return bad('管理密钥无效', 401);
+      if (p.startsWith('/admin/quota/')) return handleAdminQuota(request,env);
       if (p.startsWith('/admin/polls')) return handleAdminPoll(request, env, url);
       if (p === '/admin/presence' && method === 'GET') {
         const hub = env.ACCOUNT_EVENTS.get(env.ACCOUNT_EVENTS.idFromName('accounts'));
@@ -623,6 +627,7 @@ async function handle(request, env, ctx) {
       return handleAsrGateway(env, request, url.pathname.slice('/asr/v1/'.length));
     }
     if (p.startsWith('/official/v1/')) return bad('Not Found', 404);
+    if (p.startsWith('/quota/')) return handleUserQuota(request,env,await userFromRequest(env.DB,request,true));
     if (p.startsWith('/billing/')) return handleSubscriptions(request,env,ctx,p==='/billing/afdian/webhook'?null:await userFromRequest(env.DB,request,true));
     if (p.startsWith('/tochat/')) return handleToChat(request,env,ctx,await userFromRequest(env.DB,request,true));
 

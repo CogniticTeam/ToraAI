@@ -76,6 +76,7 @@
     "signOut": "Cerrar sesión"
   },
   "requiredUpdate": {
+    "downloadLabel": "Descargando",
     "title": "Actualizar Tora",
     "description": "La versión {{version}} está disponible. Actualiza para continuar.",
     "download": "Abrir página oficial de descarga",
@@ -1950,5 +1951,21 @@
     "planmax20": "Para trabajo intensivo",
     "planultra": "Crea proyectos grandes",
     "planultrax": "Para proyectos de gran escala"
+  },
+  "quotaSettings": {
+    "title": "Cuota",
+    "usage": "Uso",
+    "currentPlan": "Plan actual",
+    "viewPlans": "Ver planes",
+    "allowance": "Límites del plan",
+    "cards": "Restablecimientos",
+    "available": "Disponibles",
+    "history": "Historial",
+    "use": "Usar tarjeta",
+    "expired": "Caducada",
+    "noCards": "No hay tarjetas disponibles",
+    "busy": "Finaliza la tarea del modelo integrado antes de restablecer",
+    "resetSuccess": "Cuota restablecida",
+    "cardsInfo": "Las tarjetas del administrador caducan en 30 días. Restauran todas las cuotas móviles y reinician su cómputo."
   }
 }

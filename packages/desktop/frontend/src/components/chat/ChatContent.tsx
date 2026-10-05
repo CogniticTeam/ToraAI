@@ -128,6 +128,7 @@ interface ChatContentProps {
 	 * looking, rather than scrolled off the top.
 	 */
 	footerSlot?: React.ReactNode;
+	composerNotice?: string;
 	/** @see TextInputProps.allowedInputTypes */
 	allowedInputTypes: string[];
 	/** @see TextInputProps.fileProcessor */
@@ -174,6 +175,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	className,
 	onInterrupt,
 	footerSlot,
+	composerNotice,
 	allowedInputTypes,
 	fileProcessor,
 	cwd,
@@ -588,6 +590,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 					{/* 新聊天保留项目入口；已创建的会话直接显示输入卡片。 */}
 					<TextInput
 						autoFocus={autoFocusInput}
+						notice={composerNotice}
 						variant={composerVariant}
 						className="w-full"
 						onSend={handleSend}
