@@ -21,14 +21,14 @@ try {
   for(const model of BUILTIN_MODELS){
    const maximum=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id}}});assert.equal(maximum.maxTokensBudget,model.context-24576);
    const reduced=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id,parameters:{contextWindow:'300k'}}}});assert.equal(reduced.maxTokensBudget,Math.min(model.context,300000)-24576);
-   const mc={type:'tora_official',credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'high'}};
+   const mc={type:'tora_official',credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'max'}};
    const code=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:mc}},agent);assert.equal(code.model,model.id);assert.equal(code.provider,'tochat-official');assert.equal(code.appMode,'tocode');assert.equal(code.tochatMode,'work');assert.equal(code.apiKey,'account-token-only');
    const chat=resolveRunCfg({config:{application_mode:'tochat',model_source:'official',task_mode:'chat',chat_model_config:{...mc,credential_id:'tora-tochat-official'}}},agent);assert.equal(chat.model,model.id);assert.equal(chat.appMode,'tochat');assert.equal(chat.tochatMode,'chat');assert.equal(chat.defaultScopeFullDisk,false);
    outgoing=[];globalThis.fetch=async(url,init)=>{assert.equal(String(url),'https://builtin-fixture.invalid/tochat/v1/chat/completions');outgoing.push({headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{content:'actual '+model.id},finish_reason:'stop'}],usage:{total_tokens:10}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
    const session=await (await post('/sessions/',{agent_id:agent.id,chat_model_config:mc,cwd:project})).json();const run=await post('/chat/',{agent_id:agent.id,session_id:session.session_id,input:{role:'user',content:[{type:'text',text:'Say hello'}]}});assert.equal(run.status,200);
    for(let n=0;n<200&&isRunning(session.session_id);n++)await new Promise(resolve=>setTimeout(resolve,10));assert.equal(isRunning(session.session_id),false);
    let status;const unsubscribe=subscribe(session.session_id,()=>assert.fail('completed reply must not be replayed'),null,value=>{status=value;});unsubscribe();assert.equal(status.mode,'reset','late initial subscribers must reload the completed reply');
-   assert.equal(outgoing.length,1,'automatic naming must not make another paid request');assert.equal(outgoing[0].body.model,model.id);assert.equal(outgoing[0].headers['x-tochat-mode'],'work');assert.equal(outgoing[0].headers.authorization,'Bearer account-token-only');assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Bash'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Write'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Subagent'));
+   assert.equal(outgoing.length,1,'automatic naming must not make another paid request');assert.equal(outgoing[0].body.model,model.id);assert.equal(outgoing[0].body.reasoning_effort,'max');assert.equal(outgoing[0].body.enable_thinking,undefined);assert.equal(outgoing[0].headers['x-tochat-mode'],'work');assert.equal(outgoing[0].headers.authorization,'Bearer account-token-only');assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Bash'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Write'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Subagent'));
   }
  });
  test('read-only ToCode permissions reject official-model write proposals',async()=>{
@@ -36,6 +36,16 @@ try {
   const cfg=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:'gpt-6.1-sol'}}},null);
   for await(const event of runAgent({cfg,messages:[{role:'user',content:'Write a file'}],cwd:project,permissionMode:'explore'}))void event;
   assert.equal(existsSync(target),false);assert.equal(round,2);
+ });
+ test('GPT official transport preserves encrypted reasoning and exact effort with tools',async()=>{
+  const {createClient,chatCompletion}=await import('../src/model.js');
+  for(const model of BUILTIN_MODELS.filter(item=>item.id.startsWith('gpt-6'))){
+   const opaque=[{type:'reasoning',id:'opaque-fixture',encrypted_content:'fixture-encrypted-reasoning',summary:[]}];
+   let sent;globalThis.fetch=async(_url,init)=>{sent=JSON.parse(init.body);return new Response('data: '+JSON.stringify({choices:[{delta:{content:'OK'},finish_reason:'stop'}]})+'\n\ndata: '+JSON.stringify({choices:[],tora_response_items:opaque})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+   const client=createClient({...resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'xhigh'}}}}),supportsTools:true});
+   const result=await chatCompletion(client,{messages:[{role:'user',content:'hello'},{role:'assistant',content:'previous',tora_response_items:opaque}],tools:[{type:'function',function:{name:'Read',parameters:{type:'object'}}}]});
+   assert.equal(sent.reasoning_effort,'xhigh');assert.equal(sent.enable_thinking,undefined);assert.deepEqual(sent.messages[1].tora_response_items,opaque);assert.deepEqual(result.message.tora_response_items,opaque);
+  }
  });
  test('logout clears access without borrowing the configured personal key',async()=>{
   await post('/admin/tochat-config',{baseURL:'https://builtin-fixture.invalid',authToken:''});const result=await (await get('/credential/')).json();assert.ok(!result.credentials.some(credential=>credential.id==='tora-official'));assert.equal((await (await get('/model/?provider=tora_official')).json()).models.length,0);

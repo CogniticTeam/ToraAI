@@ -189,7 +189,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
 				},
 			}));
 		}
-		if(client.provider==='tochat-official'&&client.model==='gpt-6.1-sol'&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
+		if(client.provider==='tochat-official'&&/^gpt-6(?:[.-]|$)/i.test(client.model)&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
 		if (m.name) out.name = sanitizeLoneSurrogates(m.name);
 		if(typeof m.reasoning_content==='string') out.reasoning_content=sanitizeLoneSurrogates(m.reasoning_content);
 		return out;
@@ -220,11 +220,12 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
   }
   // GPT-6 Sol/Luna 在 Chat Completions 中仅允许 reasoning_effort=none 时调用工具。
   // 保持工具能力比在此端点强制思考更重要；无工具请求仍使用用户选定的思考档位。
-  const openAIChatToolsNeedNone = openAICompatible && /^gpt-6-(?:sol|luna)(?:-|$)/i.test(client.model) && !!tools?.length;
+  const openAIChatToolsNeedNone = client.provider!=='tochat-official' && openAICompatible && /^gpt-6-(?:sol|luna)(?:-|$)/i.test(client.model) && !!tools?.length;
   const knownVariant = thinkingParamCache.get(thinkingKey);
   if (knownVariant && !openAIChatToolsNeedNone) thinkingVariants.sort((a, b) => (a.key === knownVariant ? -1 : 1));
   const thinkingVariantsForClient = nativeDeepSeek
     ? [{key:'none',extra:{thinking:{type:client.thinking?'enabled':'disabled'},reasoning_effort:client.thinking?(['low','high','max'].includes(client.thinkingEffort)?client.thinkingEffort:'high'):'none'}}]
+    : client.provider==='tochat-official' ? [{key:'reasoning_effort',extra:{reasoning_effort:client.thinkingEffort??'high'}}]
     : client.thinking && !openAIChatToolsNeedNone ? thinkingVariants : [{ key: 'none', extra: openAIChatToolsNeedNone ? { reasoning_effort: 'none' } : {} }];
   // 已知不支持 tool_calls 的端点：不再带 tools，省一次必然失败的往返
   const toolsEnabled = !!tools?.length && client.supportsTools !== false;
