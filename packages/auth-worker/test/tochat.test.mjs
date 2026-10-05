@@ -23,7 +23,7 @@ test('内置 Gemini 独立 Secret、白名单、无隐式回退、流式工具�
  const request=(model,tag='gemini-first')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'chat','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,messages:[{role:'user',content:'hello'}],reasoning_effort:'max',tools:[{type:'function',function:{name:'WebSearch',parameters:{type:'object'}}}]})});
  try {
   const quota=await (await handleToChat(new Request('https://test/tochat/quota'),env,ctx,{id:1})).json();
-  assert.deepEqual(quota.models.map(item=>[item.id,item.enabled]),[['deepseek-flash',true],['gemini-3.8-flash',true],['gpt-6.1-sol',false]]);assert.ok(!JSON.stringify(quota).includes('test-only'));
+  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,7);assert.ok(!JSON.stringify(quota).includes('test-only'));
   let calls=0;
   globalThis.fetch=async(url,init)=>{calls++;assert.equal(url,'https://shuliuyun.com/v1/chat/completions');assert.equal(init.headers.authorization,'Bearer gemini-test-only');const body=JSON.parse(init.body);assert.equal(body.model,'gemini-3.8-flash');assert.equal(body.thinking,undefined);assert.equal(body.reasoning_effort,'high');assert.equal(body.tool_choice,'auto');assert.equal(body.stream_options.include_usage,true);return new Response('data: '+JSON.stringify({choices:[{delta:{tool_calls:[{id:'search-call',index:0,type:'function',function:{name:'WebSearch',arguments:'{"query":"Tora"}'}}]},finish_reason:'tool_calls'}],usage:{total_tokens:300}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
   const response=await handleToChat(request('gemini-3.8-flash'),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/WebSearch/);await Promise.all(tasks);assert.equal((await readToChatQuota(db,1)).chatUnlimited,true);
@@ -63,4 +63,24 @@ test('official work permits review after a completed reply, charges actual token
  await reserveToChat(db,{userId:31,messageId:'code-review-turn',requestId:'code-review',kind:'work',fingerprint:'work',reserved:100,now});await settleToChat(db,{userId:31,messageId:'code-review-turn',requestId:'code-review',usage:{total_tokens:30}});assert.equal(sqlite.prepare('SELECT SUM(charged) AS n FROM tochat_requests WHERE user_id=31').get().n,80);
  await reserveToChat(db,{userId:32,messageId:'chat-answer',requestId:'chat-first',kind:'chat',fingerprint:'chat',reserved:1,now});await settleToChat(db,{userId:32,messageId:'chat-answer',requestId:'chat-first',usage:{total_tokens:10}});
  await assert.rejects(reserveToChat(db,{userId:32,messageId:'chat-answer',requestId:'chat-repeat',kind:'chat',fingerprint:'chat',reserved:1,now}),/BUSY_OR_DONE/);sqlite.close();
+});
+
+test('new GPT family and Claude use dedicated secrets and charge cached/input/output tokens', async()=>{
+ const {db,sqlite}=database(),before=globalThis.fetch,tasks=[];const ctx={waitUntil(task){tasks.push(task);}};
+ try {
+  for(const model of ['gpt-6-sol','gpt-6-luna','gpt-6-astra','claude-opus-5']){
+   const gpt=model.startsWith('gpt'),secret=gpt?'SHULIUYUN_GPT_API_KEY':'SHULIUYUN_CLAUDE_API_KEY';
+   const request=()=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'work','x-tora-feature':'tocode','x-tochat-message-id':model,'x-tochat-request-id':model+'-request'},body:JSON.stringify({model,reasoning_effort:'medium',max_tokens:256,messages:[{role:'user',content:'hello'}],tools:[{type:'function',function:{name:'Read',parameters:{type:'object'}}}]})});
+   assert.equal((await handleToChat(request(),{DB:db,SHULIUYUN_API_KEY:'unrelated-gemini-key'},ctx,{id:1})).status,503);
+   globalThis.fetch=async(url,init)=>{
+    const body=JSON.parse(init.body);assert.equal(init.headers.authorization,'Bearer dedicated-fixture-key');assert.equal(body.model,model);
+    assert.equal(url,'https://shuliuyun.com/v1/'+(gpt?'responses':'chat/completions'));
+    assert.equal(gpt?body.reasoning.effort:body.reasoning_effort,'medium');assert.equal(gpt?body.tools[0].name:body.tools[0].function.name,'Read');
+    const event=gpt?{type:'response.completed',response:{status:'completed',output:[{type:'message',content:[{type:'output_text',text:'OK'}]}],usage:{input_tokens:100,output_tokens:10,total_tokens:110,input_tokens_details:{cached_tokens:80}}}}:{choices:[{delta:{content:'OK'},finish_reason:'stop'}],usage:{prompt_tokens:100,completion_tokens:10,total_tokens:110,prompt_tokens_details:{cached_tokens:80}}};
+    return new Response('data: '+JSON.stringify(event)+'\n\n'+(gpt?'':'data: [DONE]\n\n'),{headers:{'content-type':'text/event-stream'}});
+   };
+   const response=await handleToChat(request(),{DB:db,[secret]:'dedicated-fixture-key'},ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/OK/);await Promise.all(tasks);
+   const row=sqlite.prepare('SELECT * FROM usage_log WHERE request_id=?').get(model+'-request');assert.equal(row.model,model);assert.equal(row.cached_tokens,80);assert.equal(row.output_tokens,10);assert.ok(row.credit_micro>0);
+  }
+ }finally{globalThis.fetch=before;sqlite.close();}
 });

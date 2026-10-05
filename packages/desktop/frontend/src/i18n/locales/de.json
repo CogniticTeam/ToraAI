@@ -845,7 +845,11 @@
       "high": "Hoch",
       "xhigh": "Sehr hoch",
       "max": "Max"
-    }
+    },
+    "defaultSet": "Standard",
+    "recommendedSet": "Empfohlene Modelle",
+    "resetThinking": "Denkintensität zurücksetzen",
+    "maximumContext": "Maximaler Kontext"
   },
   "embedding-select": {
     "placeholder": "Embedding-Modell auswählen",

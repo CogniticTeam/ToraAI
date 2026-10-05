@@ -127,5 +127,6 @@ jobs:
             /tmp/tora-subscriptions-ui.png
             /tmp/tora-account-usage-menu.png
             /tmp/tora-quota-settings.png
+            /tmp/tora-model-picker.png
           if-no-files-found: ignore
           retention-days: 7

@@ -845,7 +845,11 @@
       "high": "उच्च",
       "xhigh": "बहुत उच्च",
       "max": "अधिकतम"
-    }
+    },
+    "defaultSet": "डिफ़ॉल्ट",
+    "recommendedSet": "अनुशंसित मॉडल",
+    "resetThinking": "सोच की तीव्रता रीसेट करें",
+    "maximumContext": "अधिकतम संदर्भ"
   },
   "embedding-select": {
     "placeholder": "एक एम्बेडिंग मॉडल चुनें",

@@ -13,12 +13,14 @@ try {
   const response=await post('/admin/tochat-config',{baseURL:'https://builtin-fixture.invalid',authToken:'account-token-only'});assert.equal(response.status,200);
   assert.equal(loadConfig().tochat.authToken,undefined);
   const credentials=await (await get('/credential/')).json();const official=credentials.credentials.find(credential=>credential.id==='tora-official');assert.equal(official.editable,false);assert.equal(official.data.type,'tora_official');assert.ok(!JSON.stringify(official).includes('account-token-only'));
-  const cards=await (await get('/model/?provider=tora_official')).json();assert.deepEqual(cards.models.map(card=>card.name),BUILTIN_MODELS.map(model=>model.id));
+  const cards=await (await get('/model/?provider=tora_official')).json();assert.ok(cards.models.every(card=>card.context_size===BUILTIN_MODELS.find(model=>model.id===card.name).context));assert.deepEqual(cards.models.map(card=>card.name),BUILTIN_MODELS.map(model=>model.id));
   const custom=await (await get('/model/?provider=openai_compatible')).json();assert.deepEqual(custom.models.map(card=>card.name),['personal-model']);
  });
  test('all ToChat and ToCode selections reach the selected model; ToCode retains full tools and permission scope',async()=>{
   const agent=(await (await get('/agent/')).json()).agents[0];const project=join(home,'project');mkdirSync(project);
   for(const model of BUILTIN_MODELS){
+   const maximum=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id}}});assert.equal(maximum.maxTokensBudget,model.context-24576);
+   const reduced=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id,parameters:{contextWindow:'300k'}}}});assert.equal(reduced.maxTokensBudget,Math.min(model.context,300000)-24576);
    const mc={type:'tora_official',credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'high'}};
    const code=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:mc}},agent);assert.equal(code.model,model.id);assert.equal(code.provider,'tochat-official');assert.equal(code.appMode,'tocode');assert.equal(code.tochatMode,'work');assert.equal(code.apiKey,'account-token-only');
    const chat=resolveRunCfg({config:{application_mode:'tochat',model_source:'official',task_mode:'chat',chat_model_config:{...mc,credential_id:'tora-tochat-official'}}},agent);assert.equal(chat.model,model.id);assert.equal(chat.appMode,'tochat');assert.equal(chat.tochatMode,'chat');assert.equal(chat.defaultScopeFullDisk,false);

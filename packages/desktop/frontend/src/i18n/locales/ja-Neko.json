@@ -845,7 +845,11 @@
       "high": "高にゃ",
       "xhigh": "非常に高いにゃ",
       "max": "最大にゃ"
-    }
+    },
+    "defaultSet": "デフォルト",
+    "recommendedSet": "おすすめのモデル",
+    "resetThinking": "思考強度をリセット",
+    "maximumContext": "最大コンテキスト"
   },
   "embedding-select": {
     "placeholder": "埋め込みモデルを選択",

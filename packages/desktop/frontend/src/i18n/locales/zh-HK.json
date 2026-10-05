@@ -845,7 +845,11 @@
       "high": "高",
       "xhigh": "極高",
       "max": "極致"
-    }
+    },
+    "defaultSet": "預設",
+    "recommendedSet": "推薦模型集",
+    "resetThinking": "重設思考強度",
+    "maximumContext": "最大上下文"
   },
   "embedding-select": {
     "placeholder": "選擇 Embedding 模型",

@@ -5,17 +5,14 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { sessionApi, type ChatModelConfig, type ContentBlock, type UpdateSessionRequest } from '@/api';
-import GeminiLogo from '@/assets/providers/lobe-gemini-color.svg?react';
-import OpenAILogo from '@/assets/providers/openai-black-monoblossom.svg?react';
-import DeepSeekLogo from '@/assets/providers/si-deepseek.svg?react';
 import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { LlmSelect } from '@/components/select/LlmSelect';
+import {OfficialModelSelect} from '@/components/select/OfficialModelSelect';
 import { PermissionModeSelect } from '@/components/select/PermissionModeSelect';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AudioProvider } from '@/context/AudioContext';
@@ -26,7 +23,7 @@ import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n';
 import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from '@/lib/applicationModes';
 import { openSettings } from '@/lib/openSettings';
-import { TOCHAT_MODELS, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
+import { modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { cloudFetch, syncBuiltinModelAuth } from '@/utils/modelSync';
 
@@ -213,7 +210,7 @@ function ToChatConversation() {
 					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={['image']} fileProcessor={fileProcessor}
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} includeBuiltin={false} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
-						<DropdownMenu><DropdownMenuTrigger disabled={busy} aria-label={copy('effort')} className="inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-sm hover:bg-muted"><span aria-hidden="true">{selectedOfficial.id === 'deepseek-flash' ? <DeepSeekLogo data-testid="official-deepseek-logo" className="size-4 shrink-0" /> : selectedOfficial.id === 'gemini-3.8-flash' ? <GeminiLogo className="size-4 shrink-0" /> : <OpenAILogo className="size-4 shrink-0 dark:invert" />}</span><span>{selectedOfficial.name}</span><span className="text-muted-foreground">{copy(selectedEffort)}</span><ChevronDown className="size-3.5 text-muted-foreground" /></DropdownMenuTrigger><DropdownMenuContent align="end"><DropdownMenuRadioGroup value={selectedOfficial.id} onValueChange={(id) => void chooseOfficialModel(id as ToChatModelId)}>{TOCHAT_MODELS.map((item) => <DropdownMenuRadioItem key={item.id} value={item.id} disabled={!modelAvailable(item.id, quota?.models)}><span aria-hidden="true">{item.id === 'deepseek-flash' ? <DeepSeekLogo className="size-4" /> : item.id === 'gemini-3.8-flash' ? <GeminiLogo className="size-4" /> : <OpenAILogo className="size-4 dark:invert" />}</span>{item.name}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup><DropdownMenuSeparator /><DropdownMenuRadioGroup value={selectedEffort} onValueChange={(next) => void chooseEffort(next as Effort)}>{selectedOfficial.efforts.map((level) => <DropdownMenuRadioItem key={level} value={level}>{copy(level)}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup></DropdownMenuContent></DropdownMenu>}
+						<OfficialModelSelect model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>

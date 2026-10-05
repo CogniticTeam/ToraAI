@@ -845,7 +845,11 @@
       "high": "高喵",
       "xhigh": "极高喵",
       "max": "极致喵"
-    }
+    },
+    "defaultSet": "默认",
+    "recommendedSet": "推荐模型集",
+    "resetThinking": "重置思考强度",
+    "maximumContext": "最大上下文"
   },
   "embedding-select": {
     "placeholder": "选择 Embedding 模型",

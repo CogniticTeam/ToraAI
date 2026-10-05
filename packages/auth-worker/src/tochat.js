@@ -4,6 +4,10 @@ import {modelRates} from './subscription-plans.js';
 
 // Shared official key never crosses this server boundary.
 const MODELS = Object.freeze({
+  'gpt-6-sol': {name:'GPT-6 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
+  'gpt-6-luna': {name:'GPT-6 Luna',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
+  'gpt-6-astra': {name:'GPT-6 Astra',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
+  'claude-opus-5': {name:'Claude Opus 5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
   'deepseek-flash': {name:'DeepSeek Flash',secret:'DEEPSEEK_API_KEY',url:'https://api.deepseek.com/v1/chat/completions'},
   'gemini-3.8-flash': {name:'Gemini 3.8 Flash',secret:'SHULIUYUN_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
   'gpt-6.1-sol': {name:'GPT-6.1 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
@@ -26,7 +30,7 @@ export async function readToChatQuota(db,userId,now=Date.now()) {
 export function validateToChatBody(body,kind) {
   if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
   const effort=body.reasoning_effort||'high';
-  const efforts=body.model==='gpt-6.1-sol'?['low','medium','high','xhigh','max']:body.model==='gemini-3.8-flash'?['low','medium','high','max']:['low','high','max'];
+  const efforts=(body.model.startsWith('gpt-6')||body.model==='claude-opus-5')?['low','medium','high','xhigh','max']:body.model==='gemini-3.8-flash'?['low','medium','high','max']:['low','high','max'];
   if (!efforts.includes(effort)) throw Error('此模型不支持该思考强度');
   if (body.tools && (!Array.isArray(body.tools)||body.tools.length>100)) throw Error('工具格式无效');
   if (kind==='chat' && (body.tools||[]).some(tool=>!['WebSearch','WebFetch'].includes(tool?.function?.name))) throw Error('聊天模式只允许联网搜索工具');

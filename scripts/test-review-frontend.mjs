@@ -342,9 +342,9 @@ test('内置 Gemini 新会话保存所选模型，旧会话继续 DeepSeek，切
   const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');
   const render=()=>h.render(()=>ToChatConversation());let tree=render();await tick();tree=render();
   const menu=find(tree,node=>node.type==='ChatContent').props.modelControl;
-  await find(menu,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='deepseek-flash').props.onValueChange('gemini-3.8-flash');
+  await menu.props.onModel('gemini-3.8-flash');
   tree=render();assert.equal(extras().chat_model_config.model,'gemini-3.8-flash');
-  await find(find(tree,node=>node.type==='ChatContent').props.modelControl,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='high').props.onValueChange('medium');render();assert.equal(extras().chat_model_config.parameters.thinkingEffort,'medium');
+  await find(tree,node=>node.type==='ChatContent').props.modelControl.props.onEffort('medium');render();assert.equal(extras().chat_model_config.parameters.thinkingEffort,'medium');
   params={agentId:'agent',sessionId:'legacy'};render();assert.equal(extras().chat_model_config.model,'deepseek-flash');assert.equal(extras().chat_model_config.parameters.thinkingEffort,'max');
   params={agentId:'agent'};render();assert.equal(extras().chat_model_config.model,'gemini-3.8-flash');h.dispose();
 });
@@ -377,8 +377,8 @@ test('built-in account sync serializes token changes and clears the local runtim
 test('ToCode picker offers model-specific built-in efforts and keeps custom mode separate',()=>{
  const h=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official',source:'builtin-models',name:'Tora'}},models:[{name:'gpt-6.1-sol',input_types:['text','image/png'],context_size:300000}]}]},loading:false,refetch(){},builtinQuota:{enabled:true,remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining:900000,workWeeklyRemaining:9500000}})}});
  const {LlmSelect}=h.load('components/select/LlmSelect.tsx');const props={value:{type:'tora_official',credential_id:'tora-official',model:'gpt-6.1-sol',parameters:{thinking:true,thinkingEffort:'xhigh'}}};
- const tree=h.render(()=>LlmSelect(props));const submenu=find(tree,node=>node.type?.name==='SubmenuRow'&&node.props.label==='llm-select.thinking');assert.equal(submenu.props.current,'xhigh');assert.deepEqual(Array.from(submenu.props.options,option=>option.value),['low','medium','high','xhigh','max']);
- const hidden=h.render(()=>LlmSelect({...props,includeBuiltin:false}));assert.equal(find(hidden,node=>node.type?.name==='SubmenuRow'&&node.props.label==='llm-select.thinking'),null);assert.ok(find(hidden,node=>node.type==='p'&&node.props.children==='llm-select.empty.title'));h.dispose();
+ const tree=h.render(()=>LlmSelect(props));const submenu=find(tree,node=>node.type==='EffortSlider');assert.equal(submenu.props.value,'xhigh');assert.deepEqual(Array.from(submenu.props.levels),['low','medium','high','xhigh','max']);
+ const hidden=h.render(()=>LlmSelect({...props,includeBuiltin:false}));assert.equal(find(hidden,node=>node.type==='EffortSlider'),null);assert.ok(find(hidden,node=>node.type==='p'&&node.props.children==='llm-select.empty.description'));h.dispose();
 });
 
 test('model groups expose only available built-ins and keep personal credentials usable during quota outages',async()=>{

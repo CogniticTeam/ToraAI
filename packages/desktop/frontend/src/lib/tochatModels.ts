@@ -1,8 +1,12 @@
 /** Public model metadata only; credentials and upstream routing live in the Worker. */
 export const TOCHAT_MODELS = [
+	{ id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
+	{ id: 'gpt-6-astra', name: 'GPT-6 Astra', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
+	{ id: 'gpt-6-sol', name: 'GPT-6 Sol', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
+	{ id: 'gpt-6-luna', name: 'GPT-6 Luna', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
+	{ id: 'claude-opus-5', name: 'Claude Opus 5', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
 	{ id: 'deepseek-flash', name: 'DeepSeek Flash', efforts: ['low', 'high', 'max'] as const },
 	{ id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', efforts: ['low', 'medium', 'high'] as const },
-	{ id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
 ] as const;
 export type ToChatModelId = (typeof TOCHAT_MODELS)[number]['id'];
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
@@ -10,7 +14,7 @@ export const isBuiltinCredential = (id?: string) => id === BUILTIN_CREDENTIAL_ID
 export type AgentQuota = { remainingPercent: number; canUseAgent: boolean; chatUnlimited?: boolean; subscription: { planId: string; name: string; expiresAt: string } | null; windows: { key: 'fiveHour' | 'week' | 'month'; remainingPercent: number; resetAt: string | null }[] };
 export type BuiltinQuota = AgentQuota & { enabled: boolean; models?: ToChatModelAvailability[] };
 export type ToChatModelAvailability = { id: string; enabled: boolean };
-export const toChatModel = (id?: string) => TOCHAT_MODELS.find(model => model.id === id) ?? TOCHAT_MODELS[0];
+export const toChatModel = (id?: string) => TOCHAT_MODELS.find(model => model.id === id) ?? TOCHAT_MODELS.find(model => model.id === 'deepseek-flash')!;
 export const modelAvailable = (id: string, models?: ToChatModelAvailability[]) => models ? models.some(model => model.id === id && model.enabled) : id === 'deepseek-flash';
 
 export type ToChatEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';

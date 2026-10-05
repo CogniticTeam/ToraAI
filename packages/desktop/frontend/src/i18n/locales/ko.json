@@ -845,7 +845,11 @@
       "high": "높음",
       "xhigh": "매우 높음",
       "max": "최대"
-    }
+    },
+    "defaultSet": "기본",
+    "recommendedSet": "추천 모델",
+    "resetThinking": "사고 강도 초기화",
+    "maximumContext": "최대 컨텍스트"
   },
   "embedding-select": {
     "placeholder": "임베딩 모델 선택",

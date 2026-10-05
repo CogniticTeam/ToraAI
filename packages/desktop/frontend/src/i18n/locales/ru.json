@@ -851,7 +851,11 @@
       "high": "Высокий",
       "xhigh": "Очень высокий",
       "max": "Макс."
-    }
+    },
+    "defaultSet": "По умолчанию",
+    "recommendedSet": "Рекомендуемые модели",
+    "resetThinking": "Сбросить усилие",
+    "maximumContext": "Максимальный контекст"
   },
   "embedding-select": {
     "placeholder": "Выберите модель эмбеддингов",

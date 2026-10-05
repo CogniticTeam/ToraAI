@@ -11,6 +11,11 @@ export const PLANS = Object.freeze([
 ]);
 // Versioned service rates, not claims about OpenAI's internal prices.
 export const CREDIT_RATES = Object.freeze({
+ // New channel rates: ceil(CNY per 1M tokens × 400 service Credits/CNY).
+ 'claude-opus-5':{input:288,cached:29,output:1440},
+ 'gpt-6-sol':{input:68,cached:7,output:336,longInput:135,longCached:14,longOutput:504,threshold:272000},
+ 'gpt-6-luna':{input:135,cached:14,output:672,longInput:269,longCached:27,longOutput:1008,threshold:272000},
+ 'gpt-6-astra':{input:336,cached:34,output:1680,longInput:672,longCached:68,longOutput:2520,threshold:272000},
  'deepseek-flash':{input:300,cached:30,output:600},
  'gemini-3.8-flash':{input:1000,cached:100,output:6000},
  'gpt-6.1-sol':{input:1200,cached:60,output:6000,longInput:2400,longCached:120,longOutput:9000,threshold:272000},

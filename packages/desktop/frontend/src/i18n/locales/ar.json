@@ -857,7 +857,11 @@
       "high": "مرتفع",
       "xhigh": "مرتفع جدًا",
       "max": "أقصى"
-    }
+    },
+    "defaultSet": "الافتراضي",
+    "recommendedSet": "النماذج المقترحة",
+    "resetThinking": "إعادة ضبط التفكير",
+    "maximumContext": "أقصى سياق"
   },
   "embedding-select": {
     "placeholder": "اختر نموذج تضمين",
