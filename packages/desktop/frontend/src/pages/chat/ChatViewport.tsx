@@ -25,7 +25,6 @@ import type {
 } from '@/api';
 import { sessionApi, skillApi } from '@/api';
 import MCPSvg from '@/assets/images/mcp.svg?react';
-import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent.tsx';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { SubagentHitlCard } from '@/components/chat/SubagentHitlCard';
@@ -1109,7 +1108,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									// 	}}
 									// }
 									footerSlot={<>
-										{builtinSelected && !builtinBlocked && <div className="mx-auto w-40 px-3 text-center text-xs text-muted-foreground"><AgentQuotaMeter quota={builtinQuota} compact /></div>}
 										{userQuestion ? (
 											<QuestionPanel
 												key={userQuestion.ask_id}
