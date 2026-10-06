@@ -1,6 +1,6 @@
 /** Original model list and detail panel; context uses the model maximum. */
 import { Ban, Box, Check, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { ChatModelConfig, CredentialView, ModelCard } from '@/api';
 import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
@@ -36,86 +36,22 @@ interface SubmenuOption {
 	hint?: string;
 }
 
-/**
- * 详情卡里「标签 + 当前值 + 右延伸子菜单」的一行 —— 思考强度 / 上下文窗口
- * 共用同一套设计。子菜单默认向右延伸，右缘空间不足时翻转向左。
- */
+/** Portal positioning avoids both horizontal and vertical window boundaries. */
 function SubmenuRow({ label, current, currentLabel, options, onSelect }: {
-	label: string;
-	/** 当前选中的 option.value。 */
-	current: string;
-	currentLabel: string;
-	options: SubmenuOption[];
-	onSelect: (value: string) => void;
+ label: string; current: string; currentLabel: string; options: SubmenuOption[];
+ onSelect: (value: string) => void;
 }) {
-	const btnRef = useRef<HTMLButtonElement>(null);
-	const [open, setOpen] = useState(false);
-	const [side, setSide] = useState<'right' | 'left'>('right');
-	const toggle = () => {
-		if (!open) {
-			const r = btnRef.current?.getBoundingClientRect();
-			// 面板 w-36（144px）+ 间距，右缘放不下就翻转向左
-			setSide(r && window.innerWidth - r.right < 170 ? 'left' : 'right');
-		}
-		setOpen((v) => !v);
-	};
-	// 点击空白处（行自身与子菜单之外）收起子菜单；capture 阶段监听，
-	// 避免被业务层的 stopPropagation 拦掉。
-	useEffect(() => {
-		if (!open) return;
-		const onDocPointerDown = (e: PointerEvent) => {
-			const root = btnRef.current?.parentElement;
-			if (root && e.target instanceof Node && !root.contains(e.target)) setOpen(false);
-		};
-		document.addEventListener('pointerdown', onDocPointerDown, true);
-		return () => document.removeEventListener('pointerdown', onDocPointerDown, true);
-	}, [open]);
-	return (
-		<div className="relative">
-			<button
-				ref={btnRef}
-				type="button"
-				onClick={toggle}
-				className="flex w-full items-center justify-between rounded-xl bg-surface-muted px-3 py-2.5 text-sm hover:bg-surface-muted"
-			>
-				<span>{label}</span>
-				<span className="flex items-center gap-0.5 text-muted-foreground">
-					{currentLabel}
-					<ChevronRight className="size-3.5" />
-				</span>
-			</button>
-			{open && (
-				<div
-					className={cn(
-						'absolute top-0 z-10 w-36 rounded-xl border bg-popover p-1.5 shadow-md',
-						side === 'right' ? 'left-full ml-2' : 'right-full mr-2',
-					)}
-				>
-					{options.map((o) => (
-						<button
-							key={o.value}
-							type="button"
-							disabled={o.disabled}
-							title={o.hint}
-							onClick={() => {
-								if (o.disabled) return;
-								onSelect(o.value);
-								setOpen(false);
-							}}
-							className={cn(
-								'flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm motion-safe:transition-colors',
-								o.value === current ? 'bg-accent' : 'hover:bg-accent',
-								o.disabled && 'cursor-not-allowed opacity-40',
-							)}
-						>
-							<span>{o.label}</span>
-							{o.value === current && <Check className="size-4 text-primary" />}
-						</button>
-					))}
-				</div>
-			)}
-		</div>
-	);
+ const [open,setOpen] = useState(false);
+ return <Popover open={open} onOpenChange={setOpen}>
+  <PopoverTrigger asChild><button type="button" className="flex w-full items-center justify-between rounded-xl bg-surface-muted px-3 py-2.5 text-sm hover:bg-surface-muted">
+   <span>{label}</span><span className="flex items-center gap-0.5 text-muted-foreground">{currentLabel}<ChevronRight className="size-3.5" /></span>
+  </button></PopoverTrigger>
+  <PopoverContent data-testid="thinking-menu" side="right" align="start" sideOffset={8} collisionPadding={8} avoidCollisions sticky="always" className="z-50 w-36 gap-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto rounded-xl p-1.5">
+   {options.map(option => <button key={option.value} type="button" disabled={option.disabled} title={option.hint} aria-pressed={option.value === current} onClick={() => {onSelect(option.value);setOpen(false);}} className={cn('flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm motion-safe:transition-colors',option.value === current ? 'bg-accent' : 'hover:bg-accent',option.disabled && 'cursor-not-allowed opacity-40')}>
+    <span>{option.label}</span>{option.value === current && <Check className="size-4 text-primary" />}
+   </button>)}
+  </PopoverContent>
+ </Popover>;
 }
 
 /** 从 parameters 读出当前思考档（保留用户保存的 medium 档位）。 */
