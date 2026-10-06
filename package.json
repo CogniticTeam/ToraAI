@@ -26,7 +26,7 @@
     "test:desktop-security": "node scripts/test-desktop-security.mjs",
     "eval:baseline": "node scripts/eval-work-execution.mjs --check-fixtures && node --test scripts/eval-suite/runner.test.mjs",
     "verify:mac-release": "node scripts/verify-mac-release.mjs",
-    "test:tochat": "node --test packages/auth-worker/test/quota-resets.test.mjs packages/auth-worker/test/subscriptions.test.mjs packages/auth-worker/test/tochat.test.mjs packages/auth-worker/test/tochat-responses.test.mjs packages/core/test/tocode-builtin.test.mjs && node packages/core/test/tochat-mode.js && node scripts/test-application-modes-i18n.mjs"
+    "test:tochat": "node --test packages/auth-worker/test/quota-resets.test.mjs packages/auth-worker/test/subscriptions.test.mjs packages/auth-worker/test/tochat.test.mjs packages/auth-worker/test/tochat-responses.test.mjs packages/auth-worker/test/tochat-title.test.mjs packages/core/test/tocode-builtin.test.mjs && node packages/core/test/tochat-mode.js && node scripts/test-application-modes-i18n.mjs"
   },
   "engines": {
     "node": ">=18"

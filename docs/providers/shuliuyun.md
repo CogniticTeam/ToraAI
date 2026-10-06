@@ -44,3 +44,9 @@ Gemini 提供低（`low`）、中（`medium`）、高（`high`）三个思考档
 - GPT 默认最大上下文 1,050,000；Claude 默认最大上下文 1,000,000；Gemini、DeepSeek 为 1,048,576。依据模型官方规格，渠道 `/v1/models` 未返回上下文元数据，尚未进行填满整个窗口的高成本实测。桌面压缩预算扣除输出及系统提示余量；上下文选择入口已移除，历史会话保存的较小上下文选项也不再限制运行。
 
 规格来源：[OpenAI GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)、[Luna](https://developers.openai.com/api/docs/models/gpt-6-luna)、[Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)、[Claude 上下文](https://platform.claude.com/docs/en/build-with-claude/context-windows)、[Claude 思考强度](https://platform.claude.com/docs/en/build-with-claude/effort)、[Gemini](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash/)、[DeepSeek 模型目录](https://api-docs.deepseek.com/api/list-models/)。
+
+## 首条消息的 AI 命名
+
+ToChat 与 ToCode 共用标题规则：仅归纳第一条消息，要求12字以内、使用消息原语言，并清理引号、前缀和句末标点。先显示24字符以内的占位标题，在后台生成短标题，不等待命名才启动正文。失败、超时或纯图片输入保留占位名。
+
+官方模型通过已登录用户的 `/tochat/title` 辅助接口命名。枢流云模型优先使用同一网关内已配置的轻量 Gemini；DeepSeek 及未配置轻量模型的环境使用原模型，正文的模型选择不变，输入最多400字符、输出上限4096 Token，不执行任何真实工具，仅允许提交题名的结构化结果，不允许自定义上游地址；独立限流为每用户6次/分钟、60次/小时，不占正文 Agent 请求的并发槽位或额度预留。密钥仍仅在 Worker。自定义模型复用原 ToCode 命名调用。标题只尝试一次，后台结果不得覆盖用户手动命名、恢复已删除会话，或把用户从新对话跳回旧对话。

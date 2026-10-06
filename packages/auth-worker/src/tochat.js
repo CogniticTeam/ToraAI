@@ -1,3 +1,4 @@
+import {generateOfficialTitle} from './tochat-title.js';
 import { toResponsesBody, responsesChatStream } from './tochat-responses.js';
 import {readAgentQuota,publicQuota,reserveCreditStatement,progressCredit,settleCreditStatement} from './agent-credits.js';
 import {modelRates} from './subscription-plans.js';
@@ -83,6 +84,19 @@ export async function handleToChat(request,env,ctx,user) {
   if(!user) return fail('请先登录',401);
   if(user.banned) return fail('账户已被封禁',403);
   const path=new URL(request.url).pathname;
+  if(path==='/tochat/title'&&request.method==='POST'){
+    let input;try{const raw=await request.text();if(new TextEncoder().encode(raw).length>4096)return fail('标题输入过大',413);input=JSON.parse(raw);}catch{return fail('标题输入无效');}
+    if(!modelConfig(input?.model)||typeof input?.userText!=='string'||!input.userText.trim()||input.userText.length>400)return fail('标题输入无效');
+    if(!env.ACCOUNT_EVENTS)return fail('标题服务暂不可用',503);
+    const gate=env.ACCOUNT_EVENTS.get(env.ACCOUNT_EVENTS.idFromName('titles:'+user.id));
+    let permit;try{permit=await (await gate.fetch('https://internal/title-permit',{method:'POST'})).json();}catch{return fail('标题服务暂不可用',503);}
+    if(!permit.allowed)return fail('标题请求过于频繁',429);
+    const selected=modelConfig(input.model);
+    // Keep metadata fast on the same configured gateway; never switch the conversation model.
+    const fast=selected.url.startsWith('https://shuliuyun.com/')&&env.SHULIUYUN_API_KEY?modelConfig('gemini-3.8-flash'):selected;
+    const namingInput={...input,model:fast===selected?input.model:'gemini-3.8-flash'};
+    const result=await generateOfficialTitle(env,namingInput,fast);return json(result.data,result.status);
+  }
   if(path==='/tochat/quota'&&request.method==='GET') {const models=toChatModels(env);return json({...await readToChatQuota(env.DB,user.id),enabled:models.some(model=>model.enabled),model:'deepseek-flash',models});}
   if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env).filter(model=>model.enabled)});
   if(path!=='/tochat/v1/chat/completions'||request.method!=='POST') return fail('Not Found',404);

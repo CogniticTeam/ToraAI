@@ -50,10 +50,10 @@ function getBus(sessionId) {
   return bus;
 }
 
-function push(bus, event) {
+function push(bus, event, retain = true) {
   if (event.type === 'REPLY_END') bus.lastReplyEnd = event;
   const frame = { cursor: `${bus.streamId}:${++bus.sequence}`, sequence: bus.sequence, event };
-  bus.events.push(frame);
+  if (retain) bus.events.push(frame);
   for (const send of bus.subs) {
     try { send(frame); } catch { /* 订阅者已断开 */ }
   }
@@ -346,30 +346,32 @@ async function _startChatRunAsync(sessionId, agent, payload) {
       })),
     ),
   );
-  // AI 自动命名（仅首轮）：**先开工、后台取名**。首轮立即以占位标题启动
-  // Agent（REPLY_START 毫秒级到达，用户零等待），AI 标题在后台生成 ——
-  // 成功后改名、落盘并广播 session_updated，侧栏实时刷新为最终名字；
-  // 失败/超时静默保留占位标题（generateTitle 自带 20s 超时兜底）。
-  // 无论成败都锁 naming.auto=false —— 仅第一次，后续轮次零额外请求。
+  // Only the first user message is summarized; manual names take precedence.
   const firstRun = session.config.naming?.auto !== false;
   const cfg = resolveRunCfg(session, agent);
   cfg.tochatMessageId=replyId;
-  if (firstRun) {
-    session.config.naming = { auto: false };
-    const ph = placeholderTitle(userText);
-    if (!session.config.name || session.config.name === ph) {
-      session.config.name = session.config.name || ph;
-      saveSessionRecord(session);
-      (cfg.appMode==='tochat'||cfg.provider==='tochat-official' ? Promise.resolve(null) : generateTitle(cfg, { userText }))
-        .then((t) => {
-          if (!t) return;
-          session.config.name = t;
-          saveSessionRecord(session);
-          push(bus, E.custom('session_updated', {}));
-        })
-        .catch(() => { /* 保留占位标题 */ });
-    } else {
-      saveSessionRecord(session);
+  if(firstRun){
+    const ph=placeholderTitle(userText);
+    const shouldName=(!session.config.name||session.config.name===ph)&&!!userText.trim();
+    session.config.name=session.config.name||ph;
+    session.config.naming={auto:false,...(shouldName?{pending:true}:{})};
+    saveSessionRecord(session);
+    if(shouldName){
+      const nameOnce=async()=>{
+        const title=await generateTitle(cfg,{userText});
+        // Re-read after I/O: never resurrect deleted sessions or overwrite manual changes.
+        const saved=loadSessionRecord(sessionId);
+        if(!saved?.config.naming?.pending)return;
+        const activeBus=buses.get(sessionId);
+        const latest=activeBus?.activeSession||saved;
+        if(!latest.config.naming?.pending)return;
+        latest.config.naming={auto:false};
+        if(title&&latest.config.name===ph)latest.config.name=title;
+        saveSessionRecord(latest);
+        if(title)push(activeBus||bus,E.custom('session_updated',{}),!!activeBus?.running);
+      };
+      // Metadata naming runs in the background; Agent replies never await it.
+      void nameOnce().catch(()=>{});
     }
   }
 

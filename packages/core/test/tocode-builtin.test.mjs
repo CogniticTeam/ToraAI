@@ -24,12 +24,32 @@ try {
    const mc={type:'tora_official',credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'max'}};
    const code=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:mc}},agent);assert.equal(code.model,model.id);assert.equal(code.provider,'tochat-official');assert.equal(code.appMode,'tocode');assert.equal(code.tochatMode,'work');assert.equal(code.apiKey,'account-token-only');
    const chat=resolveRunCfg({config:{application_mode:'tochat',model_source:'official',task_mode:'chat',chat_model_config:{...mc,credential_id:'tora-tochat-official'}}},agent);assert.equal(chat.model,model.id);assert.equal(chat.appMode,'tochat');assert.equal(chat.tochatMode,'chat');assert.equal(chat.defaultScopeFullDisk,false);
-   outgoing=[];globalThis.fetch=async(url,init)=>{assert.equal(String(url),'https://builtin-fixture.invalid/tochat/v1/chat/completions');outgoing.push({headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{content:'actual '+model.id},finish_reason:'stop'}],usage:{total_tokens:10}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+   outgoing=[];globalThis.fetch=async(url,init)=>{if(String(url)==='https://builtin-fixture.invalid/tochat/title')return Response.json({title:'简短测试标题'});assert.equal(String(url),'https://builtin-fixture.invalid/tochat/v1/chat/completions');outgoing.push({headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{content:'actual '+model.id},finish_reason:'stop'}],usage:{total_tokens:10}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
    const session=await (await post('/sessions/',{agent_id:agent.id,chat_model_config:mc,cwd:project})).json();const run=await post('/chat/',{agent_id:agent.id,session_id:session.session_id,input:{role:'user',content:[{type:'text',text:'Say hello'}]}});assert.equal(run.status,200);
    for(let n=0;n<200&&isRunning(session.session_id);n++)await new Promise(resolve=>setTimeout(resolve,10));assert.equal(isRunning(session.session_id),false);
    let status;const unsubscribe=subscribe(session.session_id,()=>assert.fail('completed reply must not be replayed'),null,value=>{status=value;});unsubscribe();assert.equal(status.mode,'reset','late initial subscribers must reload the completed reply');
-   assert.equal(outgoing.length,1,'automatic naming must not make another paid request');assert.equal(outgoing[0].body.model,model.id);assert.equal(outgoing[0].body.reasoning_effort,'max');assert.equal(outgoing[0].body.enable_thinking,undefined);assert.equal(outgoing[0].headers['x-tochat-mode'],'work');assert.equal(outgoing[0].headers.authorization,'Bearer account-token-only');assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Bash'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Write'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Subagent'));
+   assert.equal(outgoing.length,1,'title metadata must not create another Agent completion');assert.equal(outgoing[0].body.model,model.id);assert.equal(outgoing[0].body.reasoning_effort,'max');assert.equal(outgoing[0].body.enable_thinking,undefined);assert.equal(outgoing[0].headers['x-tochat-mode'],'work');assert.equal(outgoing[0].headers.authorization,'Bearer account-token-only');assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Bash'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Write'));assert.ok(outgoing[0].body.tools.some(tool=>tool.function.name==='Subagent'));
   }
+ });
+ test('ToChat summarizes first message without blocking reply, protects manual names and deleted sessions',async()=>{
+  const agent=(await (await get('/agent/')).json()).agents[0],pending=[];
+  globalThis.fetch=async(url,init)=>{
+   if(String(url).endsWith('/tochat/title'))return new Promise(resolve=>pending.push({body:JSON.parse(init.body),resolve}));
+   return new Response('data: '+JSON.stringify({choices:[{delta:{content:'main reply'},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});
+  };
+  const create=async text=>{
+   const made=await (await post('/sessions/',{agent_id:agent.id,application_mode:'tochat',model_source:'official',task_mode:'chat',chat_model_config:{credential_id:'tora-official',model:'gpt-6.1-sol'}})).json();
+   await post('/chat/',{agent_id:agent.id,session_id:made.session_id,input:{role:'user',content:[{type:'text',text}]}});
+   for(let i=0;i<100&&isRunning(made.session_id);i++)await new Promise(r=>setTimeout(r,10));assert.equal(isRunning(made.session_id),false);
+   return made.session_id;
+  };
+  const read=async id=>(await (await get('/sessions/'+id)).json()).session;
+  const manual=await create('请优化手机输入框被键盘遮挡的问题');assert.equal(pending.length,1);assert.equal(pending[0].body.userText,'请优化手机输入框被键盘遮挡的问题');
+  assert.equal((await originalFetch(base+'/sessions/'+manual,{method:'PATCH',headers,body:JSON.stringify({name:'手动指定名称'})})).status,200);
+  pending[0].resolve(Response.json({title:'自动标题'}));await new Promise(r=>setTimeout(r,20));assert.equal((await read(manual)).config.name,'手动指定名称');
+  await post('/chat/',{agent_id:agent.id,session_id:manual,input:{role:'user',content:[{type:'text',text:'第二条不应该重新命名'}]}});for(let i=0;i<100&&isRunning(manual);i++)await new Promise(r=>setTimeout(r,10));assert.equal(pending.length,1);
+  const removed=await create('删除期间不要恢复记录');assert.equal(pending.length,2);await originalFetch(base+'/sessions/'+removed,{method:'DELETE',headers});pending[1].resolve(Response.json({title:'不应恢复'}));await new Promise(r=>setTimeout(r,20));assert.equal((await get('/sessions/'+removed)).status,404);
+  const automatic=await create('为移动端输入框增加键盘适配');assert.equal(pending.length,3);pending[2].resolve(Response.json({title:'标题：手机键盘适配。'}));await new Promise(r=>setTimeout(r,20));assert.equal((await read(automatic)).config.name,'手机键盘适配');
  });
  test('read-only ToCode permissions reject official-model write proposals',async()=>{
   const {runAgent}=await import('../src/agent.js');const project=join(home,'project'),target=join(project,'must-not-write.txt');let round=0;globalThis.fetch=async()=>new Response('data: '+JSON.stringify({choices:[{delta:round++===0?{tool_calls:[{index:0,id:'write-test',type:'function',function:{name:'Write',arguments:JSON.stringify({path:target,content:'forbidden'})}}]}:{content:'write denied'},finish_reason:round===1?'tool_calls':'stop'}],usage:{total_tokens:10}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});

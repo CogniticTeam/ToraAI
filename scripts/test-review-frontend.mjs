@@ -32,6 +32,7 @@ function harness(mocks = {}, globals = {}) {
   const window = { addEventListener() {}, removeEventListener() {}, dispatchEvent() {}, setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {} };
   const audio = { disposeAll() {} };
   const imports = {
+    './adapters/authStore': {getToken:()=> 'fixture-web-token'},
     react: { ...react, default: react }, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     '@/i18n/useI18n': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
     '@/i18n/useI18n.ts': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
@@ -52,7 +53,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   return { load, render(fn) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); for (const run of effects.splice(0)) run(); return result; },
@@ -416,4 +417,27 @@ test('ToChat mode switcher disappears on optimistic send and restored sessions, 
  phase='idle';msgs=[{role:'user',content:[]}];assert.equal(switcher(render()),null,'first message keeps the mode locked after completion');
  params={agentId:'agent',sessionId:'existing'};msgs=[];assert.equal(switcher(render()),null,'no flash while existing history is loading');
  params={agentId:'agent'};assert.ok(switcher(render()),'new conversation restores mode choice');h.dispose();
+});
+
+test('website AI title is deferred, uses only first message, and preserves subsequent conversation history', {skip:!existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
+ const gate=deferred(),stored=new Map(),titles=[],requests=[];
+ const h=harness({
+  '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},
+  './i18n.ts':{webText:value=>value},
+  './api':{webFetch:async()=>({}),webJSON:async(path,init)=>{assert.equal(path,'title');requests.push(JSON.parse(init.body));return gate.promise;}},
+  './stream':{readChatStream:async()=>({content:'main reply',reasoning:'',tools:[]})},
+  './localFiles':{selectedDirectory:()=>({}),localToolDefinitions:[]},
+  './storage':{saveConversation:async value=>stored.set(value.id,structuredClone(value)),applyConversationTitle:async(id,owner,title)=>{const old=stored.get(id);if(!old||old.owner!==owner||!old.naming?.pending)return null;const updated={...old,title:title||old.title,naming:{pending:false}};stored.set(id,updated);return updated;}},
+ },{structuredClone});
+ const {useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+ const opts={mode:'chat',model:'gpt-6-sol',effort:'high',search:false,confirmWrites:true,onUpdate(){},onQuota(){},onTitleUpdate:value=>titles.push(value)};
+ const render=()=>h.render(()=>useWebConversation('fixture',null,opts));
+ await render().send([{type:'text',text:'请修复手机输入时键盘遮住输入框的问题'}]);assert.equal(render().busy,false);assert.equal(titles.length,0,'main reply completes before naming resolves');
+ await render().send([{type:'text',text:'第二条消息不参与标题生成'}]);assert.equal(requests.length,1);assert.equal(requests[0].userText,'请修复手机输入时键盘遮住输入框的问题');
+ gate.resolve({title:'标题：手机键盘适配。'});await tick();assert.equal(titles[0].title,'手机键盘适配');assert.equal(titles[0].messages.length,4,'background naming must retain both turns');h.dispose();
+});
+
+test('a stale naming/auth response cannot sign out a newly logged-in web account',{skip:!existsSync(new URL('../website/tochat/src/api.ts',import.meta.url))},async()=>{
+ let token='first-account',cleared=0;const response=deferred();const h=harness({'./adapters/authStore':{getToken:()=>token,delToken:async()=>cleared++,delEmail:async()=>cleared++}},{fetch:()=>response.promise});
+ const {webFetch}=h.load('../../../../website/tochat/src/api.ts');const old=webFetch('title');token='second-account';response.resolve(Response.json({detail:'expired'},{status:401}));await old;assert.equal(cleared,0);h.dispose();
 });

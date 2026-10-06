@@ -17,11 +17,22 @@ export function snapshotAccountPresence(ctx, now = Date.now()) {
   return { onlineUsers: users.size, connections, sampledAt: new Date(now).toISOString() };
 }
 
+/** Independent metadata budget; does not occupy Agent completion slots. */
+export async function reserveTitlePermit(storage,now=Date.now()){
+ return storage.transaction(async tx=>{
+  const minute=Math.floor(now/60000),hour=Math.floor(now/3600000),previous=await tx.get('title-limit');
+  const minuteCount=previous?.minute===minute?previous.minuteCount:0,hourCount=previous?.hour===hour?previous.hourCount:0;
+  if(minuteCount>=6||hourCount>=60)return false;
+  await tx.put('title-limit',{minute,hour,minuteCount:minuteCount+1,hourCount:hourCount+1});return true;
+ });
+}
+
 export class AccountEvents {
   constructor(ctx, env) { this.ctx = ctx; this.env = env; }
 
   async fetch(request) {
     const path = new URL(request.url).pathname;
+    if(path==='/title-permit'&&request.method==='POST')return Response.json({allowed:await reserveTitlePermit(this.ctx.storage)});
     if (path === '/presence' && request.method === 'GET') {
       return Response.json(snapshotAccountPresence(this.ctx));
     }
