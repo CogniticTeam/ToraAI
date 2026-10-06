@@ -5,7 +5,7 @@
 
 import {
   AudioWaveform, BotMessageSquare, Box, Brain, ChartColumn, ChevronLeft, ChevronRight, CircleDot, Cloud, CloudDrizzle,
-  Cpu, Database, ExternalLink, Flame, Info, Layers, Loader2, Moon,
+  Cpu, Database, ExternalLink, Flame, Gauge, Info, Layers, Loader2, Moon,
   Palette, Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Trash2, TriangleAlert, UserRound, Waves, X, Zap
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -103,7 +103,7 @@ const SECTIONS: { key: Section; label: string; icon: typeof Settings2 }[] = [
 	{ key: 'account', label: 'settings.sections.account', icon: UserRound },
 	{ key: 'general', label: 'settings.sections.general', icon: Settings2 },
 	{ key: 'theme', label: 'settings.sections.theme', icon: Palette },
-	{ key: 'quota', label: 'quotaSettings.title', icon: ChartColumn },
+	{ key: 'quota', label: 'quotaSettings.title', icon: Gauge },
 	{ key: 'usage', label: 'settings.sections.usage', icon: ChartColumn },
 	{ key: 'agent', label: 'settings.sections.agent', icon: BotMessageSquare },
 	{ key: 'model', label: 'settings.sections.model', icon: Cpu },
