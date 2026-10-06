@@ -394,3 +394,26 @@ test('fresh-session adoption recovers a fast reply already persisted before its 
  const {useMessages}=h.load('hooks/useMessages.ts');const render=()=>h.render(()=>useMessages('agent',sessionId,{onSessionCreated:id=>{sessionId=id;}}));
  await render().send([{type:'text',text:'hello'}]);render();await tick();const result=render();assert.deepEqual(Array.from(result.msgs,message=>message.id),['server-user','fast-reply']);assert.equal(result.phase,'idle');h.dispose();
 });
+
+test('ToChat mode switcher disappears on optimistic send and restored sessions, returns only for a fresh draft',async()=>{
+ let params={agentId:'agent'},msgs=[],phase='idle';
+ const h=harness({
+  'react-router-dom':{useNavigate:()=>()=>{},useParams:()=>params,useSearchParams:()=>[new URLSearchParams()]},
+  '@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},
+  '@/hooks/useSessions':{useSessions:()=>({sessions:[],loading:true,refetch:async()=>{}})},
+  '@/hooks/useMessages':{useMessages:()=>({msgs,phase,loading:false,send:()=>{phase='streaming';}})},
+  '@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})},
+  '@/lib/applicationModes':{readToChatSource:()=> 'custom',modeCopy:()=>key=>key},
+  '@/utils/authStore':{getToken:()=>''},
+  'framer-motion':{motion:{span:'span'}},
+ });
+ const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');
+ const render=()=>h.render(()=>ToChatConversation()),switcher=tree=>find(tree,node=>node.props?.['data-testid']==='tochat-task-switcher');
+ let tree=render();assert.ok(switcher(tree));
+ await find(tree,node=>node.type==='ChatContent').props.modelControl.props.onChange({type:'openai_compatible',credential_id:'fixture',model:'fixture'});
+ tree=render();assert.ok(switcher(tree));find(tree,node=>node.type==='ChatContent').props.onSend([{type:'text',text:'first message'}]);
+ assert.equal(switcher(render()),null,'hidden before session creation and first message render');
+ phase='idle';msgs=[{role:'user',content:[]}];assert.equal(switcher(render()),null,'first message keeps the mode locked after completion');
+ params={agentId:'agent',sessionId:'existing'};msgs=[];assert.equal(switcher(render()),null,'no flash while existing history is loading');
+ params={agentId:'agent'};assert.ok(switcher(render()),'new conversation restores mode choice');h.dispose();
+});

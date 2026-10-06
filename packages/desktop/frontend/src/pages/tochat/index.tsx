@@ -129,6 +129,8 @@ function ToChatConversation() {
 	});
 	useEffect(() => { if (phase === 'idle') void refreshQuota(); }, [phase, refreshQuota]);
 	const busy = phase !== 'idle' || configPending;
+	// Hide during optimistic first-send, before session creation or history loads.
+	const showTaskSwitcher = !sessionId && msgs.length === 0 && phase === 'idle';
 	const limitReached = source === 'official' && work && quota && !quota.canUseAgent;
 	useEffect(() => {if(source !== 'official' || !work)return;const timer=window.setInterval(()=>void refreshQuota(),phase==='idle'?30000:2000);return()=>window.clearInterval(timer);},[source,work,phase,refreshQuota]);
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
@@ -169,7 +171,7 @@ function ToChatConversation() {
 			<header data-window-drag-region className="app-drag flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-5">
 				<div className="flex min-w-0 items-center gap-2">
 					<SidebarTrigger className="md:hidden" />
-					<div className="flex shrink-0 items-center rounded-full bg-muted p-0.5" role="group" aria-label="ToChat">
+					{showTaskSwitcher && (<div className="flex shrink-0 items-center rounded-full bg-muted p-0.5" data-testid="tochat-task-switcher" role="group" aria-label="ToChat">
 						{(['chat', 'work'] as const).map((kind) => (
 							<button key={kind} type="button" disabled={busy} aria-pressed={task === kind} onClick={() => fresh(kind)} className={`relative isolate rounded-full px-3 py-1 text-xs disabled:opacity-50 ${task === kind ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
 								{task === kind && <motion.span
@@ -184,7 +186,7 @@ function ToChatConversation() {
 								{copy(kind)}
 								</button>
 						))}
-					</div>
+					</div>)}
 					{msgs.length > 0 && <span className="hidden truncate text-sm text-muted-foreground lg:block">{view?.session.config.name}</span>}
 				</div>
 				<WindowDragRegion className="min-w-6 flex-1 self-stretch" />
