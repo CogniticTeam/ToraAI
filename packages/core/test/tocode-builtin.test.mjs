@@ -20,7 +20,7 @@ try {
   const agent=(await (await get('/agent/')).json()).agents[0];const project=join(home,'project');mkdirSync(project);
   for(const model of BUILTIN_MODELS){
    const maximum=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id}}});assert.equal(maximum.maxTokensBudget,model.context-24576);
-   const reduced=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id,parameters:{contextWindow:'300k'}}}});assert.equal(reduced.maxTokensBudget,Math.min(model.context,300000)-24576);
+   const reduced=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id,parameters:{contextWindow:'300k'}}}});assert.equal(reduced.maxTokensBudget,model.context-24576);
    const mc={type:'tora_official',credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'max'}};
    const code=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:mc}},agent);assert.equal(code.model,model.id);assert.equal(code.provider,'tochat-official');assert.equal(code.appMode,'tocode');assert.equal(code.tochatMode,'work');assert.equal(code.apiKey,'account-token-only');
    const chat=resolveRunCfg({config:{application_mode:'tochat',model_source:'official',task_mode:'chat',chat_model_config:{...mc,credential_id:'tora-tochat-official'}}},agent);assert.equal(chat.model,model.id);assert.equal(chat.appMode,'tochat');assert.equal(chat.tochatMode,'chat');assert.equal(chat.defaultScopeFullDisk,false);

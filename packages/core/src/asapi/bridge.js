@@ -181,9 +181,7 @@ export function resolveRunCfg(session, agent) {
   };
   const declaredContext=Number(mc.parameters?.contextSize);
   if(Number.isSafeInteger(declaredContext)&&declaredContext>=1024&&declaredContext<=10000000){
-    const preference=mc.parameters?.contextWindow;
-    const context=preference==='300k'?Math.min(declaredContext,300000):preference==='1m'?Math.min(declaredContext,1000000):declaredContext;
-    cfg.maxTokensBudget=Math.max(1024,context-16384-8192);
+    cfg.maxTokensBudget=Math.max(1024,declaredContext-16384-8192);
   }
   cfg.appMode=session.config?.application_mode==='tochat'?'tochat':'tocode';
   if(session.config?.application_mode==='tochat') {
@@ -200,9 +198,8 @@ export function resolveRunCfg(session, agent) {
     const auth=builtinAuth(toraCfg);
     cfg.baseURL=String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
     const maximum=BUILTIN_MODELS.find(item=>item.id===model).context;
-    const preferred=mc.parameters?.contextWindow;
-    const context=preferred==='300k'?Math.min(maximum,300000):preferred==='1m'?Math.min(maximum,1000000):maximum;
-    cfg.maxTokensBudget=Math.max(1024,context-16384-8192);
+    // Context selection was removed; legacy smaller choices no longer cap a run.
+    cfg.maxTokensBudget=Math.max(1024,maximum-16384-8192);
     cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=true;cfg.thinking=true;
     if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
   }

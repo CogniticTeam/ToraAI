@@ -1,23 +1,30 @@
-import {Check, ChevronDown} from 'lucide-react';
+import {ChevronDown} from 'lucide-react';
 
-import {EffortSlider} from './EffortSlider';
-import {Popover, PopoverContent, PopoverTrigger} from '@/components/ui/popover';
-import {ProviderIcon} from '@/components/ui/provider-icon';
+import GeminiLogo from '@/assets/providers/lobe-gemini-color.svg?react';
+import OpenAILogo from '@/assets/providers/openai-black-monoblossom.svg?react';
+import AnthropicLogo from '@/assets/providers/si-anthropic.svg?react';
+import DeepSeekLogo from '@/assets/providers/si-deepseek.svg?react';
+import {DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {useTranslation} from '@/i18n/useI18n';
 import {TOCHAT_MODELS, modelAvailable, toChatModel, type ToChatModelId, type ToChatModelAvailability} from '@/lib/tochatModels';
 
+function ModelIcon({model}: {model: string}) {
+ if(model.startsWith('gemini')) return <GeminiLogo className="size-4 shrink-0" />;
+ if(model.startsWith('claude')) return <AnthropicLogo className="size-4 shrink-0 dark:invert" />;
+ if(model.startsWith('gpt')) return <OpenAILogo className="size-4 shrink-0 dark:invert" />;
+ return <DeepSeekLogo data-testid="official-deepseek-logo" className="size-4 shrink-0" />;
+}
+
+/** Restore the original radio model menu, with the original thinking options. */
 export function OfficialModelSelect({model, effort, models, disabled, onModel, onEffort, className = ''}: {
  model: ToChatModelId; effort: string; models?: ToChatModelAvailability[]; disabled?: boolean;
  onModel: (id: ToChatModelId) => void; onEffort: (level: string) => void; className?: string;
 }) {
  const {t} = useTranslation(), selected = toChatModel(model);
- const provider = model.startsWith('gpt') ? 'openai' : model.startsWith('claude') ? 'anthropic' : model.startsWith('gemini') ? 'gemini' : 'deepseek';
- return <Popover><PopoverTrigger disabled={disabled} aria-label={t('llm-select.placeholder')} className={`inline-flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1 text-sm hover:bg-muted ${className}`}>
-  <ProviderIcon keyName={provider} size="size-4" /><span className="web-model-name truncate">{selected.name}</span><span className="shrink-0 text-muted-foreground">{t(`llm-select.level.${effort}`)}</span><ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
- </PopoverTrigger><PopoverContent align="end" sideOffset={8} className="w-72 gap-0 max-w-[calc(100vw-24px)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto rounded-2xl p-2">
-  <p className="px-3 py-2 text-sm font-medium text-muted-foreground">{t('llm-select.placeholder')}</p>
-  <div className="px-3 pb-2 pt-1"><p className="text-sm font-medium">{t('llm-select.defaultSet')}</p><p className="text-xs text-muted-foreground">{t('llm-select.recommendedSet')}</p></div>
-  <div role="group" aria-label={t('llm-select.placeholder')}>{TOCHAT_MODELS.map(item => <button type="button" key={item.id} disabled={disabled || !modelAvailable(item.id,models)} aria-pressed={model===item.id} onClick={() => onModel(item.id)} className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-start text-sm hover:bg-accent disabled:opacity-40"><span>{item.name}</span>{model===item.id && <Check className="size-4 text-muted-foreground" />}</button>)}</div>
-  <div className="mt-2 border-t"><EffortSlider levels={selected.efforts} value={effort} model={selected.name} disabled={disabled} onChange={onEffort} /></div>
- </PopoverContent></Popover>;
+ return <DropdownMenu><DropdownMenuTrigger disabled={disabled} aria-label={t('llm-select.placeholder')} className={`inline-flex min-w-0 items-center gap-1.5 rounded-full px-2 py-1 text-sm hover:bg-muted ${className}`}>
+  <span aria-hidden="true"><ModelIcon model={model} /></span><span className="web-model-name truncate">{selected.name}</span><span className="shrink-0 text-muted-foreground">{t(`llm-select.level.${effort}`)}</span><ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+ </DropdownMenuTrigger><DropdownMenuContent align="end" className="min-w-60 max-w-[calc(100vw-24px)]">
+  <DropdownMenuRadioGroup value={model} onValueChange={id => onModel(id as ToChatModelId)}>{TOCHAT_MODELS.map(item => <DropdownMenuRadioItem key={item.id} value={item.id} disabled={disabled || !modelAvailable(item.id,models)}><span aria-hidden="true"><ModelIcon model={item.id} /></span>{item.name}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup>
+  <DropdownMenuSeparator /><DropdownMenuRadioGroup value={effort} onValueChange={onEffort}>{selected.efforts.map(level => <DropdownMenuRadioItem key={level} value={level} disabled={disabled}>{t(`llm-select.level.${level}`)}</DropdownMenuRadioItem>)}</DropdownMenuRadioGroup>
+ </DropdownMenuContent></DropdownMenu>;
 }

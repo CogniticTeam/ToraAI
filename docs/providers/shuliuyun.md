@@ -40,7 +40,7 @@ Gemini 提供低（`low`）、中（`medium`）、高（`high`）三个思考档
 - `gpt-6-sol`、`gpt-6-luna`、`gpt-6-astra` 复用 `SHULIUYUN_GPT_API_KEY`，通过 Responses API 转发完整函数调用与工具续写。
 - `claude-opus-5` 使用独立 Worker Secret `SHULIUYUN_CLAUDE_API_KEY`，通过已实测的 OpenAI 兼容 Chat Completions 接口提供服务。
 - 四款模型均已真实验证文字流式回复、函数调用及工具结果继续请求；不执行真实文件修改或外部工具。
-- 思考强度支持 low / medium / high / xhigh / max，界面采用离散滑块；Gemini 仍为三档，DeepSeek 仍为原有三档。
-- GPT 默认最大上下文 1,050,000；Claude 默认最大上下文 1,000,000；Gemini、DeepSeek 为 1,048,576。依据模型官方规格，渠道 `/v1/models` 未返回上下文元数据，尚未进行填满整个窗口的高成本实测。桌面压缩预算扣除输出及系统提示余量；用户明确保存的较小上下文选项继续生效。
+- 思考强度支持 low / medium / high / xhigh / max，界面保留原来的思考强度菜单；Gemini 仍为三档，DeepSeek 仍为原有三档。
+- GPT 默认最大上下文 1,050,000；Claude 默认最大上下文 1,000,000；Gemini、DeepSeek 为 1,048,576。依据模型官方规格，渠道 `/v1/models` 未返回上下文元数据，尚未进行填满整个窗口的高成本实测。桌面压缩预算扣除输出及系统提示余量；上下文选择入口已移除，历史会话保存的较小上下文选项也不再限制运行。
 
 规格来源：[OpenAI GPT-6 Sol](https://developers.openai.com/api/docs/models/gpt-6-sol)、[Luna](https://developers.openai.com/api/docs/models/gpt-6-luna)、[Astra](https://developers.openai.com/api/docs/models/gpt-6-astra)、[Claude 上下文](https://platform.claude.com/docs/en/build-with-claude/context-windows)、[Claude 思考强度](https://platform.claude.com/docs/en/build-with-claude/effort)、[Gemini](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash/)、[DeepSeek 模型目录](https://api-docs.deepseek.com/api/list-models/)。

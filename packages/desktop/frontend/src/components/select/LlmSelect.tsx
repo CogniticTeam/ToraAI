@@ -1,9 +1,9 @@
-/** Compact model list with discrete thinking controls and model-sized context. */
-import { Ban, Box, Check, ChevronDown, PlusCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+/** Original model list and detail panel; context uses the model maximum. */
+import { Ban, Box, Check, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 
-import { EffortSlider } from './EffortSlider';
 import type { ChatModelConfig, CredentialView, ModelCard } from '@/api';
+import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { FIRST_RUN_CLOSE_MODEL_EVENT } from '@/components/onboarding/constants';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -23,16 +23,99 @@ interface ModelEntry {
 }
 
 type ThinkingLevel = 'off' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
-type ContextWindow = 'max' | '300k' | '1m';
 
 // 思考档位 label 走 i18n（llm-select.level.*），这里只存档位键
 const THINKING_LEVELS: ThinkingLevel[] = ['off', 'low', 'high', 'max'];
 
-/** Inline native select stays inside the compact menu on narrow screens. */
-function SubmenuRow({label,current,options,onSelect}: {
- label:string; current:string; currentLabel:string; options:{value:string;label:string}[]; onSelect:(value:string)=>void;
+interface SubmenuOption {
+	value: string;
+	label: string;
+	/** 置灰不可选（如模型不支持 1M）。 */
+	disabled?: boolean;
+	/** 置灰原因的悬停提示。 */
+	hint?: string;
+}
+
+/**
+ * 详情卡里「标签 + 当前值 + 右延伸子菜单」的一行 —— 思考强度 / 上下文窗口
+ * 共用同一套设计。子菜单默认向右延伸，右缘空间不足时翻转向左。
+ */
+function SubmenuRow({ label, current, currentLabel, options, onSelect }: {
+	label: string;
+	/** 当前选中的 option.value。 */
+	current: string;
+	currentLabel: string;
+	options: SubmenuOption[];
+	onSelect: (value: string) => void;
 }) {
- return <label className="flex items-center justify-between gap-2 rounded-xl px-2 py-2 text-xs text-muted-foreground"><span>{label}</span><select aria-label={label} value={current} onChange={event=>onSelect(event.target.value)} className="min-w-0 max-w-44 rounded-md bg-popover py-1 text-foreground focus-visible:outline-2 focus-visible:outline-ring">{options.map(option=><option key={option.value} value={option.value}>{option.label}</option>)}</select></label>;
+	const btnRef = useRef<HTMLButtonElement>(null);
+	const [open, setOpen] = useState(false);
+	const [side, setSide] = useState<'right' | 'left'>('right');
+	const toggle = () => {
+		if (!open) {
+			const r = btnRef.current?.getBoundingClientRect();
+			// 面板 w-36（144px）+ 间距，右缘放不下就翻转向左
+			setSide(r && window.innerWidth - r.right < 170 ? 'left' : 'right');
+		}
+		setOpen((v) => !v);
+	};
+	// 点击空白处（行自身与子菜单之外）收起子菜单；capture 阶段监听，
+	// 避免被业务层的 stopPropagation 拦掉。
+	useEffect(() => {
+		if (!open) return;
+		const onDocPointerDown = (e: PointerEvent) => {
+			const root = btnRef.current?.parentElement;
+			if (root && e.target instanceof Node && !root.contains(e.target)) setOpen(false);
+		};
+		document.addEventListener('pointerdown', onDocPointerDown, true);
+		return () => document.removeEventListener('pointerdown', onDocPointerDown, true);
+	}, [open]);
+	return (
+		<div className="relative">
+			<button
+				ref={btnRef}
+				type="button"
+				onClick={toggle}
+				className="flex w-full items-center justify-between rounded-xl bg-surface-muted px-3 py-2.5 text-sm hover:bg-surface-muted"
+			>
+				<span>{label}</span>
+				<span className="flex items-center gap-0.5 text-muted-foreground">
+					{currentLabel}
+					<ChevronRight className="size-3.5" />
+				</span>
+			</button>
+			{open && (
+				<div
+					className={cn(
+						'absolute top-0 z-10 w-36 rounded-xl border bg-popover p-1.5 shadow-md',
+						side === 'right' ? 'left-full ml-2' : 'right-full mr-2',
+					)}
+				>
+					{options.map((o) => (
+						<button
+							key={o.value}
+							type="button"
+							disabled={o.disabled}
+							title={o.hint}
+							onClick={() => {
+								if (o.disabled) return;
+								onSelect(o.value);
+								setOpen(false);
+							}}
+							className={cn(
+								'flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm motion-safe:transition-colors',
+								o.value === current ? 'bg-accent' : 'hover:bg-accent',
+								o.disabled && 'cursor-not-allowed opacity-40',
+							)}
+						>
+							<span>{o.label}</span>
+							{o.value === current && <Check className="size-4 text-primary" />}
+						</button>
+					))}
+				</div>
+			)}
+		</div>
+	);
 }
 
 /** 从 parameters 读出当前思考档（保留用户保存的 medium 档位）。 */
@@ -46,15 +129,6 @@ function thinkingLevelOf(parameters: Record<string, unknown> | undefined): Think
 	return 'high'; // high / 未设置（默认开、高强度）
 }
 
-function contextWindowOf(parameters: Record<string, unknown> | undefined): ContextWindow {
- const value = parameters?.contextWindow;
- return value === '300k' || value === '1m' ? value : 'max';
-}
-function contextSizeOf(model: ModelCard, context: ContextWindow) {
- const maximum = Math.max(1024, model.context_size || 128000);
- return context === 'max' ? maximum : Math.min(maximum, context === '1m' ? 1000000 : 300000);
-}
-function contextLabel(size: number) { return size >= 1000000 ? `${Number((size / 1000000).toFixed(3))}M` : `${Math.round(size / 1000)}K`; }
 
 /**
  * Provider key for a single model.
@@ -110,7 +184,7 @@ export function LlmSelect({
 	className,
 	...props
 }: Props) {
-	const { groups, loading, refetch } = useAvailableModels();
+	const { groups, loading, refetch, builtinQuota } = useAvailableModels();
 	const { t } = useTranslation();
 	// 凭证的模型列表加载失败会带回空 models 数组；丢弃避免渲染死行
 	const groupEntries = Object.entries(groups)
@@ -144,18 +218,12 @@ export function LlmSelect({
 			type: entry.type,
 			credential_id: entry.credential.id,
 			model: entry.model.name,
-			parameters: isBuiltinCredential(entry.credential.id) ? { ...(value?.parameters ?? {}), contextWindow: value?.parameters?.contextWindow ?? 'max', contextSize: entry.model.context_size, thinking: true, thinkingEffort: toChatEffort(entry.model.name, String(value?.parameters?.thinkingEffort ?? 'high')) } : { ...(value?.parameters ?? {}), contextWindow: value?.parameters?.contextWindow ?? 'max', contextSize: entry.model.context_size },
+			parameters: isBuiltinCredential(entry.credential.id) ? { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size, thinking: true, thinkingEffort: toChatEffort(entry.model.name, String(value?.parameters?.thinkingEffort ?? 'high')) } : { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size },
 		});
 	};
 
-	/** 更新当前选中模型的 parameters（思考档位 / 上下文窗口共用入口）。 */
-	const patchParameters = (patch: Record<string, unknown>) => {
-		if (!value) return;
-		onChange?.({ ...value, parameters: { ...(value.parameters ?? {}), ...patch } });
-	};
-
 	const handleThinking = (level: ThinkingLevel) => {
-		const parameters: Record<string, unknown> = { ...(value?.parameters ?? {}) };
+		const parameters: Record<string, unknown> = { ...(value?.parameters ?? {}), contextWindow: 'max' };
 		parameters.thinking = level !== 'off';
 		if (level === 'off' || level === 'high') delete parameters.thinkingEffort; // high 是默认档
 		else parameters.thinkingEffort = level;
@@ -169,8 +237,6 @@ export function LlmSelect({
 			: (placeholder ?? t('llm-select.placeholder'));
 
 	const detail = selectedEntry;
-	const detailModel = detail?.model;
-	const currentCtx: ContextWindow | null = detailModel ? contextWindowOf(value?.parameters) : null;
 	const currentLevel = value && isBuiltinCredential(value.credential_id) ? toChatEffort(value.model, String(value.parameters?.thinkingEffort ?? 'high')) : thinkingLevelOf(value?.parameters);
 
 	// 受控开关 + 文档级兜底：radix 自带外点关闭，但个别空白区域的事件可能被
@@ -219,22 +285,122 @@ export function LlmSelect({
 					<ChevronDown className="size-3.5 text-muted-foreground" />
 				</Button>
 			</PopoverTrigger>
-			<PopoverContent align={composer ? 'end' : 'start'} sideOffset={8} className="w-72 gap-0 max-w-[calc(100vw-24px)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto rounded-2xl p-2">
-    <p className="px-3 py-2 text-sm font-medium text-muted-foreground">{t('llm-select.placeholder')}</p>
-    {!loading && !hasOptions && <p className="px-3 py-4 text-sm text-muted-foreground">{t('llm-select.empty.description')}</p>}
-    {entries.map(({type, credential, model}, idx) => <div key={`${credential.id}:${model.name}`}>
-     {firstIdxByCredential.get(credential.id) === idx && <div className="px-3 pb-2 pt-1"><p className="text-sm font-medium">{isBuiltinCredential(credential.id) ? t('llm-select.defaultSet') : credentialLabel(credential, t('common.toraModels'))}</p>{isBuiltinCredential(credential.id) && <p className="text-xs text-muted-foreground">{t('llm-select.recommendedSet')}</p>}</div>}
-     <button type="button" aria-pressed={value?.credential_id === credential.id && value?.model === model.name} onClick={() => handleSelect({type, credential, model})} className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2.5 text-start text-sm hover:bg-accent"><span className="truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name).name : model.name}</span>{value?.credential_id === credential.id && value?.model === model.name && <Check className="size-4 shrink-0 text-muted-foreground" />}</button>
-    </div>)}
-    {detail && <div className="mt-2 border-t">
-     <EffortSlider model={isBuiltinCredential(detail.credential.id) ? toChatModel(detail.model.name).name : detail.model.name} value={currentLevel} levels={isBuiltinCredential(detail.credential.id) ? toChatModel(detail.model.name).efforts : /gemini-3\.8-flash/i.test(detail.model.name) ? ['off','low','medium','high'] : THINKING_LEVELS} onChange={level => handleThinking(level as ThinkingLevel)} />
-     {currentCtx && <SubmenuRow label={t('llm-select.contextWindow')} current={currentCtx} currentLabel={contextLabel(contextSizeOf(detail.model, currentCtx))} options={[{value:'max',label:`${t('llm-select.maximumContext')} · ${contextLabel(detail.model.context_size)}`}, ...(['300k','1m'] as const).filter(key => (key === '1m' ? 1000000 : 300000) < detail.model.context_size).map(key => ({value:key,label:key === '1m' ? '1M' : '300K'}))]} onSelect={contextWindow => patchParameters({contextWindow,contextSize:detail.model.context_size})} />}
-    </div>}
-    <div className="mt-2 border-t pt-1">
-     {allowClear && <button type="button" onClick={() => onChange?.(null)} disabled={!value} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-accent disabled:opacity-40"><Ban className="size-4" />{clearLabel ?? t('llm-select.clear')}</button>}
-     <button type="button" id={props.id === 'tour-llm-select' ? 'tour-add-model' : undefined} onClick={() => {setPopOpen(false);onAddCredential?.();}} className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-muted-foreground hover:bg-accent"><PlusCircle className="size-4" />{t('llm-select.addCredential')}</button>
-    </div>
-   </PopoverContent>
+			<PopoverContent
+				align={composer ? 'end' : 'start'}
+				sideOffset={6}
+				className="w-auto gap-0 overflow-visible rounded-2xl p-0"
+			>
+				<div className="flex items-stretch max-sm:flex-col">
+					{/* ─────────── 左列：模型清单 ─────────── */}
+					<div className="w-60 shrink-0 overflow-y-auto p-1.5 max-sm:w-72" style={{ maxHeight: '26rem' }}>
+						{!loading && !hasOptions ? (
+							<div className="px-2 py-3 text-center text-sm text-muted-foreground">
+								<p className="font-medium">{t('llm-select.empty.title')}</p>
+								<p className="text-xs mt-1">{t('llm-select.empty.description')}</p>
+							</div>
+						) : (
+							entries.map(({ type, credential, model }, idx) => {
+								const selected =
+									value?.credential_id === credential.id && value?.model === model.name;
+								const showHeader = firstIdxByCredential.get(credential.id) === idx;
+								return (
+									<div key={`${credential.id}:${model.name}`}>
+										{showHeader && (
+											<div className="px-2 pb-1 pt-2 text-[11px] font-medium text-muted-foreground first:pt-1">
+												{isBuiltinCredential(credential.id) ? t('llm-select.builtinModels') : credentialLabel(credential, t('common.toraModels'))}
+											</div>
+										)}
+										<button
+											type="button"
+											onClick={() => handleSelect({ type, credential, model })}
+											className={cn(
+												'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm motion-safe:transition-colors',
+												selected ? 'bg-accent' : 'hover:bg-accent',
+											)}
+										>
+											<ProviderIcon
+												keyName={providerKeyOf(credential, model.name)}
+												size="size-5"
+												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
+											/>
+											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name).name : model.name}</span>
+											{selected && <Check className="size-4 shrink-0 text-primary" />}
+										</button>
+									</div>
+								);
+							})
+						)}
+						<div className="mt-1 border-t pt-1">
+							{allowClear && (
+								<button
+									type="button"
+									onClick={() => onChange?.(null)}
+									disabled={!value}
+									className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm text-muted-foreground hover:bg-accent disabled:opacity-40"
+								>
+									<Ban className="size-4" />
+									<span>{clearLabel ?? t('llm-select.clear')}</span>
+								</button>
+							)}
+							<button
+								type="button"
+								id={props.id === 'tour-llm-select' ? 'tour-add-model' : undefined}
+								onClick={() => {
+									setPopOpen(false);
+									onAddCredential?.();
+								}}
+								className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm text-muted-foreground hover:bg-accent"
+							>
+								<PlusCircle className="size-4" />
+								<span>{t('llm-select.addCredential')}</span>
+							</button>
+						</div>
+					</div>
+
+					{/* ─────────── 右侧：详情卡 ─────────── */}
+					<div className="w-64 shrink-0 border-l p-4 max-sm:w-72 max-sm:border-l-0 max-sm:border-t">
+						{!detail ? (
+							<div className="flex h-full min-h-40 items-center justify-center text-center text-sm text-muted-foreground">
+								{t('llm-select.pickForDetails')}
+							</div>
+						) : (
+							<div className="flex h-full flex-col gap-3">
+								<div className="flex items-center gap-2.5">
+									<ProviderIcon
+										keyName={providerKeyOf(detail.credential, detail.model.name)}
+										size="size-7"
+										fallback={<Box className="size-5 shrink-0 text-muted-foreground" />}
+									/>
+									<span className="min-w-0 truncate text-base font-semibold">{isBuiltinCredential(detail.credential.id) ? toChatModel(detail.model.name).name : detail.model.name}</span>
+								</div>
+
+								{/* 能力标签：多模态输入 / 上下文规模 */}
+								<div className="flex flex-wrap gap-1.5">
+									{detail.model.input_types.filter((x) => x !== 'text').map((x) => (
+										<span key={x} className="rounded-md bg-primary-soft px-1.5 py-0.5 text-[11px] text-primary">
+											{x === 'image' ? t('llm-select.vision') : x}
+										</span>
+									))}
+									<span className="rounded-md bg-surface-muted px-1.5 py-0.5 text-[11px] text-muted-foreground tabular-nums">
+										{t('llm-select.contextBadge', { size: detail.model.context_size >= 1000000 ? `${Number((detail.model.context_size / 1000000).toFixed(3))}M` : `${Math.round(detail.model.context_size / 1000)}K` })}
+									</span>
+								</div>
+
+								{isBuiltinCredential(detail.credential.id) && <div className="space-y-1 text-xs text-muted-foreground"><p>{t('llm-select.builtinQuotaHint')}</p>{builtinQuota && <AgentQuotaMeter quota={builtinQuota} />}</div>}
+								<div className="flex-1" />
+
+								<SubmenuRow
+									label={t('llm-select.thinking')}
+									current={currentLevel}
+									currentLabel={t(`llm-select.level.${currentLevel}`)}
+									options={(isBuiltinCredential(value?.credential_id) ? toChatModel(value?.model).efforts : /(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
+									onSelect={(v) => handleThinking(v as ThinkingLevel)}
+								/>
+							</div>
+						)}
+					</div>
+				</div>
+			</PopoverContent>
 		</Popover>
 	);
 }
