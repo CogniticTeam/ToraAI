@@ -7,6 +7,8 @@ export function toResponsesBody(body, effort, maxOutput, adapter = 'openai') {
     if(message.role==='assistant'&&Array.isArray(message.tora_response_items)) {
       if(message.tora_response_items.length>32)throw Error('模型上下文格式无效');
       for(const item of message.tora_response_items) {
+        // Opaque reasoning is provider-specific. Legacy untagged items are GPT.
+        if((item?.tora_provider||'openai')!==adapter)continue;
         if(item?.type!=='reasoning'||typeof item.id!=='string'||typeof item.encrypted_content!=='string'||item.encrypted_content.length>1024*1024)throw Error('模型上下文格式无效');
         input.push({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:(item.summary||[]).filter(part=>part?.type==='summary_text'&&typeof part.text==='string').map(part=>({type:'summary_text',text:part.text}))});
       }
@@ -50,7 +52,7 @@ export function responsesChatStream(response, model) {
           for(const item of items)if(item.type==='function_call')tool(item);
           if(!textSeen){const text=items.filter(item=>item.type==='message').flatMap(item=>item.content||[]).map(part=>part.text||part.refusal||'').join('');if(text)delta({content:text});}
           if(!reasoningSeen){const text=items.filter(item=>item.type==='reasoning').flatMap(item=>item.summary||[]).map(part=>part.text||'').join('');if(text)delta({reasoning_content:text});}
-          const contexts=items.filter(item=>item.type==='reasoning'&&typeof item.encrypted_content==='string').map(item=>({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:item.summary||[]}));
+          const contexts=items.filter(item=>item.type==='reasoning'&&typeof item.encrypted_content==='string').map(item=>({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:item.summary||[],tora_provider:model.startsWith('doubao-')?'ark':'openai'}));
           if(contexts.length)emit({choices:[],tora_response_items:contexts});
           const usage=event.response?.usage;
           emit({choices:[{index:0,delta:{},finish_reason:calls.size?'tool_calls':'stop'}],...(usage?{usage:{prompt_tokens:usage.input_tokens,completion_tokens:usage.output_tokens,total_tokens:usage.total_tokens??usage.input_tokens+usage.output_tokens,prompt_tokens_details:usage.input_tokens_details,completion_tokens_details:usage.output_tokens_details}}:{})});

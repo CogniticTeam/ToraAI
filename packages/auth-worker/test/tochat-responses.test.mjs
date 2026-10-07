@@ -19,7 +19,13 @@ test('Responses failed, incomplete or truncated streams cannot become successful
 });
 
 test('Ark omits unsupported summary configuration, preserves encrypted context and multimedia; GPT rejects audio/video',()=>{
- const media={model:'doubao-seed-2-1-lite-260915',messages:[{role:'user',content:[{type:'input_audio',audio_url:'data:audio/wav;base64,aGVsbG8='},{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8='}]},{role:'assistant',tora_response_items:[context],content:'ok'}]};
+ const media={model:'doubao-seed-2-1-lite-260915',messages:[{role:'user',content:[{type:'input_audio',audio_url:'data:audio/wav;base64,aGVsbG8='},{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8='}]},{role:'assistant',tora_response_items:[{...context,tora_provider:'ark'}],content:'ok'}]};
  const ark=toResponsesBody(media,'high',8192,'ark');assert.deepEqual(ark.reasoning,{effort:'high'});assert.equal(ark.input[0].content[0].audio_url,media.messages[0].content[0].audio_url);assert.equal(ark.input[0].content[1].fps,1);assert.deepEqual(ark.input[1],context);
  assert.throws(()=>toResponsesBody(media,'high',8192),/不支持音频/);
+});
+
+test('model switches never send another provider encrypted reasoning',()=>{
+ const messages=[{role:'assistant',content:'previous',tora_response_items:[context,{...context,id:'ark_context',tora_provider:'ark'}]}];
+ assert.deepEqual(toResponsesBody({model:'gpt-6-sol',messages},'low',1024).input.filter(p=>p.type==='reasoning').map(p=>p.id),['rs_test']);
+ assert.deepEqual(toResponsesBody({model:'doubao-seed-2-1-lite-260915',messages},'low',1024,'ark').input.filter(p=>p.type==='reasoning').map(p=>p.id),['ark_context']);
 });
