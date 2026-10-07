@@ -822,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "For ToChat chat mode only. This model is permanently free and does not use your quota.",
     "freeChatModel": "Free",
     "builtinModels": "Built-in models",
     "builtinQuotaHint": "ToChat work and ToCode share this allowance.",

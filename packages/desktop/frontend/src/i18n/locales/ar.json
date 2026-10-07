@@ -834,6 +834,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "متاح فقط في وضع الدردشة في ToChat. هذا النموذج مجاني دائمًا ولا يستهلك حصتك.",
     "freeChatModel": "مجاني",
     "builtinModels": "النماذج المدمجة",
     "builtinQuotaHint": "يشترك عمل ToChat وToCode في هذه الحصة.",

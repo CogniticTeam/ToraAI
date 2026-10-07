@@ -822,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "Nur für den Chatmodus von ToChat. Dieses Modell ist dauerhaft kostenlos und verbraucht kein Kontingent.",
     "freeChatModel": "Kostenlos",
     "builtinModels": "Integrierte Modelle",
     "builtinQuotaHint": "ToChat-Arbeit und ToCode teilen dieses Kontingent.",

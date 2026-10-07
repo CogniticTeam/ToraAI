@@ -828,6 +828,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "Только для режима чата ToChat. Эта модель всегда бесплатна и не расходует вашу квоту.",
     "freeChatModel": "Бесплатно",
     "builtinModels": "Встроенные модели",
     "builtinQuotaHint": "Работа ToChat и ToCode используют общую квоту.",

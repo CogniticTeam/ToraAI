@@ -822,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "Solo per la modalità chat di ToChat. Questo modello è gratuito per sempre e non consuma la tua quota.",
     "freeChatModel": "Gratis",
     "builtinModels": "Modelli integrati",
     "builtinQuotaHint": "ToChat lavoro e ToCode condividono la quota.",

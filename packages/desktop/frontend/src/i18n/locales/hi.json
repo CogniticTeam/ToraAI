@@ -822,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "केवल ToChat के चैट मोड के लिए। यह मॉडल हमेशा मुफ़्त है और आपका कोटा खर्च नहीं करता।",
     "freeChatModel": "निःशुल्क",
     "builtinModels": "अंतर्निहित मॉडल",
     "builtinQuotaHint": "ToChat कार्य और ToCode की सीमा साझा है।",

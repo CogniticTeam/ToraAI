@@ -240,6 +240,9 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	assert.match(await page.locator('input[type="file"]').getAttribute('accept'),/audio\/wav/);
 	assert.match(await page.locator('input[type="file"]').getAttribute('accept'),/video\/mp4/);
 	await page.getByRole('button',{name:'选择模型',exact:true}).click();
+	await page.getByTestId('doubao-free-label').hover();
+	await page.locator('[data-slot="tooltip-content"]').waitFor({state:'visible'});
+	assert.equal(await page.getByRole('tooltip',{includeHidden:true}).textContent(),'仅限ToChat聊天模式使用，本模型永久免费，不消耗你的额度');
 	await page.screenshot({path:'/tmp/tora-doubao-chat-picker.png'});
 	await page.keyboard.press('Escape');
 	await page.getByRole('button',{name:'工作',exact:true}).click();

@@ -822,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "ToChat 채팅 모드 전용입니다. 이 모델은 영구 무료이며 사용 한도를 소모하지 않습니다.",
     "freeChatModel": "무료",
     "builtinModels": "기본 제공 모델",
     "builtinQuotaHint": "ToChat 작업과 ToCode는 한도를 공유합니다.",

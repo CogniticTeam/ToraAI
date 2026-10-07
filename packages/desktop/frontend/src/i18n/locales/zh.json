@@ -681,6 +681,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "仅限ToChat聊天模式使用，本模型永久免费，不消耗你的额度",
     "freeChatModel": "免费",
     "builtinModels": "内置模型",
     "builtinQuotaHint": "ToChat 工作模式与 ToCode 共用额度。",

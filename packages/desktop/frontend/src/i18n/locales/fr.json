@@ -822,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModelHint": "Réservé au mode chat de ToChat. Ce modèle est gratuit à vie et ne consomme pas votre quota.",
     "freeChatModel": "Gratuit",
     "builtinModels": "Modèles intégrés",
     "builtinQuotaHint": "ToChat travail et ToCode partagent ce quota.",
