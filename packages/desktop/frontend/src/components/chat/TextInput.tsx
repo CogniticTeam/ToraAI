@@ -174,6 +174,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		const { installed: catgirlInstalled } = useCatgirlSettings();
 		const [catgirlDialog, setCatgirlDialog] = useState<'zh' | 'ja' | null>(null);
 		const composing = useRef(false);
+		const compositionEndedAt = useRef(-Infinity);
+		const [capsuleExpanded, setCapsuleExpanded] = useState(false);
 		const detectCatgirl = (text: string) => {
 			const trigger = catgirlTrigger(text, i18n.language);
 			if (!catgirlInstalled && trigger && !disabled) { setCatgirlDialog(trigger); return true; }
@@ -283,17 +285,34 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			};
 		}, []);
 
-		// Grow the textarea with its content. The ``auto`` reset is what lets it
-		// shrink again — ``scrollHeight`` never reports less than the current height.
+		// Measure at the compact width even after expansion: measuring the wider
+		// two-row editor would collapse it again and make wrapping flicker.
 		useLayoutEffect(() => {
 			const textarea = textareaRef.current;
-			if (!textarea) return;
-			textarea.style.height = 'auto';
-			textarea.style.height = `${textarea.scrollHeight}px`;
-			if (variant === 'capsule') {
-				textarea.closest<HTMLElement>('.composer-shell')?.style.setProperty('--capsule-radius', textarea.scrollHeight > TEXTAREA_MIN_HEIGHT_PX ? '24px' : '9999px');
-			}
-		}, [value, variant]);
+			const shell = textarea?.closest<HTMLElement>('.composer-shell');
+			if (!textarea || !shell) return;
+			const resize = () => {
+				if (variant === 'capsule') {
+					const previous = shell.dataset.multiline;
+					shell.dataset.multiline = 'false';
+					textarea.style.height = 'auto';
+					const multiline = value.includes('\n') || textarea.scrollHeight > LINE_HEIGHT_PX + TEXTAREA_PADDING_Y_PX * 2;
+					shell.dataset.multiline = previous;
+					setCapsuleExpanded(multiline);
+				}
+				textarea.style.height = 'auto';
+				textarea.style.height = `${textarea.scrollHeight}px`;
+			};
+			resize();
+			let width = shell.clientWidth;
+			const observer = new ResizeObserver(() => {
+				if (shell.clientWidth === width) return;
+				width = shell.clientWidth;
+				resize();
+			});
+			observer.observe(shell);
+			return () => observer.disconnect();
+		}, [value, variant, capsuleExpanded]);
 
 		// Calculate autocomplete suggestion using useMemo
 		const suggestion = useMemo(() => {
@@ -361,6 +380,13 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		}, []);
 
 		const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+			// Safari can finish composition before the candidate-confirming Enter,
+			// with isComposing already false. 229 covers legacy IME key events.
+			if (composing.current || e.nativeEvent.isComposing || e.nativeEvent.keyCode === 229) return;
+			if (e.key === 'Enter' && performance.now() - compositionEndedAt.current < 80) {
+				e.preventDefault();
+				return;
+			}
 			// Tab key to select autocomplete
 			if (e.key === 'Tab' && suggestion) {
 				e.preventDefault();
@@ -658,6 +684,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 					)}
 					data-tour="chat-input"
 					data-composer-variant={variant}
+					data-multiline={capsuleExpanded ? 'true' : 'false'}
 					data-has-attachments={files.length > 0 ? 'true' : undefined}
 				>
 					{/* 声波只占上方文字区；底部操作按钮始终清晰可点。 */}
@@ -743,9 +770,10 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 								ref={textareaRef}
 								value={value}
 								onChange={(e) => { setValue(e.target.value); if (!composing.current) detectCatgirl(e.target.value); }}
-								onCompositionStart={() => { composing.current = true; }}
-								onCompositionEnd={e => { composing.current = false; detectCatgirl(e.currentTarget.value); }}
+								onCompositionStart={() => { composing.current = true; compositionEndedAt.current = -Infinity; }}
+								onCompositionEnd={e => { composing.current = false; compositionEndedAt.current = performance.now(); detectCatgirl(e.currentTarget.value); }}
 								onKeyDown={handleKeyDown}
+								onKeyUp={e => { if (e.key === 'Enter') compositionEndedAt.current = -Infinity; }}
 								onFocus={() => setIsFocused(true)}
 								onBlur={() => setIsFocused(false)}
 								placeholder={voiceBusy || notice ? '' : defaultPlaceholder}

@@ -44,7 +44,7 @@ function harness(mocks = {}, globals = {}) {
     mime: { getType: () => 'image/png', getExtension: () => 'png' },
     ...mocks,
   };
-  const context = { console, crypto: { randomUUID }, Response, Request, Headers, AbortController, AbortSignal, URL, URLSearchParams,
+  const context = { console, performance, crypto: { randomUUID }, Response, Request, Headers, AbortController, AbortSignal, URL, URLSearchParams,
     window, document: { visibilityState: 'visible' }, localStorage: { getItem: () => null },
     setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     requestAnimationFrame: fn => { queueMicrotask(fn); return 1; }, cancelAnimationFrame() {},
@@ -440,4 +440,21 @@ test('website AI title is deferred, uses only first message, and preserves subse
 test('a stale naming/auth response cannot sign out a newly logged-in web account',{skip:!existsSync(new URL('../website/tochat/src/api.ts',import.meta.url))},async()=>{
  let token='first-account',cleared=0;const response=deferred();const h=harness({'./adapters/authStore':{getToken:()=>token,delToken:async()=>cleared++,delEmail:async()=>cleared++}},{fetch:()=>response.promise});
  const {webFetch}=h.load('../../../../website/tochat/src/api.ts');const old=webFetch('title');token='second-account';response.resolve(Response.json({detail:'expired'},{status:401}));await old;assert.equal(cleared,0);h.dispose();
+});
+
+
+test('IME candidate Enter never sends, including Safari compositionend ordering; next Enter still sends', () => {
+  let now = 1000; const sent = [];
+  const h = harness({}, { performance: { now: () => now } });
+  const { TextInput } = h.load('components/chat/TextInput.tsx');
+  const render = () => find(h.render(() => TextInput({onSend: blocks => sent.push(blocks)}, null)), node => node.type === 'textarea').props;
+  let editor = render(); editor.onChange({target:{value:'输入法测试'}}); editor = render();
+  const enter = (native = {}, shiftKey = false) => editor.onKeyDown({key:'Enter',shiftKey,nativeEvent:native,preventDefault(){}});
+  editor.onCompositionStart(); enter(); assert.equal(sent.length, 0);
+  editor.onCompositionEnd({currentTarget:{value:'输入法测试'}}); enter(); assert.equal(sent.length, 0);
+  editor.onKeyUp({key:'Enter'}); enter(); assert.equal(sent.length, 1);
+  editor = render(); editor.onChange({target:{value:'另一次测试'}}); editor = render();
+  now += 100; enter({keyCode:229}); enter({isComposing:true}); enter({},true); assert.equal(sent.length, 1);
+  editor.onCompositionEnd({currentTarget:{value:'另一次测试'}}); now += 81; enter(); assert.equal(sent.length, 2);
+  h.dispose();
 });

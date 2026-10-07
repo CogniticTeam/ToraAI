@@ -129,5 +129,6 @@ jobs:
             /tmp/tora-quota-settings.png
             /tmp/tora-model-picker.png
             /tmp/tora-thinking-menu-edges.png
+            /tmp/tora-chat-composer-multiline.png
           if-no-files-found: ignore
           retention-days: 7

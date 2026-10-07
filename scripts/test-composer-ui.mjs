@@ -196,6 +196,37 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 		const user = modelRequest?.messages.find(message => Array.isArray(message.content) && message.content.some(part => part.type === 'image_url'));
 		assert.match(user?.content.find(part => part.type === 'image_url')?.image_url?.url || '', /^data:image\/png;base64,/, '发往模型的图片必须是 data URL');
 	} finally { globalThis.fetch = previousFetch; }
+	// ToChat switches rows for both manual newlines and wrapping, then shrinks.
+	await page.evaluate(() => localStorage.setItem('tora_tochat_source', 'custom'));
+	await page.goto(`${base}/tochat/${agentId}?task=chat`, {waitUntil:'domcontentloaded'});
+	const capsule = page.locator('.composer-shell[data-composer-variant="capsule"]');
+	const chatEditor = capsule.locator('textarea');
+	await capsule.waitFor({state:'visible'});
+	const expectRows = async expanded => {
+		await page.waitForFunction(expected => {
+			const shell = document.querySelector('.composer-shell[data-composer-variant="capsule"]');
+			if (!shell || shell.dataset.multiline !== String(expected)) return false;
+			const editor = shell.querySelector('.composer-editor').getBoundingClientRect();
+			const button = shell.querySelector('#tour-send-button').getBoundingClientRect();
+			return expected ? button.top >= editor.bottom : button.top < editor.bottom;
+		}, expanded);
+	};
+	await chatEditor.fill('第一行'); await expectRows(false);
+	await chatEditor.press('Shift+Enter'); await expectRows(true);
+	await chatEditor.fill('自动换行测试'.repeat(30)); await expectRows(true);
+	await page.waitForTimeout(200); await expectRows(true); // no expand/collapse oscillation
+	await page.setViewportSize({width:960,height:700}); await expectRows(true);
+	await page.screenshot({path:'/tmp/tora-chat-composer-multiline.png'});
+	await chatEditor.fill('你好'); await expectRows(false);
+	await chatEditor.evaluate(element => {
+		element.dispatchEvent(new CompositionEvent('compositionstart', {bubbles:true}));
+		element.dispatchEvent(new CompositionEvent('compositionend', {bubbles:true,data:'你好'}));
+		element.dispatchEvent(new KeyboardEvent('keydown', {bubbles:true,cancelable:true,key:'Enter',isComposing:false}));
+		element.dispatchEvent(new KeyboardEvent('keyup', {bubbles:true,key:'Enter'}));
+	});
+	assert.equal(await chatEditor.inputValue(), '你好', '候选字确认不能清空输入或发送');
+	assert.equal(new URL(page.url()).pathname, `/tochat/${agentId}`, '候选字确认不能创建会话');
+	await chatEditor.fill(''); await expectRows(false);
 	assert.deepEqual(errors, [], `浏览器脚本错误：${errors.join(' | ')}`);
 	console.log('紧凑输入卡片与 DeepSeek 图片附件前端到模型请求全链路：通过');
 } finally {
