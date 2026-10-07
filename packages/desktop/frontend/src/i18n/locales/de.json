@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "Nicht unterstützter oder zu großer Anhang. Audio: 10 MB; Video: 20 MB.",
     "toComplete": "zum Abschließen",
     "attach": "Datei anhängen",
     "attachNotSupported": "Dieses Modell unterstützt keine Dateianhänge",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "Kostenlos",
     "builtinModels": "Integrierte Modelle",
     "builtinQuotaHint": "ToChat-Arbeit und ToCode teilen dieses Kontingent.",
     "placeholder": "Modell auswählen",

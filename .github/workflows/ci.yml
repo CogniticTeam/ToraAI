@@ -130,5 +130,6 @@ jobs:
             /tmp/tora-model-picker.png
             /tmp/tora-thinking-menu-edges.png
             /tmp/tora-chat-composer-multiline.png
+            /tmp/tora-doubao-chat-picker.png
           if-no-files-found: ignore
           retention-days: 7

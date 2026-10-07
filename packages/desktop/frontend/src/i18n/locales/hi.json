@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "असमर्थित या बहुत बड़ा अटैचमेंट। ऑडियो: 10 MB; वीडियो: 20 MB।",
     "toComplete": "पूरा करने के लिए",
     "attach": "फ़ाइल अटैच करें",
     "attachNotSupported": "यह मॉडल फ़ाइल अटैचमेंट का समर्थन नहीं करता",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "निःशुल्क",
     "builtinModels": "अंतर्निहित मॉडल",
     "builtinQuotaHint": "ToChat कार्य और ToCode की सीमा साझा है।",
     "placeholder": "एक मॉडल चुनें",

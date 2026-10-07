@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "Pièce jointe non prise en charge ou trop volumineuse. Audio : 10 Mo ; vidéo : 20 Mo.",
     "toComplete": "pour terminer",
     "attach": "Joindre un fichier",
     "attachNotSupported": "Ce modèle ne prend pas en charge les pièces jointes",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "Gratuit",
     "builtinModels": "Modèles intégrés",
     "builtinQuotaHint": "ToChat travail et ToCode partagent ce quota.",
     "placeholder": "Sélectionner un modèle",

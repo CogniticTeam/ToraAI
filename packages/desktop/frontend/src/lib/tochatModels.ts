@@ -1,5 +1,7 @@
+import {DOUBAO_MODEL_ID} from '../../../../core/src/chat-media.js';
 /** Public model metadata only; credentials and upstream routing live in the Worker. */
 export const TOCHAT_MODELS = [
+	{ id: DOUBAO_MODEL_ID, name: 'Doubao Seed 2.1 Lite', efforts: ['low', 'medium', 'high'] as const },
 	{ id: 'gpt-6.1-sol', name: 'GPT-6.1 Sol', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
 	{ id: 'gpt-6-astra', name: 'GPT-6 Astra', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
 	{ id: 'gpt-6-sol', name: 'GPT-6 Sol', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
@@ -9,6 +11,7 @@ export const TOCHAT_MODELS = [
 	{ id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', efforts: ['low', 'medium', 'high'] as const },
 ] as const;
 export type ToChatModelId = (typeof TOCHAT_MODELS)[number]['id'];
+export const modelAllowedInMode = (id: string, mode: string) => id !== DOUBAO_MODEL_ID || mode === 'chat';
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
 export const isBuiltinCredential = (id?: string) => id === BUILTIN_CREDENTIAL_ID || id === 'tora-tochat-official';
 export type AgentQuota = { remainingPercent: number; canUseAgent: boolean; chatUnlimited?: boolean; subscription: { planId: string; name: string; expiresAt: string } | null; windows: { key: 'fiveHour' | 'week' | 'month'; remainingPercent: number; resetAt: string | null }[] };

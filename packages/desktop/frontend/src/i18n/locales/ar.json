@@ -378,6 +378,7 @@
     }
   },
   "textInput": {
+    "mediaError": "مرفق غير مدعوم أو كبير جدًا. الصوت: 10 ميغابايت؛ الفيديو: 20 ميغابايت.",
     "toComplete": "لإكمال",
     "attach": "إرفاق ملف",
     "attachNotSupported": "لا يدعم هذا النموذج مرفقات الملفات",
@@ -833,6 +834,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "مجاني",
     "builtinModels": "النماذج المدمجة",
     "builtinQuotaHint": "يشترك عمل ToChat وToCode في هذه الحصة.",
     "placeholder": "اختر نموذجًا",

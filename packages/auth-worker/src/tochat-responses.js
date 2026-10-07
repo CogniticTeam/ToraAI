@@ -1,5 +1,5 @@
 // Server-side Responses adapter. No provider key or routing choice comes from clients.
-export function toResponsesBody(body, effort, maxOutput) {
+export function toResponsesBody(body, effort, maxOutput, adapter = 'openai') {
   const input=[], instructions=[];
   for(const message of body.messages) {
     if(message.role==='system') {instructions.push(typeof message.content==='string'?message.content:(message.content||[]).map(part=>part.text||'').join('\n'));continue;}
@@ -11,12 +11,19 @@ export function toResponsesBody(body, effort, maxOutput) {
         input.push({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:(item.summary||[]).filter(part=>part?.type==='summary_text'&&typeof part.text==='string').map(part=>({type:'summary_text',text:part.text}))});
       }
     }
-    const content=typeof message.content==='string' ? [{type:message.role==='assistant'?'output_text':'input_text',text:message.content}] : (message.content||[]).map(part=>part.type==='image_url'?{type:'input_image',image_url:part.image_url.url}:{type:message.role==='assistant'?'output_text':'input_text',text:part.text||''});
-    if(content.some(part=>part.type==='input_image'||part.text))input.push({role:message.role,content});
+    const content=typeof message.content==='string' ? [{type:message.role==='assistant'?'output_text':'input_text',text:message.content}] : (message.content||[]).map(part=>{
+      if(part.type==='image_url')return {type:'input_image',image_url:part.image_url.url};
+      if(part.type==='input_audio'||part.type==='input_video'){
+        if(adapter!=='ark')throw Error('此模型不支持音频或视频附件');
+        return part.type==='input_audio'?{type:'input_audio',audio_url:part.audio_url}:{type:'input_video',video_url:part.video_url,fps:1};
+      }
+      return {type:message.role==='assistant'?'output_text':'input_text',text:part.text||''};
+    });
+    if(content.some(part=>['input_image','input_audio','input_video'].includes(part.type)||part.text))input.push({role:message.role,content});
     for(const call of message.tool_calls||[])input.push({type:'function_call',call_id:call.id,name:call.function.name,arguments:call.function.arguments||'{}'});
   }
   const tools=(body.tools||[]).map(tool=>({type:'function',name:tool.function.name,description:tool.function.description,parameters:tool.function.parameters,strict:false}));
-  return {model:body.model,instructions:instructions.join('\n\n'),input,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,reasoning:{effort,summary:'auto'},max_output_tokens:maxOutput,stream:true,store:false,include:['reasoning.encrypted_content']};
+  return {model:body.model,instructions:instructions.join('\n\n'),input,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,reasoning:adapter==='ark'?{effort}:{effort,summary:'auto'},max_output_tokens:maxOutput,stream:true,store:false,include:['reasoning.encrypted_content']};
 }
 
 /** Convert semantic Responses SSE into the existing Chat stream, preserving opaque reasoning. */

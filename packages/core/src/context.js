@@ -18,6 +18,7 @@ function contentTokens(content) {
     let t = 0;
     for (const part of content) {
       if (part?.type === 'text') t += estimateTokens(part.text ?? '');
+      else if (part?.type === 'input_audio' || part?.type === 'input_video') t += 32768;
       else if (part?.type === 'image_url') t += 1100; // 视觉输入的粗估（分辨率相关）
     }
     return t;

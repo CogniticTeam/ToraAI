@@ -53,7 +53,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   return { load, render(fn) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); for (const run of effects.splice(0)) run(); return result; },
@@ -457,4 +457,15 @@ test('IME candidate Enter never sends, including Safari compositionend ordering;
   now += 100; enter({keyCode:229}); enter({isComposing:true}); enter({},true); assert.equal(sent.length, 1);
   editor.onCompositionEnd({currentTarget:{value:'另一次测试'}}); now += 81; enter(); assert.equal(sent.length, 2);
   h.dispose();
+});
+
+test('Doubao appears only in chat model menus; attachment capabilities include audio/video only there',()=>{
+ const id='doubao-seed-2-1-lite-260915',h=harness();
+ const {OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx');
+ const render=mode=>h.render(()=>OfficialModelSelect({model:'deepseek-flash',effort:'high',mode,onModel(){},onEffort(){}}));
+ assert.ok(find(render('chat'),node=>node.type==='DropdownMenuRadioItem'&&node.props.value===id));
+ assert.equal(find(render('work'),node=>node.type==='DropdownMenuRadioItem'&&node.props.value===id),null);
+ const {chatAttachmentTypes}=h.load('lib/chatAttachments.ts');assert.ok(chatAttachmentTypes(id,'chat').includes('audio/wav'));assert.ok(chatAttachmentTypes(id,'chat').includes('video/mp4'));assert.ok(!chatAttachmentTypes(id,'work').includes('video/mp4'));assert.ok(!chatAttachmentTypes('gpt-6-sol','chat').includes('audio/wav'));h.dispose();
+ const code=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:id,input_types:['text']},{name:'gpt-6-sol',input_types:['text']}]}]},loading:false,refetch(){}})}});
+ const {LlmSelect}=code.load('components/select/LlmSelect.tsx');const tree=code.render(()=>LlmSelect({}));assert.equal(find(tree,node=>node.type==='button'&&find(node,child=>child.props?.children==='Doubao Seed 2.1 Lite')),null);code.dispose();
 });

@@ -23,7 +23,7 @@ test('内置 Gemini 独立 Secret、白名单、无隐式回退、流式工具�
  const request=(model,tag='gemini-first')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'chat','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,messages:[{role:'user',content:'hello'}],reasoning_effort:'max',tools:[{type:'function',function:{name:'WebSearch',parameters:{type:'object'}}}]})});
  try {
   const quota=await (await handleToChat(new Request('https://test/tochat/quota'),env,ctx,{id:1})).json();
-  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,7);assert.ok(!JSON.stringify(quota).includes('test-only'));
+  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,8);assert.ok(!JSON.stringify(quota).includes('test-only'));
   let calls=0;
   globalThis.fetch=async(url,init)=>{calls++;assert.equal(url,'https://shuliuyun.com/v1/chat/completions');assert.equal(init.headers.authorization,'Bearer gemini-test-only');const body=JSON.parse(init.body);assert.equal(body.model,'gemini-3.8-flash');assert.equal(body.thinking,undefined);assert.equal(body.reasoning_effort,'high');assert.equal(body.tool_choice,'auto');assert.equal(body.stream_options.include_usage,true);return new Response('data: '+JSON.stringify({choices:[{delta:{tool_calls:[{id:'search-call',index:0,type:'function',function:{name:'WebSearch',arguments:'{"query":"Tora"}'}}]},finish_reason:'tool_calls'}],usage:{total_tokens:300}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
   const response=await handleToChat(request('gemini-3.8-flash'),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/WebSearch/);await Promise.all(tasks);assert.equal((await readToChatQuota(db,1)).chatUnlimited,true);
@@ -82,5 +82,28 @@ test('new GPT family and Claude use dedicated secrets and charge cached/input/ou
    const response=await handleToChat(request(),{DB:db,[secret]:'dedicated-fixture-key'},ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/OK/);await Promise.all(tasks);
    const row=sqlite.prepare('SELECT * FROM usage_log WHERE request_id=?').get(model+'-request');assert.equal(row.model,model);assert.equal(row.cached_tokens,80);assert.equal(row.output_tokens,10);assert.ok(row.credit_micro>0);
   }
+ }finally{globalThis.fetch=before;sqlite.close();}
+});
+
+test('Doubao is free without subscription, forwards multimodal Responses, and rejects Work/ToCode before upstream or quota writes',async()=>{
+ const {db,sqlite}=database(),before=globalThis.fetch,tasks=[],sent=[];
+ sqlite.exec('DELETE FROM user_subscription');
+ const env={DB:db,ARK_API_KEY:'synthetic-ark-secret'},ctx={waitUntil(p){tasks.push(p);}};
+ const body={model:'doubao-seed-2-1-lite-260915',reasoning_effort:'medium',messages:[{role:'user',content:[{type:'text',text:'Describe attachments'},{type:'image_url',image_url:{url:'data:image/png;base64,aGVsbG8='}},{type:'input_audio',audio_url:'data:audio/wav;base64,aGVsbG8='},{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8=',fps:1000}]}]};
+ const req=(mode='chat',feature)=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':mode,'x-tochat-message-id':'doubao-message','x-tochat-request-id':'doubao-request',...(feature?{'x-tora-feature':feature}:{})},body:JSON.stringify(body)});
+ try{
+  globalThis.fetch=async(url,init)=>{sent.push({url,body:JSON.parse(init.body),headers:init.headers});return new Response('data: '+JSON.stringify({type:'response.output_text.delta',delta:'Attachments understood'})+'\n\ndata: '+JSON.stringify({type:'response.completed',response:{status:'completed',output:[],usage:{input_tokens:200,output_tokens:20,total_tokens:220}}})+'\n\n',{headers:{'content-type':'text/event-stream'}});};
+  assert.equal((await handleToChat(req('work'),env,ctx,{id:1})).status,400);
+  assert.equal((await handleToChat(req('chat','tocode'),env,ctx,{id:1})).status,403);
+  assert.equal(sent.length,0);assert.equal(sqlite.prepare('SELECT count(*) AS n FROM tochat_requests').get().n,0);
+  const response=await handleToChat(req(),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/Attachments understood/);await Promise.all(tasks);
+  assert.equal(sent[0].url,'https://ark.cn-beijing.volces.com/api/v3/responses');assert.equal(sent[0].headers.authorization,'Bearer synthetic-ark-secret');assert.equal(sent[0].body.reasoning.effort,'medium');assert.equal(sent[0].body.reasoning.summary,undefined);
+  assert.deepEqual(sent[0].body.input[0].content.map(p=>p.type),['input_text','input_image','input_audio','input_video']);assert.equal(sent[0].body.input[0].content[3].fps,1);assert.equal(sent[0].body.store,false);
+  assert.equal(sqlite.prepare('SELECT count(*) AS n FROM usage_log').get().n,0);assert.equal(sqlite.prepare('SELECT charged FROM tochat_requests').get().charged,0);
+  const list=await (await handleToChat(new Request('https://test/tochat/v1/models'),env,ctx,{id:1})).json();assert.equal(list.data[0].free,true);assert.deepEqual(list.data[0].modes,['chat']);assert.deepEqual(list.data[0].input_modalities,['text','image','audio','video']);assert.ok(!JSON.stringify(list).includes(env.ARK_API_KEY));
+  const work=await (await handleToChat(new Request('https://test/tochat/v1/models',{headers:{'x-tochat-mode':'work'}}),env,ctx,{id:1})).json();assert.deepEqual(work.data,[]);
+  assert.throws(()=>validateToChatBody({...body,model:'deepseek-flash',reasoning_effort:'high'},'chat'),/音频和视频/);
+  assert.throws(()=>validateToChatBody({...body,messages:[{role:'user',content:[{type:'input_audio',audio_url:'https://private.invalid/audio.wav'}]}]},'chat'),/上传/);
+  assert.throws(()=>validateToChatBody({...body,messages:[{role:'assistant',content:[{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8='}]}]},'chat'),/用户附件/);
  }finally{globalThis.fetch=before;sqlite.close();}
 });

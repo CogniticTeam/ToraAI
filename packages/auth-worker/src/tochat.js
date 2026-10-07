@@ -1,3 +1,4 @@
+import {DOUBAO_MODEL_ID, AUDIO_MIME_TYPES, VIDEO_MIME_TYPES} from '../../core/src/chat-media.js';
 import {generateOfficialTitle} from './tochat-title.js';
 import { toResponsesBody, responsesChatStream } from './tochat-responses.js';
 import {readAgentQuota,publicQuota,reserveCreditStatement,progressCredit,settleCreditStatement} from './agent-credits.js';
@@ -5,6 +6,7 @@ import {modelRates} from './subscription-plans.js';
 
 // Shared official key never crosses this server boundary.
 const MODELS = Object.freeze({
+  [DOUBAO_MODEL_ID]: {name:'Doubao Seed 2.1 Lite',secret:'ARK_API_KEY',url:'https://ark.cn-beijing.volces.com/api/v3/responses',protocol:'responses',adapter:'ark',modes:['chat']},
   'gpt-6-sol': {name:'GPT-6 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-luna': {name:'GPT-6 Luna',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-astra': {name:'GPT-6 Astra',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
@@ -14,7 +16,7 @@ const MODELS = Object.freeze({
   'gpt-6.1-sol': {name:'GPT-6.1 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
 });
 const modelConfig = id => Object.hasOwn(MODELS,id) ? MODELS[id] : null;
-export const toChatModels = env => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,input_modalities:['text','image'],enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
+export const toChatModels = env => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,input_modalities:model.adapter==='ark'?['text','image','audio','video']:['text','image'],modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','access-control-allow-origin':'*','cache-control':'no-store'}});
 const fail = (detail,status=400) => json({detail},status);
 export function quotaPeriods(now=Date.now()) {
@@ -30,12 +32,13 @@ export async function readToChatQuota(db,userId,now=Date.now()) {
 }
 export function validateToChatBody(body,kind) {
   if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
+  if(modelConfig(body.model).modes&&!modelConfig(body.model).modes.includes(kind))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
   const effort=body.reasoning_effort||'high';
-  const efforts=(body.model.startsWith('gpt-6')||body.model==='claude-opus-5')?['low','medium','high','xhigh','max']:body.model==='gemini-3.8-flash'?['low','medium','high','max']:['low','high','max'];
+  const efforts=(body.model.startsWith('gpt-6')||body.model==='claude-opus-5')?['low','medium','high','xhigh','max']:[DOUBAO_MODEL_ID,'gemini-3.8-flash'].includes(body.model)?['low','medium','high','max']:['low','high','max'];
   if (!efforts.includes(effort)) throw Error('此模型不支持该思考强度');
   if (body.tools && (!Array.isArray(body.tools)||body.tools.length>100)) throw Error('工具格式无效');
   if (kind==='chat' && (body.tools||[]).some(tool=>!['WebSearch','WebFetch'].includes(tool?.function?.name))) throw Error('聊天模式只允许联网搜索工具');
-  let images=0;
+  let images=0,media=0;
   const clean=JSON.parse(JSON.stringify(body));
   for(const message of clean.messages) {
     if(!['system','user','assistant','tool'].includes(message.role)) throw Error('消息角色无效');
@@ -47,11 +50,19 @@ export function validateToChatBody(body,kind) {
         if(url.length>45*1024*1024) throw Error('图片过大');
         if(++images>20) throw Error('单次最多20张图片');
         part.image_url.url='[image]';
-      } else if(part.type!=='text') throw Error('目前支持文字与图片输入');
+      } else if(['input_audio','input_video'].includes(part.type)) {
+        if(body.model!==DOUBAO_MODEL_ID||message.role!=='user')throw Error('音频和视频仅支持豆包聊天的用户附件');
+        const audio=part.type==='input_audio',field=audio?'audio_url':'video_url',url=part[field];
+        const match=typeof url==='string'&&url.match(/^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/);
+        if(!match||!(audio?AUDIO_MIME_TYPES:VIDEO_MIME_TYPES).includes(match[1]))throw Error('请上传受支持的音频或视频附件');
+        if(match[2].length>(audio?10:20)*1024*1024*4/3+4)throw Error('音频最大 10 MB，视频最大 20 MB');
+        if(++media>4)throw Error('单次最多 4 个音频或视频附件');
+        part[field]='[media]';
+      } else if(part.type!=='text') throw Error('附件格式不受支持');
     }
   }
   // UTF-8 byte count is a conservative text-token bound, plus chat framing.
-  const inputBound=new TextEncoder().encode(JSON.stringify({messages:clean.messages,tools:clean.tools})).length+32768*images+128*clean.messages.length+512;
+  const inputBound=new TextEncoder().encode(JSON.stringify({messages:clean.messages,tools:clean.tools})).length+32768*(images+media)+128*clean.messages.length+512;
   const output=Math.min(16384,Math.max(256,Number.isFinite(Number(body.max_tokens))?Math.floor(Number(body.max_tokens)):8192));
   return {effort,inputBound,output};
 }
@@ -98,7 +109,7 @@ export async function handleToChat(request,env,ctx,user) {
     const result=await generateOfficialTitle(env,namingInput,fast);return json(result.data,result.status);
   }
   if(path==='/tochat/quota'&&request.method==='GET') {const models=toChatModels(env);return json({...await readToChatQuota(env.DB,user.id),enabled:models.some(model=>model.enabled),model:'deepseek-flash',models});}
-  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env).filter(model=>model.enabled)});
+  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env).filter(model=>model.enabled&&(!(request.headers.get('x-tochat-mode')==='work'||request.headers.get('x-tora-feature')==='tocode')||model.modes.includes('work')))});
   if(path!=='/tochat/v1/chat/completions'||request.method!=='POST') return fail('Not Found',404);
   const kind=request.headers.get('x-tochat-mode');
   const messageId=request.headers.get('x-tochat-message-id');
@@ -109,9 +120,10 @@ export async function handleToChat(request,env,ctx,user) {
   let body,checked;
   try{body=JSON.parse(raw);checked=validateToChatBody(body,kind);}catch(error){return fail(error.message);}
   const selected=modelConfig(body.model);
+  if(selected.modes&&request.headers.get('x-tora-feature')==='tocode')return fail('豆包免费模型仅支持 ToChat 聊天模式',403);
   if(!env[selected.secret]||env.TOCHAT_ENABLED==='0') return fail('官方模型暂不可用，请稍后重试或在设置中主动切换为自定义模型',503);
   let upstreamBody;
-  try{if(selected.protocol==='responses')upstreamBody=toResponsesBody(body,checked.effort,checked.output);}catch(error){return fail(error.message);}
+  try{if(selected.protocol==='responses')upstreamBody=toResponsesBody(body,checked.effort,checked.output,selected.adapter);}catch(error){return fail(error.message);}
   const lastUser=[...body.messages].reverse().find(m=>m.role==='user');
   if(!lastUser) return fail('缺少用户消息');
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(kind==='work'?messageId:JSON.stringify(lastUser.content)));
@@ -128,7 +140,7 @@ export async function handleToChat(request,env,ctx,user) {
     if(!expected.every(id=>body.messages.some(m=>m.role==='tool'&&m.tool_call_id===id))) return fail('缺少对应的联网工具结果');
   }
   const quota=kind==='work'?await readAgentQuota(env.DB,user.id):null;
-  const rate=modelRates(body.model,checked.inputBound,env);
+  const rate=kind==='work'?modelRates(body.model,checked.inputBound,env):{input:0,cached:0,output:0};
   const available=quota?.availableMicro??Infinity;
   const inputCost=checked.inputBound*rate.input;
   const output=kind==='work'?Math.min(checked.output,Math.floor((available-inputCost)/rate.output)):checked.output;

@@ -189,7 +189,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
 				},
 			}));
 		}
-		if(client.provider==='tochat-official'&&/^gpt-6(?:[.-]|$)/i.test(client.model)&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
+		if(client.provider==='tochat-official'&&/^(?:gpt-6(?:[.-]|$)|doubao-seed-2-1-lite-260915$)/i.test(client.model)&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
 		if (m.name) out.name = sanitizeLoneSurrogates(m.name);
 		if(typeof m.reasoning_content==='string') out.reasoning_content=sanitizeLoneSurrogates(m.reasoning_content);
 		return out;

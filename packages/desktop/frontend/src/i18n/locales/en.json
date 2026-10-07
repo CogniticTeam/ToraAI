@@ -229,6 +229,7 @@
 		}
 	},
 	"textInput": {
+    "mediaError": "Unsupported or oversized attachment. Audio: 10 MB; video: 20 MB.",
 		"toComplete": "to complete",
 		"attach": "Attach file",
 		"attachNotSupported": "This model does not support file attachments",
@@ -680,6 +681,7 @@
 		}
 	},
 	"llm-select": {
+    "freeChatModel": "Free",
 		"builtinModels": "Built-in models",
 		"builtinQuotaHint": "ToChat work and ToCode share this allowance.",
 		"placeholder": "Select a model",

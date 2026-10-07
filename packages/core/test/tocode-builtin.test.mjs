@@ -18,7 +18,7 @@ try {
  });
  test('all ToChat and ToCode selections reach the selected model; ToCode retains full tools and permission scope',async()=>{
   const agent=(await (await get('/agent/')).json()).agents[0];const project=join(home,'project');mkdirSync(project);
-  for(const model of BUILTIN_MODELS){
+  for(const model of BUILTIN_MODELS.filter(item=>!item.modes)){
    const maximum=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id}}});assert.equal(maximum.maxTokensBudget,model.context-24576);
    const reduced=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:model.id,parameters:{contextWindow:'300k'}}}});assert.equal(reduced.maxTokensBudget,model.context-24576);
    const mc={type:'tora_official',credential_id:'tora-official',model:model.id,parameters:{thinkingEffort:'max'}};
@@ -70,6 +70,20 @@ try {
  test('logout clears access without borrowing the configured personal key',async()=>{
   await post('/admin/tochat-config',{baseURL:'https://builtin-fixture.invalid',authToken:''});const result=await (await get('/credential/')).json();assert.ok(!result.credentials.some(credential=>credential.id==='tora-official'));assert.equal((await (await get('/model/?provider=tora_official')).json()).models.length,0);
   const cfg=resolveRunCfg({config:{chat_model_config:{credential_id:'tora-official',model:'gpt-6.1-sol'}}},null);assert.equal(cfg.apiKey,'');assert.notEqual(cfg.apiKey,loadConfig().apiKey);
+ });
+ test('Doubao is chat-only and desktop audio/video retain MIME instead of becoming images',async()=>{
+  await post('/admin/tochat-config',{baseURL:'https://builtin-fixture.invalid',authToken:'account-token-only'});
+  const model='doubao-seed-2-1-lite-260915',mc={credential_id:'tora-official',model,parameters:{thinkingEffort:'high'}};
+  assert.throws(()=>resolveRunCfg({config:{application_mode:'tocode',chat_model_config:mc}}),/仅支持/);
+  assert.throws(()=>resolveRunCfg({config:{application_mode:'tochat',task_mode:'work',model_source:'official',chat_model_config:mc}}),/仅支持/);
+  const cfg=resolveRunCfg({config:{application_mode:'tochat',task_mode:'chat',model_source:'official',chat_model_config:mc}});assert.equal(cfg.maxTokensBudget,1048576-24576);
+  const agent=(await (await get('/agent/')).json()).agents[0];let wire;
+  globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/title'))return Response.json({title:null});wire=JSON.parse(init.body);return new Response('data: '+JSON.stringify({choices:[{delta:{content:'media accepted'},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+  const made=await (await post('/sessions/',{agent_id:agent.id,application_mode:'tochat',task_mode:'chat',model_source:'official',chat_model_config:mc})).json();
+  await post('/chat/',{agent_id:agent.id,session_id:made.session_id,input:{role:'user',content:[{type:'data',source:{type:'base64',media_type:'audio/wav',data:'aGVsbG8='},name:'sound.wav'},{type:'data',source:{type:'base64',media_type:'video/quicktime',data:'aGVsbG8='},name:'video.mov'}]}});
+  for(let n=0;n<100&&isRunning(made.session_id);n++)await new Promise(resolve=>setTimeout(resolve,10));assert.equal(isRunning(made.session_id),false);
+  const user=wire.messages.find(m=>m.role==='user');assert.deepEqual(user.content.filter(part=>part.type!=='text').map(part=>part.type),['input_audio','input_video']);assert.match(user.content[2].video_url,/^data:video\/mov;/);
+  const messages=await (await get('/sessions/'+made.session_id+'/messages')).json();assert.deepEqual(messages.messages.find(m=>m.role==='user').content.filter(b=>b.type==='data').map(b=>b.source.media_type),['audio/wav','video/quicktime']);
  });
 }finally{
  // node:test cases execute asynchronously; cleanup is registered after them.

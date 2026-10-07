@@ -11,7 +11,7 @@ import { ProviderIcon } from '@/components/ui/provider-icon';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTranslation } from '@/i18n/useI18n.ts';
 import { OPEN_SETTINGS_EVENT } from '@/lib/openSettings';
-import { isBuiltinCredential, toChatEffort, toChatModel } from '@/lib/tochatModels';
+import { isBuiltinCredential, modelAllowedInMode, toChatEffort, toChatModel } from '@/lib/tochatModels';
 import { cn } from '@/lib/utils';
 import { credentialLabel } from '@/utils/common';
 
@@ -130,7 +130,7 @@ export function LlmSelect({
 	const allEntries: ModelEntry[] = groupEntries.flatMap(([type, usable]) =>
 		usable.flatMap(({ credential, models }) => models.map((model) => ({ type, credential, model }))),
 	);
-	const entries: ModelEntry[] = allEntries;
+	const entries: ModelEntry[] = allEntries.filter(entry => !isBuiltinCredential(entry.credential.id) || modelAllowedInMode(entry.model.name,'work'));
 	// 每个凭证首次出现的下标 —— 左列在组首渲染凭证标题
 	const firstIdxByCredential = new Map<string, number>();
 	entries.forEach((e, idx) => {

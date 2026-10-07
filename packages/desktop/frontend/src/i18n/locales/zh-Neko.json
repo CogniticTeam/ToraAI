@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "附件格式不支持或太大了喵。音频限 10 MB，视频限 20 MB。",
     "toComplete": "补全喵",
     "attach": "带上附件喵",
     "attachNotSupported": "当前模型不支持文件附件喵",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "免费喵",
     "builtinModels": "内置模型喵",
     "builtinQuotaHint": "ToChat 工作模式与 ToCode 共用额度。",
     "placeholder": "选择模型",

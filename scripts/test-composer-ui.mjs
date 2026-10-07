@@ -229,6 +229,23 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	assert.equal(await chatEditor.inputValue(), '你好', '候选字确认不能清空输入或发送');
 	assert.equal(new URL(page.url()).pathname, `/tochat/${agentId}`, '候选字确认不能创建会话');
 	await chatEditor.fill(''); await expectRows(false);
+	// Free Doubao remains available without a subscription, only in chat.
+	await page.unroute('https://tora.ohfun.online/tochat/quota');
+	await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({enabled:true,models:[{id:'deepseek-flash',enabled:true},{id:'doubao-seed-2-1-lite-260915',enabled:true}],chatUnlimited:true,canUseAgent:false,remainingPercent:0,subscription:null,windows:[]})}));
+	await page.evaluate(() => localStorage.setItem('tora_tochat_source','official'));
+	await page.goto(`${base}/tochat/${agentId}?task=chat`, {waitUntil:'domcontentloaded'});
+	await page.getByRole('button',{name:'选择模型',exact:true}).click();
+	await page.getByRole('menuitemradio',{name:/Doubao Seed 2.1 Lite/}).click();
+	await page.waitForFunction(()=>document.querySelector('#tour-chat-textarea')?.disabled===false);
+	assert.match(await page.locator('input[type="file"]').getAttribute('accept'),/audio\/wav/);
+	assert.match(await page.locator('input[type="file"]').getAttribute('accept'),/video\/mp4/);
+	await page.getByRole('button',{name:'选择模型',exact:true}).click();
+	await page.screenshot({path:'/tmp/tora-doubao-chat-picker.png'});
+	await page.keyboard.press('Escape');
+	await page.getByRole('button',{name:'工作',exact:true}).click();
+	await page.getByRole('button',{name:'选择模型',exact:true}).click();
+	assert.equal(await page.getByRole('menuitemradio',{name:/Doubao/}).count(),0,'Work must hide Doubao');
+	await page.keyboard.press('Escape');
 	assert.deepEqual(errors, [], `浏览器脚本错误：${errors.join(' | ')}`);
 	console.log('紧凑输入卡片与 DeepSeek 图片附件前端到模型请求全链路：通过');
 } finally {

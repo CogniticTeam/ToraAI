@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "지원하지 않거나 너무 큰 첨부 파일입니다. 오디오: 10 MB, 동영상: 20 MB.",
     "toComplete": "완료하려면",
     "attach": "파일 첨부",
     "attachNotSupported": "이 모델은 파일 첨부를 지원하지 않습니다",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "무료",
     "builtinModels": "기본 제공 모델",
     "builtinQuotaHint": "ToChat 작업과 ToCode는 한도를 공유합니다.",
     "placeholder": "모델 선택",

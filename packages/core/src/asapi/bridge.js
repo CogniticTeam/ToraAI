@@ -1,3 +1,4 @@
+import {DOUBAO_MODEL_ID,mediaInputPart} from '../chat-media.js';
 // ASAPI 聊天桥：POST /chat/ 触发后台运行，runAgent 事件流 → AgentEvent SSE 协议
 // 关键语义（与前端 useMessages/appendEvent 对齐）：
 //  - REPLY_START 按 reply_id 建 Msg；REPLY_END 收尾；运行结束清空缓冲，
@@ -14,7 +15,7 @@ import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
-import { builtinAuth, BUILTIN_MODELS, isBuiltinCredential, isBuiltinModel } from '../builtin-models.js';
+import { builtinAuth, BUILTIN_MODELS, isBuiltinCredential, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
 import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import { recordUsage } from './usage-store.js';
@@ -201,6 +202,7 @@ export function resolveRunCfg(session, agent) {
     // Context selection was removed; legacy smaller choices no longer cap a run.
     cfg.maxTokensBudget=Math.max(1024,maximum-16384-8192);
     cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=true;cfg.thinking=true;
+    if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'work':cfg.tochatMode))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
     if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
   }
   if (visionOverride !== undefined && cfg.provider!=='tochat-official') cfg.vision = visionOverride;
@@ -305,6 +307,9 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   const selectedSkillIds =
     typeof payload === 'string' ? [] : (Array.isArray(payload?.selected_skill_ids) ? payload.selected_skill_ids : []);
 
+  const cfg = resolveRunCfg(session, agent);
+  if(images.some(im=>/^audio\/|^video\//.test(im.media_type||im.data_url?.match(/^data:([^;,]+)/)?.[1]||''))&&!(cfg.model===DOUBAO_MODEL_ID&&cfg.appMode==='tochat'&&cfg.tochatMode==='chat'))throw Error('音频和视频附件仅支持豆包聊天模式');
+
   const replyId = `reply-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   bus.replyId = replyId;
   bus.running = true;
@@ -323,7 +328,7 @@ async function _startChatRunAsync(sessionId, agent, payload) {
     content: images.length
       ? [
           { type: 'text', text: internalContent },
-          ...images.map((im) => ({ type: 'image_url', image_url: { url: im.data_url ?? im.url } }))
+          ...images.map((im) => mediaInputPart(im.data_url ?? im.url, im.media_type))
         ]
       : internalContent
   });
@@ -348,7 +353,6 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   );
   // Only the first user message is summarized; manual names take precedence.
   const firstRun = session.config.naming?.auto !== false;
-  const cfg = resolveRunCfg(session, agent);
   cfg.tochatMessageId=replyId;
   if(firstRun){
     const ph=placeholderTitle(userText);

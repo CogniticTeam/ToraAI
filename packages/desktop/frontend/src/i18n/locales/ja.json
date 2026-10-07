@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "非対応の添付ファイル、またはサイズ超過です。音声は 10 MB、動画は 20 MB までです。",
     "toComplete": "完了まで",
     "attach": "ファイルを添付",
     "attachNotSupported": "このモデルはファイルの添付に対応していません",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "無料",
     "builtinModels": "内蔵モデル",
     "builtinQuotaHint": "ToChatの作業とToCodeは利用枠を共有します。",
     "placeholder": "モデルを選択",

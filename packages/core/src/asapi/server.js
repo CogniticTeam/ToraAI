@@ -1338,7 +1338,7 @@ async function route(req, res) {
   if (p === '/model/' && method === 'GET') {
     const cfg = loadConfig();
     if(q.provider===BUILTIN_PROVIDER_TYPE) {
-      const cards=builtinAuth(cfg).authToken?BUILTIN_MODELS.map(model=>({type:'chat_model',name:model.id,label:model.name,status:'active',deprecated_at:null,input_types:inputTypesFor(model.id,true),output_types:['text'],context_size:model.context,output_size:16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}})):[];
+      const cards=builtinAuth(cfg).authToken?BUILTIN_MODELS.map(model=>({type:'chat_model',name:model.id,label:model.name,status:'active',deprecated_at:null,input_types:model.inputTypes||inputTypesFor(model.id,true),output_types:['text'],context_size:model.context,output_size:16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}})):[];
       return json(res,200,{models:cards,total:cards.length});
     }
     const enabled = enabledModels(cfg);

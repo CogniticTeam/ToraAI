@@ -22,8 +22,9 @@ import { useMotionSettings } from '@/hooks/useMotionSettings';
 import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n';
 import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from '@/lib/applicationModes';
+import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments';
 import { openSettings } from '@/lib/openSettings';
-import { modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
+import { modelAllowedInMode, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { cloudFetch, syncBuiltinModelAuth } from '@/utils/modelSync';
 
@@ -45,7 +46,7 @@ function ToChatConversation() {
 	const agentId = urlAgent || agents[0]?.id || null;
 	const { sessions, loading: sessionsLoading, refetch } = useSessions(agentId);
 	const view = sessions.find((item) => item.session.id === sessionId);
-	const { i18n } = useTranslation();
+	const { i18n, t } = useTranslation();
 	const copy = modeCopy(i18n.language);
 	const { effective, clickEnabled } = useMotionSettings();
 	const tabMotion = clickEnabled ? effective : 'off';
@@ -67,7 +68,8 @@ function ToChatConversation() {
 	const permissionContext = view?.session.state.permission_context as { mode?: string } | undefined;
 	const selectedPermission = permissionContext?.mode ?? permission;
 	const storedEffort = view?.session.config.chat_model_config?.parameters?.thinkingEffort;
-	const selectedOfficial = toChatModel(view ? view.session.config.chat_model_config?.model : officialModelId);
+	const candidateOfficial = toChatModel(view ? view.session.config.chat_model_config?.model : officialModelId);
+	const selectedOfficial = modelAllowedInMode(candidateOfficial.id,task) ? candidateOfficial : toChatModel('deepseek-flash');
 	const selectedEffort = toChatEffort(selectedOfficial.id, typeof storedEffort === 'string' ? storedEffort : effort);
 	const officialModel: ChatModelConfig = { type: 'openai_compatible', credential_id: 'tora-tochat-official', model: selectedOfficial.id, parameters: { thinking: true, thinkingEffort: selectedEffort } };
 	const builtinAccountToken = getToken();
@@ -152,18 +154,14 @@ function ToChatConversation() {
 		if (await patch({ chat_model_config: { ...officialModel, parameters: { thinking: true, thinkingEffort: next } } })) setEffort(next);
 	};
 	const chooseOfficialModel = async (id: ToChatModelId) => {
+		if (!modelAllowedInMode(id,task)) return;
 		const nextEffort = toChatEffort(id, selectedEffort);
 		if (await patch({ chat_model_config: { ...officialModel, model: id, parameters: { thinking: true, thinkingEffort: nextEffort } } })) { setOfficialModelId(id); setEffort(nextEffort); }
 	};
+	const attachmentModel = source === 'official' ? selectedOfficial.id : 'custom';
 	const fileProcessor = async (file: File): Promise<ContentBlock | null> => {
-		if (!/^image\/(png|jpeg|gif|webp)$/i.test(file.type) || file.size > 32 * 1024 * 1024) { toast.error(copy('imageError')); return null; }
-		const url = await new Promise<string>((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => resolve(String(reader.result));
-			reader.onerror = () => reject(reader.error);
-			reader.readAsDataURL(file);
-		});
-		return { id: crypto.randomUUID(), type: 'data', source: { type: 'base64', media_type: file.type, data: url.split(',')[1] }, name: file.name, created_at: new Date().toISOString() };
+		try { return await processChatAttachment(file,attachmentModel,task); }
+		catch { toast.error(attachmentModel.startsWith('doubao') ? t('textInput.mediaError') : copy('imageError')); return null; }
 	};
 
 	return (
@@ -209,10 +207,10 @@ function ToChatConversation() {
 					composerVariant={work ? 'default' : 'capsule'}
 					onCwdChange={async (next) => { if (await patch({ cwd: next })) setCwd(next); }}
 					onSend={(content, context, skills) => { if (!model) { toast.error(copy('selectModel')); return; } void send(content, context, skills); }}
-					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={['image']} fileProcessor={fileProcessor}
+					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={chatAttachmentTypes(attachmentModel,task)} fileProcessor={fileProcessor}
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} includeBuiltin={false} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
-						<OfficialModelSelect model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
+						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>

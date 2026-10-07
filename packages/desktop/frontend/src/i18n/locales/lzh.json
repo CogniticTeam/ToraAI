@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "附件未合式或過鉅。音限十 MB，影限二十 MB。",
     "toComplete": "补全",
     "attach": "附文卷",
     "attachNotSupported": "今之模型不纳文卷之附",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "免費",
     "builtinModels": "內建模型",
     "builtinQuotaHint": "ToChat工作與ToCode共用其額。",
     "placeholder": "择模型",

@@ -17,3 +17,9 @@ test('Responses failed, incomplete or truncated streams cannot become successful
  for(const end of ['response.failed','response.incomplete','truncated']){const raw='data: '+JSON.stringify(events[1])+'\n\n'+(end==='truncated'?'':'data: '+JSON.stringify({type:end})+'\n\n');const response=responsesChatStream(new Response(raw,{headers:{'content-type':'text/event-stream'}}),'gpt-6.1-sol');await assert.rejects(response.text(),/中断/);}
  assert.throws(()=>responsesChatStream(Response.json({output:[]}),'gpt-6.1-sol'),/流式/);
 });
+
+test('Ark omits unsupported summary configuration, preserves encrypted context and multimedia; GPT rejects audio/video',()=>{
+ const media={model:'doubao-seed-2-1-lite-260915',messages:[{role:'user',content:[{type:'input_audio',audio_url:'data:audio/wav;base64,aGVsbG8='},{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8='}]},{role:'assistant',tora_response_items:[context],content:'ok'}]};
+ const ark=toResponsesBody(media,'high',8192,'ark');assert.deepEqual(ark.reasoning,{effort:'high'});assert.equal(ark.input[0].content[0].audio_url,media.messages[0].content[0].audio_url);assert.equal(ark.input[0].content[1].fps,1);assert.deepEqual(ark.input[1],context);
+ assert.throws(()=>toResponsesBody(media,'high',8192),/不支持音频/);
+});

@@ -370,6 +370,7 @@
     }
   },
   "textInput": {
+    "mediaError": "Anexo não suportado ou muito grande. Áudio: 10 MB; vídeo: 20 MB.",
     "toComplete": "para concluir",
     "attach": "Anexar arquivo",
     "attachNotSupported": "Este modelo não suporta anexos de arquivo",
@@ -821,6 +822,7 @@
     }
   },
   "llm-select": {
+    "freeChatModel": "Grátis",
     "builtinModels": "Modelos integrados",
     "builtinQuotaHint": "ToChat trabalho e ToCode compartilham esta cota.",
     "placeholder": "Selecione um modelo",
