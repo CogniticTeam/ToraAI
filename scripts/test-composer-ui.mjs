@@ -202,6 +202,8 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	const capsule = page.locator('.composer-shell[data-composer-variant="capsule"]');
 	const chatEditor = capsule.locator('textarea');
 	await capsule.waitFor({state:'visible'});
+	await page.locator('#tour-model-selector').click();
+	await page.getByRole('button', {name:'deepseek-flash',exact:true}).click();
 	const expectRows = async expanded => {
 		await page.waitForFunction(expected => {
 			const shell = document.querySelector('.composer-shell[data-composer-variant="capsule"]');
