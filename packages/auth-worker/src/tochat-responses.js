@@ -21,7 +21,7 @@ export function toResponsesBody(body, effort, maxOutput, adapter = 'openai') {
       }
       return {type:message.role==='assistant'?'output_text':'input_text',text:part.text||''};
     });
-    if(content.some(part=>['input_image','input_audio','input_video'].includes(part.type)||part.text))input.push({role:message.role,content});
+    if(content.some(part=>['input_image','input_audio','input_video'].includes(part.type)||part.text))input.push({...(adapter==='ark'?{type:'message'}:{}),role:message.role,content});
     for(const call of message.tool_calls||[])input.push({type:'function_call',call_id:call.id,name:call.function.name,arguments:call.function.arguments||'{}'});
   }
   const tools=(body.tools||[]).map(tool=>({type:'function',name:tool.function.name,description:tool.function.description,parameters:tool.function.parameters,strict:false}));
