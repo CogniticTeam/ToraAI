@@ -244,7 +244,9 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	await page.locator('[data-slot="tooltip-content"]').waitFor({state:'visible'});
 	assert.equal(await page.getByRole('tooltip',{includeHidden:true}).textContent(),'仅限ToChat聊天模式使用，本模型永久免费，不消耗你的额度');
 	await page.screenshot({path:'/tmp/tora-doubao-chat-picker.png'});
-	await page.keyboard.press('Escape');
+	await page.keyboard.press('Escape'); // close the nested tooltip first
+	await page.keyboard.press('Escape'); // then close the model menu
+	await page.getByRole('menu').waitFor({state:'hidden'});
 	await page.getByRole('button',{name:'工作',exact:true}).click();
 	await page.getByRole('button',{name:'选择模型',exact:true}).click();
 	assert.equal(await page.getByRole('menuitemradio',{name:/Doubao/}).count(),0,'Work must hide Doubao');
