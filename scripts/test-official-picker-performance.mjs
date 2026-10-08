@@ -30,7 +30,7 @@ try{
   await page.evaluate(()=>{
    const state={start:0,visible:null,settled:null,lastFrame:0,maxFrameGap:0,frames:0,longTasks:[],rootAttributeChanges:0,style:null,done:false};window.pickerProbe=state;
    const longObserver=new PerformanceObserver(list=>{for(const entry of list.getEntries())if(state.start&&entry.startTime>=state.start)state.longTasks.push({start:entry.startTime-state.start,duration:entry.duration});});longObserver.observe({type:'longtask',buffered:false});
-   const app=document.querySelector('#root');const mutations=new MutationObserver(list=>{if(state.start)state.rootAttributeChanges+=list.length;});mutations.observe(app,{attributes:true,attributeFilter:['aria-hidden','inert']});
+   const app=document.querySelector('#root');const mutations=new MutationObserver(list=>{if(state.start)state.rootAttributeChanges+=list.length;});mutations.observe(app,{attributes:true,subtree:true,attributeFilter:['aria-hidden','inert']});
    document.addEventListener('pointerdown',()=>{state.start=performance.now();const frame=now=>{if(state.lastFrame)state.maxFrameGap=Math.max(state.maxFrameGap,now-state.lastFrame);state.lastFrame=now;state.frames++;const menu=document.querySelector('[data-slot="dropdown-menu-content"]');if(menu){const style=getComputedStyle(menu);const positioned=menu.parentElement.style.transform!=='translate(0px, -200%)';if(positioned&&style.visibility!=='hidden'&&Number(style.opacity)>0){state.visible??=performance.now()-state.start;state.style??={animation:style.animationName,duration:style.animationDuration,transition:style.transitionProperty};if(Number(style.opacity)===1&&menu.getAnimations().every(animation=>animation.playState!=='running'))state.settled??=performance.now()-state.start;}}if(performance.now()-state.start<650)requestAnimationFrame(frame);else{state.done=true;longObserver.disconnect();mutations.disconnect();}};requestAnimationFrame(frame);},{capture:true,once:true});
   });
   await trigger.click();await page.waitForFunction(()=>window.pickerProbe?.done);const metrics=await page.evaluate(()=>({variant:null,...window.pickerProbe,domNodes:document.querySelectorAll('*').length,hiddenChat:document.querySelector('#root')?.getAttribute('aria-hidden'),scrollLock:document.body.getAttribute('data-scroll-locked')}));delete metrics.start;delete metrics.lastFrame;results.push({...metrics,variant,fetches:requests.length-fetchBefore});
@@ -38,5 +38,10 @@ try{
  }
  await cdp.send('Emulation.setCPUThrottlingRate',{rate:1});writeFileSync('/tmp/tora-official-picker-performance.json',JSON.stringify(results,null,2));console.log('PICKER_PERFORMANCE',JSON.stringify(results));
  assert.ok(results.every(row=>row.visible!==null),'Every popup must be visible');
+ assert.ok(results.every(row=>row.scrollLock===null),'Model picker must not lock the whole page');
+ assert.ok(results.every(row=>row.rootAttributeChanges===0),'Opening must not hide the conversation accessibility tree');
+ assert.ok(results.every(row=>row.style.animation==='none'),'The picker must render without a scaling animation');
+ await trigger.click();await page.keyboard.press('Escape');await page.getByRole('menu').waitFor({state:'hidden'});
+ await trigger.click();await page.locator('textarea').click();await page.getByRole('menu').waitFor({state:'hidden'});
  await context.close();
 }finally{await browser.close();core.closeAllConnections?.();cloud.closeAllConnections?.();await Promise.all([new Promise(resolve=>core.close(resolve)),new Promise(resolve=>cloud.close(resolve))]);rmSync(home,{recursive:true,force:true});}

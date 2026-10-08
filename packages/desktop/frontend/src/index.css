@@ -1184,3 +1184,12 @@ body {
 	.first-run-demo { top: 47%; left: 50%; }
 	.first-run-paused { width: calc(100vw - 24px); }
 }
+
+/* The official picker is a lightweight chooser: preserve placement, avoid
+   scaling/fading a large menu and do not animate its painted surface. The
+   Radix wrapper owns positioning; this rule only affects the inner menu. */
+.official-model-menu {
+	animation: none !important;
+	transition: none !important;
+	transform: none !important;
+}
