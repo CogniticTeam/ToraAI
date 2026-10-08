@@ -5,7 +5,7 @@
 
 import {
   AudioWaveform, BotMessageSquare, Box, Brain, ChartColumn, ChevronLeft, ChevronRight, CircleDot, Cloud, CloudDrizzle,
-  Cpu, Database, ExternalLink, Flame, Gauge, Info, Layers, Loader2, Moon,
+  Cpu, Database, ExternalLink, Flame, Gauge, Import, Info, Layers, Loader2, Moon,
   Palette, Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Trash2, TriangleAlert, UserRound, Waves, X, Zap
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -57,6 +57,7 @@ import { cloudFetch, syncLocalModelMirror } from '@/utils/modelSync';
 interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
+	onImportSessions?: () => void;
 	/** 打开时定位到的板块（默认通用）。配合 key 重挂载可强制切换。 */
 	initialTab?: Section;
 }
@@ -1591,7 +1592,7 @@ function AdvancedSection() {
 	);
 }
 
-export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: Props) {
+export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onImportSessions }: Props) {
 	const { t } = useTranslation();
 	const { installed: catgirlInstalled } = useCatgirlSettings();
 	const [section, setSection] = useState<Section>(initialTab);
@@ -1890,6 +1891,11 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general' }: P
 								<h3 className="text-lg font-semibold">{t('settings.data.title')}</h3>
 								<div className="mt-2 text-xs text-muted-foreground">{t('settings.data.subtitle')}</div>
 								<div className="mt-3 space-y-3">
+									{onImportSessions && <Row title={t('sessionImport.title')} description={t('sessionImport.description')}>
+										<Button type="button" variant="outline" size="sm" data-testid="open-session-import" onClick={onImportSessions}>
+											<Import className="size-3.5" />{t('sessionImport.title')}
+										</Button>
+									</Row>}
 									<Row title={t('settings.data.wipe.title')} description={t('settings.data.wipe.desc')}>
 										{!confirmWipe ? (
 											<Button

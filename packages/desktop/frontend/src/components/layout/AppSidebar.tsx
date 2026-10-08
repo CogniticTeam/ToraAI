@@ -7,7 +7,6 @@ import {
 	Globe,
 	ChevronUp,
 	
-	Import,
 	Languages,
 	LogOut,
 	Mail,
@@ -364,10 +363,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 						</DropdownMenuItem>}
 						<AccountUsageMenu />
 						<DropdownMenuSeparator />
-						<DropdownMenuItem className="py-1 text-[13px]" data-testid="open-session-import" onSelect={() => setImportOpen(true)}>
-							<Import /><span>{t('sessionImport.title')}</span>
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
 						<DropdownMenuItem className="py-1 text-[13px]" data-testid="account-sign-out" onSelect={() => void signOutAccount().catch(() => toast.error(t('common.error')))}>
 							<LogOut />
 							<span>{t('settings.account.logout')}</span>
@@ -387,6 +382,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 						open={settingsOpen}
 						onOpenChange={handleSettingsOpenChange}
 						initialTab={settingsTab}
+						onImportSessions={() => { handleSettingsOpenChange(false); setImportOpen(true); }}
 					/>
 				</Suspense>
 			)}
