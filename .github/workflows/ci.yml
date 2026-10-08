@@ -102,6 +102,10 @@ jobs:
         run: npm --prefix packages/desktop/frontend run build
       - name: Enforce initial-load bundle budget
         run: npm run test:bundle
+      - name: Profile official model picker with a long synthetic conversation
+        env:
+          TORA_CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/test-official-picker-performance.mjs
       - name: Verify login-gated task shell in headless Chrome
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome
@@ -131,5 +135,6 @@ jobs:
             /tmp/tora-thinking-menu-edges.png
             /tmp/tora-chat-composer-multiline.png
             /tmp/tora-doubao-chat-picker.png
+            /tmp/tora-official-picker-performance.json
           if-no-files-found: ignore
           retention-days: 7
