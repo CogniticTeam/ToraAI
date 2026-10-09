@@ -208,7 +208,7 @@ async function main() {
     assert.equal(total, 1);
     const sv = sessions[0];
     assert.equal(sv.session.id, session_id);
-    assert.equal(loadSessionRecord(session_id).config.title_language, 'fr');
+    assert.equal(sv.session.config.title_language, 'fr');
     assert.equal(sv.status, 'idle');
     assert.equal(sv.session.origin.type, 'user');
     assert.ok(sv.session.config.chat_model_config.model);
