@@ -455,7 +455,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 		<div
 			data-chat-empty={isEmpty}
 			className={cn(
-				'chat-content-layout flex min-w-0 flex-col h-full w-full items-center gap-4',
+				'flex flex-col h-full w-full items-center gap-4',
 				isEmpty && 'justify-center',
 				className,
 			)}
@@ -565,7 +565,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			    点击全部落空，用户视角就是"选不了文件夹、选不了模型、点不动"。
 			    loading 只影响上方消息区（spinner 有 SPINNER_DELAY_MS 延迟，
 			    短窗几乎无感），输入区始终可用。 */}
-			<div className="chat-composer-wrap relative mx-auto w-full max-w-[46rem] pb-4">
+			<div className="relative mx-auto w-full max-w-[46rem] pb-4">
 					<FlipCard
 						visible={toConfirmedToolCalls.length > 0 || footerSlot !== null}
 						className="absolute bottom-full left-0 right-0 mb-2 z-50"

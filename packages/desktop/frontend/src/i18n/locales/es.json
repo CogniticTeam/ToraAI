@@ -273,9 +273,6 @@
     "disabled": "El administrador ha deshabilitado las encuestas."
   },
   "common": {
-    "navigation": "Navegación",
-    "toggleNavigation": "Abrir o cerrar la barra lateral",
-    "navigationDescription": "Cambia de función o elige una conversación.",
     "toraModels": "Modelos de Tora",
     "add": "Añadir",
     "agent": "Agente",
@@ -1408,7 +1405,7 @@
       "motionPageTitle": "Transiciones de página",
       "motionPageDesc": "Cambios fluidos entre páginas del espacio de trabajo",
       "backgroundTitle": "Fondo",
-      "backgroundDesc": "Fondo del espacio de trabajo y de la pantalla de inicio de sesión.",
+      "backgroundDesc": "Compartido por el espacio de trabajo, los ajustes y las pantallas de inicio de sesión",
       "lavender": "Lavanda suave",
       "mist": "Bruma azul",
       "stone": "Piedra cálida",

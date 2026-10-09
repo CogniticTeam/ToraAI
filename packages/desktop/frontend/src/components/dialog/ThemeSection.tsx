@@ -63,17 +63,17 @@ export function ThemeSection() {
 	return (
 		<>
 			<h3 className="text-lg font-semibold">{t('settings.theme.title')}</h3>
-			<p className="mt-2 text-[13px] leading-5 text-muted-foreground">{t('settings.theme.subtitle')}</p>
+			<p className="mt-2 text-xs text-muted-foreground">{t('settings.theme.subtitle')}</p>
 			<div className="mt-5 space-y-5">
-				<section className="settings-card rounded-xl border border-border bg-card px-5 py-5">
+				<section className="rounded-xl border border-border bg-card px-5 py-4">
 					<div className="text-sm font-medium">{t('settings.theme.modeTitle')}</div>
-					<p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">{t('settings.theme.modeDesc')}</p>
-					<div className="mt-4 inline-flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
+					<p className="mt-0.5 text-xs text-muted-foreground">{t('settings.theme.modeDesc')}</p>
+					<div className="mt-4 inline-flex flex-wrap items-center gap-1 rounded-lg border border-border bg-muted p-1">
 						{MODES.map(({ value, icon: Icon }) => {
 							const active = mode === value;
 							return <button key={value} type="button" aria-pressed={active}
 								onClick={() => setMode(value as ThemePreference)}
-								className={'inline-flex items-center gap-1.5 min-h-9 rounded-md px-3 py-1.5 text-sm transition-colors ' +
+								className={'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors ' +
 									(active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
 								<Icon className="size-3.5" />{t(`settings.theme.${value}`)}
 							</button>;
@@ -81,35 +81,35 @@ export function ThemeSection() {
 					</div>
 				</section>
 
-				<section className="settings-card rounded-xl border border-border bg-card px-5 py-5">
+				<section className="rounded-xl border border-border bg-card px-5 py-4">
 					<div className="text-sm font-medium">{t('settings.theme.motionTitle')}</div>
-					<p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">{t('settings.theme.motionDesc')}</p>
-					<div role="group" aria-label={t('settings.theme.motionModeTitle')} className="mt-4 inline-flex flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
+					<p className="mt-0.5 text-xs text-muted-foreground">{t('settings.theme.motionDesc')}</p>
+					<div role="group" aria-label={t('settings.theme.motionModeTitle')} className="mt-4 inline-flex flex-wrap items-center gap-1 rounded-lg border border-border bg-muted p-1">
 						{MOTION_MODES.map(value => <button key={value} type="button" aria-pressed={motion.mode === value}
 							onClick={() => motion.setMode(value)}
-							className={'min-h-9 rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ' +
+							className={'rounded-md px-3 py-1.5 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ' +
 								(motion.mode === value ? 'bg-background text-foreground shadow-sm' : 'text-foreground/75 hover:text-foreground')}>
 							{t(`settings.theme.motion.${value}`)}
 						</button>)}
 					</div>
-					{motion.systemReduced && <p role="status" className="mt-2 text-[13px] leading-5 text-muted-foreground">{t('settings.theme.motionReduced')}</p>}
+					{motion.systemReduced && <p role="status" className="mt-2 text-xs text-muted-foreground">{t('settings.theme.motionReduced')}</p>}
 					<div className="mt-4 divide-y divide-border/70">
 						<div className="flex items-center justify-between gap-4 py-2.5">
 							<div><div id="motion-click-label" className="text-sm">{t('settings.theme.motionClickTitle')}</div>
-								<p className="text-[13px] leading-5 text-muted-foreground">{t('settings.theme.motionClickDesc')}</p></div>
+								<p className="text-xs text-muted-foreground">{t('settings.theme.motionClickDesc')}</p></div>
 							<Switch aria-labelledby="motion-click-label" checked={motion.clickEnabled} disabled={motion.effective === 'off'} onCheckedChange={motion.setClickEnabled} />
 						</div>
 						<div className="flex items-center justify-between gap-4 py-2.5">
 							<div><div id="motion-page-label" className="text-sm">{t('settings.theme.motionPageTitle')}</div>
-								<p className="text-[13px] leading-5 text-muted-foreground">{t('settings.theme.motionPageDesc')}</p></div>
+								<p className="text-xs text-muted-foreground">{t('settings.theme.motionPageDesc')}</p></div>
 							<Switch aria-labelledby="motion-page-label" checked={motion.pageEnabled} disabled={motion.effective === 'off'} onCheckedChange={motion.setPageEnabled} />
 						</div>
 					</div>
 				</section>
 
-				<section className="settings-card rounded-xl border border-border bg-card px-5 py-5">
+				<section className="rounded-xl border border-border bg-card px-5 py-4">
 					<div className="text-sm font-medium">{t('settings.theme.backgroundTitle')}</div>
-					<p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">{t('settings.theme.backgroundDesc')}</p>
+					<p className="mt-0.5 text-xs text-muted-foreground">{t('settings.theme.backgroundDesc')}</p>
 					<div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
 						{options.map(({ id, src }) => {
 							const active = background.preference === id;
@@ -135,7 +135,7 @@ export function ThemeSection() {
 						</Button>}
 					</div>
 					<input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" className="hidden" onChange={event => void importFile(event)} aria-label={t('settings.theme.import')} />
-					<p className="mt-3 text-[13px] leading-5 text-muted-foreground">{t('settings.theme.localOnly')}</p>
+					<p className="mt-3 text-xs text-muted-foreground">{t('settings.theme.localOnly')}</p>
 					{error && <p role="alert" className="mt-2 text-xs text-destructive">{error}</p>}
 				</section>
 				<FontSection />

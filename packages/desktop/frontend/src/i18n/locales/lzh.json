@@ -273,9 +273,6 @@
     "disabled": "投票之能，已由管理者閉。"
   },
   "common": {
-    "navigation": "導覽",
-    "toggleNavigation": "展收側欄",
-    "navigationDescription": "切換功能，擇其對話。",
     "toraModels": "Tora 模型",
     "add": "增",
     "agent": "智能體",
@@ -1408,7 +1405,7 @@
       "motionPageTitle": "頁面切換",
       "motionPageDesc": "於工作區頁面之間平滑過渡",
       "backgroundTitle": "背景",
-      "backgroundDesc": "工作區與登入之背景",
+      "backgroundDesc": "工作區、設置與登入界面共用背景",
       "lavender": "柔紫",
       "mist": "霧藍",
       "stone": "暖灰",

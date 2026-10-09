@@ -273,9 +273,6 @@
     "disabled": "تم تعطيل الاستطلاعات بواسطة المسؤول."
   },
   "common": {
-    "navigation": "التنقل",
-    "toggleNavigation": "فتح الشريط الجانبي أو إغلاقه",
-    "navigationDescription": "بدّل الوظائف أو اختر محادثة.",
     "toraModels": "نماذج Tora",
     "add": "إضافة",
     "agent": "الوكيل",
@@ -1420,7 +1417,7 @@
       "motionPageTitle": "انتقالات الصفحات",
       "motionPageDesc": "تغيّرات سلسة بين صفحات مساحة العمل",
       "backgroundTitle": "الخلفية",
-      "backgroundDesc": "خلفية مساحة العمل وشاشة تسجيل الدخول.",
+      "backgroundDesc": "مشتركة بين مساحة العمل والإعدادات وشاشات تسجيل الدخول",
       "lavender": "خزامى ناعم",
       "mist": "ضباب أزرق",
       "stone": "حجر دافئ",

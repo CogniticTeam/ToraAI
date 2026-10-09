@@ -132,9 +132,6 @@
     "disabled": "投票功能已由管理员关闭。"
   },
   "common": {
-    "navigation": "导航",
-    "toggleNavigation": "展开或收起侧栏",
-    "navigationDescription": "切换功能或选择对话。",
     "toraModels": "Tora 模型",
     "add": "添加",
     "agent": "智能体",
@@ -1267,7 +1264,7 @@
       "motionPageTitle": "页面切换",
       "motionPageDesc": "在工作区页面之间平滑过渡",
       "backgroundTitle": "背景",
-      "backgroundDesc": "用于工作区和登录界面的背景",
+      "backgroundDesc": "工作区、设置和登录界面共用背景",
       "lavender": "柔紫",
       "mist": "雾蓝",
       "stone": "暖灰",

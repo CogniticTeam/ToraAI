@@ -41,7 +41,6 @@ import {
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
-	useSidebar,
 } from '@/components/ui/sidebar';
 import { useMacFullscreen } from '@/hooks/useMacFullscreen';
 import { disableCatgirlLanguagePack } from '@/i18n';
@@ -100,7 +99,6 @@ function NavIndicator({ visible, motionMode }: { visible: boolean; motionMode: N
 export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationMotion }) {
 	const navigate = useNavigate();
 	const location = useLocation();
-	const {isMobile, setOpenMobile} = useSidebar();
 	const newTaskActive = /^\/(?:chat|tochat)(?:\/[\w-]+)?\/?$/.test(location.pathname);
 	const { t, i18n } = useTranslation();
 	const { installed: catgirlInstalled } = useCatgirlSettings();
@@ -119,10 +117,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	const [importOpen, setImportOpen] = useState(false);
 	useEffect(() => getWindowBridge()?.onOpenMessagesFromNotification?.(() => setMessagesOpen(true)), []);
 	const [subscriptionOpen,setSubscriptionOpen]=useState(false);
-	useEffect(() => { setOpenMobile(false); }, [location.pathname, setOpenMobile]);
-	useEffect(() => {
-		if (isMobile && (settingsOpen || messagesOpen || languageOpen || importOpen || subscriptionOpen)) setOpenMobile(false);
-	}, [isMobile, settingsOpen, messagesOpen, languageOpen, importOpen, subscriptionOpen, setOpenMobile]);
 	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
 	const handleSettingsOpenChange = useCallback((open: boolean) => {
@@ -255,14 +249,14 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 		// 内部再靠 app-no-drag 逐块"挖洞"在 Electron 里并不可靠（尤其
 		// SidebarContent 还带 overflow-auto，Chromium 不支持滚动区当拖拽区），
 		// 会表现为侧栏按钮点不动。窗口拖动有标题条 + 主内容区顶栏两处足够。
-		<><Sidebar collapsible={isMobile ? 'offcanvas' : 'none'} className="app-sidebar w-72! border-r border-sidebar-border bg-sidebar">
+		<Sidebar collapsible="none" className="w-72! border-r border-sidebar-border bg-sidebar">
 			{!nativeTitlebar && <SidebarHeader className="h-12 shrink-0 p-0">
 				<div data-testid="sidebar-brand" className={`app-drag flex h-12 items-center gap-2 pe-4 ${getWindowBridge()?.platform === 'darwin' && !fullscreen ? 'ps-24' : 'ps-4'}`}>
 					<img src="/icon.png" alt="" width={20} height={20} draggable={false} className="size-5 shrink-0 rounded-[5px] grayscale" />
 					<span className="text-base font-semibold tracking-tight text-foreground">Tora</span>
 				</div>
 			</SidebarHeader>}
-			<SidebarContent className="app-sidebar-content gap-2 px-1">
+			<SidebarContent>
 				<ApplicationModeSwitcher />
 				<SidebarGroup>
 					<SidebarGroupContent>
@@ -329,10 +323,10 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 				{/* 历史会话：菜单项之下（Tora 定制，自聊天页侧栏迁入） */}
 				<SessionListSection />
 			</SidebarContent>
-			<SidebarFooter className="border-t border-sidebar-border/60 px-3 py-3">
+			<SidebarFooter className="p-2">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<SidebarMenuButton className="h-11 rounded-lg px-2">
+						<SidebarMenuButton className="h-10 rounded-rect px-2">
 							<Avatar className="size-6 rounded-full">
 								<AvatarImage src={avatarUrl ?? undefined} alt={accountName} />
 								<AvatarFallback className="rounded-full bg-foreground text-[11px] text-background">
@@ -376,7 +370,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 					</DropdownMenuContent>
 				</DropdownMenu>
 			</SidebarFooter>
-		</Sidebar>
 			{/* key=settingsTab：同一 tab 重开时靠 open effect 复位；不同 tab 重挂载强制切换 */}
 			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
 			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
@@ -393,6 +386,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 					/>
 				</Suspense>
 			)}
-		</>
+		</Sidebar>
 	);
 }

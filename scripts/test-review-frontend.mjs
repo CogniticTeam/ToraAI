@@ -35,7 +35,6 @@ function harness(mocks = {}, globals = {}) {
     './adapters/authStore': {getToken:()=> 'fixture-web-token'},
     '@/i18n': {__esModule:true,default:{language:'zh'}},
     react: { ...react, default: react }, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
-    '@/components/ui/sidebar': new Proxy({useSidebar:()=>({isMobile:false,setOpenMobile(){}})}, {get:(target,key)=>key in target?target[key]:key==='__esModule'?true:String(key)}),
     '@/i18n/useI18n': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
     '@/i18n/useI18n.ts': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
     '@/context/AudioContext': { useAudioManager: () => audio, AudioProvider: 'AudioProvider' },

@@ -273,9 +273,6 @@
     "disabled": "Umfragen wurden vom Administrator deaktiviert."
   },
   "common": {
-    "navigation": "Navigation",
-    "toggleNavigation": "Seitenleiste öffnen oder schließen",
-    "navigationDescription": "Funktionen wechseln oder ein Gespräch auswählen.",
     "toraModels": "Tora Models",
     "add": "Hinzufügen",
     "agent": "Agent",
@@ -1408,7 +1405,7 @@
       "motionPageTitle": "Seitenübergänge",
       "motionPageDesc": "Sanfte Wechsel zwischen Arbeitsbereichsseiten",
       "backgroundTitle": "Hintergrund",
-      "backgroundDesc": "Hintergrund für Arbeitsbereich und Anmeldebildschirm.",
+      "backgroundDesc": "Wird von Arbeitsbereich, Einstellungen und Anmeldebildschirmen gemeinsam genutzt",
       "lavender": "Sanftes Lavendel",
       "mist": "Blauer Nebel",
       "stone": "Warmer Stein",

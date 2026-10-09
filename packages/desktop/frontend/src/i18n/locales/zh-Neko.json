@@ -273,9 +273,6 @@
     "disabled": "投票功能已由管理员关闭喵。"
   },
   "common": {
-    "navigation": "导航喵",
-    "toggleNavigation": "展开或收起侧栏喵",
-    "navigationDescription": "切换功能或选择对话喵。",
     "toraModels": "Tora 模型喵",
     "add": "添加喵",
     "agent": "智能体喵",
@@ -1408,7 +1405,7 @@
       "motionPageTitle": "页面切换喵",
       "motionPageDesc": "在工作区页面之间平滑过渡喵",
       "backgroundTitle": "背景喵",
-      "backgroundDesc": "工作区和登录界面的背景喵",
+      "backgroundDesc": "工作区、设置和登录界面共用背景喵",
       "lavender": "柔紫喵",
       "mist": "雾蓝喵",
       "stone": "暖灰喵",
