@@ -79,7 +79,9 @@ try {
 	const volumeMenu = page.getByRole('listbox');
 	const bounds = await volumeMenu.boundingBox();
 	assert.ok(bounds.y >= 0 && bounds.y + bounds.height <= 600, '窗口底部的选项应完整显示');
+	await page.waitForFunction(() => document.activeElement?.getAttribute('role') === 'option' && document.activeElement.textContent.includes('60%'));
 	await page.keyboard.press('ArrowDown');
+	await page.waitForFunction(() => document.activeElement?.getAttribute('role') === 'option' && document.activeElement.textContent.includes('75%'));
 	await page.keyboard.press('Enter');
 	await page.waitForFunction(() => JSON.parse(localStorage.getItem('tora_sound') || '{}').volume === 0.75);
 	await settings.getByRole('button', { name: '账号', exact: true }).click();
