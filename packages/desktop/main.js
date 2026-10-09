@@ -338,7 +338,7 @@ const readCachedDark = () => {
   catch { return null; }
 };
 let reportedDark = null;
-const winBackgroundFor = (dark) => (dark ? '#0c0d10' : '#f4f5f6');
+const winBackgroundFor = (dark) => (dark ? '#000000' : '#f4f5f6');
 
 /**
  * 安装自定义应用菜单，替掉 Electron 默认菜单。

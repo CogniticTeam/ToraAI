@@ -10,11 +10,12 @@ html[data-app-background='midnight'] { --startup-image: url('/images/tora-midnig
 html[data-app-background='custom'] { --startup-image: var(--app-custom-wallpaper, none); }
 html[data-app-background='none'] { --startup-image: none; --startup-base: #f4f5f6; }
 html.dark {
-	--startup-base: #18202c;
-	--startup-wash: rgba(13, 18, 28, .42);
+	--startup-base: #000000;
+	--startup-image: none;
+	--startup-wash: #000000;
 	--startup-mark-filter: invert(1);
 }
-html.dark[data-app-background='none'] { --startup-base: #0c0d10; }
+html.dark[data-app-background='none'] { --startup-base: #000000; }
 
 html, body { margin: 0; }
 .startup-loading-surface {

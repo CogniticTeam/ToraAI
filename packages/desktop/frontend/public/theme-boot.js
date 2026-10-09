@@ -31,7 +31,7 @@ const applyTheme = () => {
 	else useDark = darkQuery.matches;
 	document.documentElement.classList.toggle('dark', useDark);
 	// CSS 文件加载前的底色兜底（值与 index.css 的 --bg 一致）。
-	document.documentElement.style.background = useDark ? '#0c0d10' : '#f4f5f6';
+	document.documentElement.style.background = useDark ? '#000000' : '#f4f5f6';
 	// CSS 就位前让原生控件/滚动条也走对应配色。
 	document.documentElement.style.colorScheme = useDark ? 'dark' : 'light';
 	// 纠正主进程建窗时的猜测（跟系统），并让主进程记住本次主题。

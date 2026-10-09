@@ -284,8 +284,8 @@ svg.lucide {
 .dark {
 	color-scheme: dark;
 	--text: #b0b0ab;
-	--bg: #151515;
-	--background: #1b1b1a;
+	--bg: #000000;
+	--background: #000000;
 	--foreground: oklch(0.985 0 0);
 	--card: #1b1b1a;
 	--card-foreground: oklch(0.985 0 0);
@@ -308,7 +308,7 @@ svg.lucide {
 	--chart-3: oklch(0.439 0 0);
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
-	--sidebar: #1b1b1a;
+	--sidebar: #000000;
 	--sidebar-foreground: oklch(0.985 0 0);
 	--sidebar-primary: #f4f4f0;
 	--sidebar-primary-foreground: #171717;
@@ -360,6 +360,9 @@ html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(25, 25, 26
 	background-size: cover;
 }
 html[data-app-background='none'] .app-wallpaper { background-image: none; }
+/* Dark mode uses a pure black canvas; stored wallpaper choices still apply in light mode. */
+html.dark .app-wallpaper { background-image: none; }
+html.dark .hero-aurora { background: none; }
 
 @layer base {
 	* {
