@@ -81,8 +81,6 @@ export function ThemeSection() {
 					</div>
 				</section>
 
-				<FontSection />
-
 				<section className="rounded-xl border border-border bg-card px-5 py-4">
 					<div className="text-sm font-medium">{t('settings.theme.motionTitle')}</div>
 					<p className="mt-0.5 text-xs text-muted-foreground">{t('settings.theme.motionDesc')}</p>
@@ -140,6 +138,7 @@ export function ThemeSection() {
 					<p className="mt-3 text-xs text-muted-foreground">{t('settings.theme.localOnly')}</p>
 					{error && <p role="alert" className="mt-2 text-xs text-destructive">{error}</p>}
 				</section>
+				<FontSection />
 			</div>
 		</>
 	);

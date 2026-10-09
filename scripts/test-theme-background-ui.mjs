@@ -65,6 +65,7 @@ try {
 	assert.equal(await page.getByText('外观', { exact: true }).count(), 0, '通用页不应继续显示外观开关');
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('heading', { name: '主题' }).waitFor({ state: 'visible' });
+	assert.equal(await page.getByTestId('theme-font-section').evaluate(el=>el===el.parentElement.lastElementChild),true,'字体应位于主题设置最后');
 	const fontSelect=page.getByTestId('theme-font-select');
 	await page.waitForFunction(()=>document.querySelector('[data-testid="theme-font-select"]')?.options.length>1);
 	assert.equal(await fontSelect.locator('option').count(),systemFonts.length+1);

@@ -6,7 +6,9 @@ export function normalizeFontFamilies(values){
 }
 export function parseFontFamilies(output,platform){
  if(platform==='darwin'){
-  const records=JSON.parse(output).SPFontsDataType||[];
+  const data=JSON.parse(output);
+  if(Array.isArray(data))return normalizeFontFamilies(data);
+  const records=data.SPFontsDataType||[];
   return normalizeFontFamilies(records.filter(item=>item.enabled!=='no'&&item.valid!=='no').flatMap(item=>(item.typefaces||[]).filter(face=>face.enabled!=='no'&&face.valid!=='no').map(face=>face.family)));
  }
  if(platform==='win32'){const data=JSON.parse(output.replace(/^\uFEFF/,''));return normalizeFontFamilies(Array.isArray(data)?data:[data]);}
@@ -19,13 +21,25 @@ export function createSystemFontService({platform=process.platform,run=execute,n
   if(!refresh&&cached&&now()<expires)return cached;
   pending=(async()=>{
    let command,args;
-   if(platform==='darwin'){command='/usr/sbin/system_profiler';args=['SPFontsDataType','-json'];}
+   if(platform==='darwin'){
+    // Query the OS font registry directly, without inspecting every font file.
+    // This fixed script only reads CoreText metadata; it never automates the UI.
+    command='/usr/bin/osascript';args=['-l','JavaScript','-e',"ObjC.import('CoreText'); JSON.stringify(ObjC.deepUnwrap(ObjC.castRefToObject($.CTFontManagerCopyAvailableFontFamilyNames())));"];
+   }
    else if(platform==='win32'){
     command='powershell.exe';args=['-NoProfile','-NonInteractive','-Command',"$ErrorActionPreference='Stop'; [Console]::OutputEncoding=[System.Text.UTF8Encoding]::new($false); Add-Type -AssemblyName System.Drawing; $collection=[System.Drawing.Text.InstalledFontCollection]::new(); try { ConvertTo-Json -InputObject @($collection.Families | ForEach-Object { $_.Name }) -Compress } finally { $collection.Dispose() }"];
    }else if(platform==='linux'){command='fc-list';args=['--format','%{family[0]}\\n'];}
    else throw Error('unsupported-platform');
-   const {stdout}=await run(command,args,{encoding:'utf8',timeout:20000,maxBuffer:32*1024*1024,windowsHide:true});
-   const names=parseFontFamilies(stdout,platform);if(!names.length)throw Error('font-list-empty');cached=names;expires=now()+60000;return names;
+   const scan=async(command,args)=>{
+    const {stdout}=await run(command,args,{encoding:'utf8',timeout:20000,maxBuffer:32*1024*1024,windowsHide:true});
+    const names=parseFontFamilies(stdout,platform);if(!names.length)throw Error('font-list-empty');return names;
+   };
+   let names;
+   try{names=await scan(command,args);}catch(error){
+    if(platform!=='darwin')throw error;
+    names=await scan('/usr/sbin/system_profiler',['SPFontsDataType','-json']);
+   }
+   cached=names;expires=now()+60000;return names;
   })();
   try{return await pending;}finally{pending=null;}
  };
