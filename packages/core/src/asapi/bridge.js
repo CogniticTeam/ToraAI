@@ -362,7 +362,7 @@ async function _startChatRunAsync(sessionId, agent, payload) {
     saveSessionRecord(session);
     if(shouldName){
       const nameOnce=async()=>{
-        const title=await generateTitle(cfg,{userText});
+        const title=await generateTitle(cfg,{userText,language:session.config.title_language});
         // Re-read after I/O: never resurrect deleted sessions or overwrite manual changes.
         const saved=loadSessionRecord(sessionId);
         if(!saved?.config.naming?.pending)return;

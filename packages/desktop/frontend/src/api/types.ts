@@ -179,6 +179,8 @@ export interface SessionRecord extends RecordBase {
 }
 
 export interface CreateSessionRequest {
+	/** UI language captured when the first message is sent, for automatic naming. */
+	title_language?: string;
 	application_mode?: 'tochat' | 'tocode';
 	task_mode?: 'chat' | 'work';
 	model_source?: 'official' | 'custom';

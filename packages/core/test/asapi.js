@@ -1,3 +1,4 @@
+import {TITLE_PROMPT} from '../src/title-rules.js';
 // ASAPI 协议适配层集成测试（mock 模型 SSE，验证 agentscope 前端所需全链路）
 // 运行：node packages/core/test/asapi.js
 import { strict as assert } from 'node:assert';
@@ -58,7 +59,7 @@ const isTitleCall = (init) => {
   try {
     const body = JSON.parse(init?.body || '{}');
     return (body.messages || []).some(
-      (m) => typeof m.content === 'string' && m.content.includes('起一个简短标题')
+      (m) => typeof m.content === 'string' && m.content.includes(TITLE_PROMPT)
     );
   } catch { return false; }
 };
@@ -198,7 +199,7 @@ async function main() {
   await test('会话创建 + 列表（SessionView 形状）', async () => {
     const r = await realFetch(base + '/sessions/', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ agent_id: agentId })
+      body: JSON.stringify({ agent_id: agentId, title_language: 'fr-FR' })
     });
     const { session_id } = await r.json();
     sessionId = session_id;
@@ -207,6 +208,7 @@ async function main() {
     assert.equal(total, 1);
     const sv = sessions[0];
     assert.equal(sv.session.id, session_id);
+    assert.equal(loadSessionRecord(session_id).config.title_language, 'fr');
     assert.equal(sv.status, 'idle');
     assert.equal(sv.session.origin.type, 'user');
     assert.ok(sv.session.config.chat_model_config.model);

@@ -1,13 +1,14 @@
-import {DEFAULT_TITLE,sanitizeTitle,titleMessages} from '../../core/src/title-rules.js';
+import {DEFAULT_TITLE,sanitizeTitle,titleMessages,normalizeTitleLanguage} from '../../core/src/title-rules.js';
 import {toResponsesBody,responsesChatStream} from './tochat-responses.js';
 /** Small, tool-free metadata request using the same selected provider as the conversation. */
 export async function generateOfficialTitle(env,input,model,fetcher=fetch){
  if(!input||typeof input.userText!=='string'||!input.userText.trim()||input.userText.length>400) return {status:400,data:{detail:'标题输入无效'}};
  if(!model||!env[model.secret]||env.TOCHAT_ENABLED==='0')return {status:503,data:{detail:'标题服务暂不可用'}};
- const messages=titleMessages({userText:input.userText});
+ if(input.language!==undefined&&!normalizeTitleLanguage(input.language))return {status:400,data:{detail:'标题语言无效'}};
+ const messages=titleMessages({userText:input.userText,language:input.language});
  const structured=input.model==='claude-opus-5';
  const tools=structured?[{type:'function',function:{name:'return_title',description:'Return a short title. No real operation is performed.',parameters:{type:'object',properties:{title:{type:'string'}},required:['title'],additionalProperties:false}}}]:[];
- if(structured)messages[0].content+=' 使用 return_title 提交标题。';
+ if(structured)messages[0].content+=' Submit the title using return_title.';
  const body=model.protocol==='responses'?{...toResponsesBody({model:input.model,messages},'low',model.adapter==='ark'?512:4096,model.adapter),stream:true,tools:[],tool_choice:'none'}:{model:input.model,messages,stream:true,...(structured?{tools,tool_choice:{type:'function',function:{name:'return_title'}}}:{}),max_tokens:structured?4096:1024,...(input.model==='deepseek-flash'?{thinking:{type:'disabled'}}:{reasoning_effort:'low'})};
  if(model.adapter==='ark'){delete body.reasoning;body.thinking={type:'disabled'};}
  try{
@@ -23,6 +24,6 @@ export async function generateOfficialTitle(env,input,model,fetcher=fetch){
    const data=await response.json();text=model.protocol==='responses'?(data.output||[]).filter(item=>item.type==='message').flatMap(item=>item.content||[]).map(part=>part.text||'').join(''):data.choices?.[0]?.message?.content;
   }
   if(structured)for(const call of calls.values())if(call.name==='return_title'){try{const title=JSON.parse(call.args).title;if(typeof title==='string')text=title;}catch{}}
-  const title=sanitizeTitle(text);return {status:200,data:{title:title&&title!==DEFAULT_TITLE?title:null}};
+  const title=sanitizeTitle(text,input.language);return {status:200,data:{title:title&&title!==DEFAULT_TITLE?title:null}};
  }catch{return {status:502,data:{detail:'标题生成失败'}};}
 }

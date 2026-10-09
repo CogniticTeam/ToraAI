@@ -1,5 +1,6 @@
 import {DOUBAO_MODEL_ID, AUDIO_MIME_TYPES, VIDEO_MIME_TYPES} from '../../core/src/chat-media.js';
 import {generateOfficialTitle} from './tochat-title.js';
+import {normalizeTitleLanguage} from '../../core/src/title-rules.js';
 import { toResponsesBody, responsesChatStream } from './tochat-responses.js';
 import {readAgentQuota,publicQuota,reserveCreditStatement,progressCredit,settleCreditStatement} from './agent-credits.js';
 import {modelRates} from './subscription-plans.js';
@@ -98,6 +99,7 @@ export async function handleToChat(request,env,ctx,user) {
   if(path==='/tochat/title'&&request.method==='POST'){
     let input;try{const raw=await request.text();if(new TextEncoder().encode(raw).length>4096)return fail('标题输入过大',413);input=JSON.parse(raw);}catch{return fail('标题输入无效');}
     if(!modelConfig(input?.model)||typeof input?.userText!=='string'||!input.userText.trim()||input.userText.length>400)return fail('标题输入无效');
+    if(input.language!==undefined&&!normalizeTitleLanguage(input.language))return fail('标题语言无效');
     if(!env.ACCOUNT_EVENTS)return fail('标题服务暂不可用',503);
     const gate=env.ACCOUNT_EVENTS.get(env.ACCOUNT_EVENTS.idFromName('titles:'+user.id));
     let permit;try{permit=await (await gate.fetch('https://internal/title-permit',{method:'POST'})).json();}catch{return fail('标题服务暂不可用',503);}

@@ -59,6 +59,8 @@ jobs:
         run: npm run test:review
       - name: Verify ToChat built-in models and reasoning transport
         run: npm run test:tochat
+      - name: Verify localized first-message naming
+        run: node --test packages/core/test/title-languages.test.mjs
       - name: Verify isolated work-execution evaluation fixtures
         run: npm run eval:baseline
       - name: Verify desktop navigation security policy

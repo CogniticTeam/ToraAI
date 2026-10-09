@@ -14,6 +14,7 @@ import { discoverSessionImports, previewSessionImports, commitSessionImports, re
 import { loadConfig, saveConfig, syncEffectiveModel, DEFAULT_CONFIG } from '../config.js';
 import { BUILTIN_CREDENTIAL_ID, BUILTIN_PROVIDER_TYPE, BUILTIN_MODELS, builtinAuth, setBuiltinAuth } from '../builtin-models.js';
 import { catgirlSettings } from '../catgirl.js';
+import { normalizeTitleLanguage } from '../title-rules.js';
 import {
   listAgents, getAgent, createAgent, updateAgent, deleteAgent,
   listCredentials, createCredential, updateCredential, deleteCredential,
@@ -1062,6 +1063,8 @@ async function route(req, res) {
     record.config.task_mode=body.task_mode==='chat'?'chat':'work';
     record.config.model_source=body.model_source==='custom'?'custom':'official';
     record.config.web_search=body.web_search===true;
+    const titleLanguage=normalizeTitleLanguage(body.title_language);
+    if(titleLanguage)record.config.title_language=titleLanguage;
     if(record.config.application_mode==='tochat'&&record.config.task_mode==='chat') record.config.cwd=null;
     saveSessionRecord(record);
     // 无会话时前端把权限模式记在本地，随第一条消息带过来 —— 与 cwd 同一策略。

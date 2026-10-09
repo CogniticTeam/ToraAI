@@ -33,6 +33,7 @@ function harness(mocks = {}, globals = {}) {
   const audio = { disposeAll() {} };
   const imports = {
     './adapters/authStore': {getToken:()=> 'fixture-web-token'},
+    '@/i18n': {__esModule:true,default:{language:'zh'}},
     react: { ...react, default: react }, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     '@/components/ui/sidebar': new Proxy({useSidebar:()=>({isMobile:false,setOpenMobile(){}})}, {get:(target,key)=>key in target?target[key]:key==='__esModule'?true:String(key)}),
     '@/i18n/useI18n': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
@@ -111,22 +112,31 @@ test('同名图片分别回写自己的处理结果，失败不删除其它同�
   assert.deepEqual(Array.from(sent[0].slice(1), block => block.id), ['A', 'B']); h.dispose();
 });
 
-function messagesFixture() {
+function messagesFixture(language = 'zh') {
   const creating = deferred(), history = deferred(), navigations = [], triggers = [], fresh = new Set();
   let agentId = 'agent', sessionId = null, delayedHistory = false;
   const options = { onSessionCreated: id => navigations.push(id) };
-  const h = harness({ '@/api': {
+  const preference={language},created=[];
+  const h = harness({ '@/i18n': {__esModule:true,default:preference}, '@/api': {
     takeFreshlyCreated: id => fresh.delete(id),
-    sessionApi: { create: () => creating.promise.then(res => { fresh.add(res.session_id); return res; }),
+    sessionApi: { create: body => {created.push(body);return creating.promise.then(res => { fresh.add(res.session_id); return res; });},
       messages: async id => delayedHistory && id === 'A' ? history.promise : { messages: [{ id: id + '-user', role: 'user', content: [] }], is_running: false },
       async *stream() {} },
     chatApi: { trigger: async value => { triggers.push(value); } },
   } });
   const { useMessages } = h.load('hooks/useMessages.ts');
   const render = () => h.render(() => useMessages(agentId, sessionId, options));
-  return { h, render, creating, history, navigations, triggers,
+  return { h, render, creating, history, navigations, triggers, created, preference,
     setSession(id) { sessionId = id; }, delayHistory() { delayedHistory = true; } };
 }
+
+test('desktop first-send naming captures the selected language before session creation completes',async()=>{
+ for(const language of ['en-GB','fr','ja','zh-HK']){
+  const f=messagesFixture(language);const sending=f.render().send([{type:'text',text:'Fix the keyboard layout'}]);
+  f.preference.language='zh';assert.equal(f.created[0].title_language,language);
+  f.creating.resolve({session_id:'localized-title'});await sending;f.h.dispose();
+ }
+});
 
 test('首发建会话迟到时不跳离当前会话，任务仍发送到原会话', async () => {
   const f = messagesFixture(); const first = f.render();
@@ -420,11 +430,12 @@ test('ToChat mode switcher disappears on optimistic send and restored sessions, 
  params={agentId:'agent'};assert.ok(switcher(render()),'new conversation restores mode choice');h.dispose();
 });
 
-test('website AI title is deferred, uses only first message, and preserves subsequent conversation history', {skip:!existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
- const gate=deferred(),stored=new Map(),titles=[],requests=[];
+test('website AI title captures language, remains deferred and preserves subsequent conversation history', {skip:!existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
+ const gate=deferred(),stored=new Map(),titles=[],requests=[],preference={language:'en-GB'};
  const h=harness({
   '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},
   './i18n.ts':{webText:value=>value},
+  '@/i18n/useI18n':{useTranslation:()=>({t:key=>key,i18n:preference})},
   './api':{webFetch:async()=>({}),webJSON:async(path,init)=>{assert.equal(path,'title');requests.push(JSON.parse(init.body));return gate.promise;}},
   './stream':{readChatStream:async()=>({content:'main reply',reasoning:'',tools:[]})},
   './localFiles':{selectedDirectory:()=>({}),localToolDefinitions:[]},
@@ -434,8 +445,10 @@ test('website AI title is deferred, uses only first message, and preserves subse
  const opts={mode:'chat',model:'gpt-6-sol',effort:'high',search:false,confirmWrites:true,onUpdate(){},onQuota(){},onTitleUpdate:value=>titles.push(value)};
  const render=()=>h.render(()=>useWebConversation('fixture',null,opts));
  await render().send([{type:'text',text:'请修复手机输入时键盘遮住输入框的问题'}]);assert.equal(render().busy,false);assert.equal(titles.length,0,'main reply completes before naming resolves');
+ preference.language='zh';
  await render().send([{type:'text',text:'第二条消息不参与标题生成'}]);assert.equal(requests.length,1);assert.equal(requests[0].userText,'请修复手机输入时键盘遮住输入框的问题');
- gate.resolve({title:'标题：手机键盘适配。'});await tick();assert.equal(titles[0].title,'手机键盘适配');assert.equal(titles[0].messages.length,4,'background naming must retain both turns');h.dispose();
+ assert.equal(requests[0].language,'en-GB');
+ gate.resolve({title:'Fix mobile keyboard overlap'});await tick();assert.equal(titles[0].title,'Fix mobile keyboard overlap');assert.equal(titles[0].titleLanguage,'en-GB');assert.equal(titles[0].messages.length,4,'background naming must retain both turns');h.dispose();
 });
 
 test('a stale naming/auth response cannot sign out a newly logged-in web account',{skip:!existsSync(new URL('../website/tochat/src/api.ts',import.meta.url))},async()=>{

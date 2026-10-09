@@ -18,6 +18,7 @@ import type { CreateSessionRequest } from '@/api';
 import { sessionApi, takeFreshlyCreated } from '@/api';
 import { chatApi } from '@/api';
 import { useAudioManager } from '@/context/AudioContext';
+import i18n from '@/i18n';
 import { playNotificationSound } from '@/lib/sound';
 
 /**
@@ -607,6 +608,7 @@ export function useMessages(
 			if (!agentId) return;
 			const lifecycle = lifecycleRef.current;
 			const sendOptions = optionsRef.current;
+			const titleLanguage = i18n.language;
 
 			// No session yet — auto-create one so the user can send a
 			// message into an empty conversation list / a bare ``/chat/:agent``
@@ -647,6 +649,7 @@ export function useMessages(
 							.create({
 								agent_id: agentId,
 								...optionsRef.current?.newSessionExtras?.(),
+								title_language: titleLanguage,
 							})
 							.then((res) => res.session_id);
 					}
