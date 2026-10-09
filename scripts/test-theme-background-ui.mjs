@@ -158,6 +158,15 @@ try {
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'none');
 	await page.getByRole('button', { name: '返回 Tora' }).click();
 	assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.app-wallpaper')).backgroundImage), 'none', '返回工作区后仍应无背景');
+
+	await page.getByRole('button', { name: /theme-test/i }).first().click();
+	await page.getByText('设置', { exact: true }).first().click();
+	await page.getByRole('button', { name: '数据管理', exact: true }).click();
+	await page.getByRole('button', { name: '导入聊天记录', exact: true }).click();
+	await page.getByTestId('session-import-dialog').waitFor({ state: 'visible' });
+	await page.getByRole('dialog', { name: '设置', exact: true }).waitFor({ state: 'hidden' });
+	await page.keyboard.press('Escape');
+	await page.getByTestId('session-import-dialog').waitFor({ state: 'hidden' });
 	assert.deepEqual(runtimeRequests,[],'设置页不应读取或改写内部运行配置');
 	assert.deepEqual(errors, [], `页面脚本错误：${errors.join(' | ')}`);
 	console.log('主题页、预设背景、无背景、自定义导入与移除、深浅色及重载持久化：通过');
