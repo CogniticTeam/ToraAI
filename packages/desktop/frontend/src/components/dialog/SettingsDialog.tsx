@@ -58,6 +58,7 @@ interface Props {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	onImportSessions?: () => void;
+	returnFocusRef?: React.RefObject<HTMLElement | null>;
 	/** 打开时定位到的板块（默认通用）。配合 key 重挂载可强制切换。 */
 	initialTab?: Section;
 }
@@ -1071,7 +1072,7 @@ function AgentSection() {
 
 // ==================== 设置主窗口 ====================
 
-export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onImportSessions }: Props) {
+export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onImportSessions, returnFocusRef }: Props) {
 	const { t } = useTranslation();
 	const { installed: catgirlInstalled } = useCatgirlSettings();
 	const [section, setSection] = useState<Section>(()=>normalizeSettingsSection(initialTab));
@@ -1189,7 +1190,11 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 		<SettingsPrimitive.Root open={open} onOpenChange={onOpenChange}>
 		<SettingsPrimitive.Portal forceMount>
 		<SettingsPrimitive.Content forceMount asChild aria-describedby={undefined} onCloseAutoFocus={event => {
-			if (restoreFocus.current?.isConnected) { event.preventDefault(); restoreFocus.current.focus(); }
+			event.preventDefault();
+			// 切换到导入或其它弹窗时，由新弹窗管理焦点。
+			if (document.querySelector('[role="dialog"][data-state="open"]')) return;
+			const target = returnFocusRef?.current ?? restoreFocus.current;
+			if (target?.isConnected) target.focus();
 		}}>
 		<div
 			aria-hidden={closing}

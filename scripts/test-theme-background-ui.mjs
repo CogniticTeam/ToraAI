@@ -88,6 +88,7 @@ try {
 	assert.equal(await page.getByRole('heading', { name: '账号', exact: true }).evaluate(el => getComputedStyle(el).fontSize), headingSize, '账号与通用页标题应一致');
 	await page.keyboard.press('Escape');
 	await settings.waitFor({ state: 'hidden' });
+	await page.waitForFunction(() => document.activeElement?.getAttribute('data-testid') === 'account-menu-trigger', null, { timeout: 5000 });
 	assert.equal(await page.getByRole('button', { name: /theme-test/i }).first().evaluate(el => el === document.activeElement), true, '关闭设置后焦点应回到账户入口');
 	await page.getByRole('button', { name: /theme-test/i }).first().click();
 	await page.getByText('设置', { exact: true }).first().click();

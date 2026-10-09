@@ -14,7 +14,7 @@ import {
 	
 	Vote,
 } from 'lucide-react';
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -111,6 +111,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 		catch { toast.error(catgirlLabels.disableError); }
 		finally { setCatgirlBusy(false); }
 	};
+	const accountMenuRef = useRef<HTMLButtonElement | null>(null);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const [messagesOpen, setMessagesOpen] = useState(false);
 	const [languageOpen, setLanguageOpen] = useState(false);
@@ -326,7 +327,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 			<SidebarFooter className="p-2">
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
-						<SidebarMenuButton className="h-10 rounded-rect px-2">
+						<SidebarMenuButton ref={accountMenuRef} data-testid="account-menu-trigger" className="h-10 rounded-rect px-2">
 							<Avatar className="size-6 rounded-full">
 								<AvatarImage src={avatarUrl ?? undefined} alt={accountName} />
 								<AvatarFallback className="rounded-full bg-foreground text-[11px] text-background">
@@ -382,6 +383,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 						open={settingsOpen}
 						onOpenChange={handleSettingsOpenChange}
 						initialTab={settingsTab}
+						returnFocusRef={accountMenuRef}
 						onImportSessions={() => { handleSettingsOpenChange(false); setImportOpen(true); }}
 					/>
 				</Suspense>
