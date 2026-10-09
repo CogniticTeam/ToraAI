@@ -92,6 +92,7 @@ try {
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'midnight');
 	await page.getByRole('button', { name: '深色', exact: true }).click();
 	assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true);
+	await page.waitForFunction(()=>[...document.querySelectorAll('.app-wallpaper')].every(el=>getComputedStyle(el).backgroundColor==='rgb(0, 0, 0)'));
 	assert.equal(await page.locator('.app-wallpaper').last().evaluate(el=>getComputedStyle(el).backgroundColor),'rgb(0, 0, 0)');
 	assert.equal(await page.locator('.app-wallpaper').last().evaluate(el=>getComputedStyle(el).backgroundImage),'none');
 	assert.equal(await page.locator('[data-sidebar=footer]').evaluate(el=>getComputedStyle(el.parentElement).backgroundColor),'rgb(0, 0, 0)');
