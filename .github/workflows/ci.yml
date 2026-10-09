@@ -143,6 +143,7 @@ jobs:
             /tmp/tora-doubao-chat-picker.png
             /tmp/tora-official-picker-performance.json
             /tmp/tora-theme-font-settings.png
+            /tmp/tora-settings-without-debug.png
           if-no-files-found: ignore
           retention-days: 7
 

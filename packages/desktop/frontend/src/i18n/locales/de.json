@@ -1330,9 +1330,8 @@
       "data": "Daten",
       "about": "Über",
       "usage": "Nutzung",
-      "account": "Konto",
-      "developer": "Entwickler & Debug"
-    },
+      "account": "Konto"
+},
     "memory": {
       "title": "Gedächtnis",
       "desc": "Langzeitgedächtnis über Sitzungen hinweg: Relevante Einträge werden zu Beginn einer Sitzung eingefügt, mit optionaler Destillation nach der Sitzung",
@@ -1493,11 +1492,6 @@
         "tooLarge": "Datei zu groß (max. 10 MB)",
         "saveFailed": "Speichern fehlgeschlagen, bitte erneut versuchen"
       },
-      "behavior": "Verhalten"
-    },
-    "developer": {
-      "title": "Entwickler & Debug",
-      "desc": "Laufzeitverhalten des Agenten, Hooks, Codeindex und Sprachserver. Änderungen werden beim nächsten Lauf wirksam.",
       "behavior": "Verhalten"
     },
     "behavior": {

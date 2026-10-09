@@ -482,3 +482,12 @@ test('Doubao appears only in chat model menus; attachment capabilities include a
  const code=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:id,input_types:['text']},{name:'gpt-6-sol',input_types:['text']}]}]},loading:false,refetch(){}})}});
  const {LlmSelect}=code.load('components/select/LlmSelect.tsx');const tree=code.render(()=>LlmSelect({}));assert.equal(find(tree,node=>node.type==='button'&&find(node,child=>child.props?.children==='Doubao Seed 2.1 Lite')),null);code.dispose();
 });
+
+
+test('retired developer settings and invalid external links fall back to General',()=>{
+ const h=harness();const {normalizeSettingsSection,SETTINGS_SECTIONS}=h.load('lib/openSettings.ts');
+ assert.ok(!SETTINGS_SECTIONS.includes('developer'));
+ for(const value of ['developer',null,'',42,{}])assert.equal(normalizeSettingsSection(value),'general');
+ for(const value of ['quota','model','agent','usage'])assert.equal(normalizeSettingsSection(value),value);
+ h.dispose();
+});

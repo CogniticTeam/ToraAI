@@ -23,6 +23,7 @@ try {
 	const chosenFont=systemFonts.find(name=>/Noto Serif|DejaVu Serif|Georgia/i.test(name))||systemFonts[0];
 	const page = await browser.newPage({ viewport: { width: 1360, height: 850 }, locale: 'zh-CN' });
 	const errors = [];
+	const runtimeRequests=[];page.on('request',request=>{if(new URL(request.url()).pathname==='/admin/runtime')runtimeRequests.push(request.url());});
 	page.on('pageerror', error => errors.push(error.message));
 	await page.addInitScript(fonts => {
 		window.toraFonts={list:async()=>({status:'ready',families:fonts})};
@@ -62,6 +63,10 @@ try {
 	await page.getByRole('button', { name: /theme-test/i }).first().click();
 	await page.getByText('设置', { exact: true }).first().click();
 	await page.getByRole('heading', { name: '通用' }).waitFor({ state: 'visible' });
+	assert.equal(await page.getByRole('button',{name:'开发者&调试',exact:true}).count(),0);
+	await page.evaluate(()=>window.dispatchEvent(new CustomEvent('tora:open-settings',{detail:'developer'})));
+	await page.getByRole('heading',{name:'通用',exact:true}).waitFor({state:'visible'});
+	await page.screenshot({path:'/tmp/tora-settings-without-debug.png'});
 	assert.equal(await page.getByText('外观', { exact: true }).count(), 0, '通用页不应继续显示外观开关');
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('heading', { name: '主题' }).waitFor({ state: 'visible' });
@@ -116,6 +121,7 @@ try {
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'none');
 	await page.getByRole('button', { name: '返回 Tora' }).click();
 	assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.app-wallpaper')).backgroundImage), 'none', '返回工作区后仍应无背景');
+	assert.deepEqual(runtimeRequests,[],'设置页不应读取或改写内部运行配置');
 	assert.deepEqual(errors, [], `页面脚本错误：${errors.join(' | ')}`);
 	console.log('主题页、预设背景、无背景、自定义导入与移除、深浅色及重载持久化：通过');
 } finally {

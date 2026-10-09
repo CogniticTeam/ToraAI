@@ -1330,9 +1330,8 @@
       "data": "Données",
       "about": "À propos",
       "usage": "Utilisation",
-      "account": "Compte",
-      "developer": "Développeur et débogage"
-    },
+      "account": "Compte"
+},
     "memory": {
       "title": "Mémoire",
       "desc": "Mémoire à long terme entre les sessions : les entrées pertinentes sont injectées au début de la session, avec une distillation facultative après la session",
@@ -1493,11 +1492,6 @@
         "tooLarge": "Fichier trop volumineux (max 10 Mo)",
         "saveFailed": "Échec de l'enregistrement, veuillez réessayer"
       },
-      "behavior": "Comportement"
-    },
-    "developer": {
-      "title": "Développeur et débogage",
-      "desc": "Comportement d'exécution de l'agent, hooks, index de code et serveurs de langage. Les modifications s'appliquent à la prochaine exécution.",
       "behavior": "Comportement"
     },
     "behavior": {

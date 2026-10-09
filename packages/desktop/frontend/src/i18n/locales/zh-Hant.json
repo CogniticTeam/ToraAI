@@ -1330,9 +1330,8 @@
       "data": "資料管理",
       "about": "關於",
       "usage": "使用統計",
-      "account": "賬號",
-      "developer": "開發者&除錯"
-    },
+      "account": "賬號"
+},
     "memory": {
       "title": "記憶",
       "desc": "跨會話的長期記憶：會話開始時注入相關條目，會話結束後可選自動提煉",
@@ -1493,11 +1492,6 @@
         "tooLarge": "檔案過大（上限 10MB）",
         "saveFailed": "儲存失敗，請重試"
       },
-      "behavior": "行為"
-    },
-    "developer": {
-      "title": "開發者&除錯",
-      "desc": "Agent 執行行為、鉤子、程式碼索引與語言服務。改完即時生效，下次執行讀取新配置。",
       "behavior": "行為"
     },
     "behavior": {

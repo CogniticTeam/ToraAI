@@ -1330,9 +1330,8 @@
       "data": "Data",
       "about": "About",
       "usage": "Usage",
-      "account": "Account",
-      "developer": "Developer & Debug"
-    },
+      "account": "Account"
+},
     "memory": {
       "title": "Memory",
       "desc": "Long-term memory across sessions: relevant entries are injected at session start, with optional post-session distillation",
@@ -1493,11 +1492,6 @@
         "tooLarge": "File too large (max 10MB)",
         "saveFailed": "Failed to save, please retry"
       },
-      "behavior": "Behavior"
-    },
-    "developer": {
-      "title": "Developer & Debug",
-      "desc": "Agent runtime behavior, hooks, code index and language servers. Changes apply to the next run.",
       "behavior": "Behavior"
     },
     "behavior": {

@@ -6,9 +6,9 @@
 import {
   AudioWaveform, BotMessageSquare, Box, Brain, ChartColumn, ChevronLeft, ChevronRight, CircleDot, Cloud, CloudDrizzle,
   Cpu, Database, ExternalLink, Flame, Gauge, Import, Info, Layers, Loader2, Moon,
-  Palette, Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Trash2, TriangleAlert, UserRound, Waves, X, Zap
+  Palette, Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Trash2, UserRound, Waves, X, Zap
 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { agentApi, type AgentView } from '@/api';
 import { AccountSection } from '@/components/dialog/AccountSection';
@@ -20,16 +20,15 @@ import { ThemeSection } from '@/components/dialog/ThemeSection';
 import { ToChatModelSource } from '@/components/dialog/ToChatModelSource';
 import { UsageSection } from '@/components/dialog/UsageSection';
 import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DropdownSelect } from '@/components/ui/dropdown-select';
-import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { ReleaseNotesDialog } from '@/components/updates/ReleaseNotesDialog';
 import { AVAILABLE_MODELS_KEY } from '@/hooks/useAvailableModels';
 import i18n, { availableLanguageOptions, normalizeLanguage, setAppLanguage } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { useCatgirlSettings } from '@/lib/catgirl';
+import {normalizeSettingsSection,type SettingsSection} from '@/lib/openSettings';
 import { PROVIDER_ICONS } from '@/lib/providerIcons';
 import { queryClient } from '@/lib/query-client';
 import { releaseNotesBridge, type ReleaseNotes } from '@/lib/releaseNotes';
@@ -65,15 +64,7 @@ interface Props {
 const apiBase = () => (localStorage.getItem('server_url') || 'http://127.0.0.1:3210').replace(/\/+$/, '');
 const apiUrl = (p: string) => `${apiBase()}${p}`;
 
-type Section = 'quota' | 'general' | 'theme' | 'usage' | 'account' | 'agent' | 'model' | 'memory' | 'data' | 'about' | 'developer';
-
-type RuntimeBehavior = {
-	maxTokensBudget: number;
-	toolOutputLimit: number;
-	maxTurns: number;
-	shellSandbox?: boolean;
-	shellNetworkAccess?: boolean;
-};
+type Section = SettingsSection;
 
 type UpdateResult = {
 	status: 'available' | 'development' | 'downloading' | 'ready' | 'error' | 'unavailable' | 'up-to-date';
@@ -87,19 +78,6 @@ function getUpdateBridge(): UpdateBridge | null {
 	return (window as unknown as { toraWindow?: UpdateBridge }).toraWindow ?? null;
 }
 
-/**
- * 参考 Trae Agent 的 YAML 执行配置，把常用的上下文、工具输出和迭代上限
- * 收敛成三个可理解的一键档位；用户仍可在下面逐项微调。
- */
-const RUNTIME_PRESETS: ReadonlyArray<{
-	id: 'fast' | 'balanced' | 'deep';
-	values: RuntimeBehavior;
-}> = [
-	{ id: 'fast', values: { maxTokensBudget: 12000, toolOutputLimit: 3000, maxTurns: 20 } },
-	{ id: 'balanced', values: { maxTokensBudget: 24000, toolOutputLimit: 6000, maxTurns: 40 } },
-	{ id: 'deep', values: { maxTokensBudget: 48000, toolOutputLimit: 12000, maxTurns: 80 } },
-];
-
 const SECTIONS: { key: Section; label: string; icon: typeof Settings2 }[] = [
 	{ key: 'account', label: 'settings.sections.account', icon: UserRound },
 	{ key: 'general', label: 'settings.sections.general', icon: Settings2 },
@@ -111,7 +89,6 @@ const SECTIONS: { key: Section; label: string; icon: typeof Settings2 }[] = [
 	{ key: 'memory', label: 'settings.sections.memory', icon: Brain },
 	{ key: 'data', label: 'settings.sections.data', icon: Database },
 	{ key: 'about', label: 'settings.sections.about', icon: Info },
-	{ key: 'developer', label: 'settings.sections.developer', icon: SquareTerminal },
 ];
 
 // 服务商预设：Anthropic 走原生 Messages API，其余走 OpenAI 兼容接口；keyUrl = 官网密钥页
@@ -828,7 +805,7 @@ function SystemNotificationSection() {
 
 /**
  * 提示音设置（自包含：配置写 localStorage、自定义音频写 IndexedDB，
- * 不并入 runtime state —— 与高级板块同理，各自的存储路径不同）。
+ * 声音设置有独立存储路径）。
  * 配置结构见 lib/sound.ts；「试听」绕过开关与防抖，按当前表单值直接播。
  */
 function SoundSection() {
@@ -1087,526 +1064,16 @@ function AgentSection() {
 
 // ==================== 设置主窗口 ====================
 
-/**
- * 行为设置面板专用的数字输入：
- * - 失焦或回车时回调 onCommit（值被合法化后），输入中不打扰父级
- * - 范围限定 + 四舍五入，避免误输入小数或负数
- * - 右侧 `suffix` 是单位提示（不参与数值）
- */
-function NumberField({
-	value,
-	min,
-	max,
-	step = 1,
-	suffix,
-	disabled,
-	onCommit
-}: {
-	value: number;
-	min: number;
-	max: number;
-	step?: number;
-	suffix?: string;
-	disabled?: boolean;
-	onCommit: (next: number) => void;
-}) {
-	const [draft, setDraft] = useState<string>(String(value));
-	// 父级 value 变化时（如后端 PATCH 成功回填）同步刷新输入框
-	useEffect(() => { setDraft(String(value)); }, [value]);
-	const commit = () => {
-		const n = Number(draft);
-		if (!Number.isFinite(n)) { setDraft(String(value)); return; }
-		const clamped = Math.max(min, Math.min(max, Math.round(n / step) * step));
-		if (clamped !== value) onCommit(clamped);
-		else setDraft(String(clamped));
-	};
-	return (
-		<div className="inline-flex items-center gap-2">
-			<Input
-				type="number"
-				inputMode="numeric"
-				className="w-32"
-				min={min}
-				max={max}
-				step={step}
-				disabled={disabled}
-				value={draft}
-				onChange={(e) => setDraft(e.target.value)}
-				onBlur={commit}
-				onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-			/>
-			{suffix && <span className="text-xs text-muted-foreground">{suffix}</span>}
-		</div>
-	);
-}
-
-// ==================== 高级板块（钩子 / 轨迹 / 索引 / 语言服务） ====================
-
-/** `/admin/runtime` 里与"高级"相关的字段。 */
-interface LspServerConfig {
-	command: string;
-	args?: string[];
-	initializationOptions?: Record<string, unknown>;
-}
-
-interface McpServerConfig {
-	command: string;
-	args?: string[];
-	env?: Record<string, string>;
-}
-
-interface McpServerStatus {
-	name: string;
-	command: string;
-	args: string[];
-	status: 'ok' | 'error';
-	tools?: string[];
-	error?: string;
-	stderrTail?: string | null;
-}
-
-interface AdvancedRuntime {
-	hooksEnabled?: boolean;
-	changesAware?: boolean;
-	lspServers?: Record<string, LspServerConfig>;
-	mcpServers?: Record<string, McpServerConfig>;
-}
-
-interface LspEntry {
-	ext: string;
-	command: string;
-	args: string[];
-	label: string;
-	path: string;
-	/**
-	 * Server-specific init params. For typescript-language-server this carries
-	 * `tsserver.path` — without it the server looks for typescript inside the
-	 * opened project and exits when it isn't there (which is the common case).
-	 * The backend probes for a usable tsserver and fills this in.
-	 */
-	initializationOptions?: Record<string, unknown>;
-}
-
-interface LspProbe {
-	installed: LspEntry[];
-	configured: Record<string, LspServerConfig>;
-}
-
-interface IndexStats {
-	cwd: string;
-	semantic: { indexed: boolean; files?: number; tokens?: number };
-	symbols: { files?: number; count?: number };
-}
-
-/**
- * 高级板块：钩子开关、轨迹开关、代码索引、语言服务、项目钩子信任。
- *
- * 自包含（自己 fetch / 自己 save），不并入上面那套 `runtime` state ——
- * 那套只认三个数字字段，硬塞进来会让它的类型和保存路径都变形。
- * 代价是打开设置页时多几次 GET，可接受。
- *
- * @returns 高级板块的行列表（无标题，标题由调用方渲染）。
- */
-function AdvancedSection() {
-	const { t } = useTranslation();
-	const [rt, setRt] = useState<AdvancedRuntime | null>(null);
-	const [lsp, setLsp] = useState<LspProbe | null>(null);
-	const [idx, setIdx] = useState<IndexStats | null>(null);
-	// 最近工作目录 —— 索引重建与项目钩子信任都需要一个具体目录，
-	// 而设置页不属于任何会话，只能用"最近用过的那个"。
-	const [recentCwd, setRecentCwd] = useState<string | null>(null);
-	const [trusted, setTrusted] = useState<boolean | null>(null);
-	const [busy, setBusy] = useState(false);
-	const [err, setErr] = useState<string | null>(null);
-	const [note, setNote] = useState<string | null>(null);
-	// 探测失败 ≠ 没有。连不上后端时如果显示"未检测到已安装的 language server"，
-	// 用户会去装 server，而真正该做的是检查连接 —— 两句话必须分开。
-	const [loadErr, setLoadErr] = useState<string | null>(null);
-
-	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			const failed: string[] = [];
-			const get = async (p: string) => {
-				try {
-					const r = await fetch(apiUrl(p));
-					if (!r.ok) throw new Error(`HTTP ${r.status}`);
-					return await r.json();
-				} catch (e) {
-					failed.push(`${p}（${e instanceof Error ? e.message : String(e)}）`);
-					return null;
-				}
-			};
-			const [a, b, d] = await Promise.all([
-				get('/admin/runtime'),
-				get('/admin/lsp'),
-				// 后端决定"现在该用哪个目录"（最近工作目录 → 最近有目录的会话），
-				// 并负责归一化 —— 前端拼接很容易在 /var 与 /private/var 上翻车。
-				get('/admin/current-workspace'),
-			]);
-			if (cancelled) return;
-			setRt(a);
-			setLsp(b);
-			const cwd: string | null = (d as { cwd?: string | null } | null)?.cwd ?? null;
-			setRecentCwd(cwd);
-			// 索引统计与钩子状态都需要一个具体目录。不带 cwd 去问 /admin/index 会
-			// 得到 422（"没有工作目录"）—— 那是预期答案，不是"读取失败"，所以这两
-			// 个请求排在拿到 cwd 之后，且没有 cwd 时干脆不问。
-			if (cwd) {
-				const [c, hk] = await Promise.all([
-					get(`/admin/index?cwd=${encodeURIComponent(cwd)}`),
-					get(`/hooks?cwd=${encodeURIComponent(cwd)}`),
-				]);
-				if (cancelled) return;
-				setIdx(c);
-				setTrusted(Boolean(hk?.projectHooksTrusted));
-			}
-			if (!cancelled && failed.length) setLoadErr(failed.join('；'));
-		})();
-		return () => { cancelled = true; };
-	}, []);
-
-	async function save(patch: Partial<AdvancedRuntime>) {
-		setBusy(true);
-		setErr(null);
-		try {
-			const r = await fetch(apiUrl('/admin/runtime'), {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(patch),
-			});
-			if (!r.ok) throw new Error(await r.text().catch(() => String(r.status)));
-			setRt(await r.json());
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setBusy(false);
-		}
-	}
-
-	async function rebuildIndex() {
-		if (!recentCwd) {
-			setNote(t('settings.advanced.index.noWorkspace'));
-			return;
-		}
-		setBusy(true);
-		setNote(null);
-		setErr(null);
-		try {
-			const r = await fetch(apiUrl('/admin/index'), {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ cwd: recentCwd, force: true }),
-			});
-			if (!r.ok) throw new Error(await r.text().catch(() => String(r.status)));
-			const built = await r.json();
-			setNote(
-				t('settings.advanced.index.done', {
-					files: built.symbols?.files ?? 0,
-					symbols: built.symbols?.count ?? 0,
-					tokens: built.semantic?.tokens ?? 0,
-				}),
-			);
-			const again = await fetch(apiUrl(`/admin/index?cwd=${encodeURIComponent(recentCwd)}`));
-			if (again.ok) setIdx(await again.json());
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setBusy(false);
-		}
-	}
-
-	async function setTrust(next: boolean) {
-		if (!recentCwd) return;
-		setBusy(true);
-		setErr(null);
-		try {
-			const r = await fetch(apiUrl('/hooks/trust'), {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ cwd: recentCwd, trust: next }),
-			});
-			if (!r.ok) throw new Error(await r.text().catch(() => String(r.status)));
-			const body = await r.json();
-			setTrusted(Boolean(body.trusted));
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setBusy(false);
-		}
-	}
-
-	// ---- MCP 服务器 ----
-	const [mcpProbe, setMcpProbe] = useState<McpServerStatus[] | null>(null);
-	const [mcpProbing, setMcpProbing] = useState(false);
-	const [mcpName, setMcpName] = useState('');
-	const [mcpCommand, setMcpCommand] = useState('');
-	const [mcpArgs, setMcpArgs] = useState('');
-
-	const probeMcp = useCallback(async () => {
-		setMcpProbing(true);
-		try {
-			const r = await fetch(apiUrl('/mcp/servers'));
-			if (!r.ok) throw new Error(await r.text().catch(() => String(r.status)));
-			const body = await r.json();
-			setMcpProbe(body.servers ?? []);
-		} catch (e) {
-			setErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setMcpProbing(false);
-		}
-	}, []);
-
-	const saveMcp = async (next: Record<string, McpServerConfig>) => {
-		await save({ mcpServers: next });
-		void probeMcp();
-	};
-
-	const addMcp = async () => {
-		const name = mcpName.trim();
-		const command = mcpCommand.trim();
-		if (!name || !command) return;
-		const args = mcpArgs.trim().split(/\s+/).filter(Boolean);
-		const next = { ...(rt?.mcpServers ?? {}), [name]: { command, args } };
-		setMcpName('');
-		setMcpCommand('');
-		setMcpArgs('');
-		await saveMcp(next);
-	};
-
-	const removeMcp = async (name: string) => {
-		const next = { ...(rt?.mcpServers ?? {}) };
-		delete next[name];
-		await saveMcp(next);
-	};
-
-	/** 把探测到的 server 写进 lspServers；写绝对路径（它可能不在 PATH 上）。 */
-	function enableLsp(entry: LspEntry) {
-		const server: LspServerConfig = { command: entry.path, args: entry.args ?? [] };
-		if (entry.initializationOptions) server.initializationOptions = entry.initializationOptions;
-		const next: Record<string, LspServerConfig> = { ...(rt?.lspServers ?? {}), [entry.ext]: server };
-		return save({ lspServers: next });
-	}
-
-	function disableLsp(ext: string) {
-		const next = { ...(rt?.lspServers ?? {}) };
-		delete next[ext];
-		return save({ lspServers: next });
-	}
-
-	const configuredExts = Object.keys(rt?.lspServers ?? {});
-	const symbolCount = idx?.symbols?.count ?? 0;
-	const symbolFiles = idx?.symbols?.files ?? 0;
-
-	return (
-		<>
-			{loadErr && (
-				<div className="rounded-md border border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">
-					{t('settings.loadFailed', { error: loadErr })}
-				</div>
-			)}
-			{err && (
-				<div className="rounded-md border border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">
-					{err}
-				</div>
-			)}
-			{note && (
-				<div className="rounded-md border border-border bg-muted px-3 py-2 text-xs">{note}</div>
-			)}
-
-			<Row title={t('settings.advanced.hooks.title')} description={t('settings.advanced.hooks.desc')}>
-				<Switch
-					size="sm"
-					checked={rt?.hooksEnabled !== false}
-					disabled={busy || rt === null}
-					onCheckedChange={(v) => void save({ hooksEnabled: v })}
-				/>
-			</Row>
-
-			<Row title={t('settings.advanced.changes.title')} description={t('settings.advanced.changes.desc')}>
-				<Switch
-					size="sm"
-					checked={rt?.changesAware !== false}
-					disabled={busy || rt === null}
-					onCheckedChange={(v) => void save({ changesAware: v })}
-				/>
-			</Row>
-
-			{/* ---- 语言服务 ---- */}
-			<Row title={t('settings.advanced.lsp.title')} description={t('settings.advanced.lsp.desc')}>
-				<span className="text-xs text-muted-foreground">
-					{configuredExts.length ? configuredExts.join(' · ') : '—'}
-				</span>
-			</Row>
-			<div className="rounded-xl border border-border bg-card px-5 py-3">
-				{lsp === null ? (
-					<div className="text-xs text-muted-foreground">{t('settings.advanced.lsp.probeFailed', { error: '—' })}</div>
-				) : (lsp.installed ?? []).length === 0 ? (
-					<div className="text-xs text-muted-foreground">{t('settings.advanced.lsp.none')}</div>
-				) : (
-					<div className="space-y-2">
-						{(lsp?.installed ?? []).map((entry) => {
-							const on = configuredExts.includes(entry.ext);
-							return (
-								<div key={`${entry.ext}-${entry.command}`} className="flex items-center gap-3">
-									<div className="min-w-0">
-										<div className="text-xs font-medium">
-											{entry.label} <span className="text-muted-foreground">{entry.ext}</span>
-										</div>
-										<div className="truncate font-mono text-[11px] text-muted-foreground">{entry.path}</div>
-									</div>
-									<Button
-										type="button"
-										variant={on ? 'ghost' : 'outline'}
-										size="sm"
-										className="ml-auto shrink-0"
-										disabled={busy || rt === null}
-										onClick={() => (on ? void disableLsp(entry.ext) : void enableLsp(entry))}
-									>
-										{on ? t('settings.advanced.lsp.disable') : t('settings.advanced.lsp.enable')}
-									</Button>
-								</div>
-							);
-						})}
-					</div>
-				)}
-			</div>
-
-			{/* ---- 索引 ---- */}
-			<Row
-				title={t('settings.advanced.index.title')}
-				description={t('settings.advanced.index.desc')}
-			>
-				<div className="flex items-center gap-3">
-					<span className="text-xs text-muted-foreground">
-						{idx
-							? t('settings.advanced.index.stats', { files: symbolFiles, symbols: symbolCount })
-							: '—'}
-					</span>
-					<Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void rebuildIndex()}>
-						{busy ? <Loader2 className="size-3 animate-spin" /> : null}
-						{t('settings.advanced.index.rebuild')}
-					</Button>
-				</div>
-			</Row>
-
-			{/* ---- 项目钩子信任 ---- */}
-			<Row title={t('settings.advanced.trust.title')} description={t('settings.advanced.trust.desc')}>
-				{recentCwd === null ? (
-					<span className="text-xs text-muted-foreground">{t('settings.advanced.trust.none')}</span>
-				) : (
-					<div className="flex items-center gap-3">
-						<span className="max-w-[16rem] truncate font-mono text-[11px] text-muted-foreground">
-							{recentCwd}
-						</span>
-						<Button
-							type="button"
-							variant={trusted ? 'ghost' : 'outline'}
-							size="sm"
-							disabled={busy}
-							onClick={() => void setTrust(!trusted)}
-						>
-							{trusted ? t('settings.advanced.trust.revoke') : t('settings.advanced.trust.trust')}
-						</Button>
-					</div>
-				)}
-			</Row>
-
-			{/* ---- MCP 服务器 ---- */}
-			<Row title={t('settings.advanced.mcp.title')} description={t('settings.advanced.mcp.desc')}>
-				<div className="flex items-center gap-2">
-					<Button type="button" variant="outline" size="sm" disabled={mcpProbing} onClick={() => void probeMcp()}>
-						{mcpProbing ? t('settings.advanced.mcp.probing') : t('settings.advanced.mcp.probe')}
-					</Button>
-				</div>
-			</Row>
-			{(rt?.mcpServers && Object.keys(rt.mcpServers).length > 0) || (mcpProbe && mcpProbe.length > 0) ? (
-				<ul className="flex flex-col gap-y-1.5">
-					{Object.entries(rt?.mcpServers ?? {}).map(([name, def]) => {
-						const st = mcpProbe?.find((p) => p.name === name);
-						return (
-							<li key={name} className="group flex items-center gap-x-2 rounded-md border px-2 py-1.5 text-xs">
-								<span className="shrink-0 font-medium">{name}</span>
-								<span className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground" title={`${def.command} ${(def.args ?? []).join(' ')}`}>
-									{`${def.command} ${(def.args ?? []).join(' ')}`}
-								</span>
-								{st?.status === 'ok' ? (
-									<Badge variant="secondary" className="shrink-0">
-										{t('settings.advanced.mcp.toolsCount', { count: st.tools?.length ?? 0 })}
-									</Badge>
-								) : st?.status === 'error' ? (
-									<span className="shrink-0 text-destructive" title={st.error}>
-										<TriangleAlert className="size-3.5" />
-									</span>
-								) : null}
-								<Button
-									type="button"
-									variant="ghost"
-									size="icon-sm"
-									aria-label={t('settings.advanced.mcp.delete')}
-									className="ml-auto shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-									onClick={() => void removeMcp(name)}
-								>
-									<Trash2 />
-								</Button>
-							</li>
-						);
-					})}
-				</ul>
-			) : (
-				<p className="px-1 text-xs text-muted-foreground">{t('settings.advanced.mcp.noServers')}</p>
-			)}
-			<div className="flex flex-wrap items-center gap-2">
-				<Input
-					value={mcpName}
-					onChange={(e) => setMcpName(e.target.value)}
-					placeholder={t('settings.advanced.mcp.namePlaceholder')}
-					className="h-8 w-32 font-mono text-xs"
-					spellCheck={false}
-				/>
-				<Input
-					value={mcpCommand}
-					onChange={(e) => setMcpCommand(e.target.value)}
-					placeholder={t('settings.advanced.mcp.commandPlaceholder')}
-					className="h-8 w-52 font-mono text-xs"
-					spellCheck={false}
-				/>
-				<Input
-					value={mcpArgs}
-					onChange={(e) => setMcpArgs(e.target.value)}
-					placeholder={t('settings.advanced.mcp.argsPlaceholder')}
-					className="h-8 w-52 font-mono text-xs"
-					spellCheck={false}
-				/>
-				<Button
-					type="button"
-					variant="outline"
-					size="sm"
-					disabled={!mcpName.trim() || !mcpCommand.trim() || busy}
-					onClick={() => void addMcp()}
-				>
-					{t('settings.advanced.mcp.add')}
-				</Button>
-			</div>
-		</>
-	);
-}
-
 export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onImportSessions }: Props) {
 	const { t } = useTranslation();
 	const { installed: catgirlInstalled } = useCatgirlSettings();
-	const [section, setSection] = useState<Section>(initialTab);
+	const [section, setSection] = useState<Section>(()=>normalizeSettingsSection(initialTab));
 
 	const [lang, setLang] = useState(i18n.language);
 	const [searchEngine, setSearchEngine] = useState<SearchEngineId>(() => getSearchEngine());
 	const [confirmWipe, setConfirmWipe] = useState(false);
 	const [wiping, setWiping] = useState(false);
 	const [wipeError, setWipeError] = useState<string | null>(null);
-	// Agent 运行行为（上下文压缩预算 + 工具输出限制 + 最大迭代轮数）。
-	// 保存时 PATCH /admin/runtime，磁盘持久化到 ~/.tora/config.json。
-	const [runtime, setRuntime] = useState<RuntimeBehavior | null>(null);
-	const [runtimeBusy, setRuntimeBusy] = useState(false);
-	const [runtimeErr, setRuntimeErr] = useState<string | null>(null);
 	const [checkingUpdate, setCheckingUpdate] = useState(false);
 	const [updateMessage, setUpdateMessage] = useState<string | null>(null);
 	const [releaseNotes, setReleaseNotes] = useState<ReleaseNotes | null>(null);
@@ -1623,7 +1090,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 	// 打开时重置到初始板块（外部可用 key 重挂载强制指定）
 	useEffect(() => {
 		if (!open) return;
-		setSection(initialTab);
+		setSection(normalizeSettingsSection(initialTab));
 		setLang(i18n.language);
 		setSearchEngine(getSearchEngine());
 		setConfirmWipe(false);
@@ -1676,56 +1143,6 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 		const timer = setTimeout(() => setMounted(false), 200);
 		return () => clearTimeout(timer);
 	}, [open]);
-
-	// 首次打开 + 切到开发者板块：拉一次运行时配置（关闭时不再请求，避免空闲轮询）
-	const runtimeKey = open && section === 'developer' ? 'ready' : 'idle';
-	useEffect(() => {
-		if (runtimeKey !== 'ready') return;
-		let cancelled = false;
-		(async () => {
-			try {
-				const r = await fetch(apiUrl('/admin/runtime'));
-				if (!r.ok) throw new Error(t('settings.errors.backend', { status: r.status }));
-				const data = await r.json();
-				if (cancelled) return;
-				setRuntime(data);
-				setRuntimeErr(null);
-			} catch (e) {
-				if (cancelled) return;
-				setRuntimeErr(e instanceof Error ? e.message : String(e));
-			}
-		})();
-		return () => { cancelled = true; };
-	}, [runtimeKey, t]);
-
-	async function handleRuntimeSave(patch: Partial<RuntimeBehavior>) {
-		setRuntimeBusy(true);
-		setRuntimeErr(null);
-		try {
-			const r = await fetch(apiUrl('/admin/runtime'), {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify(patch)
-			});
-			if (!r.ok) {
-				const responseText = await r.text().catch(() => '');
-				throw new Error(t('settings.errors.runtimeSave', { status: r.status, text: responseText || r.statusText }));
-			}
-			const next = await r.json();
-			setRuntime(next);
-		} catch (e) {
-			setRuntimeErr(e instanceof Error ? e.message : String(e));
-		} finally {
-			setRuntimeBusy(false);
-		}
-	}
-
-	function isRuntimePreset(preset: RuntimeBehavior) {
-		return runtime !== null &&
-			runtime.maxTokensBudget === preset.maxTokensBudget &&
-			runtime.toolOutputLimit === preset.toolOutputLimit &&
-			runtime.maxTurns === preset.maxTurns;
-	}
 
 	function handleLang(next: string) {
 		setLang(next);
@@ -1948,123 +1365,6 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 							</>
 						)}
 
-						{section === 'developer' && (
-							<>
-								<h3 className="text-lg font-semibold">{t('settings.developer.title')}</h3>
-								<div className="mt-1 text-xs text-muted-foreground">{t('settings.developer.desc')}</div>
-
-								{/* 行为：上下文压缩 / 工具输出 / 最大迭代轮数 */}
-								<div className="mt-6 text-xs text-muted-foreground">{t('settings.developer.behavior')}</div>
-								<div className="mt-3 space-y-3">
-									{runtimeErr && (
-										<div className="rounded-md border border-destructive bg-destructive-soft px-3 py-2 text-xs text-destructive">
-											{runtimeErr}
-										</div>
-									)}
-									{runtime === null ? (
-										<div className="text-xs text-muted-foreground">{t('settings.loadingRuntime')}</div>
-									) : (
-										<>
-											<div>
-												<div className="text-sm font-medium">{t('settings.behavior.presets.title')}</div>
-												<p className="mt-0.5 text-xs text-muted-foreground">{t('settings.behavior.presets.desc')}</p>
-												<div className="mt-2 grid grid-cols-3 gap-2">
-													{RUNTIME_PRESETS.map((preset) => {
-														const active = isRuntimePreset(preset.values);
-														return (
-															<Button
-																key={preset.id}
-																type="button"
-																variant={active ? 'default' : 'outline'}
-																className="h-auto min-h-16 flex-col items-start gap-0.5 px-3 py-2 text-left"
-																disabled={runtimeBusy}
-																aria-pressed={active}
-																onClick={() => void handleRuntimeSave(preset.values)}
-															>
-																<span className="text-xs font-medium">{t(`settings.behavior.presets.${preset.id}.title`)}</span>
-																<span className="text-[11px] leading-snug opacity-70">{t(`settings.behavior.presets.${preset.id}.desc`)}</span>
-															</Button>
-														);
-													})}
-												</div>
-											</div>
-											<Row
-												title={t('settings.behavior.context.title')}
-												description={t('settings.behavior.context.desc')}
-											>
-												<NumberField
-													value={runtime.maxTokensBudget}
-													min={2000}
-													max={200000}
-													step={1000}
-													suffix={t('settings.behavior.context.suffix')}
-													disabled={runtimeBusy}
-													onCommit={(n) => handleRuntimeSave({ maxTokensBudget: n })}
-												/>
-											</Row>
-											<Row
-												title={t('settings.behavior.toolOutput.title')}
-												description={t('settings.behavior.toolOutput.desc')}
-											>
-												<NumberField
-													value={runtime.toolOutputLimit}
-													min={200}
-													max={50000}
-													step={500}
-													suffix={t('settings.behavior.toolOutput.suffix')}
-													disabled={runtimeBusy}
-													onCommit={(n) => handleRuntimeSave({ toolOutputLimit: n })}
-												/>
-											</Row>
-											<Row
-												title={t('settings.behavior.maxTurns.title')}
-												description={t('settings.behavior.maxTurns.desc')}
-											>
-												<NumberField
-													value={runtime.maxTurns}
-													min={1}
-													max={200}
-													step={1}
-													suffix={t('settings.behavior.maxTurns.suffix')}
-													disabled={runtimeBusy}
-													onCommit={(n) => handleRuntimeSave({ maxTurns: n })}
-												/>
-											</Row>
-											<Row
-												title={t('settings.behavior.shellSandbox.title')}
-												description={t('settings.behavior.shellSandbox.desc')}
-											>
-												<Switch
-													size="sm"
-													checked={runtime.shellSandbox !== false}
-													disabled={runtimeBusy}
-													aria-label={t('settings.behavior.shellSandbox.title')}
-													onCheckedChange={(value) => void handleRuntimeSave({ shellSandbox: value })}
-												/>
-											</Row>
-											<Row
-												title={t('settings.behavior.shellNetwork.title')}
-												description={t('settings.behavior.shellNetwork.desc')}
-											>
-												<Switch
-													size="sm"
-													checked={runtime.shellNetworkAccess === true}
-													disabled={runtimeBusy || runtime.shellSandbox === false}
-													aria-label={t('settings.behavior.shellNetwork.title')}
-													onCheckedChange={(value) => void handleRuntimeSave({ shellNetworkAccess: value })}
-												/>
-											</Row>
-										</>
-									)}
-								</div>
-
-								{/* 高级：钩子 / 轨迹 / 索引 / 语言服务 / 项目钩子信任 */}
-								<div className="mt-6 text-xs text-muted-foreground">{t('settings.advanced.subtitle')}</div>
-								<div className="mt-3 space-y-3">
-									<AdvancedSection />
-								</div>
-							</>
-						)}
 						</div>
 					</div>
 				</div>

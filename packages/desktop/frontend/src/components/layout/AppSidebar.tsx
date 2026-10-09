@@ -46,7 +46,7 @@ import { useMacFullscreen } from '@/hooks/useMacFullscreen';
 import { disableCatgirlLanguagePack } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { catgirlCopy, useCatgirlSettings } from '@/lib/catgirl';
-import { OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
+import { normalizeSettingsSection, OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
 import {OPEN_SUBSCRIPTION_EVENT} from '@/lib/subscription';
 import { signOutAccount } from '@/utils/authLogout';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
@@ -163,7 +163,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	useEffect(() => {
 		const handler = (e: Event) => {
 			setSubscriptionOpen(false);
-			setSettingsTab((e as CustomEvent<SettingsSection>).detail ?? 'general');
+			setSettingsTab(normalizeSettingsSection((e as CustomEvent<unknown>).detail));
 			setSettingsOpen(true);
 		};
 		window.addEventListener(OPEN_SETTINGS_EVENT, handler);

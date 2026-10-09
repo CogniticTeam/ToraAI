@@ -1330,9 +1330,8 @@
       "data": "Dados",
       "about": "Sobre",
       "usage": "Uso",
-      "account": "Conta",
-      "developer": "Desenvolvedor e Depuração"
-    },
+      "account": "Conta"
+},
     "memory": {
       "title": "Memória",
       "desc": "Memória de longo prazo entre sessões: entradas relevantes são injetadas no início da sessão, com destilação opcional após a sessão",
@@ -1493,11 +1492,6 @@
         "tooLarge": "Arquivo muito grande (máx. 10MB)",
         "saveFailed": "Falha ao salvar, tente novamente"
       },
-      "behavior": "Comportamento"
-    },
-    "developer": {
-      "title": "Desenvolvedor e depuração",
-      "desc": "Comportamento de execução do agente, hooks, índice de código e servidores de linguagem. As alterações são aplicadas na próxima execução.",
       "behavior": "Comportamento"
     },
     "behavior": {

@@ -1189,9 +1189,8 @@
       "data": "数据管理",
       "about": "关于",
       "usage": "使用统计",
-      "account": "账号",
-      "developer": "开发者&调试"
-    },
+      "account": "账号"
+},
     "memory": {
       "title": "记忆",
       "desc": "跨会话的长期记忆：会话开始时注入相关条目，会话结束后可选自动提炼",
@@ -1351,11 +1350,6 @@
         "tooLarge": "文件过大（上限 10MB）",
         "saveFailed": "保存失败，请重试"
       },
-      "behavior": "行为"
-    },
-    "developer": {
-      "title": "开发者&调试",
-      "desc": "Agent 运行行为、钩子、代码索引与语言服务。改完即时生效，下次运行读取新配置。",
       "behavior": "行为"
     },
     "behavior": {

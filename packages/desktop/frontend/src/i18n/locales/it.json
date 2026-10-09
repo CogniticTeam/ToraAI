@@ -1330,9 +1330,8 @@
       "data": "Dati",
       "about": "Informazioni",
       "usage": "Utilizzo",
-      "account": "Account",
-      "developer": "Sviluppatore e debug"
-    },
+      "account": "Account"
+},
     "memory": {
       "title": "Memoria",
       "desc": "Memoria a lungo termine tra sessioni: le voci rilevanti vengono iniettate all'inizio della sessione, con distillazione post-sessione opzionale",
@@ -1493,11 +1492,6 @@
         "tooLarge": "File troppo grande (max 10MB)",
         "saveFailed": "Salvataggio non riuscito, riprova"
       },
-      "behavior": "Comportamento"
-    },
-    "developer": {
-      "title": "Sviluppatore e debug",
-      "desc": "Comportamento di runtime dell'agente, hook, indice del codice e language server. Le modifiche si applicano alla prossima esecuzione.",
       "behavior": "Comportamento"
     },
     "behavior": {
