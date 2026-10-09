@@ -229,7 +229,7 @@ await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
     await page.locator('h3').filter({ hasText: /^(通用|General)$/ }).waitFor({ timeout: 10000 });
     out.push('设置按需加载并打开: true');
     const languageRow = page.getByText('Interface language', { exact: true }).locator('..').locator('..');
-    await languageRow.getByRole('button').click();
+    await languageRow.getByRole('combobox').click();
     assert.equal(await page.getByRole('listbox').getByRole('option').count(), 16, '设置页应列出包含英语和繁体地区变体的全部常规语言');
     await page.keyboard.press('Escape');
     await page.getByText(/^(返回 Tora|Back to Tora)$/).click({ timeout: 5000 });
