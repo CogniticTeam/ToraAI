@@ -247,6 +247,7 @@ export function VoiceRecorder({
 						type="button"
 						variant="ghost"
 						size="icon-lg"
+						aria-label={isRecording ? t('voice.listening') : phase === 'transcribing' ? t('voice.transcribing') : t('voice.micTooltip')}
 						onClick={handleMicClick}
 						disabled={disabled || phase === 'transcribing'}
 						className={cn(

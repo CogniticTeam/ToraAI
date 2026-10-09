@@ -130,7 +130,7 @@ await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({ 
       await page.getByRole('menuitem', { name: locale('ar').common.settings }).click();
       await page.locator('h3').filter({ hasText: locale('ar').settings.general.title }).waitFor();
       const row = page.getByText(locale('ar').settings.general.language.desc, { exact: true }).locator('..').locator('..');
-      await row.getByRole('button').click();
+      await row.getByRole('combobox').click();
       assert.equal(await page.getByRole('listbox').getByRole('option').count(), 16);
       await page.getByRole('option', { name: locale('ar').settings.general.language.ja }).click();
       await page.waitForFunction(() => document.documentElement.lang === 'ja' && document.documentElement.dir === 'ltr');

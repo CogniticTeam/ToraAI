@@ -23,10 +23,10 @@ export function FontSection(){
   <div className="flex items-center gap-2 text-sm font-medium"><Type className="size-4"/>{t('settings.theme.fontTitle')}</div>
   <p className="mt-0.5 text-xs text-muted-foreground">{t('settings.theme.fontDesc')}</p>
   {supported?<><div className="mt-4 flex flex-wrap gap-2">
-   <Input className="min-w-40 flex-1" aria-label={t('settings.theme.fontSearch')} placeholder={t('settings.theme.fontSearch')} value={query} onChange={event=>setQuery(event.target.value)}/>
-   <Button type="button" size="sm" variant="outline" disabled={loading} onClick={()=>void load(true)}><RefreshCw className={loading?'size-3.5 animate-spin':'size-3.5'}/>{t('settings.theme.fontRefresh')}</Button>
+   <Input className="h-10 min-w-40 flex-1" aria-label={t('settings.theme.fontSearch')} placeholder={t('settings.theme.fontSearch')} value={query} onChange={event=>setQuery(event.target.value)}/>
+   <Button type="button" className="h-10" variant="outline" disabled={loading} onClick={()=>void load(true)}><RefreshCw className={loading?'size-3.5 animate-spin':'size-3.5'}/>{t('settings.theme.fontRefresh')}</Button>
   </div>
-  <select data-testid="theme-font-select" aria-label={t('settings.theme.fontTitle')} className="mt-2 h-10 w-full rounded-md border border-border bg-background px-3 text-sm" value={family} onChange={event=>{try{setFamily(event.target.value);}catch{setError(true);}}}>
+  <select data-testid="theme-font-select" aria-label={t('settings.theme.fontTitle')} className="mt-2 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring" value={family} onChange={event=>{try{setFamily(event.target.value);}catch{setError(true);}}}>
    <option value="">{t('settings.theme.fontDefault')}</option>
    {family&&!options.includes(family)&&<option value={family}>{family}</option>}
    {options.map(name=><option key={name} value={name}>{name}</option>)}

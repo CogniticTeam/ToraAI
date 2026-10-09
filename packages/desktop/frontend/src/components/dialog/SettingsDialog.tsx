@@ -8,6 +8,7 @@ import {
   Cpu, Database, ExternalLink, Flame, Gauge, Import, Info, Layers, Loader2, Moon,
   Palette, Pencil, Plus, Repeat, Settings2, Shuffle, Smartphone, SquareTerminal, Trash2, UserRound, Waves, X, Zap
 } from 'lucide-react';
+import { Dialog as SettingsPrimitive } from 'radix-ui';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { agentApi, type AgentView } from '@/api';
@@ -232,12 +233,12 @@ function Row({
 	children?: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-5 py-4">
-			<div className="min-w-0">
+		<div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card px-5 py-4">
+			<div className="min-w-40 flex-1">
 				<div className="text-sm font-medium">{title}</div>
 				{description && <div className="mt-0.5 text-xs text-muted-foreground">{description}</div>}
 			</div>
-			<div className="shrink-0">{children}</div>
+			<div className="max-w-full shrink-0">{children}</div>
 		</div>
 	);
 }
@@ -465,6 +466,7 @@ export function ModelSection() {
 						</div>
 						<DropdownSelect
 							className="mt-2"
+							aria-label={t('modelSection.form.provider')}
 							value={fProvider}
 							disabled={!!editingId}
 							onChange={(v) => openForm(v)}
@@ -493,6 +495,7 @@ export function ModelSection() {
 						</div>
 						<input
 							type="password"
+							aria-label={t('modelSection.form.apiKey')}
 							value={fKey}
 							onChange={(e) => setFKey(e.target.value)}
 						onBlur={() => effBaseURL && fKey.trim() && fetchModelList()}
@@ -549,6 +552,7 @@ export function ModelSection() {
 				{/* 手动输入兜底：列表为空 / 想加列表外的模型名 */}
 				<input
 					type="text"
+					aria-label={t('modelSection.form.model')}
 					value={fModel}
 					onChange={(e) => setFModel(e.target.value)}
 					placeholder={fLoading ? t('modelSection.form.fetchingModels') : t('modelSection.form.modelInputPlaceholder')}
@@ -796,7 +800,7 @@ function SystemNotificationSection() {
 		<Row title={t('settings.general.systemNotifications.title')} description={t('settings.general.systemNotifications.desc')}>
 			<div className="flex items-center gap-2">
 				{nativeBridge.testMessageNotification && <Button variant="outline" size="sm" disabled={!enabled || testing} onClick={() => void testNotification()}>{t(testing ? 'settings.general.systemNotifications.testing' : 'settings.general.systemNotifications.test')}</Button>}
-				<Switch size="sm" checked={enabled} onCheckedChange={(value) => { setEnabled(value); setSystemMessageNotificationsEnabled(value); setTestStatus(''); }} />
+				<Switch aria-label={t('settings.general.systemNotifications.title')} checked={enabled} onCheckedChange={(value) => { setEnabled(value); setSystemMessageNotificationsEnabled(value); setTestStatus(''); }} />
 			</div>
 		</Row>
 		{testStatus && <p role="status" className="px-5 text-xs text-muted-foreground">{testStatus}</p>}
@@ -862,6 +866,9 @@ function SoundSection() {
 		if (s.kind === 'custom') update({ kind: 'ding' });
 	}
 
+	const volumeOptions = [...new Set([0.25, 0.5, 0.75, 1, s.volume])].sort((a, b) => a - b)
+		.map(value => ({ value: String(value), label: `${Math.round(value * 100)}%` }));
+
 	const kindLabels: Record<SoundKind, string> = {
 		ding: t('settings.general.sound.kindDing'),
 		crisp: t('settings.general.sound.kindCrisp'),
@@ -872,18 +879,19 @@ function SoundSection() {
 	return (
 		<>
 			<Row title={t('settings.general.sound.title')} description={t('settings.general.sound.desc')}>
-				<Switch size="sm" checked={s.enabled} onCheckedChange={(v) => update({ enabled: v })} />
+				<Switch aria-label={t('settings.general.sound.title')} checked={s.enabled} onCheckedChange={(v) => update({ enabled: v })} />
 			</Row>
 			<Row title={t('settings.general.sound.replyDoneTitle')} description={t('settings.general.sound.replyDoneDesc')}>
-				<Switch size="sm" checked={s.replyDone} disabled={!s.enabled} onCheckedChange={(v) => update({ replyDone: v })} />
+				<Switch aria-label={t('settings.general.sound.replyDoneTitle')} checked={s.replyDone} disabled={!s.enabled} onCheckedChange={(v) => update({ replyDone: v })} />
 			</Row>
 			<Row title={t('settings.general.sound.needConfirmTitle')} description={t('settings.general.sound.needConfirmDesc')}>
-				<Switch size="sm" checked={s.needConfirm} disabled={!s.enabled} onCheckedChange={(v) => update({ needConfirm: v })} />
+				<Switch aria-label={t('settings.general.sound.needConfirmTitle')} checked={s.needConfirm} disabled={!s.enabled} onCheckedChange={(v) => update({ needConfirm: v })} />
 			</Row>
 			<Row title={t('settings.general.sound.kindTitle')} description={t('settings.general.sound.kindDesc')}>
 				<div className="flex items-center gap-2">
 					<DropdownSelect
 						className="w-28"
+						aria-label={t('settings.general.sound.kindTitle')}
 						value={s.kind}
 						disabled={!s.enabled}
 						onChange={(v) => update({ kind: v as SoundKind })}
@@ -918,15 +926,11 @@ function SoundSection() {
 			<Row title={t('settings.general.sound.volumeTitle')} description={t('settings.general.sound.volumeDesc')}>
 				<DropdownSelect
 					className="w-28"
+					aria-label={t('settings.general.sound.volumeTitle')}
 					value={String(s.volume)}
 					disabled={!s.enabled}
 					onChange={(v) => update({ volume: Number(v) })}
-					options={[
-						{ value: '0.25', label: '25%' },
-						{ value: '0.5', label: '50%' },
-						{ value: '0.75', label: '75%' },
-						{ value: '1', label: '100%' },
-					]}
+					options={volumeOptions}
 				/>
 			</Row>
 		</>
@@ -1014,6 +1018,7 @@ function AgentSection() {
 						<div className="text-sm font-medium">{t('agentSection.select')}</div>
 						<DropdownSelect
 							className="mt-2"
+							aria-label={t('agentSection.select')}
 							value={agentId}
 							onChange={switchAgent}
 							options={agents.map((a) => ({ value: a.id, label: a.data.name || a.id }))}
@@ -1026,6 +1031,7 @@ function AgentSection() {
 					</div>
 					<input
 						type="text"
+						aria-label={t('agentSection.name')}
 						value={name}
 						onChange={(e) => {
 							setName(e.target.value);
@@ -1038,6 +1044,7 @@ function AgentSection() {
 				<div>
 					<div className="text-sm font-medium">{t('agentSection.systemPrompt')}</div>
 					<textarea
+						aria-label={t('agentSection.systemPrompt')}
 						value={prompt}
 						onChange={(e) => {
 							setPrompt(e.target.value);
@@ -1134,9 +1141,11 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 	// 关闭动画时机接管：open→false 不立即卸载，保持 DOM 200ms 播完
 	// 退出过渡；open→true 立即恢复渲染。mounted 决定「DOM 是否存在」，
 	// closing = mounted && !open 驱动退出动画类。
+	const restoreFocus = useRef<HTMLElement | null>(null);
 	const [mounted, setMounted] = useState(open);
 	useEffect(() => {
 		if (open) {
+			restoreFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 			setMounted(true);
 			return;
 		}
@@ -1177,6 +1186,11 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 	const closing = mounted && !open;
 
 	return (
+		<SettingsPrimitive.Root open={open} onOpenChange={onOpenChange}>
+		<SettingsPrimitive.Portal forceMount>
+		<SettingsPrimitive.Content forceMount asChild aria-describedby={undefined} onCloseAutoFocus={event => {
+			if (restoreFocus.current?.isConnected) { event.preventDefault(); restoreFocus.current.focus(); }
+		}}>
 		<div
 			aria-hidden={closing}
 			className={
@@ -1186,6 +1200,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 					: 'animate-in fade-in-0 duration-200')
 			}
 		>
+			<SettingsPrimitive.Title className="sr-only">{t('settings.title')}</SettingsPrimitive.Title>
 			{/* 全屏设置：左侧导航保持上下文，右侧为集中阅读区。 */}
 			<div
 				className={
@@ -1199,7 +1214,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 				<nav className="app-no-drag flex w-72 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 pb-4 pt-14">
 					<button
 						type="button"
-						className="app-no-drag mb-5 flex items-center gap-2 rounded-rect px-2 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+						className="app-no-drag mb-5 flex items-center gap-2 rounded-rect px-2 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring"
 						onClick={() => onOpenChange(false)}
 					>
 						<ChevronLeft className="size-4" />
@@ -1210,9 +1225,10 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 					{SECTIONS.map(({ key, label, icon: Icon }) => (
 						<button
 							key={key}
+							aria-current={section === key ? 'page' : undefined}
 							type="button"
 							className={
-								'flex items-center gap-2.5 rounded-rect px-3 py-2 text-sm transition-colors duration-150 ' +
+								'flex items-center gap-2.5 rounded-rect px-3 py-2 text-sm transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-ring ' +
 								(section === key
 									? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
 									: 'text-sidebar-foreground hover:bg-sidebar-accent')
@@ -1231,7 +1247,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 					<WindowDragRegion className="absolute inset-x-0 top-0 z-10 h-12" />
 					{/* key={section} 让板块切换时重挂载触发入场动画 */}
 					<div key={section} className="settings-section-transition min-h-0 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-250">
-						<div className={`mx-auto w-full px-8 py-14 sm:px-12 lg:py-16 ${section === 'account' ? 'max-w-[856px]' : 'max-w-4xl'}`}>
+						<div className="mx-auto w-full max-w-4xl px-8 py-14 sm:px-12 lg:py-16">
 						{section === 'general' && (
 							<>
 								<h3 className="text-lg font-semibold">{t('settings.general.title')}</h3>
@@ -1240,6 +1256,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 							<Row title={t('settings.general.language.title')} description={t('settings.general.language.desc')}>
 										<DropdownSelect
 											className="w-64 max-w-full"
+											aria-label={t('settings.general.language.title')}
 											value={normalizeLanguage(lang) ?? 'en-US'}
 											onChange={handleLang}
 											options={availableLanguageOptions(catgirlInstalled).map((option) => ({
@@ -1252,6 +1269,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 									<Row title={t('settings.general.searchEngine.title')} description={t('settings.general.searchEngine.desc')}>
 										<DropdownSelect
 											className="w-44"
+											aria-label={t('settings.general.searchEngine.title')}
 											value={searchEngine}
 											onChange={handleSearchEngine}
 											options={SEARCH_ENGINES.map(({ id }) => ({
@@ -1281,9 +1299,9 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 
 						{section === 'account' && (
 							<>
-								<h3 className="text-[25px] font-semibold tracking-tight leading-tight">{t('settings.account.title')}</h3>
-								<p className="mt-2.5 text-[13px] text-muted-foreground">{t('settings.account.manager.description')}</p>
-								<div className="mt-8">
+								<h3 className="text-lg font-semibold">{t('settings.account.title')}</h3>
+								<p className="mt-2 text-xs text-muted-foreground">{t('settings.account.manager.description')}</p>
+								<div className="mt-5">
 									<AccountSection />
 								</div>
 							</>
@@ -1370,5 +1388,8 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 				</div>
 			</div>
 		</div>
+		</SettingsPrimitive.Content>
+		</SettingsPrimitive.Portal>
+		</SettingsPrimitive.Root>
 	);
 }

@@ -73,7 +73,7 @@ export function ThemeSection() {
 							const active = mode === value;
 							return <button key={value} type="button" aria-pressed={active}
 								onClick={() => setMode(value as ThemePreference)}
-								className={'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors ' +
+								className={'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring ' +
 									(active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground')}>
 								<Icon className="size-3.5" />{t(`settings.theme.${value}`)}
 							</button>;
@@ -114,7 +114,7 @@ export function ThemeSection() {
 						{options.map(({ id, src }) => {
 							const active = background.preference === id;
 							return <button key={id} type="button" aria-pressed={active} onClick={() => choose(id)}
-								className={'group min-w-0 rounded-rect border p-1.5 text-left transition-[border-color,box-shadow] ' +
+								className={'group min-w-0 rounded-rect border p-1.5 text-left transition-[border-color,box-shadow] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ' +
 									(active ? 'border-foreground ring-2 ring-foreground/15' : 'border-border hover:border-foreground/45')}>
 								<span className="relative flex aspect-[1.7] items-center justify-center overflow-hidden rounded-rect-sm bg-background">
 									{src ? <img src={src} alt="" loading="lazy" className="size-full object-cover" />

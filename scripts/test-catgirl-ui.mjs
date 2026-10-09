@@ -68,7 +68,7 @@ try {
   saveConfig({ catgirlLanguagePackInstalled: false, catgirlPersonaEnabled: false });
   const { context, page, input } = await open('zh');
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('tora:open-settings', { detail: 'general' })));
-  await page.getByRole('button', { name: '简体中文', exact: true }).click();
+  await page.getByRole('combobox', { name: '语言', exact: true }).click();
   assert.equal(await page.getByRole('option').count(), 16, '未解锁时语言列表维持原有语言');
   assert.equal(await page.getByRole('option', { name: /猫娘/ }).count(), 0);
   await page.keyboard.press('Escape');
@@ -131,7 +131,7 @@ try {
   await preference(page, 'zh');
   // 普通界面中的设置列表也包含两套猫娘语言。
   await page.evaluate(() => window.dispatchEvent(new CustomEvent('tora:open-settings', { detail: 'general' })));
-  await page.getByRole('button', { name: '简体中文', exact: true }).click();
+  await page.getByRole('combobox', { name: '语言', exact: true }).click();
   assert.equal(await page.getByRole('option', { name: '猫娘语（中文）' }).count(), 1);
   assert.equal(await page.getByRole('option', { name: '猫娘語（日本語）' }).count(), 1);
   await page.getByRole('option', { name: '猫娘語（日本語）' }).click();

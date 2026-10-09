@@ -68,10 +68,36 @@ try {
 	await page.getByRole('heading',{name:'通用',exact:true}).waitFor({state:'visible'});
 	await page.screenshot({path:'/tmp/tora-settings-without-debug.png'});
 	assert.equal(await page.getByText('外观', { exact: true }).count(), 0, '通用页不应继续显示外观开关');
+	const settings = page.getByRole('dialog', { name: '设置', exact: true });
+	assert.equal(await settings.isVisible(), true);
+	assert.equal(await page.getByRole('switch', { name: '提示音', exact: true }).count(), 1);
+	const headingSize = await page.getByRole('heading', { name: '通用', exact: true }).evaluate(el => getComputedStyle(el).fontSize);
+	await page.setViewportSize({ width: 960, height: 600 });
+	const volume = page.getByRole('combobox', { name: '音量', exact: true });
+	assert.match(await volume.textContent(), /60%/, '默认音量应显示实际值');
+	await volume.click();
+	const volumeMenu = page.getByRole('listbox');
+	const bounds = await volumeMenu.boundingBox();
+	assert.ok(bounds.y >= 0 && bounds.y + bounds.height <= 600, '窗口底部的选项应完整显示');
+	await page.keyboard.press('ArrowDown');
+	await page.keyboard.press('Enter');
+	await page.waitForFunction(() => JSON.parse(localStorage.getItem('tora_sound') || '{}').volume === 0.75);
+	await settings.getByRole('button', { name: '账号', exact: true }).click();
+	assert.equal(await page.getByRole('heading', { name: '账号', exact: true }).evaluate(el => getComputedStyle(el).fontSize), headingSize, '账号与通用页标题应一致');
+	await page.keyboard.press('Escape');
+	await settings.waitFor({ state: 'hidden' });
+	assert.equal(await page.getByRole('button', { name: /theme-test/i }).first().evaluate(el => el === document.activeElement), true, '关闭设置后焦点应回到账户入口');
+	await page.getByRole('button', { name: /theme-test/i }).first().click();
+	await page.getByText('设置', { exact: true }).first().click();
+	await page.setViewportSize({ width: 1360, height: 850 });
+
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('heading', { name: '主题' }).waitFor({ state: 'visible' });
 	assert.equal(await page.getByTestId('theme-font-section').evaluate(el=>el===el.parentElement.lastElementChild),true,'字体应位于主题设置最后');
 	const fontSelect=page.getByTestId('theme-font-select');
+	const heights = await page.getByTestId('theme-font-section').locator('input,button,select').evaluateAll(elements => elements.map(el => el.getBoundingClientRect().height));
+	assert.deepEqual(heights, [40, 40, 40], '字体搜索、刷新与选择控件应等高');
+
 	await page.waitForFunction(()=>document.querySelector('[data-testid="theme-font-select"]')?.options.length>1);
 	assert.equal(await fontSelect.locator('option').count(),systemFonts.length+1);
 	await page.getByRole('textbox',{name:'搜索字体',exact:true}).fill(chosenFont);
