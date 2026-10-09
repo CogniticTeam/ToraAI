@@ -284,8 +284,8 @@ svg.lucide {
 .dark {
 	color-scheme: dark;
 	--text: #b0b0ab;
-	--bg: #000000;
-	--background: #000000;
+	--bg: #151515;
+	--background: #1b1b1a;
 	--foreground: oklch(0.985 0 0);
 	--card: #1b1b1a;
 	--card-foreground: oklch(0.985 0 0);
@@ -308,7 +308,7 @@ svg.lucide {
 	--chart-3: oklch(0.439 0 0);
 	--chart-4: oklch(0.371 0 0);
 	--chart-5: oklch(0.269 0 0);
-	--sidebar: #000000;
+	--sidebar: #1b1b1a;
 	--sidebar-foreground: oklch(0.985 0 0);
 	--sidebar-primary: #f4f4f0;
 	--sidebar-primary-foreground: #171717;
@@ -349,7 +349,7 @@ html[data-app-background='custom'] {
 }
 html.dark { --app-wallpaper-scrim: rgba(25, 25, 26, 0.86); }
 html.dark[data-app-background='midnight'] { --app-wallpaper-scrim: rgba(25, 25, 26, 0.25); }
-html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(0, 0, 0, 0.6); }
+html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(25, 25, 26, 0.6); }
 .app-wallpaper {
 	background-color: var(--background);
 	background-image:
@@ -360,13 +360,11 @@ html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(0, 0, 0, 0
 	background-size: cover;
 }
 html[data-app-background='none'] .app-wallpaper { background-image: none; }
-/* A chosen custom image is explicit; otherwise dark mode keeps its pure black canvas. */
-html.dark:not([data-app-background='custom']) .app-wallpaper { background-image: none; }
+/* Explicit custom wallpaper choices also apply to sign-in surfaces. */
 html[data-app-background='custom'] .app-wallpaper,
 html.dark[data-app-background='custom'] .app-wallpaper {
  background-image: linear-gradient(var(--app-wallpaper-scrim), var(--app-wallpaper-scrim)), var(--app-wallpaper-image);
 }
-html.dark .hero-aurora { background: none; }
 
 @layer base {
 	* {

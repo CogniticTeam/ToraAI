@@ -3,7 +3,7 @@
   background: #f7f7f6;
   background-image: none;
 }
-.dark .app-wallpaper.tora-auth-gate { background: #000000; }
+.dark .app-wallpaper.tora-auth-gate { background: #141414; }
 .tora-auth-panel { align-items: safe center; }
 .tora-auth-panel .auth-aurora,
 .tora-auth-panel .auth-grid { display: none; }
