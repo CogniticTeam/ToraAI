@@ -106,6 +106,7 @@ try {
 	const customFile = join(process.cwd(), 'packages/desktop/frontend/public/images/tora-soft-backdrop.jpg');
 	await uploadInput.setInputFiles(customFile);
 	await page.waitForFunction(() => document.documentElement.dataset.appBackground === 'custom');
+	await page.waitForFunction(()=>[...document.querySelectorAll('.app-wallpaper')].every(el=>getComputedStyle(el).backgroundImage.includes('data:image/jpeg')));
 	const storedCustom = await page.evaluate(() => localStorage.getItem('tora.background.custom'));
 	assert.match(storedCustom, /^data:image\/jpeg;base64,/);
 	assert.ok(storedCustom.length < 2_500_000);
@@ -113,10 +114,17 @@ try {
 	await page.waitForFunction(() => document.documentElement.dataset.appBackground === 'custom');
 	assert.ok((await page.locator('#tour-chat-textarea').evaluate(el=>getComputedStyle(el).fontFamily)).includes(chosenFont),'字体在重载后应保持');
 	assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true, '颜色模式也应跨重载保留');
+	assert.ok(await page.locator('.app-wallpaper').first().evaluate(el=>getComputedStyle(el).backgroundImage.includes('data:image/jpeg')),'深色自定义背景在重载后必须可见');
+	await page.screenshot({path:'/tmp/tora-custom-background-dark.png'});
 
 	await page.getByRole('button', { name: /theme-test/i }).first().click();
 	await page.getByText('设置', { exact: true }).first().click();
 	await page.getByRole('button', { name: '主题', exact: true }).click();
+	await page.getByRole('button',{name:'浅色',exact:true}).click();
+	await page.waitForFunction(()=>!document.documentElement.classList.contains('dark'));
+	assert.ok(await page.locator('.app-wallpaper').last().evaluate(el=>getComputedStyle(el).backgroundImage.includes('data:image/jpeg')),'浅色自定义背景也必须可见');
+	await page.getByRole('button',{name:'深色',exact:true}).click();
+	await page.waitForFunction(()=>document.documentElement.classList.contains('dark'));
 	await page.getByTestId('theme-font-select').selectOption('');
 	assert.equal(await page.evaluate(()=>localStorage.getItem('tora.theme.font')),null);
 	assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--tora-ui-font')),'');

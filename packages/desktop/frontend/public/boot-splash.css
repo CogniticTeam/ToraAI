@@ -16,6 +16,7 @@ html.dark {
 	--startup-mark-filter: invert(1);
 }
 html.dark[data-app-background='none'] { --startup-base: #000000; }
+html.dark[data-app-background='custom'] { --startup-image: var(--app-custom-wallpaper, none); --startup-wash: rgba(0, 0, 0, .6); }
 
 html, body { margin: 0; }
 .startup-loading-surface {

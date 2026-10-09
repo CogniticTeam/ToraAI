@@ -349,7 +349,7 @@ html[data-app-background='custom'] {
 }
 html.dark { --app-wallpaper-scrim: rgba(25, 25, 26, 0.86); }
 html.dark[data-app-background='midnight'] { --app-wallpaper-scrim: rgba(25, 25, 26, 0.25); }
-html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(25, 25, 26, 0.82); }
+html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(0, 0, 0, 0.6); }
 .app-wallpaper {
 	background-color: var(--background);
 	background-image:
@@ -360,8 +360,12 @@ html.dark[data-app-background='custom'] { --app-wallpaper-scrim: rgba(25, 25, 26
 	background-size: cover;
 }
 html[data-app-background='none'] .app-wallpaper { background-image: none; }
-/* Dark mode uses a pure black canvas; stored wallpaper choices still apply in light mode. */
-html.dark .app-wallpaper { background-image: none; }
+/* A chosen custom image is explicit; otherwise dark mode keeps its pure black canvas. */
+html.dark:not([data-app-background='custom']) .app-wallpaper { background-image: none; }
+html[data-app-background='custom'] .app-wallpaper,
+html.dark[data-app-background='custom'] .app-wallpaper {
+ background-image: linear-gradient(var(--app-wallpaper-scrim), var(--app-wallpaper-scrim)), var(--app-wallpaper-image);
+}
 html.dark .hero-aurora { background: none; }
 
 @layer base {
