@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "Font",
+      "fontDesc": "Choose an installed interface font. Applies immediately and persists after restart.",
+      "fontDefault": "System default",
+      "fontSearch": "Search fonts",
+      "fontRefresh": "Refresh",
+      "fontLoading": "Reading system fonts…",
+      "fontError": "Could not read or save fonts. Please retry.",
+      "fontEmpty": "No matching fonts.",
+      "fontMissing": "This font is no longer installed. The system font is used as a fallback.",
+      "fontDesktopOnly": "Choose system fonts in the desktop app.",
+      "fontPreview": "Font preview: English 中文 0123456789",
       "title": "Theme",
       "subtitle": "Choose the appearance, motion, and workspace background",
       "modeTitle": "Appearance",

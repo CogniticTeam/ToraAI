@@ -118,6 +118,10 @@ jobs:
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome
         run: node scripts/test-subscription-ui.mjs
+      - name: Verify theme fonts, preview and persistence
+        env:
+          TORA_CHROME_PATH: /usr/bin/google-chrome
+        run: node scripts/test-theme-background-ui.mjs
       - name: Verify critical chat and composer interactions
         env:
           TORA_CHROME_PATH: /usr/bin/google-chrome
@@ -136,5 +140,21 @@ jobs:
             /tmp/tora-chat-composer-multiline.png
             /tmp/tora-doubao-chat-picker.png
             /tmp/tora-official-picker-performance.json
+            /tmp/tora-theme-font-settings.png
           if-no-files-found: ignore
           retention-days: 7
+
+  system-fonts:
+    name: System fonts (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test scripts/test-system-fonts.mjs scripts/test-font-preference.mjs

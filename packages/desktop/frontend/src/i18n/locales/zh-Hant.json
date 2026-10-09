@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "字型",
+      "fontDesc": "選擇電腦已安裝的介面字型，立即生效並保留至下次啟動。",
+      "fontDefault": "系統預設",
+      "fontSearch": "搜尋字型",
+      "fontRefresh": "重新讀取",
+      "fontLoading": "正在讀取系統字型…",
+      "fontError": "讀取或儲存字型失敗，請重試。",
+      "fontEmpty": "沒有符合的字型。",
+      "fontMissing": "此字型已不在系統中，目前使用系統字型作為備援。",
+      "fontDesktopOnly": "請在桌面應用程式中選擇系統字型。",
+      "fontPreview": "字型預覽：中文 English 0123456789",
       "title": "主題",
       "subtitle": "選擇外觀、動畫和工作區背景",
       "modeTitle": "外觀",

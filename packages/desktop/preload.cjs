@@ -99,3 +99,6 @@ contextBridge.exposeInMainWorld('toraVoice', {
 contextBridge.exposeInMainWorld('toraPromptOptimizer', {
 	optimize: (text) => ipcRenderer.invoke('prompt-optimizer:run', text),
 });
+
+// System font family names only; main process validates the requesting frame.
+contextBridge.exposeInMainWorld('toraFonts', {list: (refresh = false) => ipcRenderer.invoke('fonts:list', refresh === true)});

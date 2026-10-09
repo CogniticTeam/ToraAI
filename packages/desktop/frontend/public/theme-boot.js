@@ -78,3 +78,15 @@ window.addEventListener('storage', (event) => {
 	if (event.key === BACKGROUND_KEY || event.key === CUSTOM_BACKGROUND_KEY) applyBackground();
 	if ([MOTION_MODE_KEY, MOTION_CLICK_KEY, MOTION_PAGE_KEY].includes(event.key)) applyMotion();
 });
+
+// Restore the chosen local font before React mounts; no font files are loaded.
+const applyFont = () => {
+ const family = readStored('tora.theme.font');
+ if (family && family.length <= 160 && !/[\u0000-\u001f\u007f]/.test(family)) {
+  const quoted = '"' + family.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  document.documentElement.style.setProperty('--tora-ui-font', quoted + ', var(--tora-system-font)');
+ } else document.documentElement.style.removeProperty('--tora-ui-font');
+};
+applyFont();
+window.addEventListener('tora:font-changed', applyFont);
+window.addEventListener('storage', event => { if (event.key === 'tora.theme.font') applyFont(); });

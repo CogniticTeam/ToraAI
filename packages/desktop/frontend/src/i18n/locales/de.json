@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "Schriftart",
+      "fontDesc": "Installierte Schriftart für die Oberfläche wählen. Gilt sofort und bleibt nach dem Neustart erhalten.",
+      "fontDefault": "Systemstandard",
+      "fontSearch": "Schriftarten suchen",
+      "fontRefresh": "Aktualisieren",
+      "fontLoading": "Systemschriftarten werden gelesen…",
+      "fontError": "Schriftarten konnten nicht gelesen oder gespeichert werden. Bitte erneut versuchen.",
+      "fontEmpty": "Keine passenden Schriftarten.",
+      "fontMissing": "Diese Schriftart ist nicht mehr installiert. Die Systemschrift wird als Ersatz verwendet.",
+      "fontDesktopOnly": "Systemschriftarten in der Desktop-App auswählen.",
+      "fontPreview": "Vorschau: Deutsch English 中文 0123456789",
       "title": "Design",
       "subtitle": "Wähle Erscheinungsbild, Bewegung und Arbeitsbereichshintergrund",
       "modeTitle": "Erscheinungsbild",

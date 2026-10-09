@@ -1,6 +1,7 @@
 import { Check, ImageOff, ImagePlus, LaptopMinimal, Moon, Sun } from 'lucide-react';
 import { useRef, useState, type ChangeEvent } from 'react';
 
+import { FontSection } from '@/components/dialog/FontSection';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { BACKGROUND_OPTIONS, normalizeBackgroundFile, useBackground, type BackgroundPreference } from '@/hooks/useBackground';
@@ -79,6 +80,8 @@ export function ThemeSection() {
 						})}
 					</div>
 				</section>
+
+				<FontSection />
 
 				<section className="rounded-xl border border-border bg-card px-5 py-4">
 					<div className="text-sm font-medium">{t('settings.theme.motionTitle')}</div>

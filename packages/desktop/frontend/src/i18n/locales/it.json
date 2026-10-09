@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "Carattere",
+      "fontDesc": "Scegli un carattere installato per l’interfaccia. Si applica subito e resta dopo il riavvio.",
+      "fontDefault": "Predefinito di sistema",
+      "fontSearch": "Cerca caratteri",
+      "fontRefresh": "Aggiorna",
+      "fontLoading": "Lettura dei caratteri di sistema…",
+      "fontError": "Impossibile leggere o salvare i caratteri. Riprova.",
+      "fontEmpty": "Nessun carattere corrispondente.",
+      "fontMissing": "Questo carattere non è più installato. Verrà usato quello di sistema.",
+      "fontDesktopOnly": "Scegli i caratteri di sistema nell’app desktop.",
+      "fontPreview": "Anteprima: Italiano English 中文 0123456789",
       "title": "Tema",
       "subtitle": "Scegli l'aspetto, il movimento e lo sfondo dell'area di lavoro",
       "modeTitle": "Aspetto",

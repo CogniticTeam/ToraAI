@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "글꼴",
+      "fontDesc": "설치된 인터페이스 글꼴을 선택하세요. 즉시 적용되고 재시작 후에도 유지됩니다.",
+      "fontDefault": "시스템 기본값",
+      "fontSearch": "글꼴 검색",
+      "fontRefresh": "새로 고침",
+      "fontLoading": "시스템 글꼴 읽는 중…",
+      "fontError": "글꼴을 읽거나 저장하지 못했습니다. 다시 시도하세요.",
+      "fontEmpty": "일치하는 글꼴이 없습니다.",
+      "fontMissing": "설치되지 않은 글꼴입니다. 시스템 글꼴로 대체됩니다.",
+      "fontDesktopOnly": "데스크톱 앱에서 시스템 글꼴을 선택하세요.",
+      "fontPreview": "글꼴 미리보기: 한국어 English 0123456789",
       "title": "테마",
       "subtitle": "모양, 모션, 워크스페이스 배경을 선택하세요",
       "modeTitle": "모양",

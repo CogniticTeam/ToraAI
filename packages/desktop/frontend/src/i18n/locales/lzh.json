@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "字體",
+      "fontDesc": "擇本機既有之字體，即時生效，重啟猶存。",
+      "fontDefault": "系統預設",
+      "fontSearch": "尋字體",
+      "fontRefresh": "重讀",
+      "fontLoading": "正讀系統字體…",
+      "fontError": "字體讀存未成，請重試。",
+      "fontEmpty": "未得相符字體。",
+      "fontMissing": "此字體已無，暫用系統字體。",
+      "fontDesktopOnly": "請於桌面應用擇系統字體。",
+      "fontPreview": "字體預覽：天地玄黃 English 0123456789",
       "title": "主題",
       "subtitle": "擇外觀、動畫與工作區背景",
       "modeTitle": "外觀",

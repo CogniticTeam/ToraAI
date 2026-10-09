@@ -311,7 +311,10 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 				resize();
 			});
 			observer.observe(shell);
-			return () => observer.disconnect();
+			const fontStorage = (event: StorageEvent) => { if (event.key === 'tora.theme.font') resize(); };
+			window.addEventListener('tora:font-changed', resize);
+			window.addEventListener('storage', fontStorage);
+			return () => { observer.disconnect(); window.removeEventListener('tora:font-changed', resize); window.removeEventListener('storage', fontStorage); };
 		}, [value, variant, capsuleExpanded]);
 
 		// Calculate autocomplete suggestion using useMemo

@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "Police",
+      "fontDesc": "Choisissez une police installée pour l’interface. Application immédiate, conservée après redémarrage.",
+      "fontDefault": "Police système",
+      "fontSearch": "Rechercher une police",
+      "fontRefresh": "Actualiser",
+      "fontLoading": "Lecture des polices système…",
+      "fontError": "Impossible de lire ou enregistrer les polices. Réessayez.",
+      "fontEmpty": "Aucune police correspondante.",
+      "fontMissing": "Cette police n’est plus installée. La police système sert de remplacement.",
+      "fontDesktopOnly": "Choisissez les polices système dans l’application de bureau.",
+      "fontPreview": "Aperçu : Français English 中文 0123456789",
       "title": "Thème",
       "subtitle": "Choisissez l'apparence, les animations et l'arrière-plan de l'espace de travail",
       "modeTitle": "Apparence",

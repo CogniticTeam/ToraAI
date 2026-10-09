@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { existsSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {createSystemFontService} from '../packages/desktop/system-fonts.js';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('playwright-core');
@@ -18,10 +19,13 @@ const base = `http://127.0.0.1:${server.address().port}`;
 const browser = await chromium.launch({ headless: true, executablePath: chrome, args: ['--no-sandbox'] });
 
 try {
+	const systemFonts=await createSystemFontService()();
+	const chosenFont=systemFonts.find(name=>/Noto Serif|DejaVu Serif|Georgia/i.test(name))||systemFonts[0];
 	const page = await browser.newPage({ viewport: { width: 1360, height: 850 }, locale: 'zh-CN' });
 	const errors = [];
 	page.on('pageerror', error => errors.push(error.message));
-	await page.addInitScript(() => {
+	await page.addInitScript(fonts => {
+		window.toraFonts={list:async()=>({status:'ready',families:fonts})};
 		window.toraWindow = {
 			isMaximized: () => false, onMaximizeChange: () => {}, getSystemLocale: () => 'zh-CN',
 			reportLanguage: () => {}, reportTheme: () => {}, getRequiredUpdate: () => null,
@@ -29,7 +33,7 @@ try {
 			openFolderDialog: async () => null, onMenuCommand: () => () => {}, getAppVersion: () => '1.0.0',
 		};
 		window.toraVoice = { status: async () => ({ installed: true }), transcribe: async () => '' };
-	});
+	},systemFonts);
 	await page.goto(base + '/', { waitUntil: 'commit' });
 	for (const [route, payload] of Object.entries({
 		'auth/me': { id: 'theme-test', username: 'theme-test' },
@@ -61,6 +65,15 @@ try {
 	assert.equal(await page.getByText('外观', { exact: true }).count(), 0, '通用页不应继续显示外观开关');
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('heading', { name: '主题' }).waitFor({ state: 'visible' });
+	const fontSelect=page.getByTestId('theme-font-select');
+	await page.waitForFunction(()=>document.querySelector('[data-testid="theme-font-select"]')?.options.length>1);
+	assert.equal(await fontSelect.locator('option').count(),systemFonts.length+1);
+	await page.getByRole('textbox',{name:'搜索字体',exact:true}).fill(chosenFont);
+	await fontSelect.selectOption(chosenFont);
+	assert.equal(await page.evaluate(()=>localStorage.getItem('tora.theme.font')),chosenFont);
+	assert.ok((await page.getByTestId('theme-font-preview').evaluate(el=>getComputedStyle(el).fontFamily)).includes(chosenFont));
+	await page.screenshot({path:'/tmp/tora-theme-font-settings.png'});
+	await page.getByRole('textbox',{name:'搜索字体',exact:true}).fill('');
 	await page.waitForTimeout(350);
 	await page.screenshot({ path: '/tmp/tora-theme-settings-light.png' });
 
@@ -88,11 +101,15 @@ try {
 	assert.ok(storedCustom.length < 2_500_000);
 	await page.reload({ waitUntil: 'domcontentloaded' });
 	await page.waitForFunction(() => document.documentElement.dataset.appBackground === 'custom');
+	assert.ok((await page.locator('#tour-chat-textarea').evaluate(el=>getComputedStyle(el).fontFamily)).includes(chosenFont),'字体在重载后应保持');
 	assert.equal(await page.evaluate(() => document.documentElement.classList.contains('dark')), true, '颜色模式也应跨重载保留');
 
 	await page.getByRole('button', { name: /theme-test/i }).first().click();
 	await page.getByText('设置', { exact: true }).first().click();
 	await page.getByRole('button', { name: '主题', exact: true }).click();
+	await page.getByTestId('theme-font-select').selectOption('');
+	assert.equal(await page.evaluate(()=>localStorage.getItem('tora.theme.font')),null);
+	assert.equal(await page.evaluate(()=>document.documentElement.style.getPropertyValue('--tora-ui-font')),'');
 	await page.getByRole('button', { name: '移除自定义背景' }).click();
 	assert.equal(await page.evaluate(() => localStorage.getItem('tora.background.custom')), null);
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'none');

@@ -202,9 +202,10 @@ svg.lucide {
 	   -apple-system 在 macOS 上会按字符集自动回退（拉丁 → SF，中文 → 苹方），
 	   所以中英混排不需要额外声明 CJK 字体。标记区（.cn-markdown）不做覆盖，
 	   它自带代码块/公式等排版需求。 */
-	--font-sans:
+	--tora-system-font:
 		-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
 		'Microsoft YaHei', 'Noto Sans SC', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	--font-sans: var(--tora-ui-font, var(--tora-system-font));
 	/* 等宽字体全面弃用：font-mono 类（模型名/时间戳/路径/diff 等）统一
 	   渲染为系统字体。保留类名语义，恢复等宽只需还原此处字体栈。 */
 	--font-mono: var(--font-sans);
@@ -956,7 +957,7 @@ body {
 	isolation: isolate;
 	background: var(--launch-surface);
 	color: var(--launch-ink);
-	font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "PingFang SC", sans-serif;
+	font-family: var(--tora-ui-font, var(--tora-system-font));
 }
 .dark .first-launch-root {
 	--launch-ink: #f2f2f5;

@@ -1,3 +1,4 @@
+import {createSystemFontService} from './system-fonts.js';
 // Tora 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
 // 渲染层无任何 Node 集成（contextIsolation 默认开启）；前端通过 127.0.0.1 HTTP/SSE 通信，
 // 与浏览器打开完全同构。preload 在页面脚本执行前预置本地服务连接，首屏只加载一次。
@@ -92,6 +93,12 @@ const requestNativeMessageNotification = event => isMainWindowSender(event)
   ? showNativeMessageNotification() : { status: 'denied' };
 ipcMain.handle('notifications:new-message', requestNativeMessageNotification);
 ipcMain.handle('notifications:test', requestNativeMessageNotification);
+const readSystemFonts = createSystemFontService();
+ipcMain.handle('fonts:list', async (event, refresh) => {
+  if (!isMainWindowSender(event)) return {status:'denied',families:[]};
+  try { return {status:'ready',families:await readSystemFonts(refresh === true)}; }
+  catch { return {status:'error',families:[]}; }
+});
 
 // preload 在页面脚本运行前同步读取 Electron 解析后的系统区域设置，供首次语言选择。
 ipcMain.on('app:get-system-locale', (event) => {

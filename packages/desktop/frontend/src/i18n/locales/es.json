@@ -1371,6 +1371,17 @@
       }
     },
     "theme": {
+      "fontTitle": "Fuente",
+      "fontDesc": "Elige una fuente instalada para la interfaz. Se aplica al instante y se conserva al reiniciar.",
+      "fontDefault": "Predeterminada del sistema",
+      "fontSearch": "Buscar fuentes",
+      "fontRefresh": "Actualizar",
+      "fontLoading": "Leyendo fuentes del sistema…",
+      "fontError": "No se pudo leer o guardar la fuente. Vuelve a intentarlo.",
+      "fontEmpty": "No hay fuentes coincidentes.",
+      "fontMissing": "Esta fuente ya no está instalada. Se utiliza la del sistema como alternativa.",
+      "fontDesktopOnly": "Elige fuentes del sistema en la aplicación de escritorio.",
+      "fontPreview": "Vista previa: Español English 中文 0123456789",
       "title": "Tema",
       "subtitle": "Elige la apariencia, el movimiento y el fondo del espacio de trabajo",
       "modeTitle": "Apariencia",

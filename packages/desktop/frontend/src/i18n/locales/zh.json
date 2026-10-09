@@ -1230,6 +1230,17 @@
       }
     },
     "theme": {
+      "fontTitle": "字体",
+      "fontDesc": "选择电脑已安装的界面字体，立即生效并保留到下次启动。",
+      "fontDefault": "系统默认",
+      "fontSearch": "搜索字体",
+      "fontRefresh": "重新读取",
+      "fontLoading": "正在读取系统字体…",
+      "fontError": "读取或保存字体失败，请重试。",
+      "fontEmpty": "没有匹配的字体。",
+      "fontMissing": "此字体已不在系统中，当前使用系统字体作为回退。",
+      "fontDesktopOnly": "请在桌面应用中选择系统字体。",
+      "fontPreview": "字体预览：中文 English 0123456789",
       "title": "主题",
       "subtitle": "选择外观、动画和工作区背景",
       "modeTitle": "外观",
