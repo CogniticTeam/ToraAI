@@ -63,6 +63,8 @@ try {
 	await page.getByText('设置', { exact: true }).first().click();
 	await page.getByRole('heading', { name: '通用' }).waitFor({ state: 'visible' });
 	assert.equal(await page.getByText('外观', { exact: true }).count(), 0, '通用页不应继续显示外观开关');
+	await page.waitForFunction(()=>getComputedStyle(document.querySelector('.settings-surface')).opacity==='1');
+	await page.screenshot({path:'/tmp/tora-ui-settings-desktop.png'});
 	await page.getByRole('button', { name: '主题', exact: true }).click();
 	await page.getByRole('heading', { name: '主题' }).waitFor({ state: 'visible' });
 	assert.equal(await page.getByTestId('theme-font-section').evaluate(el=>el===el.parentElement.lastElementChild),true,'字体应位于主题设置最后');
@@ -73,6 +75,8 @@ try {
 	await fontSelect.selectOption(chosenFont);
 	assert.equal(await page.evaluate(()=>localStorage.getItem('tora.theme.font')),chosenFont);
 	assert.ok((await page.getByTestId('theme-font-preview').evaluate(el=>getComputedStyle(el).fontFamily)).includes(chosenFont));
+	await page.getByTestId('theme-font-preview').scrollIntoViewIfNeeded();
+	await page.waitForFunction(()=>getComputedStyle(document.querySelector('.settings-section-transition')).opacity==='1');
 	await page.screenshot({path:'/tmp/tora-theme-font-settings.png'});
 	await page.getByRole('textbox',{name:'搜索字体',exact:true}).fill('');
 	await page.waitForTimeout(350);
@@ -116,6 +120,29 @@ try {
 	assert.equal(await page.evaluate(() => document.documentElement.dataset.appBackground), 'none');
 	await page.getByRole('button', { name: '返回 Tora' }).click();
 	assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.app-wallpaper')).backgroundImage), 'none', '返回工作区后仍应无背景');
+	// The observed narrow-window bug: the fixed sidebar consumed almost the entire chat width.
+	await page.setViewportSize({width:390,height:844});
+	await page.locator('.settings-surface').waitFor({state:'detached'});
+	assert.equal(await page.locator('[data-mobile="true"]').count(),0,'窄屏侧栏应默认收起');
+	const composer=await page.locator('.composer-shell').boundingBox();
+	assert.ok(composer.width>=340&&composer.x>=16&&composer.x+composer.width<=374,'输入框应保留两侧间距');
+	await page.getByRole('button',{name:'\u5c55\u5f00\u6216\u6536\u8d77\u4fa7\u680f',exact:true}).click();
+	await page.locator('[data-mobile="true"]').waitFor({state:'visible'});
+	await page.locator('[data-mobile="true"] [data-sidebar="footer"]').getByRole('button').first().click();
+	await page.getByRole('menuitem',{name:'设置',exact:true}).click();
+	await page.getByRole('heading',{name:'通用',exact:true}).waitFor({state:'visible'});
+	await page.locator('[data-mobile="true"]').waitFor({state:'detached'});
+	assert.ok(await page.getByRole('navigation',{name:'设置'}).getByRole('button',{name:'通用',exact:true}).getAttribute('aria-current'));
+	assert.ok(await page.locator('.settings-surface').evaluate(el=>el.scrollWidth<=innerWidth),'设置界面不得横向溢出');
+	await page.waitForFunction(()=>getComputedStyle(document.querySelector('.settings-surface')).opacity==='1');
+	await page.screenshot({path:'/tmp/tora-ui-settings-mobile.png'});
+	await page.getByRole('button',{name:'主题',exact:true}).click();
+	await page.getByRole('heading',{name:'主题',exact:true}).waitFor({state:'visible'});
+	const navigation=await page.locator('.settings-navigation').boundingBox();
+	assert.equal(navigation.width,390);assert.ok(navigation.height<140,'窄屏分类导航应横向排列');
+	await page.getByRole('button',{name:'返回 Tora',exact:true}).click();
+	await page.locator('.settings-surface').waitFor({state:'detached'});
+	await page.screenshot({path:'/tmp/tora-ui-main-mobile.png'});
 	assert.deepEqual(errors, [], `页面脚本错误：${errors.join(' | ')}`);
 	console.log('主题页、预设背景、无背景、自定义导入与移除、深浅色及重载持久化：通过');
 } finally {

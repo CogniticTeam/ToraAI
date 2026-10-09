@@ -166,12 +166,12 @@ function ToChatConversation() {
 
 	return (
 		<main className="flex h-full min-w-0 flex-col bg-transparent" data-testid="tochat-page">
-			<header data-window-drag-region className="app-drag flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-5">
+			<header data-window-drag-region className="workspace-header app-drag flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-5">
 				<div className="flex min-w-0 items-center gap-2">
-					<SidebarTrigger className="md:hidden" />
+					<SidebarTrigger className="size-10 md:hidden" />
 					{showTaskSwitcher && (<div className="flex shrink-0 items-center rounded-full bg-muted p-0.5" data-testid="tochat-task-switcher" role="group" aria-label="ToChat">
 						{(['chat', 'work'] as const).map((kind) => (
-							<button key={kind} type="button" disabled={busy} aria-pressed={task === kind} onClick={() => fresh(kind)} className={`relative isolate rounded-full px-3 py-1 text-xs disabled:opacity-50 ${task === kind ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+							<button key={kind} type="button" disabled={busy} aria-pressed={task === kind} onClick={() => fresh(kind)} className={`relative isolate min-h-8 rounded-full px-3 py-1 text-sm disabled:opacity-50 ${task === kind ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
 								{task === kind && <motion.span
 									data-testid="tochat-task-indicator"
 									data-motion={tabMotion}
@@ -189,7 +189,7 @@ function ToChatConversation() {
 				</div>
 				<WindowDragRegion className="min-w-6 flex-1 self-stretch" />
 				<Popover>
-					<PopoverTrigger className="flex max-w-[45%] items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-label={copy('quota')}>
+					<PopoverTrigger className="app-no-drag flex min-h-8 max-w-[45%] items-center gap-1 rounded-lg px-2 py-1 focus-visible:outline-2 focus-visible:outline-ring text-xs text-muted-foreground hover:text-foreground" aria-label={copy('quota')}>
 						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? `${(quota.remainingPercent??0).toFixed(1)}%` : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
 					</PopoverTrigger>
 					<PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-2 text-sm">

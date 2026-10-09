@@ -15,7 +15,7 @@ export function ApplicationModeSwitcher() {
 	const choose = (next: ApplicationMode) => navigate(next === 'tochat' ? '/tochat' : '/chat');
 	return (
 		<DropdownMenu>
-			<DropdownMenuTrigger aria-label={copy('mode')} data-testid="application-mode-switcher" className="app-no-drag mx-2 mt-1 flex h-9 w-fit items-center gap-2 rounded-lg px-3 text-base font-medium hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-ring">
+			<DropdownMenuTrigger aria-label={copy('mode')} data-testid="application-mode-switcher" className="app-no-drag mx-2 mb-1 mt-1 flex h-10 w-fit items-center gap-2 rounded-lg px-3 text-base font-medium hover:bg-sidebar-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
 				{mode === 'tochat' ? 'ToChat' : 'ToCode'}<ChevronDown className="size-4 text-muted-foreground" />
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-56">

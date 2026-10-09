@@ -132,6 +132,9 @@
     "disabled": "Polls have been disabled by the administrator."
   },
 	"common": {
+		"navigation": "Navigation",
+		"toggleNavigation": "Toggle sidebar",
+		"navigationDescription": "Switch features or choose a conversation.",
 		"toraModels": "Tora Models",
 		"add": "Add",
 		"agent": "Agent",
@@ -1264,7 +1267,7 @@
 			"motionPageTitle": "Page transitions",
 			"motionPageDesc": "Smooth changes between workspace pages",
 			"backgroundTitle": "Background",
-			"backgroundDesc": "Shared by the workspace, settings, and sign-in screens",
+			"backgroundDesc": "Background for your workspace and sign-in screen.",
 			"lavender": "Soft lavender",
 			"mist": "Blue mist",
 			"stone": "Warm stone",

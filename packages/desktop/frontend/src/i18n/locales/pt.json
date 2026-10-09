@@ -273,6 +273,9 @@
     "disabled": "As enquetes foram desativadas pelo administrador."
   },
   "common": {
+    "navigation": "Navegação",
+    "toggleNavigation": "Abrir ou fechar a barra lateral",
+    "navigationDescription": "Troque de função ou escolha uma conversa.",
     "toraModels": "Tora Models",
     "add": "Adicionar",
     "agent": "Agente",
@@ -1405,7 +1408,7 @@
       "motionPageTitle": "Transições de página",
       "motionPageDesc": "Mudanças suaves entre páginas do espaço de trabalho",
       "backgroundTitle": "Plano de fundo",
-      "backgroundDesc": "Compartilhado pelo espaço de trabalho, configurações e telas de login",
+      "backgroundDesc": "Fundo do espaço de trabalho e da tela de login.",
       "lavender": "Lavanda suave",
       "mist": "Névoa azul",
       "stone": "Pedra quente",

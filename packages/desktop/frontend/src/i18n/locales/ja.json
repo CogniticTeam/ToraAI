@@ -273,6 +273,9 @@
     "disabled": "投票は管理者によって無効化されています。"
   },
   "common": {
+    "navigation": "ナビゲーション",
+    "toggleNavigation": "サイドバーを開閉",
+    "navigationDescription": "機能を切り替えるか、会話を選択します。",
     "toraModels": "Toraモデル",
     "add": "追加",
     "agent": "エージェント",
@@ -1405,7 +1408,7 @@
       "motionPageTitle": "ページ遷移",
       "motionPageDesc": "ワークスペースのページ間のスムーズな切り替え",
       "backgroundTitle": "背景",
-      "backgroundDesc": "ワークスペース、設定、サインイン画面で共有されます",
+      "backgroundDesc": "ワークスペースとログイン画面の背景",
       "lavender": "ソフトラベンダー",
       "mist": "ブルーミスト",
       "stone": "ウォームストーン",

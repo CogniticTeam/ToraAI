@@ -255,12 +255,12 @@ function Row({
 	children?: React.ReactNode;
 }) {
 	return (
-		<div className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-5 py-4">
+		<div className="settings-row flex items-center justify-between gap-4 py-4">
 			<div className="min-w-0">
 				<div className="text-sm font-medium">{title}</div>
-				{description && <div className="mt-0.5 text-xs text-muted-foreground">{description}</div>}
+				{description && <div className="mt-1 text-[13px] leading-5 text-muted-foreground">{description}</div>}
 			</div>
-			<div className="shrink-0">{children}</div>
+			<div className="settings-row-control shrink-0">{children}</div>
 		</div>
 	);
 }
@@ -1763,7 +1763,7 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 		<div
 			aria-hidden={closing}
 			className={
-				'app-wallpaper fixed inset-0 z-50 text-card-foreground ' +
+				'settings-surface fixed inset-0 z-50 bg-background text-card-foreground ' +
 				(closing
 					? 'animate-out fade-out-0 duration-200'
 					: 'animate-in fade-in-0 duration-200')
@@ -1772,37 +1772,38 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 			{/* 全屏设置：左侧导航保持上下文，右侧为集中阅读区。 */}
 			<div
 				className={
-					'relative flex h-full w-full overflow-hidden bg-transparent text-card-foreground ease-out ' +
+					'relative flex h-full w-full flex-col overflow-hidden bg-transparent text-card-foreground ease-out md:flex-row ' +
 					(closing
 						? 'animate-out fade-out-0 duration-200'
 						: 'animate-in fade-in-0 duration-200')
 				}
 			>
 				{/* 左侧导航 */}
-				<nav className="app-no-drag flex w-72 shrink-0 flex-col border-r border-sidebar-border bg-sidebar px-3 pb-4 pt-14">
+				<nav aria-label={t('settings.title')} className="settings-navigation app-no-drag flex min-w-0 shrink-0 flex-col border-b border-sidebar-border bg-sidebar px-3 pb-3 pt-3 md:w-64 md:border-b-0 md:border-r md:pb-4 md:pt-14">
 					<button
 						type="button"
-						className="app-no-drag mb-5 flex items-center gap-2 rounded-rect px-2 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+						className="app-no-drag mb-2 flex min-h-9 items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent md:mb-5"
 						onClick={() => onOpenChange(false)}
 					>
 						<ChevronLeft className="size-4" />
 						{t('settings.backToApp')}
 					</button>
-					<div className="px-2 pb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('settings.title')}</div>
-					<div className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pr-1">
+					<div className="hidden px-3 pb-3 text-xs font-medium text-muted-foreground md:block">{t('settings.title')}</div>
+					<div className="flex min-h-0 gap-1 overflow-x-auto pb-1 md:flex-1 md:flex-col md:overflow-x-hidden md:overflow-y-auto md:pb-0">
 					{SECTIONS.map(({ key, label, icon: Icon }) => (
 						<button
 							key={key}
 							type="button"
 							className={
-								'flex items-center gap-2.5 rounded-rect px-3 py-2 text-sm transition-colors duration-150 ' +
+								'flex min-h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-150 ' +
 								(section === key
 									? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
 									: 'text-sidebar-foreground hover:bg-sidebar-accent')
 							}
+							aria-current={section === key ? 'page' : undefined}
 							onClick={() => setSection(key)}
 						>
-							<Icon className="size-4" />
+							<Icon className="size-4 shrink-0" />
 							{t(label)}
 						</button>
 					))}
@@ -1810,11 +1811,11 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 				</nav>
 
 				{/* 右侧内容 */}
-				<div className="relative flex min-w-0 flex-1 flex-col">
-					<WindowDragRegion className="absolute inset-x-0 top-0 z-10 h-12" />
+				<div className="relative flex min-h-0 min-w-0 flex-1 flex-col">
+					<WindowDragRegion className="absolute inset-x-0 top-0 z-10 hidden h-12 md:block" />
 					{/* key={section} 让板块切换时重挂载触发入场动画 */}
 					<div key={section} className="settings-section-transition min-h-0 flex-1 overflow-y-auto animate-in fade-in slide-in-from-bottom-1 duration-250">
-						<div className={`mx-auto w-full px-8 py-14 sm:px-12 lg:py-16 ${section === 'account' ? 'max-w-[856px]' : 'max-w-4xl'}`}>
+						<div className="settings-panel mx-auto w-full max-w-[52rem] px-5 pb-12 pt-7 sm:px-8 md:pt-14 lg:px-10 lg:pt-16">
 						{section === 'general' && (
 							<>
 								<h3 className="text-lg font-semibold">{t('settings.general.title')}</h3>

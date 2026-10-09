@@ -273,6 +273,9 @@
     "disabled": "I sondaggi sono stati disabilitati dall'amministratore."
   },
   "common": {
+    "navigation": "Navigazione",
+    "toggleNavigation": "Apri o chiudi la barra laterale",
+    "navigationDescription": "Cambia funzione o scegli una conversazione.",
     "toraModels": "Modelli Tora",
     "add": "Aggiungi",
     "agent": "Agente",
@@ -1405,7 +1408,7 @@
       "motionPageTitle": "Transizioni di pagina",
       "motionPageDesc": "Cambi fluidi tra le pagine dell'area di lavoro",
       "backgroundTitle": "Sfondo",
-      "backgroundDesc": "Condiviso da area di lavoro, impostazioni e schermate di accesso",
+      "backgroundDesc": "Sfondo per lo spazio di lavoro e la schermata di accesso.",
       "lavender": "Lavanda tenue",
       "mist": "Foschia blu",
       "stone": "Pietra calda",
