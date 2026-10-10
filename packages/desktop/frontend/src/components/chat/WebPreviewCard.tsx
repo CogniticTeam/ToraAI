@@ -1,13 +1,14 @@
 import {ArrowUpRight,Globe,LoaderCircle} from 'lucide-react';
 import {useState} from 'react';
-import {useNavigate,useParams} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import {sessionApi} from '@/api';
 import {Button} from '@/components/ui/button';
 import {useTranslation} from '@/i18n/useI18n';
+import {requestPanel} from '@/lib/openPanel';
 
 export function WebPreviewCard({replyId,entry}:{replyId:string;entry?:string}) {
- const {t}=useTranslation(),{agentId,sessionId}=useParams(),navigate=useNavigate();
+ const {t}=useTranslation(),{agentId,sessionId}=useParams();
  const [pending,setPending]=useState(false),[error,setError]=useState('');
  if(!sessionId||!agentId||!/Electron/i.test(navigator.userAgent))return null;
  const open=async()=>{
@@ -17,7 +18,7 @@ export function WebPreviewCard({replyId,entry}:{replyId:string;entry?:string}) {
    const url=new URL(preview.url);
    if(url.protocol!=='http:'||!['localhost','127.0.0.1','[::1]'].includes(url.hostname)||url.username||url.password)throw Error('Invalid preview URL');
    const {openBuiltinBrowserTab}=await import('@/components/panel/BrowserPanel');
-   await openBuiltinBrowserTab(url.href);navigate('/browser');
+   await openBuiltinBrowserTab(url.href);requestPanel('browser',{exclusive:true});
   }catch {setError(t('webPreview.error'));}finally{setPending(false);}
  };
  return <div data-web-preview-card className="mt-2 flex flex-wrap items-center gap-3 rounded-rect border border-border bg-muted/40 p-3 text-sm">

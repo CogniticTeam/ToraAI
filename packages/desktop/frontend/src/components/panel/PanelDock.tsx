@@ -1,4 +1,4 @@
-import {motion} from 'framer-motion';
+import {AnimatePresence,motion,useIsPresent} from 'framer-motion';
 import { X } from 'lucide-react';
 import { Fragment, Suspense, type ReactNode } from 'react';
 
@@ -68,7 +68,7 @@ interface PanelDockProps {
 	 * Lookup from {@link PanelKey} to its {@link PanelDescriptor}. Only
 	 * needs to contain keys that may appear in {@link layout}.
 	 */
-	panels: Record<PanelKey, PanelDescriptor>;
+	panels: Partial<Record<PanelKey, PanelDescriptor>>;
 	/**
 	 * Invoked when a panel's close button is clicked. The owner is
 	 * responsible for removing the key from {@link layout} (and dropping
@@ -90,6 +90,11 @@ const COLUMN_MIN_WIDTH = '20rem';
  * title bar plus a sliver of content stays visible.
  */
 const PANEL_MIN_HEIGHT = '6rem';
+
+function DockMotion({mode,duration,children}:{mode:string;duration:number;children:ReactNode}) {
+	const present=useIsPresent();
+	return <motion.div data-dock-motion={mode} data-dock-exiting={!present} className={`h-full min-w-0 ${present?'':'pointer-events-none'}`} initial={{opacity:mode==='off'?1:0,x:mode==='off'?0:18}} animate={{opacity:1,x:0}} exit={{opacity:0,x:mode==='off'?0:18}} transition={{duration,ease:[0.2,0.7,0.2,1]}}>{children}</motion.div>;
+}
 
 interface PanelProps {
 	title: ReactNode;
@@ -163,17 +168,13 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 	const {effective,clickEnabled}=useMotionSettings();
 	const motionMode=clickEnabled?effective:'off';
 	const duration=motionMode==='off'?0:motionMode==='fast'?0.15:motionMode==='gentle'?0.3:0.22;
-	if (layout.length === 0) return null;
-
 	return (
-		<>
-			{layout.map((column, colIndex) => (
+		<AnimatePresence initial={false}>
+			{layout.map((column) => (
 				<Fragment key={`col-${column.join('-')}`}>
-					{colIndex > 0 && (
 						<ResizableHandle withHandle className="bg-transparent w-1.5" />
-					)}
 					<ResizablePanel minSize={COLUMN_MIN_WIDTH} defaultSize="22rem">
-						<motion.div data-dock-motion={motionMode} className="h-full min-w-0" initial={{opacity:motionMode==='off'?1:0,x:motionMode==='off'?0:18}} animate={{opacity:1,x:0}} transition={{duration,ease:[0.2,0.7,0.2,1]}}>
+						<DockMotion mode={motionMode} duration={duration}>
 						<ResizablePanelGroup orientation="vertical">
 							{column.map((key, rowIndex) => {
 								const descriptor = panels[key];
@@ -206,10 +207,10 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 								);
 							})}
 						</ResizablePanelGroup>
-						</motion.div>
+						</DockMotion>
 					</ResizablePanel>
 				</Fragment>
 			))}
-		</>
+		</AnimatePresence>
 	);
 };

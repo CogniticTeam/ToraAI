@@ -771,6 +771,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		const placeholder = pageRef.current;
 		const host = ensurePersistentHost();
 		if (!placeholder) return;
+		const dock = placeholder.closest<HTMLElement>('[data-dock-motion]');
 		let raf = 0;
 		let followUntil = performance.now() + 450;
 		const schedule = () => { if (!raf) raf = requestAnimationFrame(sync); };
@@ -790,12 +791,17 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 			if (host.style.top !== top) host.style.top = top;
 			if (host.style.width !== width) host.style.width = width;
 			if (host.style.height !== height) host.style.height = height;
+			const opacity = dock ? getComputedStyle(dock).opacity : '1';
+			if (host.style.opacity !== opacity) host.style.opacity = opacity;
 			if (host.style.visibility !== 'visible') host.style.visibility = 'visible';
-			if (host.style.pointerEvents !== 'auto') host.style.pointerEvents = 'auto';
+			const pointerEvents = dock?.dataset.dockExiting === 'true' ? 'none' : 'auto';
+			if (host.style.pointerEvents !== pointerEvents) host.style.pointerEvents = pointerEvents;
 			if (performance.now() < followUntil) schedule();
 		};
 		const observer = new ResizeObserver(followTransition);
 		observer.observe(placeholder);
+		const motionObserver = new MutationObserver(followTransition);
+		if (dock) motionObserver.observe(dock, {attributes:true,attributeFilter:['style','data-dock-exiting']});
 		window.addEventListener('resize', followTransition);
 		window.addEventListener('scroll', followTransition, true);
 		window.visualViewport?.addEventListener('resize', followTransition);
@@ -803,6 +809,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		return () => {
 			cancelAnimationFrame(raf);
 			observer.disconnect();
+			motionObserver.disconnect();
 			window.removeEventListener('resize', followTransition);
 			window.removeEventListener('scroll', followTransition, true);
 			window.visualViewport?.removeEventListener('resize', followTransition);

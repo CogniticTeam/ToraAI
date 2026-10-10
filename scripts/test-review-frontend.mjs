@@ -631,3 +631,19 @@ test('live webpage preview artifact survives reply completion and retains the re
  const{useMessages}=h.load('hooks/useMessages.ts');const render=()=>h.render(()=>useMessages('agent','site-session'));
  render();await tick();await tick();const state=render();assert.equal(state.phase,'idle');assert.equal(state.msgs.length,1);assert.equal(state.msgs[0].id,'web-reply');assert.equal(state.msgs[0].metadata.web_preview,preview);h.dispose();
 });
+
+test('website preview card opens an exclusive browser dock and keeps the conversation route',async()=>{
+ const opened=[],panels=[],navigations=[];
+ const h=harness({'react-router-dom':{useParams:()=>({agentId:'agent',sessionId:'session'}),useNavigate:()=>url=>navigations.push(url)},'@/api':{sessionApi:{preview:async()=>({url:'http://127.0.0.1:5173/'})}},'@/components/panel/BrowserPanel':{openBuiltinBrowserTab:async url=>opened.push(url)},'@/lib/openPanel':{requestPanel:(...args)=>panels.push(args)}},{navigator:{userAgent:'Electron fixture'}});
+ const {WebPreviewCard}=h.load('components/chat/WebPreviewCard.tsx');const render=()=>h.render(()=>WebPreviewCard({replyId:'reply',entry:'/project/index.html'}));
+ find(render(),node=>node.type==='Button').props.onClick();await tick();await tick();render();
+ assert.deepEqual(opened,['http://127.0.0.1:5173/']);assert.equal(panels.length,1);assert.equal(panels[0][0],'browser');assert.equal(panels[0][1].exclusive,true);assert.deepEqual(navigations,[]);h.dispose();
+});
+
+test('ToChat work hosts the same right browser dock and closes it without navigating',async()=>{
+ const listeners=new Map(),navigations=[],view={session:{id:'work',state:{},config:{application_mode:'tocode',task_mode:'work',chat_model_config:{credential_id:'tora-official',model:'gpt-6.1-sol'}}}};
+ const h=harness({'react-router-dom':{useNavigate:()=>url=>navigations.push(url),useParams:()=>({agentId:'agent',sessionId:'work'}),useSearchParams:()=>[new URLSearchParams('task=work')]},'@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},'@/hooks/useSessions':{useSessions:()=>({sessions:[view],loading:false,refetch(){}})},'@/hooks/useMessages':{useMessages:()=>({msgs:[],loading:false,phase:'idle',send(){},interrupt(){}})},'@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'standard',clickEnabled:true})},'@/utils/authStore':{getToken:()=> 'fixture'},'@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},fetchBuiltinQuota:async()=>Response.json({enabled:true,canUseAgent:true,models:[{id:'gpt-6.1-sol',enabled:true}]})},'@/lib/applicationModes':{modeCopy:()=>key=>key,readToChatSource:()=> 'official',TOCHAT_SOURCE_EVENT:'source'},'@/lib/openPanel':{OPEN_PANEL_EVENT:'open-panel'}},{window:{addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name),setInterval:()=>1,clearInterval(){}}});
+ const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');const render=()=>h.render(()=>ToChatConversation());render();await tick();
+ listeners.get('open-panel')({detail:{key:'browser',exclusive:true}});const dock=find(render(),node=>node.type==='PanelDock');assert.ok(dock);assert.equal(JSON.stringify(dock.props.layout),'[["browser"]]');assert.ok(dock.props.panels.browser);assert.deepEqual(navigations,[]);
+ dock.props.onClosePanel('browser');assert.equal(find(render(),node=>node.type==='PanelDock').props.layout.length,0);h.dispose();
+});

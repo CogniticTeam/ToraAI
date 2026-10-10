@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import { ChevronDown, RotateCw } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { ChevronDown, RotateCw, Globe } from 'lucide-react';
+import { lazy, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -10,11 +10,13 @@ import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
+import {PanelDock} from '@/components/panel/PanelDock';
 import { LlmSelect } from '@/components/select/LlmSelect';
 import {OfficialModelSelect} from '@/components/select/OfficialModelSelect';
 import { PermissionModeSelect } from '@/components/select/PermissionModeSelect';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {ResizablePanelGroup,ResizablePanel} from '@/components/ui/resizable';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { AudioProvider } from '@/context/AudioContext';
 import { useAgents } from '@/hooks/useAgents';
@@ -24,6 +26,7 @@ import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n';
 import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from '@/lib/applicationModes';
 import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments';
+import {OPEN_PANEL_EVENT,type PanelOpenDetail} from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { modelAllowedInMode, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
@@ -31,6 +34,7 @@ import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 type Quota = BuiltinQuota;
+const BrowserPanel=lazy(async()=>({default:(await import('@/components/panel/BrowserPanel')).BrowserPanel}));
 const TAB_TRANSITIONS = {
 	off: { duration: 0 },
 	gentle: { type: 'spring' as const, stiffness: 250, damping: 30, mass: 0.7 },
@@ -53,6 +57,14 @@ function ToChatConversation() {
 	const tabMotion = clickEnabled ? effective : 'off';
 	const task: ToChatTask = view ? sessionHistoryKind(view.session.config) : (params.get('task') === 'work' ? 'work' : 'chat');
 	const work = task === 'work';
+	const [browserOpen,setBrowserOpen]=useState(false);
+	useEffect(()=>{
+		setBrowserOpen(false);
+		if(!work)return;
+		const open=(event:Event)=>{const detail=(event as CustomEvent<PanelOpenDetail>).detail;if((typeof detail==='string'?detail:detail?.key)==='browser')setBrowserOpen(true);};
+		window.addEventListener(OPEN_PANEL_EVENT,open);
+		return()=>window.removeEventListener(OPEN_PANEL_EVENT,open);
+	},[work]);
 	const [preference, setPreference] = useState(readToChatSource);
 	const source = view ? sessionModelSource(view.session.config) : preference;
 	const [effort, setEffort] = useState<Effort>('high');
@@ -201,6 +213,8 @@ function ToChatConversation() {
 					</PopoverContent>
 				</Popover>
 			</header>
+			<ResizablePanelGroup orientation="horizontal" className="chat-dock min-h-0 flex-1" data-motion={clickEnabled?effective:'off'}>
+			<ResizablePanel className="flex min-h-0 min-w-0" minSize={work?'24rem':0}>
 			<div className="canvas-glow relative flex min-h-0 flex-1 justify-center overflow-hidden [--chat-content-w:54rem]">
 				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled}
 					composerNotice={missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached)) ? copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
@@ -215,6 +229,9 @@ function ToChatConversation() {
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>
+			</ResizablePanel>
+			<PanelDock layout={work&&browserOpen?[['browser']]:[]} panels={{browser:{title:t('panel.workspace.browser'),icon:<Globe className="size-4" />,content:<BrowserPanel />}}} onClosePanel={()=>setBrowserOpen(false)} />
+			</ResizablePanelGroup>
 		</main>
 	);
 }

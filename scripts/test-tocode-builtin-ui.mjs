@@ -35,6 +35,8 @@ const dock=await page.locator('.chat-dock').getAttribute('data-motion');assert.e
 assert.equal(await page.locator('.chat-dock > [data-panel]').first().evaluate(el=>getComputedStyle(el).transitionProperty),'flex-grow');
 await page.screenshot({path:'/tmp/tora-web-preview-sidebar.png'});
 await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelector('.chat-dock')?.getAttribute('data-motion')==='off');assert.equal(await page.locator('.chat-dock > [data-panel]').first().evaluate(el=>getComputedStyle(el).transitionProperty),'none');await page.emulateMedia({reducedMotion:'no-preference'});
+await page.waitForFunction(()=>document.querySelector('.chat-dock')?.getAttribute('data-motion')==='standard');
 await page.getByRole('button',{name:'关闭侧栏',exact:true}).click();
+await page.locator('[data-dock-exiting="true"]').waitFor({state:'attached'});await page.locator('[data-dock-exiting="true"]').waitFor({state:'detached'});
 await page.screenshot({path:'/tmp/tora-tocode-builtin-model.png'});console.log('ToCode built-in selector, first-send model routing, work billing and full tool availability verified.');await context.close();
 }finally{await browser.close();core.closeAllConnections?.();cloud.closeAllConnections?.();await Promise.all([new Promise(resolve=>core.close(resolve)),new Promise(resolve=>cloud.close(resolve))]);rmSync(home,{recursive:true,force:true});}

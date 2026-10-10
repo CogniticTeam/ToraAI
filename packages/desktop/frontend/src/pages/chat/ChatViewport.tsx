@@ -42,7 +42,6 @@ import {
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
 } from '@/components/ui/resizable.tsx';
@@ -388,7 +387,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			const key = typeof detail === 'string' ? detail : detail?.key;
 			if (!key || !(key in KNOWN_PANELS)) return;
 			if (key === 'diff') setRecordedDiff(typeof detail === 'object' && typeof detail.diff === 'string' && detail.diff.trim() ? {scope:diffScope,diff:detail.diff,root:detail.root} : null);
-			setPanelLayout((layout) => openPanelInLayout(layout, key));
+			setPanelLayout((layout) => key === 'browser' && typeof detail === 'object' && detail.exclusive ? [['browser']] : openPanelInLayout(layout, key));
 		};
 		window.addEventListener(OPEN_PANEL_EVENT, handler);
 		return () => window.removeEventListener(OPEN_PANEL_EVENT, handler);
@@ -1216,9 +1215,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 							</div>
 						</div>
 					</ResizablePanel>
-					{panelLayout.length > 0 && (
-						<ResizableHandle withHandle className="bg-transparent w-1.5" />
-					)}
 					<PanelDock layout={panelLayout} panels={panels} onClosePanel={closePanel} />
 				</ResizablePanelGroup>
 			</main>
