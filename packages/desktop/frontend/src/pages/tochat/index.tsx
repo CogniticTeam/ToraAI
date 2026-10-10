@@ -170,7 +170,7 @@ function ToChatConversation() {
 		if (await patch({ chat_model_config: { ...officialModel, parameters: { thinking: true, thinkingEffort: next } } })) setEffort(next);
 	};
 	const chooseOfficialModel = async (id: ToChatModelId) => {
-		if (!modelAllowedInMode(id,task)) return;
+		if (!modelAllowedInMode(id,task) || !modelAvailable(id,quota?.models)) return;
 		const nextEffort = toChatEffort(id, selectedEffort);
 		if (await patch({ chat_model_config: { ...officialModel, model: id, parameters: { thinking: true, thinkingEffort: nextEffort } } })) { setOfficialModelId(id); setEffort(nextEffort); }
 	};

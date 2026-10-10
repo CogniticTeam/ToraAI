@@ -384,12 +384,14 @@ test('内置 Gemini 新会话保存所选模型，旧会话继续 DeepSeek，切
     '@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})},
     '@/lib/applicationModes':{readToChatSource:()=> 'official',modeCopy:()=>key=>key},
     '@/utils/authStore':{getToken:()=> 'synthetic-token'},
-    '@/utils/modelSync':{cloudApi:()=> 'https://synthetic.invalid',cloudFetch:async()=>Response.json({enabled:true,chatRemaining:150,models:[{id:'deepseek-flash',enabled:true},{id:'gemini-3.8-flash',enabled:true}]})},
+    '@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},fetchBuiltinQuota:async()=>Response.json({enabled:true,chatRemaining:150,models:[{id:'deepseek-flash',enabled:true},{id:'gemini-3.8-flash',enabled:true},{id:'claude-haiku-5-5',enabled:true,allowed:false,minimumPlan:'pro'}]})},
     'framer-motion':{motion:{span:'span'}},
   },{fetch:async()=>Response.json({})});
   const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');
   const render=()=>h.render(()=>ToChatConversation());let tree=render();await tick();tree=render();
   const menu=find(tree,node=>node.type==='ChatContent').props.modelControl;
+  await menu.props.onModel('claude-haiku-5-5');
+  assert.equal(extras().chat_model_config.model,'deepseek-flash');
   await menu.props.onModel('gemini-3.8-flash');
   tree=render();assert.equal(extras().chat_model_config.model,'gemini-3.8-flash');
   await find(tree,node=>node.type==='ChatContent').props.modelControl.props.onEffort('medium');render();assert.equal(extras().chat_model_config.parameters.thinkingEffort,'medium');
@@ -543,6 +545,21 @@ test('Doubao appears only in chat model menus; attachment capabilities include a
  const {LlmSelect}=code.load('components/select/LlmSelect.tsx');const tree=code.render(()=>LlmSelect({}));assert.equal(find(tree,node=>node.type==='button'&&find(node,child=>child.props?.children==='Doubao Seed 2.1 Lite')),null);code.dispose();
 });
 
+
+test('locked official models have no subscription column and reject selection callbacks',()=>{
+ const h=harness(),chosen=[];
+ const{OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx');
+ const tree=h.render(()=>OfficialModelSelect({model:'deepseek-flash',effort:'high',mode:'chat',models:[{id:'claude-haiku-5-5',enabled:true,allowed:false,minimumPlan:'pro'},{id:'deepseek-flash',enabled:true,allowed:true}],onModel:id=>chosen.push(id),onEffort(){}}));
+ const locked=find(tree,node=>node.type==='DropdownMenuRadioItem'&&node.props.value==='claude-haiku-5-5');
+ assert.equal(locked.props.disabled,true);
+ assert.match(locked.props.className,/data-disabled:cursor-not-allowed/);
+ assert.match(locked.props.className,/data-disabled:pointer-events-auto/);
+ assert.ok(!JSON.stringify(locked).includes('requiresPlan'));
+ const group=find(tree,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='deepseek-flash');
+ group.props.onValueChange('claude-haiku-5-5');assert.equal(chosen.length,0);
+ group.props.onValueChange('deepseek-flash');assert.deepEqual(chosen,['deepseek-flash']);
+ h.dispose();
+});
 
 test('retired developer settings and invalid external links fall back to General',()=>{
  const h=harness();const {normalizeSettingsSection,SETTINGS_SECTIONS}=h.load('lib/openSettings.ts');

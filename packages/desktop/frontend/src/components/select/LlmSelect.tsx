@@ -11,7 +11,7 @@ import { ProviderIcon } from '@/components/ui/provider-icon';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTranslation } from '@/i18n/useI18n.ts';
 import { OPEN_SETTINGS_EVENT } from '@/lib/openSettings';
-import { isBuiltinCredential, modelAllowedInMode, modelAvailable, modelRequirementLabel, toChatEffort, toChatModel } from '@/lib/tochatModels';
+import { isBuiltinCredential, modelAllowedInMode, modelAvailable, toChatEffort, toChatModel } from '@/lib/tochatModels';
 import { cn } from '@/lib/utils';
 import { credentialLabel } from '@/utils/common';
 
@@ -149,6 +149,7 @@ export function LlmSelect({
 	}, [refetchTrigger, refetch]);
 
 	const handleSelect = (entry: ModelEntry) => {
+		if (isBuiltinCredential(entry.credential.id) && (builtinUnavailable || !modelAvailable(entry.model.name,builtinQuota?.models))) return;
 		// 换模型保留思考强度 / 上下文窗口等参数偏好
 		onChange?.({
 			type: entry.type,
@@ -262,7 +263,6 @@ export function LlmSelect({
 												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
 											/>
 											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name).name : model.name}</span>
-											{isBuiltinCredential(credential.id)&&modelRequirementLabel(model.name,builtinQuota?.models,t)&&<span className="text-xs text-muted-foreground">{modelRequirementLabel(model.name,builtinQuota?.models,t)}</span>}
 											{isBuiltinCredential(credential.id)&&model.name==='deepseek-flash'&&!builtinQuota?.subscription&&(builtinQuota?.trial?.remaining||0)>0&&<span className="text-xs text-muted-foreground">{t('llm-select.trialRemaining',{count:builtinQuota?.trial?.remaining})}</span>}
 											{selected && <Check className="size-4 shrink-0 text-primary" />}
 										</button>
