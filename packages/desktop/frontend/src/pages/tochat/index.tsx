@@ -153,6 +153,7 @@ function ToChatConversation() {
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
 	const needsHumanVerification=source==='official'&&humanVerificationNeeded(selectedOfficial.id,quota);
 	const disabled = (phase==='idle'&&needsHumanVerification) || !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || (phase==='idle'&&!!limitReached)));
+	const modelLocked = source === 'official' && !!quota && !modelAvailable(selectedOfficial.id,quota.models);
 	const patch = async (config: UpdateSessionRequest) => {
 		if (busy && !(Object.keys(config).length === 1 && 'permission_mode' in config)) return false;
 		setConfigPending(true);
@@ -219,8 +220,8 @@ function ToChatConversation() {
 			<ResizablePanelGroup orientation="horizontal" className="chat-dock min-h-0 flex-1" data-motion={clickEnabled?effective:'off'}>
 			<ResizablePanel className="flex min-h-0 min-w-0" minSize={work?'24rem':0}>
 			<div className="canvas-glow relative flex min-h-0 flex-1 justify-center overflow-hidden [--chat-content-w:54rem]">
-				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled}
-					composerNotice={missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached)) ? modelRequirementLabel(selectedOfficial.id,quota?.models,t) || copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
+				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled && !modelLocked} sendDisabled={disabled}
+					composerNotice={!modelLocked && (missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached))) ? modelRequirementLabel(selectedOfficial.id,quota?.models,t) || copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
 					greetingOverride={copy(work ? 'workReady' : 'ready')} showWorkspace={work} cwd={work ? selectedCwd : null}
 					composerVariant={work ? 'default' : 'capsule'}
 					onCwdChange={async (next) => { if (await patch({ cwd: next })) setCwd(next); }}

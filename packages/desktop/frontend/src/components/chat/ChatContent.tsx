@@ -109,6 +109,7 @@ interface ChatContentProps {
 	 */
 	phase: ReplyPhase;
 	disabled: boolean;
+	sendDisabled?: boolean;
 	onSend: (content: ContentBlock[], autoContext?: ContentBlock[], selectedSkills?: SlashItem[]) => void;
 	onUserConfirm: (
 		toolCall: ToolCallBlock,
@@ -169,6 +170,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	loading = false,
 	phase,
 	disabled,
+	sendDisabled,
 	onSend,
 	onUserConfirm,
 	autoComplete,
@@ -598,6 +600,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 						onSend={handleSend}
 						commandItems={slashItems}
 						disabled={disabled}
+						sendDisabled={sendDisabled}
 						autoComplete={autoComplete}
 						allowedInputTypes={allowedInputTypes}
 						fileProcessor={fileProcessor}

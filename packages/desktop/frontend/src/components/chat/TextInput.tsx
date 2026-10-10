@@ -75,6 +75,8 @@ interface TextInputProps {
 	notice?: string;
 	autoComplete?: (input: string) => string | null;
 	disabled?: boolean;
+	/** Block submission while keeping the draft editable. */
+	sendDisabled?: boolean;
 	className?: string;
 	/**
 	 * Controls which file types the file picker accepts.
@@ -157,6 +159,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			variant = 'default',
 			autoComplete,
 			disabled = false,
+			sendDisabled = false,
 			className,
 			allowedInputTypes,
 			fileProcessor,
@@ -470,7 +473,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			// The skills-only case must be allowed too: the button already enables
 			// itself when chips are attached, so bailing on `!value.trim()` here
 			// made Enter (and the button) silently do nothing.
-			if (phase !== 'idle' || (!hasText && !hasSkills && !hasElements) || disabled || hasProcessing) return;
+			if (phase !== 'idle' || (!hasText && !hasSkills && !hasElements) || disabled || sendDisabled || hasProcessing) return;
 
 			const blocks: ContentBlock[] = [];
 
@@ -561,7 +564,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 				// chips with no text is a real use case (e.g. pick a button in the
 				// browser, then just say "make it rounder").
 				disabled:
-					disabled || hasProcessing
+					disabled || sendDisabled || hasProcessing
 					|| (!value.trim() && selectedCommands.length === 0 && elementRefs.length === 0),
 				onClick: handleSend,
 			};

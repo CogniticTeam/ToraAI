@@ -546,6 +546,23 @@ test('Doubao appears only in chat model menus; attachment capabilities include a
 });
 
 
+test('submission-only disabling keeps drafts editable and prevents Enter and send clicks',()=>{
+ const h=harness(),sent=[];
+ const{TextInput}=h.load('components/chat/TextInput.tsx');
+ const render=()=>h.render(()=>TextInput({sendDisabled:true,onSend:value=>sent.push(value)},null));
+ let tree=render(),editor=find(tree,node=>node.type==='textarea');
+ assert.equal(editor.props.disabled,false);
+ editor.props.onChange({target:{value:'保留输入草稿'}});
+ tree=render();editor=find(tree,node=>node.type==='textarea');
+ assert.equal(editor.props.value,'保留输入草稿');
+ editor.props.onKeyDown({key:'Enter',nativeEvent:{},preventDefault(){}});
+ assert.equal(sent.length,0);
+ const button=find(tree,node=>node.type==='Button'&&node.props['aria-label']==='textInput.send');
+ assert.equal(button.props.disabled,true);button.props.onClick();assert.equal(sent.length,0);
+ assert.equal(find(render(),node=>node.type==='textarea').props.value,'保留输入草稿');
+ h.dispose();
+});
+
 test('locked official models have no subscription column and reject selection callbacks',()=>{
  const h=harness(),chosen=[];
  const{OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx');
