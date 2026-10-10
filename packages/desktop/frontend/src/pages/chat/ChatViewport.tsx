@@ -56,7 +56,7 @@ import { useToraData } from '@/hooks/useToraData';
 import { useWorkspace } from '@/hooks/useWorkspace.ts';
 import { useWorkspaceStatus } from '@/hooks/useWorkspaceStatus';
 import { useTranslation } from '@/i18n/useI18n';
-import { OPEN_PANEL_EVENT } from '@/lib/openPanel';
+import { OPEN_PANEL_EVENT, type PanelOpenDetail } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
 import { isBuiltinCredential } from '@/lib/tochatModels';
@@ -227,6 +227,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// panels stacked top→bottom. Open order determines placement.
 	// Persisted so leaving and returning to /chat keeps the same panels.
 	const [panelLayout, setPanelLayout] = useState<PanelKey[][]>(loadPanelLayout);
+	const [recordedDiff, setRecordedDiff] = useState<{scope: string; diff: string; root?: string} | null>(null);
+	const diffScope = `${agentId}:${sessionId}`;
+	const selectedDiff = recordedDiff?.scope === diffScope ? recordedDiff : null;
 	const openPanels = useMemo(() => new Set(panelLayout.flat()), [panelLayout]);
 
 	useEffect(() => {
@@ -378,16 +381,19 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// 用 openPanelInLayout 而不是 togglePanel —— 已经打开时不能再点一下把它关掉。
 	useEffect(() => {
 		const handler = (e: Event) => {
-			const key = (e as CustomEvent<PanelKey>).detail;
+			const detail = (e as CustomEvent<PanelOpenDetail>).detail;
+			const key = typeof detail === 'string' ? detail : detail?.key;
 			if (!key || !(key in KNOWN_PANELS)) return;
+			if (key === 'diff') setRecordedDiff(typeof detail === 'object' && typeof detail.diff === 'string' && detail.diff.trim() ? {scope:diffScope,diff:detail.diff,root:detail.root} : null);
 			setPanelLayout((layout) => openPanelInLayout(layout, key));
 		};
 		window.addEventListener(OPEN_PANEL_EVENT, handler);
 		return () => window.removeEventListener(OPEN_PANEL_EVENT, handler);
-	}, []);
+	}, [diffScope]);
 
 	// Toggle a panel open/closed from the top-bar buttons.
 	const togglePanel = useCallback((key: PanelKey) => {
+		if (key === 'diff') setRecordedDiff(null);
 		setPanelLayout((layout) =>
 			layout.some((column) => column.includes(key))
 				? closePanelInLayout(layout, key)
@@ -397,6 +403,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 
 	// Close a panel (driven by the panel's own close button).
 	const closePanel = useCallback((key: PanelKey) => {
+		if (key === 'diff') setRecordedDiff(null);
 		setPanelLayout((layout) => closePanelInLayout(layout, key));
 	}, []);
 
@@ -635,12 +642,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				icon: <GitCompare className="size-4" />,
 				content: (
 					<DiffPanel
-						diff={tora.diff}
-						error={tora.diffError}
-						errorCode={tora.diffErrorCode}
-						loading={tora.loading}
-						onRefresh={tora.refresh}
-						root={workspaceStatus?.cwd ?? view?.session.config.cwd ?? null}
+						diff={selectedDiff?.diff ?? tora.diff}
+						error={selectedDiff ? null : tora.diffError}
+						errorCode={selectedDiff ? null : tora.diffErrorCode}
+						loading={selectedDiff ? false : tora.loading}
+						onRefresh={selectedDiff ? undefined : tora.refresh}
+						root={selectedDiff?.root ?? workspaceStatus?.cwd ?? view?.session.config.cwd ?? null}
 					/>
 				),
 			},
@@ -696,6 +703,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			sessionId,
 			view,
 			tora,
+			selectedDiff,
 			workspaceStatus?.cwd,
 			activeCwd,
 		],

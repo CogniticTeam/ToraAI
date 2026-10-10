@@ -8,13 +8,13 @@ import { useTranslation } from '@/i18n/useI18n';
 import { cn } from '@/lib/utils';
 
 interface DiffPanelProps {
-	/** Raw `git diff` output. Empty when the tree is clean. */
+	/** Unified diff from the working tree or a recorded tool result. */
 	diff: string;
 	/** Set when git itself could not answer (not a repo, no workspace). */
 	error: string | null;
 	errorCode?: 'not_git_repository' | 'git_unavailable' | 'git_diff_failed' | null;
 	loading: boolean;
-	onRefresh: () => void;
+	onRefresh?: () => void;
 	/** Repository root, shown in the header when known. */
 	root?: string | null;
 }
@@ -120,9 +120,9 @@ export function DiffPanel({ diff, error, errorCode, loading, onRefresh, root }: 
 						-{stats.removed}
 					</Badge>
 				</span>
-				<Button variant="ghost" size="sm" onClick={onRefresh} disabled={loading}>
+				{onRefresh && <Button variant="ghost" size="sm" onClick={onRefresh} disabled={loading}>
 					{zh ? '刷新' : 'Refresh'}
-				</Button>
+				</Button>}
 			</div>
 			<div className="flex-1 overflow-auto rounded-md border bg-muted py-1 font-mono text-xs">
 				{diff.split('\n').map((line, i) => (

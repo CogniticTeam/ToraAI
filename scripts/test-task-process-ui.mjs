@@ -95,6 +95,11 @@ try {
 	assert.equal(await assistant.getByText('已完成修复，并通过构建检查。').isVisible(), true, '结语始终可见');
 	assert.equal(await assistant.getByText('我先检查现有实现。').count(), 0, '历史过程默认折叠');
 	assert.equal(await assistant.getByText('1 个文件已更改').isVisible(), true, '改动摘要保留在过程外');
+	await assistant.getByRole('button', {name:'在面板中查看全部改动'}).click();
+	// The file card's recorded patch works even without a Git workspace.
+	await page.getByText('+++ src/example.ts',{exact:true}).waitFor({state:'visible'});
+	assert.equal(await page.getByText('当前文件夹不是 Git 仓库',{exact:true}).count(),0);
+	assert.equal(await page.getByText('+new',{exact:true}).isVisible(),true);
 	await process.getByRole('button', { name: '用时 2分钟4秒' }).click();
 	await assistant.getByText('我先检查现有实现。').waitFor({ state: 'visible' });
 	assert.equal(await assistant.getByText('已完成修复，并通过构建检查。').isVisible(), true, '展开过程不隐藏结语');

@@ -563,3 +563,17 @@ test('Claude 5.5 picker replaces Opus 5 without silently changing saved selectio
   assert.equal(find(tree,node=>node.type==='DropdownMenuRadioItem'&&node.props.value==='claude-opus-5'),null);
  }h.dispose();
 });
+
+test('changed-files panel entry carries its recorded diff instead of requesting an unrelated Git diff',()=>{
+ const requests=[],h=harness({'@/lib/openPanel':{requestPanel:(...args)=>requests.push(args)}});
+ const{ChangedFilesCard}=h.load('components/chat/tool-renderers/ChangedFilesCard.tsx');
+ const files=[{path:'/project/page.html',name:'page.html',dir:'/project',added:1,removed:0,diff:'@@ -0,0 +1 @@\n+<html>'}];
+ const tree=h.render(()=>ChangedFilesCard({files}));find(tree,node=>node.type==='Button').props.onClick();
+ assert.equal(requests[0][0],'diff');assert.match(requests[0][1].diff,/page.html/);assert.match(requests[0][1].diff,/\+<html>/);assert.equal(requests[0][1].root,'/project/page.html');h.dispose();
+});
+
+test('recorded diff renders without a Git error or a misleading refresh action',()=>{
+ const h=harness(),{DiffPanel}=h.load('components/panel/DiffPanel.tsx');
+ const tree=h.render(()=>DiffPanel({diff:'--- /dev/null\n+++ b/page.html\n@@ -0,0 +1 @@\n+<html>',error:null,loading:false,root:'/project/page.html'}));
+ assert.equal(find(tree,node=>node.type==='PanelEmpty'),null);assert.equal(find(tree,node=>node.type==='Button'),null);h.dispose();
+});

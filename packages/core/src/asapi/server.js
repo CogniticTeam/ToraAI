@@ -44,6 +44,7 @@ import { normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
 import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates } from '../tools/mcp-workshop.js';
 import { createTerminal, writeTerminal, interruptTerminal, killTerminal, getTerminal, subscribeTerminal, replayTerminal } from './terminal.js';
 import { listCheckpoints, restore as restoreCheckpoint, clearCheckpoints } from '../tools/checkpoint.js';
+import {recordedSessionDiff} from './session-diff.js';
 import { listBranches, createBranch, switchBranch, deleteBranch, listWorktrees, createWorktree, removeWorktree, stageFiles, unstageFiles, statusFiles, commit, log as gitLog } from '../tools/tora-git.js';
 import { listAutomations, createAutomation, updateAutomation, deleteAutomation, drainNotifications } from '../tools/automations.js';
 import {
@@ -1419,6 +1420,10 @@ async function route(req, res) {
     if (!cwd) return apiError(res, 422, '该会话还没有工作目录');
     const root = realpathAllowMissing(cwd);
     const repo = await runGit(['rev-parse', '--is-inside-work-tree'], root);
+    if(q.staged!=='1'&&(repo.code===-1||repo.stdout.trim()==='false'||/not a git repository/i.test(repo.stderr||''))){
+      const diff=recordedSessionDiff(rec,root,q.path);
+      if(diff)return json(res,200,{diff,root,source:'session'});
+    }
     if (repo.code === -1) {
       return json(res, 200, { diff: '', error_code: 'git_unavailable', error: 'Git 不可用，无法读取变更预览' });
     }

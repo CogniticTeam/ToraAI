@@ -48,7 +48,11 @@ export function ChangedFilesCard({ files }: { files: ChangedFileEntry[] }) {
 							variant="ghost"
 							size="icon-sm"
 							className="shrink-0 text-muted-foreground"
-							onClick={() => requestPanel('diff')}
+							aria-label={t('messageBubble.changedFiles.openPanel')}
+							onClick={() => {
+								const diff = files.map(file => file.diff.trim() ? (/^--- /m.test(file.diff) ? file.diff : `--- ${file.path}\n+++ ${file.path}\n${file.diff}`) : '').filter(Boolean).join('\n\n');
+								requestPanel('diff', diff ? {diff,root:files.length === 1 ? files[0].path : undefined} : undefined);
+							}}
 						>
 							<ArrowUpRight className="size-4" />
 						</Button>

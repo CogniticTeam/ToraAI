@@ -8,8 +8,9 @@
 import type { PanelKey } from '@/components/panel/PanelDock';
 
 export const OPEN_PANEL_EVENT = 'tora:open-panel';
+export type PanelOpenDetail = PanelKey | {key: PanelKey; diff: string; root?: string};
 
 /** 请求把某个右侧面板打开（已经打开时是 no-op）。 */
-export function requestPanel(key: PanelKey) {
-	window.dispatchEvent(new CustomEvent<PanelKey>(OPEN_PANEL_EVENT, { detail: key }));
+export function requestPanel(key: PanelKey, preview?: {diff: string; root?: string}) {
+	window.dispatchEvent(new CustomEvent<PanelOpenDetail>(OPEN_PANEL_EVENT, { detail: preview ? {key,...preview} : key }));
 }
