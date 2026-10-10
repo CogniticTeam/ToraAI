@@ -421,6 +421,18 @@ async function route(req, res) {
   }
   // 写入：apiKey 空字符串/缺省 = 保留原值
   // Desktop quota reads use Node's transport, independent of Chromium TLS.
+  if(p==='/admin/tochat-human-verification' && method==='POST') {
+    const cfg=loadConfig(),auth=builtinAuth(cfg);
+    if(!auth.authToken)return apiError(res,401,'请先登录');
+    const body=await readBody(req);
+    if(typeof body?.['cf-turnstile-response']!=='string'||body['cf-turnstile-response'].length>2048)return apiError(res,400,'验证请求无效');
+    try{
+      const response=await fetch(String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/auth/human-verification',{method:'POST',headers:{authorization:`Bearer ${auth.authToken}`,'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':body['cf-turnstile-response']}),signal:AbortSignal.timeout(15000),redirect:'error'});
+      if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账号已切换，请重试');
+      if(!response.headers.get('content-type')?.includes('application/json'))return apiError(res,502,'验证服务响应无效');
+      return json(res,response.status,await response.json());
+    }catch{return apiError(res,502,'验证服务暂不可用，请重试');}
+  }
   if(p==='/admin/tochat-quota' && method==='GET') {
     const cfg=loadConfig(),auth=builtinAuth(cfg);
     if(!auth.authToken)return apiError(res,503,'官方模型身份尚未同步');

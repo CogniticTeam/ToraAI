@@ -2010,6 +2010,18 @@
     "planultra": "大規模プロジェクトを構築",
     "planultrax": "さらに大きなプロジェクトに"
   },
+  "humanVerification": {
+    "loading": "認証を読み込み中…",
+    "waiting": "下の認証を完了してください",
+    "verified": "認証に成功しました",
+    "failed": "認証が未完了です。再試行してください。",
+    "expired": "認証が期限切れです。再試行してください。",
+    "timeout": "認証がタイムアウトしました。再試行してください。",
+    "verifying": "認証中…",
+    "required": "無料体験には人間認証が必要です",
+    "description": "認証を完了すると無料体験を続けられます。",
+    "continue": "続ける"
+  },
   "quotaSettings": {
     "cardExpires": "{{time}} に有効期限が切れます",
     "title": "利用枠",

@@ -2010,6 +2010,18 @@
     "planultra": "Crie projetos maiores",
     "planultrax": "Para grandes projetos"
   },
+  "humanVerification": {
+    "loading": "Carregando verificação…",
+    "waiting": "Conclua a verificação abaixo",
+    "verified": "Verificação aprovada",
+    "failed": "Verificação incompleta. Tente novamente.",
+    "expired": "Verificação expirada. Tente novamente.",
+    "timeout": "Tempo esgotado. Tente novamente.",
+    "verifying": "Verificando…",
+    "required": "Conclua a verificação humana para usar o teste gratuito",
+    "description": "Verifique para continuar usando seu teste gratuito.",
+    "continue": "Continuar"
+  },
   "quotaSettings": {
     "cardExpires": "Expira em {{time}}",
     "title": "Cota",

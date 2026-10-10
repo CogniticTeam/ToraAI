@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import { quotaPeriods, readToChatQuota, reserveToChat, settleToChat, totalUsage, validateToChatBody, handleToChat } from '../src/tochat.js';
+import { quotaPeriods, readToChatQuota, reserveToChat, settleToChat, totalUsage, validateToChatBody, handleToChat as realHandleToChat } from '../src/tochat.js';
 import {usageCost} from '../src/subscription-plans.js';
 function database(){const sqlite=new DatabaseSync(':memory:');sqlite.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2);');sqlite.exec(readFileSync(new URL('../migrations/0003_subscriptions.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0004_quota_resets.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0008_model_access_trials.sql',import.meta.url),'utf8'));sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(1,'ultrax',Date.now()+2592000000,500000000,1600000000,7000000000,Date.now());const db={prepare(sql){return{bind(...args){return{run(){return{meta:{changes:sqlite.prepare(sql).run(...args).changes}};},first(){return sqlite.prepare(sql).get(...args)||null;},all(){return{results:sqlite.prepare(sql).all(...args)};}};}};},async batch(statements){sqlite.exec('BEGIN');try{const result=statements.map(statement=>statement.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};return{db,sqlite};}
 const now=Date.parse('2026-10-02T01:00:00Z');
@@ -179,3 +179,5 @@ test('Grok uses its dedicated secret, four efforts, Responses and server-selecte
   assert.ok((await db.prepare("SELECT * FROM usage_log WHERE status='failed'").bind().all()).results.every(row=>row.credit_micro===0&&row.held_micro===0));
  }finally{globalThis.fetch=before;sqlite.close();}
 });
+
+const handleToChat=(request,env,ctx,user)=>realHandleToChat(request,{TURNSTILE_DEV_BYPASS:'1',...env},ctx,user);

@@ -2010,6 +2010,18 @@
     "planultra": "Größere Projekte erstellen",
     "planultrax": "Für sehr große Projekte"
   },
+  "humanVerification": {
+    "loading": "Überprüfung wird geladen…",
+    "waiting": "Schließen Sie die Überprüfung unten ab",
+    "verified": "Überprüfung erfolgreich",
+    "failed": "Überprüfung unvollständig. Erneut versuchen.",
+    "expired": "Überprüfung abgelaufen. Erneut versuchen.",
+    "timeout": "Zeitlimit überschritten. Erneut versuchen.",
+    "verifying": "Wird überprüft…",
+    "required": "Bestätigen Sie für die kostenlose Testphase, dass Sie ein Mensch sind",
+    "description": "Nach der Überprüfung können Sie Ihre kostenlose Testphase fortsetzen.",
+    "continue": "Weiter"
+  },
   "quotaSettings": {
     "cardExpires": "Läuft am {{time}} ab",
     "title": "Kontingent",

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import {sessionHistoryKind,sessionModelSource} from '../../../../../core/src/session-mode.js';
 import { sessionApi, type ChatModelConfig, type ContentBlock, type UpdateSessionRequest } from '@/api';
+import { HumanVerificationControl } from '@/components/auth/HumanVerificationControl';
 import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
@@ -29,7 +30,7 @@ import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments'
 import {OPEN_PANEL_EVENT,type PanelOpenDetail} from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import {formatQuotaPercent} from '@/lib/subscription';
-import { modelAllowedInMode, canUseWorkModel, modelRequirementLabel, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
+import { modelAllowedInMode, humanVerificationNeeded, canUseWorkModel, modelRequirementLabel, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
@@ -150,7 +151,8 @@ function ToChatConversation() {
 	const limitReached = source === 'official' && work && quota && !canUseWorkModel(selectedOfficial.id,quota);
 	useEffect(() => {if(source !== 'official' || !work)return;const timer=window.setInterval(()=>void refreshQuota(),phase==='idle'?30000:2000);return()=>window.clearInterval(timer);},[source,work,phase,refreshQuota]);
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
-	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || (phase==='idle'&&!!limitReached)));
+	const needsHumanVerification=source==='official'&&humanVerificationNeeded(selectedOfficial.id,quota);
+	const disabled = (phase==='idle'&&needsHumanVerification) || !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || (phase==='idle'&&!!limitReached)));
 	const patch = async (config: UpdateSessionRequest) => {
 		if (busy && !(Object.keys(config).length === 1 && 'permission_mode' in config)) return false;
 		setConfigPending(true);
@@ -227,7 +229,7 @@ function ToChatConversation() {
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} includeBuiltin={false} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
 						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} trial={!quota?.subscription?quota?.trial:undefined} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
-					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
+					footerSlot={phase==='idle'&&needsHumanVerification?<HumanVerificationControl onVerified={()=>refreshQuota()}/>:userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>
 			</ResizablePanel>

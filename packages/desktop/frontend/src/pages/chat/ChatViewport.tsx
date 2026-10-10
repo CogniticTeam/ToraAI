@@ -25,6 +25,7 @@ import type {
 } from '@/api';
 import { sessionApi, skillApi } from '@/api';
 import MCPSvg from '@/assets/images/mcp.svg?react';
+import { HumanVerificationControl } from '@/components/auth/HumanVerificationControl';
 import { ChatContent } from '@/components/chat/ChatContent.tsx';
 import { QuestionPanel } from '@/components/chat/QuestionPanel';
 import { SubagentHitlCard } from '@/components/chat/SubagentHitlCard';
@@ -59,7 +60,7 @@ import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_PANEL_EVENT, type PanelOpenDetail } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
-import { canUseWorkModel, modelRequirementLabel, modelAllowedInMode } from '@/lib/tochatModels';
+import { humanVerificationNeeded, canUseWorkModel, modelRequirementLabel, modelAllowedInMode } from '@/lib/tochatModels';
 import { isBuiltinCredential } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { syncBuiltinModelAuth } from '@/utils/modelSync';
@@ -215,6 +216,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(null);
 	const builtinAccountToken = getToken();
 	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
+	const needsHumanVerification=builtinSelected&&humanVerificationNeeded(selectedModel?.model||'',builtinQuota);
 	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !canUseWorkModel(selectedModel?.model||'',builtinQuota));
 	const [selectedKnowledgeConfig, setSelectedKnowledgeConfig] =
 		useState<SessionKnowledgeConfig | null>(null);
@@ -1103,7 +1105,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								//（R3 行为），避免"没有会话就输不进字"。
 								// 模型是否可用由 TextInput 内部的 send 按钮
 								// 单独判定（无模型时禁发，不锁 textarea）。
-								disabled={!agentId || (phase === 'idle' && builtinBlocked)}
+								disabled={!agentId || (phase === 'idle' && (builtinBlocked||needsHumanVerification))}
 									composerNotice={phase === 'idle' && builtinBlocked ? modelRequirementLabel(selectedModel?.model||'',builtinQuota?.models,t) || t(builtinQuota && !builtinQuota.canUseAgent ? 'applicationModes.limitReached' : 'applicationModes.connectError') : undefined}
 									onSend={send}
 									onUserConfirm={onUserConfirm}
@@ -1116,6 +1118,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									// 	}}
 									// }
 									footerSlot={<>
+										{phase==='idle'&&needsHumanVerification&&<HumanVerificationControl onVerified={()=>refreshAvailableModels()}/>}
 										{userQuestion ? (
 											<QuestionPanel
 												key={userQuestion.ask_id}

@@ -2010,6 +2010,18 @@
     "planultra": "Crea progetti più grandi",
     "planultrax": "Per progetti di grande portata"
   },
+  "humanVerification": {
+    "loading": "Caricamento della verifica…",
+    "waiting": "Completa la verifica qui sotto",
+    "verified": "Verifica superata",
+    "failed": "Verifica incompleta. Riprova.",
+    "expired": "Verifica scaduta. Riprova.",
+    "timeout": "Tempo scaduto. Riprova.",
+    "verifying": "Verifica in corso…",
+    "required": "Verifica di essere umano per usare la prova gratuita",
+    "description": "Completa la verifica per continuare la prova gratuita.",
+    "continue": "Continua"
+  },
   "quotaSettings": {
     "cardExpires": "Scade il {{time}}",
     "title": "Quota",

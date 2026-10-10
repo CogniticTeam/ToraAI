@@ -63,4 +63,4 @@ test('Claude 5.5 title requests use adaptive thinking without forced tools',asyn
 
 // Title tests use an active paid account; routing tests remain independent of billing schema.
 const titleDB={prepare(sql){return{bind(){return{first:async()=>sql.includes('FROM user_subscription')?{plan_id:'ultrax',expires_at:Date.now()+86400000,five_hour_limit:0,week_limit:0,month_limit:0}:null};}};}};
-const handleToChat=(request,env,ctx,user)=>realHandleToChat(request,{DB:titleDB,...env},ctx,user);
+const handleToChat=(request,env,ctx,user)=>realHandleToChat(request,{DB:titleDB,TURNSTILE_DEV_BYPASS:'1',...env},ctx,user);

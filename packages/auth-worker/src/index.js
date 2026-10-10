@@ -1,3 +1,4 @@
+import {verifyTurnstile,verificationSessionStatement,handleHumanVerification} from './human-verification.js';
 // Tora 登录/注册服务（Cloudflare Worker + D1 + Resend 邮件）。
 //
 // 端点：
@@ -23,7 +24,7 @@
 // 环境变量：
 //   RESEND_API_KEY（wrangler secret put RESEND_API_KEY；本地 dev 写 .dev.vars）
 //   TURNSTILE_SECRET（wrangler secret put TURNSTILE_SECRET）——Cloudflare
-//     Turnstile 人机验证 secret。登录/注册端点强制校验；未配置时跳过（本地 dev 降级）。
+//     Turnstile 人机验证 secret。登录/注册端点强制校验；生产环境必须配置；本地测试可显式启用 TURNSTILE_DEV_BYPASS。
 //   TURNSTILE_HOSTNAMES（可选，逗号分隔）——siteverify 返回 hostname 白名单；
 //     未配置默认 "127.0.0.1,localhost,ohfun.online"（桌面客户端 token 的 hostname
 //     为 127.0.0.1；生产收紧时删掉本地项即可）。
@@ -51,6 +52,7 @@ import subscriptionSchemaSql from '../migrations/0003_subscriptions.sql';
 import quotaResetSchemaSql from '../migrations/0004_quota_resets.sql';
 import removeNewUserResetCardsSql from '../migrations/0007_remove_new_user_reset_cards.sql';
 import modelAccessTrialsSql from '../migrations/0008_model_access_trials.sql';
+import humanVerificationSql from '../migrations/0009_human_verification.sql';
 import proTwoWindowsSql from '../migrations/0005_pro_two_windows.sql';
 import {handleAdminQuota,handleUserQuota} from './quota-management.js';
 import {handleSubscriptions} from './subscriptions.js';
@@ -88,40 +90,6 @@ function isValidUsername(s) {
 // ---------- Turnstile 人机验证 ----------
 // 仅对 /auth/login 与 /auth/register 做门禁（注册链路里验证码发送等其余端点不拦）。
 // siteverify 只能由后端调用；token 一次性，失败重试需前端 reset 换新 token。
-
-const DEFAULT_TURNSTILE_HOSTNAMES = '127.0.0.1,localhost,ohfun.online';
-
-/** 校验 Turnstile token；返回 false 一律 403。未配置 secret 时跳过（本地 dev 降级）。 */
-async function verifyTurnstile(env, request, token, expectedAction) {
-  if (!env.TURNSTILE_SECRET) return true;
-  if (typeof token !== 'string' || token.length === 0 || token.length > 2048) return false;
-  const hostnames = new Set(
-    (env.TURNSTILE_HOSTNAMES ?? DEFAULT_TURNSTILE_HOSTNAMES)
-      .split(',').map((s) => s.trim()).filter(Boolean),
-  );
-  if (hostnames.size === 0) return false;
-  let result;
-  try {
-    const r = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      signal: AbortSignal.timeout(10_000),
-      body: new URLSearchParams({
-        secret: env.TURNSTILE_SECRET,
-        response: token,
-        remoteip: request.headers.get('cf-connecting-ip') ?? '',
-      }),
-    });
-    if (!r.ok) return false;
-    result = await r.json();
-  } catch {
-    // siteverify 网络故障按拒绝处理（fail-closed）
-    return false;
-  }
-  return result.success === true
-    && result.action === expectedAction
-    && hostnames.has(result.hostname);
-}
 
 // ---------- 邮箱验证码（Resend 发信） ----------
 
@@ -342,6 +310,7 @@ async function ensureSchema(db) {
   await db.exec(proTwoWindowsSql);
   await db.exec(removeNewUserResetCardsSql);
   await db.exec(modelAccessTrialsSql);
+  await db.exec(humanVerificationSql);
   // 旧版本自动发放的官方模型是生成数据；自定义模型模式下直接清理。
   await db.prepare(
     "DELETE FROM user_models WHERE id LIKE 'official-%' OR base_url LIKE '%/official/v1%'"
@@ -387,11 +356,10 @@ function timingSafeEqual(a, b) {
 
 // ---------- 会话 ----------
 
-async function createSession(db, userId) {
+async function createSession(db, userId, humanVerified=false) {
   const token = bytesToHex(crypto.getRandomValues(new Uint8Array(48)));
   const expiresAt = Date.now() + SESSION_TTL_MS;
-  await db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)')
-    .bind(token, userId, expiresAt).run();
+  await db.batch([db.prepare('INSERT INTO sessions (token, user_id, expires_at) VALUES (?, ?, ?)').bind(token,userId,expiresAt),...(humanVerified?[db.prepare('DELETE FROM human_verification_sessions WHERE expires_at<=?').bind(Date.now()),await verificationSessionStatement(db,token,userId)]:[])]);
   return token;
 }
 
@@ -633,6 +601,7 @@ async function handle(request, env, ctx) {
       return handleAsrGateway(env, request, url.pathname.slice('/asr/v1/'.length));
     }
     if (p.startsWith('/official/v1/')) return bad('Not Found', 404);
+    if (p==='/auth/human-verification')return handleHumanVerification(request,env,await userFromRequest(env.DB,request,true));
     if (p.startsWith('/quota/')) return handleUserQuota(request,env,await userFromRequest(env.DB,request,true));
     if (p.startsWith('/billing/')) return handleSubscriptions(request,env,ctx,p==='/billing/afdian/webhook'?null:await userFromRequest(env.DB,request,true));
     if (p.startsWith('/tochat/')) return handleToChat(request,env,ctx,await userFromRequest(env.DB,request,true));
@@ -687,7 +656,7 @@ async function handle(request, env, ctx) {
       try {
         const r = await env.DB.prepare('INSERT INTO users (email, salt, hash, created_at, username) VALUES (?, ?, ?, ?, ?)')
           .bind(email, salt, hash, createdAt, username).run();
-        const token = await createSession(env.DB, r.meta.last_row_id);
+        const token = await createSession(env.DB, r.meta.last_row_id,!!env.TURNSTILE_SECRET);
         // 注册成功后异步发送欢迎邮件（waitUntil 不阻塞响应、失败不影响注册）
         ctx?.waitUntil(sendWelcomeEmail(env, email).catch((e) => console.error(`欢迎邮件异常：${e?.message ?? e}`)));
         return json({ token, email, username, createdAt, avatar: null });
@@ -723,7 +692,7 @@ async function handle(request, env, ctx) {
         return bad('账号或密码错误', 401);
       }
       await clearLoginFails(env.DB, account);
-      const token = await createSession(env.DB, user.id);
+      const token = await createSession(env.DB, user.id,!!env.TURNSTILE_SECRET);
       return json({ token, email: user.email, username: user.username, createdAt: user.created_at, avatar: user.avatar ?? null });
     }
 

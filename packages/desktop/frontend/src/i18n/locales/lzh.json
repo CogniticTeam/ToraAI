@@ -2010,6 +2010,18 @@
     "planultra": "建大型之業",
     "planultrax": "供超大之業"
   },
+  "humanVerification": {
+    "loading": "正在載入驗證…",
+    "waiting": "請完成下方驗證",
+    "verified": "驗證已通過",
+    "failed": "驗證未完成，請重試",
+    "expired": "驗證已過期，請重試",
+    "timeout": "驗證已逾時，請重試",
+    "verifying": "正在驗證…",
+    "required": "請完成人機驗證後使用免費體驗",
+    "description": "完成驗證後即可繼續使用免費體驗。",
+    "continue": "繼續使用"
+  },
   "quotaSettings": {
     "cardExpires": "將於 {{time}} 到期",
     "title": "額度",

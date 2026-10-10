@@ -1,3 +1,4 @@
+import {readHumanVerification,publicHumanVerification,verificationRequired,trialTurnVerified,verifiedTrialStatement} from './human-verification.js';
 import {MODEL_MINIMUM_PLAN,hasModelSubscription} from '../../core/src/model-access.js';
 import {readDeepSeekTrial,modelAccessAllowed,modelAccessFailure,reserveTrialStatement} from './model-access.js';
 import {DOUBAO_MODEL_ID, AUDIO_MIME_TYPES, VIDEO_MIME_TYPES} from '../../core/src/chat-media.js';
@@ -33,9 +34,9 @@ export function quotaPeriods(now=Date.now()) {
   const monday = midnight-((shifted.getUTCDay()+6)%7)*86400000;
   return {day,week:new Date(monday).toISOString().slice(0,10),dailyReset:new Date(midnight+86400000-8*3600000).toISOString(),weeklyReset:new Date(monday+7*86400000-8*3600000).toISOString()};
 }
-export async function readToChatQuota(db,userId,now=Date.now()) {
+export async function readToChatQuota(db,userId,now=Date.now(),humanVerification={required:false,verified:true,expiresAt:null}) {
   const quota=await readAgentQuota(db,userId,now);
-  return {...publicQuota(quota),chatUnlimited:true,trial:await readDeepSeekTrial(db,userId)};
+  return {...publicQuota(quota),chatUnlimited:true,trial:await readDeepSeekTrial(db,userId),humanVerification};
 }
 export function validateToChatBody(body,kind) {
   if(body?.model==='claude-opus-5')throw Error('Claude Opus 5 已下架，请选择其他官方模型');
@@ -80,6 +81,7 @@ export async function reserveToChat(db,params) {
   const p=quotaPeriods(now);
   const credit=params.credit;
   await db.batch([
+    ...(params.verifiedSessionHash?[verifiedTrialStatement(db,userId,messageId,params.verifiedSessionHash,now)]:[]),
     ...(params.trial?[reserveTrialStatement(db,{userId,messageId,fingerprint:params.trial.fingerprint,now})]:[]),
     ...(credit?[reserveCreditStatement(db,{userId,requestId,now,...credit})]:[]),
     db.prepare('INSERT INTO tochat_turns(user_id,message_id,day,kind,fingerprint,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,message_id) DO NOTHING').bind(userId,messageId,p.day,kind,fingerprint,now),
@@ -106,6 +108,8 @@ export async function handleToChat(request,env,ctx,user) {
   if(!user) return fail('请先登录',401);
   if(user.banned) return fail('账户已被封禁',403);
   const path=new URL(request.url).pathname;
+  const humanState=await readHumanVerification(env,request,user.id);
+  const humanStatus=publicHumanVerification(humanState);
   if(path==='/tochat/title'&&request.method==='POST'){
     let input;try{const raw=await request.text();if(new TextEncoder().encode(raw).length>4096)return fail('标题输入过大',413);input=JSON.parse(raw);}catch{return fail('标题输入无效');}
     if(!modelConfig(input?.model)||typeof input?.userText!=='string'||!input.userText.trim()||input.userText.length>400)return fail('标题输入无效');
@@ -114,16 +118,17 @@ export async function handleToChat(request,env,ctx,user) {
     const gate=env.ACCOUNT_EVENTS.get(env.ACCOUNT_EVENTS.idFromName('titles:'+user.id));
     let permit;try{permit=await (await gate.fetch('https://internal/title-permit',{method:'POST'})).json();}catch{return fail('标题服务暂不可用',503);}
     if(!permit.allowed)return fail('标题请求过于频繁',429);
-    const titleQuota=await readToChatQuota(env.DB,user.id);
+    const titleQuota=await readToChatQuota(env.DB,user.id,Date.now(),humanStatus);
     if(!modelAccessAllowed(input.model,titleQuota))return json(modelAccessFailure(input.model),403);
+    if(input.model==='deepseek-flash'&&!titleQuota.subscription&&humanState.required&&!humanState.verified)return json(verificationRequired(),403);
     const selected=modelConfig(input.model);
     // Keep metadata fast on the same configured gateway; never switch the conversation model.
     const fast=selected.url.startsWith('https://shuliuyun.com/')&&env.SHULIUYUN_API_KEY?modelConfig('gemini-3.8-flash'):selected;
     const namingInput={...input,model:fast===selected?input.model:'gemini-3.8-flash'};
     const result=await generateOfficialTitle(env,namingInput,fast);return json(result.data,result.status);
   }
-  if(path==='/tochat/quota'&&request.method==='GET') {const quota=await readToChatQuota(env.DB,user.id),models=toChatModels(env,quota);return json({...quota,enabled:models.some(model=>model.enabled),model:'deepseek-flash',models});}
-  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env,await readToChatQuota(env.DB,user.id)).filter(model=>model.enabled&&(!(request.headers.get('x-tochat-mode')==='work'||request.headers.get('x-tora-feature')==='tocode')||model.modes.includes('work')))});
+  if(path==='/tochat/quota'&&request.method==='GET') {const quota=await readToChatQuota(env.DB,user.id,Date.now(),humanStatus),models=toChatModels(env,quota);return json({...quota,enabled:models.some(model=>model.enabled),model:'deepseek-flash',models});}
+  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env,await readToChatQuota(env.DB,user.id,Date.now(),humanStatus)).filter(model=>model.enabled&&(!(request.headers.get('x-tochat-mode')==='work'||request.headers.get('x-tora-feature')==='tocode')||model.modes.includes('work')))});
   if(path!=='/tochat/v1/chat/completions'||request.method!=='POST') return fail('Not Found',404);
   const kind=request.headers.get('x-tochat-mode');
   const messageId=request.headers.get('x-tochat-message-id');
@@ -157,12 +162,13 @@ export async function handleToChat(request,env,ctx,user) {
     const expected=JSON.parse(existing.expected_tools||'[]');
     if(!expected.every(id=>body.messages.some(m=>m.role==='tool'&&m.tool_call_id===id))) return fail('缺少对应的联网工具结果');
   }
-  const access=await readToChatQuota(env.DB,user.id);
+  const access=await readToChatQuota(env.DB,user.id,Date.now(),humanStatus);
   const trial=body.model==='deepseek-flash'&&!hasModelSubscription(body.model,access.subscription);
   let trialFingerprint;
   if(trial){
     const prior=await env.DB.prepare('SELECT * FROM model_trial_turns WHERE user_id=? AND message_id=?').bind(user.id,messageId).first();
     if(!prior&&!modelAccessAllowed(body.model,access))return json(modelAccessFailure(body.model),403);
+    if(humanState.required&&!humanState.verified&&!await trialTurnVerified(env.DB,user.id,messageId,humanState.sessionHash))return json(verificationRequired(),403);
     if(prior&&existing?.state!=='waiting_tools')return fail('此体验消息已完成或正在执行，请发送新的消息',409);
     if(existing?.state==='waiting_tools'){
       const expected=JSON.parse(existing.expected_tools||'[]');
@@ -179,7 +185,7 @@ export async function handleToChat(request,env,ctx,user) {
   const output=metered?Math.min(checked.output,Math.floor((available-inputCost)/rate.output)):checked.output;
   if(output<1) return json({detail:quota?.subscription?'官方工作额度已耗尽或无法覆盖当前上下文，请等待滚动窗口释放额度':'请先订阅后使用官方工作模型',quota:quota?publicQuota(quota):null},429);
   const reserved=inputCost+output*rate.output;
-  try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,trial:trial?{fingerprint:trialFingerprint}:null,credit:metered?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
+  try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,verifiedSessionHash:trial&&humanState.required?humanState.sessionHash:null,trial:trial?{fingerprint:trialFingerprint}:null,credit:metered?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
   catch(error){if(/MODEL_TRIAL/.test(error.message))return json(modelAccessFailure(body.model),/ID_REUSED/.test(error.message)?409:403);return fail(/LIMIT|SUBSCRIPTION/.test(error.message)?'官方工作额度或并发限制已达到，请等待额度释放':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT|SUBSCRIPTION/.test(error.message)?429:409);}
   const settle=options=>settleToChat(env.DB,{userId:user.id,messageId,requestId,trial,...options,creditStatement:metered?settleCreditStatement(env.DB,{userId:user.id,requestId,model:body.model,env,...options}):null});
   const abort=new AbortController();

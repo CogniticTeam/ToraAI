@@ -92,3 +92,12 @@ export async function syncModelsFromCloud(): Promise<void> {
 		// 同步失败不阻塞登录流程（下次打开设置板块会再拉一次）
 	}
 }
+
+
+export async function verifyBuiltinHuman(proof:string):Promise<Response>{
+ const account=getToken();await syncBuiltinModelAuth();
+ if(account!==getToken())throw Error('Account changed during verification');
+ const response=await fetch(`${localApi()}/admin/tochat-human-verification`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':proof}),signal:AbortSignal.timeout(20000)});
+ if(account!==getToken())throw Error('Account changed during verification');
+ return response;
+}

@@ -74,7 +74,10 @@ test('注册需要服务端 Turnstile，通过验证后才消费邮件码；邮�
     assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM verification_codes').get().n, 1);
   }
   const registered = await worker.fetch(request('/auth/register', { ...input, 'cf-turnstile-response': 'register-proof' }), env, ctx);
-  assert.equal(registered.status, 200, await registered.text());
+  assert.equal(registered.status,200);
+  const registeredAccount=await registered.json();
+  const verification=await worker.fetch(new Request('https://fixture.invalid/auth/human-verification',{headers:{authorization:'Bearer '+registeredAccount.token}}),env,ctx);
+  assert.equal(verification.status,200);assert.equal((await verification.json()).verified,true);
   assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM verification_codes').get().n, 0);
   assert.equal(verificationCalls, 3);
   assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards').get().n,0);

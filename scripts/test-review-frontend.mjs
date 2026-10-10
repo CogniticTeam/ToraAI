@@ -757,3 +757,39 @@ test('锁定的官方模型保留在列表中显示套餐门槛，个人模型�
  const h=harness();const{modelGroupsWithQuota}=h.load('hooks/useAvailableModels.ts');const result=modelGroupsWithQuota(groups,quota,false);
  assert.equal(result.tora_official[0].models.length,2);assert.equal(result.custom[0].models[0].name,'personal-model');h.dispose();
 });
+
+
+test('人机验证只阻止缺少有效验证的免费体验，付费用户和豆包不反复验证',()=>{
+ const h=harness();const{humanVerificationNeeded}=h.load('lib/tochatModels.ts');
+ const quota={subscription:null,trial:{remaining:5},humanVerification:{required:true,verified:false,expiresAt:null}};
+ assert.equal(humanVerificationNeeded('deepseek-flash',quota),true);assert.equal(humanVerificationNeeded('gpt-6-sol',quota),false);assert.equal(humanVerificationNeeded('doubao-seed-2-1-lite-260915',quota),false);
+ assert.equal(humanVerificationNeeded('deepseek-flash',{...quota,subscription:{planId:'plus'}}),false);
+ assert.equal(humanVerificationNeeded('deepseek-flash',{...quota,trial:{remaining:0}}),false);
+ assert.equal(humanVerificationNeeded('deepseek-flash',{...quota,humanVerification:{required:true,verified:true}}),false);h.dispose();
+});
+
+test('Turnstile 过期、超时和错误清空旧令牌，重试可获得新令牌',async()=>{
+ let callbacks,renders=0,resets=0;const tokens=[];
+ const h=harness({}, {window:{turnstile:{render(_el,opts){callbacks=opts;renders++;return 'widget';},reset(){resets++;},remove(){}}},document:{documentElement:{classList:{contains:()=>true}}}});
+ const{Turnstile}=h.load('components/auth/Turnstile.tsx');const props={action:'free_trial',onToken:token=>tokens.push(token)};
+ const render=()=>h.render(()=>Turnstile(props,null),{deferEffects:true});let tree=render();find(tree,node=>node.type==='div'&&node.props.ref).props.ref.current={};h.flushEffects();await tick();
+ callbacks.callback('first-proof');assert.equal(tokens.at(-1),'first-proof');
+ for(const status of ['expired','timeout']){callbacks[status+'-callback']();assert.equal(tokens.at(-1),'');tree=render();assert.ok(find(tree,node=>node.props?.role==='alert'&&node.props.children==='humanVerification.'+status));}
+ callbacks['error-callback']();assert.equal(tokens.at(-1),'');tree=render();find(tree,node=>node.type==='button'&&node.props.children==='error.retry').props.onClick();assert.equal(resets,1);
+ callbacks.callback('new-proof');assert.equal(tokens.at(-1),'new-proof');assert.equal(renders,1);h.dispose();
+});
+
+
+test('人机验证失败不会放行发送，成功后才刷新额度；取消不会提交请求',async()=>{
+ let accepted=false,requests=0,verified=0,resets=0;
+ const h=harness({'@/utils/modelSync':{verifyBuiltinHuman:async()=>{requests++;return Response.json({verified:accepted},{status:accepted?200:403});}}});
+ const{HumanVerificationControl}=h.load('components/auth/HumanVerificationControl.tsx');
+ const render=()=>h.render(()=>HumanVerificationControl({onVerified:async()=>verified++}));
+ let tree=render();find(tree,node=>node.type==='Button'&&node.props.children==='settings.account.captchaTitle').props.onClick();
+ tree=render();assert.equal(find(tree,node=>node.type==='Dialog').props.open,true);
+ find(tree,node=>node.type==='Button'&&node.props.children==='common.cancel').props.onClick();assert.equal(requests,0);assert.equal(find(render(),node=>node.type==='Dialog').props.open,false);
+ find(render(),node=>node.type==='Button'&&node.props.children==='settings.account.captchaTitle').props.onClick();
+ tree=render();const widget=find(tree,node=>node.type==='Turnstile');widget.props.ref.current={reset:()=>{resets++;widget.props.onToken('');}};widget.props.onToken('proof');
+ tree=render();find(tree,node=>node.type==='Button'&&node.props.children==='humanVerification.continue').props.onClick();await tick();assert.equal(verified,0);assert.equal(resets,1);assert.equal(find(render(),node=>node.type==='Button'&&node.props.children==='humanVerification.continue').props.disabled,true);
+ accepted=true;find(render(),node=>node.type==='Turnstile').props.onToken('new-proof');tree=render();find(tree,node=>node.type==='Button'&&node.props.children==='humanVerification.continue').props.onClick();await tick();assert.equal(verified,1);assert.equal(find(render(),node=>node.type==='Dialog').props.open,false);h.dispose();
+});

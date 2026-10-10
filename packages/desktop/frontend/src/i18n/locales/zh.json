@@ -1868,6 +1868,18 @@
     "planultra": "构建大型项目",
     "planultrax": "满足超大项目"
   },
+  "humanVerification": {
+    "loading": "正在加载验证…",
+    "waiting": "请完成下方验证",
+    "verified": "验证已通过",
+    "failed": "验证未完成，请重试",
+    "expired": "验证已过期，请重试",
+    "timeout": "验证已超时，请重试",
+    "verifying": "正在校验…",
+    "required": "请完成人机验证后使用免费体验",
+    "description": "完成验证后即可继续使用免费体验。",
+    "continue": "继续使用"
+  },
   "quotaSettings": {
     "cardExpires": "将于 {{time}} 到期",
     "title": "额度",

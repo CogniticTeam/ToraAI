@@ -76,6 +76,26 @@ async function main() {
   let r = await realFetch(base + '/health');
   assert.equal((await r.json()).status, 'ok');
 
+  await test('人机校验使用本地代理固定端点，透传状态并拒绝账号切换后的迟到结果', async () => {
+    const { builtinAuth, setBuiltinAuth } = await import('../src/builtin-models.js');
+    const { loadConfig } = await import('../src/config.js');
+    const prior=builtinAuth(loadConfig());
+    setBuiltinAuth({baseURL:'https://verification.fixture.invalid',authToken:'fixture-account-A'});
+    try {
+      globalThis.fetch=async(url,options)=>{
+        assert.equal(url,'https://verification.fixture.invalid/auth/human-verification');
+        assert.equal(options.method,'POST');assert.equal(options.headers.authorization,'Bearer fixture-account-A');
+        assert.deepEqual(JSON.parse(options.body),{'cf-turnstile-response':'fixture-proof'});
+        return Response.json({ok:true,verified:true});
+      };
+      const invoke=()=>realFetch(base+'/admin/tochat-human-verification',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':'fixture-proof'})});
+      let response=await invoke();assert.equal(response.status,200);assert.equal((await response.json()).verified,true);
+      globalThis.fetch=async()=>{setBuiltinAuth({baseURL:'https://verification.fixture.invalid',authToken:'fixture-account-B'});return Response.json({verified:true});};
+      response=await invoke();assert.equal(response.status,409);
+      const invalid=await realFetch(base+'/admin/tochat-human-verification',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':'x'.repeat(2049)})});assert.equal(invalid.status,400);
+    } finally {globalThis.fetch=realFetch;setBuiltinAuth(prior);}
+  });
+
   await test('累计 Token 里程碑端点：到档待展示，确认后不再弹出', async () => {
     const { recordUsage } = await import('../src/asapi/usage-store.js');
     const initial = await (await realFetch(base + '/admin/usage-milestones')).json();

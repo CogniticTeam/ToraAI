@@ -2010,6 +2010,18 @@
     "planultra": "Build larger projects",
     "planultrax": "Capacity for major projects"
   },
+  "humanVerification": {
+    "loading": "Loading verification…",
+    "waiting": "Complete the verification below",
+    "verified": "Verification passed",
+    "failed": "Verification incomplete. Try again.",
+    "expired": "Verification expired. Try again.",
+    "timeout": "Verification timed out. Try again.",
+    "verifying": "Verifying…",
+    "required": "Complete human verification to use the free trial",
+    "description": "Verify to continue using your free trial.",
+    "continue": "Continue"
+  },
   "quotaSettings": {
     "cardExpires": "Expires on {{time}}",
     "title": "Allowance",
