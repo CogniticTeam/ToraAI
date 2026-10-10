@@ -54,7 +54,7 @@ test('批量删除只删除所选且已过期的投票，单选、混合选择�
 test('注册需要服务端 Turnstile，通过验证后才消费邮件码；邮箱大小写共享锁定', async t => {
   const { sqlite, DB } = database(); t.after(() => sqlite.close());
   const { default: worker } = await import('../src/index.js?review-regression');
-  const env = { DB, TURNSTILE_SECRET: 'fixture-only', TURNSTILE_HOSTNAMES: 'fixture.invalid' };
+  const env = { DB, ADMIN_TOKEN: 'test-admin-only', TURNSTILE_SECRET: 'fixture-only', TURNSTILE_HOSTNAMES: 'fixture.invalid' };
   const ctx = { waitUntil(promise) { promise.catch(() => {}); } };
   const health = await worker.fetch(new Request('https://fixture.invalid/health'), env, ctx);
   assert.equal(health.status, 200, await health.text());
@@ -77,6 +77,16 @@ test('注册需要服务端 Turnstile，通过验证后才消费邮件码；邮�
   assert.equal(registered.status, 200, await registered.text());
   assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM verification_codes').get().n, 0);
   assert.equal(verificationCalls, 3);
+  const card = sqlite.prepare('SELECT * FROM quota_reset_cards').get();
+  assert.ok(card);assert.equal(card.expires_at-card.issued_at,30*86400000);
+  for(const path of ['/admin/quota/cancel-subscription','/admin/quota/new-user-cards']){
+    const response=await worker.fetch(request(path,{scope:'all',enabled:false}),env,ctx);
+    assert.equal(response.status,401);
+  }
+  assert.equal((await worker.fetch(new Request('https://fixture.invalid/admin/quota/new-user-cards'),env,ctx)).status,401);
+  const settings=await worker.fetch(new Request('https://fixture.invalid/admin/quota/new-user-cards',{headers:{authorization:'Bearer test-admin-only'}}),env,ctx);
+  assert.equal(settings.status,200);assert.equal((await settings.json()).enabled,true);
+  assert.equal(sqlite.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards').get().n,1);
   const login = account => worker.fetch(request('/auth/login', { account, password: 'wrong-password', 'cf-turnstile-response': 'login-proof' }), env, ctx);
   for (let i = 0; i < 5; i++) assert.equal((await login(email)).status, 401);
   assert.equal((await login(email.toUpperCase())).status, 429);

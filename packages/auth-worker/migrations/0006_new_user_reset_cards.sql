@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS quota_settings (id INTEGER PRIMARY KEY CHECK(id=1),new_user_cards_enabled INTEGER NOT NULL DEFAULT 1 CHECK(new_user_cards_enabled IN (0,1)),updated_at INTEGER NOT NULL);
+INSERT OR IGNORE INTO quota_settings(id,new_user_cards_enabled,updated_at) VALUES(1,1,CAST(strftime('%s','now') AS INTEGER)*1000);
+CREATE TRIGGER IF NOT EXISTS quota_new_user_card AFTER INSERT ON users WHEN (SELECT new_user_cards_enabled FROM quota_settings WHERE id=1)=1 BEGIN INSERT INTO quota_reset_cards(id,user_id,operation_id,issued_at,expires_at) VALUES(lower(hex(randomblob(16))),NEW.id,'new-user-registration',CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000+2592000000); END;
