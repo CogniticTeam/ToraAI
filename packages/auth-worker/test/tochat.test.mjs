@@ -3,8 +3,34 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { quotaPeriods, readToChatQuota, reserveToChat, settleToChat, totalUsage, validateToChatBody, handleToChat } from '../src/tochat.js';
+import {usageCost} from '../src/subscription-plans.js';
 function database(){const sqlite=new DatabaseSync(':memory:');sqlite.exec(readFileSync(new URL('../migrations/0003_subscriptions.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0004_quota_resets.sql',import.meta.url),'utf8'));sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(1,'plus',Date.now()+2592000000,500000000,1600000000,7000000000,Date.now());const db={prepare(sql){return{bind(...args){return{run(){return{meta:{changes:sqlite.prepare(sql).run(...args).changes}};},first(){return sqlite.prepare(sql).get(...args)||null;},all(){return{results:sqlite.prepare(sql).all(...args)};}};}};},async batch(statements){sqlite.exec('BEGIN');try{const result=statements.map(statement=>statement.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};return{db,sqlite};}
 const now=Date.parse('2026-10-02T01:00:00Z');
+test('GLM uses only its dedicated secret, retain thinking/tool history and settle actual work usage',async()=>{
+ const{db,sqlite}=database(),before=globalThis.fetch,tasks=[],sent=[];
+ const env={DB:db,SHULIUYUN_GLM_API_KEY:'synthetic-cn-secret'},ctx={waitUntil(p){tasks.push(p);}};
+ const history=[{role:'user',content:'Read the test file'},{role:'assistant',content:null,reasoning_content:'I should inspect it.',tool_calls:[{id:'read-fixture',type:'function',function:{name:'Read',arguments:'{"path":"test.txt"}'}}]},{role:'tool',tool_call_id:'read-fixture',content:'test data'}];
+ const req=(model,tag,kind='work',effort='high')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':kind,'x-tora-feature':'tocode','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,messages:history,reasoning_effort:effort,max_tokens:256,...(kind==='work'?{tools:[{type:'function',function:{name:'Read',parameters:{type:'object'}}}]}:{})})});
+ try{
+  const list=await(await handleToChat(new Request('https://test/tochat/v1/models'),env,ctx,{id:1})).json();assert.deepEqual(list.data.map(m=>m.id),['glm-5.3']);assert.deepEqual(list.data[0].input_modalities,['text']);assert.ok(!JSON.stringify(list).includes(env.SHULIUYUN_GLM_API_KEY));
+  globalThis.fetch=async(url,init)=>{sent.push({url,headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{reasoning_content:'Verified.',content:'CN_OK'},finish_reason:'stop'}],usage:{prompt_tokens:100,prompt_tokens_details:{cached_tokens:80},completion_tokens:20,completion_tokens_details:{reasoning_tokens:18},total_tokens:120}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+  for(const model of ['glm-5.3']){
+   const slug=model.replaceAll('.','-');
+   assert.equal((await handleToChat(req(model,slug+'-missing'),{DB:db,SHULIUYUN_API_KEY:'unrelated'},ctx,{id:1})).status,503);
+   for(const effort of ['low','high','max']){
+    const tag=slug+'-'+effort,response=await handleToChat(req(model,tag,'work',effort),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/CN_OK/);await Promise.all(tasks);
+    const outgoing=sent.at(-1);assert.equal(outgoing.url,'https://shuliuyun.com/v1/chat/completions');assert.equal(outgoing.headers.authorization,'Bearer '+env.SHULIUYUN_GLM_API_KEY);assert.equal(outgoing.body.reasoning_effort,effort);assert.equal(outgoing.body.thinking?.type,'enabled');assert.deepEqual(outgoing.body.messages,history);assert.equal(outgoing.body.tools[0].function.name,'Read');
+    const row=sqlite.prepare('SELECT * FROM usage_log WHERE request_id=?').get(tag+'-request');assert.equal(row.cached_tokens,80);assert.equal(row.output_tokens,20);assert.equal(row.feature,'tocode');assert.equal(row.credit_micro,usageCost(model,{input:100,cached:80,output:20}));
+   }
+   const response=await handleToChat(req(model,slug+'-free','chat'),env,ctx,{id:1});assert.equal(response.status,200);await response.text();await Promise.all(tasks);assert.equal(sqlite.prepare('SELECT count(*) AS n FROM usage_log WHERE request_id=?').get(slug+'-free-request').n,0);
+   for(const effort of ['medium','xhigh','off'])assert.throws(()=>validateToChatBody({model,messages:history,reasoning_effort:effort},'work'),/不支持/);
+   for(const status of [401,403,429,500]){globalThis.fetch=async()=>new Response(env.SHULIUYUN_GLM_API_KEY,{status});const failed=await handleToChat(req(model,slug+'-error-'+status),env,ctx,{id:1});assert.equal(failed.status,status===429?429:502);assert.ok(!(await failed.text()).includes(env.SHULIUYUN_GLM_API_KEY));}
+   globalThis.fetch=async(url,init)=>{sent.push({url,headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{content:'CN_OK'},finish_reason:'stop'}],usage:{prompt_tokens:100,prompt_tokens_details:{cached_tokens:80},completion_tokens:20,total_tokens:120}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+  }
+  const image=[{role:'user',content:[{type:'image_url',image_url:{url:'data:image/png;base64,aGVsbG8='}}]}];assert.throws(()=>validateToChatBody({model:'glm-5.3',messages:image},'chat'),/不支持图片/);
+  assert.ok(sqlite.prepare("SELECT * FROM usage_log WHERE status='failed'").all().every(row=>row.credit_micro===0&&row.held_micro===0));
+ }finally{globalThis.fetch=before;sqlite.close();}
+});
 test('聊天禁止执行工具；工作SSE保留图片与max；未登录拒绝；Secret不会回传',async()=>{
  const body={model:'deepseek-flash',messages:[{role:'user',content:[{type:'text',text:'hello'},{type:'image_url',image_url:{url:'data:image/png;base64,aGVsbG8='}}]}],reasoning_effort:'max'};
  assert.throws(()=>validateToChatBody({...body,tools:[{function:{name:'Bash'}}]},'chat'),/只允许/);
@@ -23,7 +49,7 @@ test('内置 Gemini 独立 Secret、白名单、无隐式回退、流式工具�
  const request=(model,tag='gemini-first')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'chat','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,messages:[{role:'user',content:'hello'}],reasoning_effort:'max',tools:[{type:'function',function:{name:'WebSearch',parameters:{type:'object'}}}]})});
  try {
   const quota=await (await handleToChat(new Request('https://test/tochat/quota'),env,ctx,{id:1})).json();
-  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,9);assert.ok(!JSON.stringify(quota).includes('test-only'));
+  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,10);assert.ok(!JSON.stringify(quota).includes('test-only'));
   let calls=0;
   globalThis.fetch=async(url,init)=>{calls++;assert.equal(url,'https://shuliuyun.com/v1/chat/completions');assert.equal(init.headers.authorization,'Bearer gemini-test-only');const body=JSON.parse(init.body);assert.equal(body.model,'gemini-3.8-flash');assert.equal(body.thinking,undefined);assert.equal(body.reasoning_effort,'high');assert.equal(body.tool_choice,'auto');assert.equal(body.stream_options.include_usage,true);return new Response('data: '+JSON.stringify({choices:[{delta:{tool_calls:[{id:'search-call',index:0,type:'function',function:{name:'WebSearch',arguments:'{"query":"Tora"}'}}]},finish_reason:'tool_calls'}],usage:{total_tokens:300}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
   const response=await handleToChat(request('gemini-3.8-flash'),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/WebSearch/);await Promise.all(tasks);assert.equal((await readToChatQuota(db,1)).chatUnlimited,true);

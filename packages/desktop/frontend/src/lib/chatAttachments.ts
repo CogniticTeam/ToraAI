@@ -3,7 +3,7 @@ import mime from 'mime';
 
 import {DOUBAO_MODEL_ID,DOUBAO_INPUT_TYPES,IMAGE_MIME_TYPES,normalizeMediaType,mediaInputPart} from '../../../../core/src/chat-media.js';
 
-export const chatAttachmentTypes = (model: string, mode = 'chat') => model === DOUBAO_MODEL_ID && mode === 'chat' ? DOUBAO_INPUT_TYPES.filter(type => type !== 'text') : IMAGE_MIME_TYPES;
+export const chatAttachmentTypes = (model: string, mode = 'chat') => model === 'glm-5.3' ? [] : model === DOUBAO_MODEL_ID && mode === 'chat' ? DOUBAO_INPUT_TYPES.filter(type => type !== 'text') : IMAGE_MIME_TYPES;
 
 export async function processChatAttachment(file: File, model: string, mode: string, imageLimit = 32 * 1024 * 1024): Promise<ContentBlock> {
   const type = normalizeMediaType(file.type || mime.getType(file.name) || '');

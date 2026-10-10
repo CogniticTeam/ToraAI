@@ -502,3 +502,14 @@ test('Grok official picker retains four supported efforts and server availabilit
  const group=find(tree,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='xhigh');
  assert.deepEqual(Array.from(group.props.children,item=>item.props.value),['low','medium','high','xhigh']);h.dispose();
 });
+
+test('GLM preserves the original picker with only low/high/max and text-only GLM attachments',()=>{
+ const h=harness(),models=h.load('lib/tochatModels.ts'),{OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx'),{chatAttachmentTypes}=h.load('lib/chatAttachments.ts');
+ for(const model of ['glm-5.3']){
+  for(const mode of ['chat','work','tocode'])assert.equal(models.modelAllowedInMode(model,mode),true);
+  assert.equal(models.toChatEffort(model,'max'),'max');assert.equal(models.toChatEffort(model,'medium'),'high');assert.equal(models.modelAvailable(model,[]),false);
+  const tree=h.render(()=>OfficialModelSelect({model,effort:'max',models:[{id:model,enabled:true}],onModel(){},onEffort(){}}));
+  const group=find(tree,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='max');assert.deepEqual(Array.from(group.props.children,item=>item.props.value),['low','high','max']);
+ }
+ assert.equal(chatAttachmentTypes('glm-5.3').length,0);h.dispose();
+});

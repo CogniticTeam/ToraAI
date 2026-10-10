@@ -8,6 +8,7 @@ export const TOCHAT_MODELS = [
 	{ id: 'gpt-6-luna', name: 'GPT-6 Luna', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
 	{ id: 'grok-4.7', name: 'Grok 4.7', efforts: ['low', 'medium', 'high', 'xhigh'] as const },
 	{ id: 'claude-opus-5', name: 'Claude Opus 5', efforts: ['low', 'medium', 'high', 'xhigh', 'max'] as const },
+	{ id: 'glm-5.3', name: 'GLM 5.3', efforts: ['low', 'high', 'max'] as const },
 	{ id: 'deepseek-flash', name: 'DeepSeek Flash', efforts: ['low', 'high', 'max'] as const },
 	{ id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash', efforts: ['low', 'medium', 'high'] as const },
 ] as const;

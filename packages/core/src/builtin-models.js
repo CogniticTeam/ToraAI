@@ -10,6 +10,7 @@ export const BUILTIN_MODELS = [
   {id:'gpt-6-luna',name:'GPT-6 Luna',provider:'openai',context:1050000},
   {id:'grok-4.7',name:'Grok 4.7',provider:'xai',context:500000},
   {id:'claude-opus-5',name:'Claude Opus 5',provider:'anthropic',context:1000000},
+  {id:'glm-5.3',name:'GLM 5.3',provider:'bigmodel',context:1000000,inputTypes:['text']},
   {id:'deepseek-flash',name:'DeepSeek Flash',provider:'deepseek',context:1048576},
   {id:'gemini-3.8-flash',name:'Gemini 3.8 Flash',provider:'google',context:1048576},
 ];

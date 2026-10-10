@@ -11,6 +11,7 @@ export async function generateOfficialTitle(env,input,model,fetcher=fetch){
  if(structured)messages[0].content+=' Submit the title using return_title.';
  const body=model.protocol==='responses'?{...toResponsesBody({model:input.model,messages},'low',model.adapter==='ark'?512:4096,model.adapter),stream:true,tools:[],tool_choice:'none'}:{model:input.model,messages,stream:true,...(structured?{tools,tool_choice:{type:'function',function:{name:'return_title'}}}:{}),max_tokens:structured?4096:1024,...(input.model==='deepseek-flash'?{thinking:{type:'disabled'}}:{reasoning_effort:'low'})};
  if(model.adapter==='ark'){delete body.reasoning;body.thinking={type:'disabled'};}
+ if(model.thinking)body.thinking=model.thinking;
  try{
   const response=await fetcher(model.url,{method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env[model.secret]}`},body:JSON.stringify(body),signal:AbortSignal.timeout(18000)});
   if(!response.ok)return {status:502,data:{detail:'标题生成失败'}};

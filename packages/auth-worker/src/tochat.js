@@ -13,12 +13,13 @@ const MODELS = Object.freeze({
   'gpt-6-astra': {name:'GPT-6 Astra',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'grok-4.7': {name:'Grok 4.7',secret:'SHULIUYUN_GROK_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses',adapter:'xai',efforts:['low','medium','high','xhigh']},
   'claude-opus-5': {name:'Claude Opus 5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
+  'glm-5.3': {name:'GLM 5.3',secret:'SHULIUYUN_GLM_API_KEY',url:'https://shuliuyun.com/v1/chat/completions',efforts:['low','high','max'],thinking:{type:'enabled'},inputModalities:['text']},
   'deepseek-flash': {name:'DeepSeek Flash',secret:'DEEPSEEK_API_KEY',url:'https://api.deepseek.com/v1/chat/completions'},
   'gemini-3.8-flash': {name:'Gemini 3.8 Flash',secret:'SHULIUYUN_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
   'gpt-6.1-sol': {name:'GPT-6.1 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
 });
 const modelConfig = id => Object.hasOwn(MODELS,id) ? MODELS[id] : null;
-export const toChatModels = env => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,input_modalities:model.adapter==='ark'?['text','image','audio','video']:['text','image'],modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
+export const toChatModels = env => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,input_modalities:model.inputModalities||(model.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','access-control-allow-origin':'*','cache-control':'no-store'}});
 const fail = (detail,status=400) => json({detail},status);
 export function quotaPeriods(now=Date.now()) {
@@ -46,6 +47,7 @@ export function validateToChatBody(body,kind) {
     if(!['system','user','assistant','tool'].includes(message.role)) throw Error('消息角色无效');
     if(Array.isArray(message.content)) for(const part of message.content) {
       if(part.type==='image_url') {
+        if(modelConfig(body.model).inputModalities&&!modelConfig(body.model).inputModalities.includes('image'))throw Error('此模型不支持图片输入');
         if(message.role!=='user') throw Error('图片必须放在用户消息中');
         const url=part.image_url?.url;
         if(typeof url!=='string'||!/^data:image\/(?:png|jpeg|gif|webp);base64,/i.test(url)) throw Error('请通过附件上传图片');
@@ -160,7 +162,7 @@ export async function handleToChat(request,env,ctx,user) {
   let upstream;
   try{upstream=await fetch(selected.url,{
     method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env[selected.secret]}`},signal:AbortSignal.any([abort.signal,AbortSignal.timeout(300000)]),
-    body:JSON.stringify(selected.protocol==='responses'?{...upstreamBody,max_output_tokens:output}:{model:body.model,messages:body.messages.map(({tora_response_items,...message})=>message),tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,...(body.model==='deepseek-flash'?{thinking:{type:'enabled'}}:{}),reasoning_effort:body.model==='gemini-3.8-flash'&&checked.effort==='max'?'high':checked.effort,max_tokens:output,stream:true,stream_options:{include_usage:true}}),
+    body:JSON.stringify(selected.protocol==='responses'?{...upstreamBody,max_output_tokens:output}:{model:body.model,messages:body.messages.map(({tora_response_items,...message})=>message),tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,...(selected.thinking?{thinking:selected.thinking}:body.model==='deepseek-flash'?{thinking:{type:'enabled'}}:{}),reasoning_effort:body.model==='gemini-3.8-flash'&&checked.effort==='max'?'high':checked.effort,max_tokens:output,stream:true,stream_options:{include_usage:true}}),
   });}catch{await settle({unknown:true});return fail('官方模型连接失败，请稍后重试',502);}
   if(!upstream.ok){await settle({failed:true});return fail(`官方模型请求失败（HTTP ${upstream.status}）`,upstream.status===429?429:502);}
   if(selected.protocol==='responses'){try{upstream=responsesChatStream(upstream,body.model);}catch{await settle({unknown:true});return fail('模型未返回有效的流式响应',502);}}

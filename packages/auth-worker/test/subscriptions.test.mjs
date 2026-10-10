@@ -28,3 +28,10 @@ test('Grok screenshot service rates discount cached input, include reasoning onc
  assert.equal(usageCost('grok-4.7',{input:199999,cached:0,output:1}),199999*166+497);
  assert.equal(usageCost('grok-4.7',{input:200000,cached:100000,output:20}),100000*332+100000*83+20*994);
 });
+
+test('GLM screenshot rates charge uncached input, discounted cache and output once',()=>{
+ for(const [model,output] of [['glm-5.3',1920]]){
+  assert.equal(usageCost(model,{input:100,cached:80,output:20}),20*480+80*48+20*output);
+  assert.equal(usageCost(model,{input:1000000,cached:1000000,output:0}),48000000);
+ }
+});

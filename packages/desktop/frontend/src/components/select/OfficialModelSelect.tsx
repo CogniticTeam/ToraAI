@@ -5,6 +5,7 @@ import GrokLogo from '@/assets/providers/lobe-grok.svg?react';
 import OpenAILogo from '@/assets/providers/openai-black-monoblossom.svg?react';
 import AnthropicLogo from '@/assets/providers/si-anthropic.svg?react';
 import DeepSeekLogo from '@/assets/providers/si-deepseek.svg?react';
+import BigmodelLogo from '@/assets/providers/site-bigmodel.png';
 import VolcengineLogo from '@/assets/providers/site-volcengine.png';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {Tooltip,TooltipContent,TooltipTrigger} from '@/components/ui/tooltip';
@@ -12,6 +13,7 @@ import {useTranslation} from '@/i18n/useI18n';
 import {TOCHAT_MODELS, modelAllowedInMode, modelAvailable, toChatModel, type ToChatModelId, type ToChatModelAvailability} from '@/lib/tochatModels';
 
 function ModelIcon({model}: {model: string}) {
+ if(model.startsWith('glm')) return <img src={BigmodelLogo} alt="" className="size-4 shrink-0" />;
  if(model.startsWith('grok')) return <GrokLogo className="size-4 shrink-0 dark:invert" />;
  if(model.startsWith('doubao')) return <img src={VolcengineLogo} alt="" className="size-4 shrink-0" />;
  if(model.startsWith('gemini')) return <GeminiLogo className="size-4 shrink-0" />;

@@ -198,10 +198,10 @@ export function resolveRunCfg(session, agent) {
     if(!isBuiltinModel(model))throw Error('不支持的内置模型');
     const auth=builtinAuth(toraCfg);
     cfg.baseURL=String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
-    const maximum=BUILTIN_MODELS.find(item=>item.id===model).context;
+    const metadata=BUILTIN_MODELS.find(item=>item.id===model),maximum=metadata.context;
     // Context selection was removed; legacy smaller choices no longer cap a run.
     cfg.maxTokensBudget=Math.max(1024,maximum-16384-8192);
-    cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=true;cfg.thinking=true;
+    cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=metadata.inputTypes?.some(type=>type.startsWith('image/'))??true;cfg.thinking=true;
     if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'work':cfg.tochatMode))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
     if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
   }

@@ -85,6 +85,16 @@ try {
   const user=wire.messages.find(m=>m.role==='user');assert.deepEqual(user.content.filter(part=>part.type!=='text').map(part=>part.type),['input_audio','input_video']);assert.match(user.content[2].video_url,/^data:video\/mov;/);
   const messages=await (await get('/sessions/'+made.session_id+'/messages')).json();assert.deepEqual(messages.messages.find(m=>m.role==='user').content.filter(b=>b.type==='data').map(b=>b.source.media_type),['audio/wav','video/quicktime']);
  });
+test('GLM uses maximum declared context; GLM cards and runtime disable images',async()=>{
+ for(const [id,context,vision] of [['glm-5.3',1000000,false]]){
+  const model=BUILTIN_MODELS.find(model=>model.id===id);assert.equal(model.context,context);
+  const cfg=resolveRunCfg({config:{application_mode:'tocode',chat_model_config:{credential_id:'tora-official',model:id,parameters:{contextSize:32768}}}});
+  assert.equal(cfg.maxTokensBudget,context-24576);assert.equal(cfg.vision,vision);
+  for(const mode of ['chat','work','tocode'])assert.equal(builtinModelAllowed(id,mode),true);
+ }
+ assert.deepEqual(BUILTIN_MODELS.find(model=>model.id==='glm-5.3').inputTypes,['text']);
+});
+
 }finally{
  // node:test cases execute asynchronously; cleanup is registered after them.
  test('fixture cleanup',async()=>{globalThis.fetch=originalFetch;server.closeAllConnections?.();await new Promise(resolve=>server.close(resolve));rmSync(home,{recursive:true,force:true});});
