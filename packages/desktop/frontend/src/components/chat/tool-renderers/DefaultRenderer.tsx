@@ -4,9 +4,10 @@ import type { ReactNode } from 'react';
 
 import { getResultText, toolArgClass, toolLabelClass } from './_shared';
 import type { TFunction, ToolCallWithResult } from './types';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
-export function defaultGetDisplayName(call: ToolCallBlock): string {
-	return call.name;
+export function defaultGetDisplayName(call: ToolCallBlock, t: TFunction): string {
+	return getToolDisplayName(call.name, t);
 }
 
 export function defaultRenderConfirmBody(call: ToolCallBlock): ReactNode {
@@ -26,7 +27,7 @@ export function defaultRenderHeader(pair: ToolCallWithResult, t: TFunction): Rea
 	return (
 		<>
 			<span className={toolLabelClass}>{t('tool.callGeneric')}</span>
-			<span className={toolArgClass}>{defaultGetDisplayName(pair.call)}</span>
+			<span className={toolArgClass}>{defaultGetDisplayName(pair.call, t)}</span>
 		</>
 	);
 }

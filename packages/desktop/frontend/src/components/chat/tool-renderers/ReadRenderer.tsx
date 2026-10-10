@@ -9,6 +9,7 @@ import {
 import { defaultRenderBody } from './DefaultRenderer';
 import { DiffPreview } from './DiffPreview';
 import type { ToolRenderer } from './types';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 /**
  * Split a `cat -n` formatted Read result (`"    12\tcontent"`, produced by the
@@ -40,7 +41,7 @@ function buildContextDiff(content: string): string {
 }
 
 export const ReadRenderer: ToolRenderer = {
-	getDisplayName: (_call, t) => t('tool.read.name'),
+	getDisplayName: (call, t) => getToolDisplayName(call.name, t),
 
 	renderConfirmBody: (call) => (
 		<div className="w-full max-w-full overflow-hidden break-words">
@@ -48,16 +49,16 @@ export const ReadRenderer: ToolRenderer = {
 		</div>
 	),
 
-	renderHeader: (pair) => {
+	renderHeader: (pair, t) => {
 		const fileName = tryGetFileName(pair.call.input);
 		const readContent = getResultText(pair.result);
 		const lines = readContent ? readContent.split('\n').length : 0;
 		return (
 			<>
-				<span className={toolLabelClass}>Read</span>
+				<span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>
 				{fileName && <span className={toolArgClass}>{fileName}</span>}
 				{pair.result?.state === 'success' && (
-					<span className={toolLabelClass}>{lines} lines</span>
+					<span className={toolLabelClass}>{t('tool.read.lineCount', { count: lines, formatted: String(lines) })}</span>
 				)}
 			</>
 		);

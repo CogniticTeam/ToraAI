@@ -1,5 +1,6 @@
 import { getResultText, parseInput, toolArgClass, toolLabelClass } from './_shared';
 import type { ToolRenderer } from './types';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 function getPattern(input: string): string {
 	const { pattern } = parseInput(input) as { pattern?: string };
@@ -7,11 +8,11 @@ function getPattern(input: string): string {
 }
 
 export const GrepRenderer: ToolRenderer = {
-	getDisplayName: (_call, t) => t('tool.grep.name'),
+	getDisplayName: (call, t) => getToolDisplayName(call.name, t),
 
-	renderHeader: (pair) => (
+	renderHeader: (pair, t) => (
 		<>
-			<span className={toolLabelClass}>Grep pattern</span>
+			<span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>
 			<span className={toolArgClass}>{getPattern(pair.call.input)}</span>
 		</>
 	),

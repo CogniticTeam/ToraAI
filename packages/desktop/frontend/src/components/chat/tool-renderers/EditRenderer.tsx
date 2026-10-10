@@ -14,6 +14,7 @@ import {
 	tryGetFileName,
 	tryGetFilePath,
 } from '@/components/chat/tool-renderers/_shared.tsx';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 /**
  * Count the real inserted / deleted lines between ``oldText`` and ``newText``
@@ -45,7 +46,7 @@ function headerStats(pair: ToolCallWithResult): { insertions: number; deletions:
 }
 
 export const EditRenderer: ToolRenderer = {
-	getDisplayName: (call) => call.name,
+	getDisplayName: (call, t) => getToolDisplayName(call.name, t),
 
 	renderConfirmBody: (call) => (
 		<div className="w-full max-w-full overflow-hidden break-words">
@@ -53,15 +54,15 @@ export const EditRenderer: ToolRenderer = {
 		</div>
 	),
 
-	renderHeader: (pair) => {
+	renderHeader: (pair, t) => {
 		// While the tool-call JSON is still streaming, ``call.input`` is a partial
 		// dict and the file name / diff can't be trusted yet — show just the label.
 		const fileName = tryGetFileName(pair.call.input);
-		if (!fileName) return <span className={toolLabelClass}>{pair.call.name}</span>;
+		if (!fileName) return <span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>;
 		const { insertions, deletions } = headerStats(pair);
 		return (
 			<>
-				<span className={toolLabelClass}>{pair.call.name}</span>
+				<span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>
 				<span className={toolArgClass}>{fileName}</span>
 				<DiffStats insertions={insertions} deletions={deletions} />
 			</>

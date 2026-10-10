@@ -10,6 +10,7 @@ import { DropdownSelect } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from '@/i18n/useI18n';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 /** The behavior keys we render sections for (excludes ``passthrough``). */
 type RuleBehavior = 'allow' | 'deny' | 'ask';
@@ -98,7 +99,7 @@ function ToolRuleCard({ toolName, rules, onDelete }: { toolName: string; rules: 
 	return (
 		<div className="rounded-md border">
 			<div className="flex items-center gap-x-2 border-b px-2 py-1.5 text-sm font-medium">
-				{toolName}
+				{getToolDisplayName(toolName, t)}
 				<Badge variant="secondary" className="ml-auto">
 					{rules.length}
 				</Badge>
@@ -259,7 +260,7 @@ export function PermissionPanel({ permissionContext }: PermissionPanelProps) {
 								className="w-32"
 								value={tool}
 								onChange={setTool}
-								options={TOOL_CHOICES.map((v) => ({ value: v, label: v }))}
+								options={TOOL_CHOICES.map((v) => ({ value: v, label: getToolDisplayName(v, t) }))}
 							/>
 							<DropdownSelect
 								className="w-24"

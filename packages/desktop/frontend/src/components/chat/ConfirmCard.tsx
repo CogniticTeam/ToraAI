@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Kbd } from '@/components/ui/kbd';
 import { Spinner } from '@/components/ui/spinner.tsx';
 import { useTranslation } from '@/i18n/useI18n';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 import { cn } from '@/lib/utils';
 
 type SelectOption = 'yes' | 'yes_with_rule' | 'no';
@@ -151,7 +152,7 @@ export function ConfirmCard({
 							<span className="break-all min-w-0">
 								2.{' '}
 								{t('confirmCard.yesWithRule', {
-									toolName: toolCall.suggested_rules![0].tool_name,
+									toolName: getToolDisplayName(toolCall.suggested_rules![0].tool_name, t),
 									// 匹配"任意调用"的规则 rule_content 为空 —— 直接插值
 									// 会渲染成一句以空串结尾的残句，回填成人话。
 									ruleContent:

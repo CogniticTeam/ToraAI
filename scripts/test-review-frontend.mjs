@@ -54,7 +54,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name === '@/lib/subscription' ? load('lib/subscription.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name === '@/lib/subscription' ? load('lib/subscription.ts') : name === '@/lib/toolDisplayName' ? load('lib/toolDisplayName.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   const flushEffects=()=>{for(const run of effects.splice(0))run();};
@@ -646,4 +646,53 @@ test('ToChat work hosts the same right browser dock and closes it without naviga
  const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');const render=()=>h.render(()=>ToChatConversation());render();await tick();
  listeners.get('open-panel')({detail:{key:'browser',exclusive:true}});const dock=find(render(),node=>node.type==='PanelDock');assert.ok(dock);assert.equal(JSON.stringify(dock.props.layout),'[["browser"]]');assert.ok(dock.props.panels.browser);assert.deepEqual(navigations,[]);
  dock.props.onClosePanel('browser');assert.equal(find(render(),node=>node.type==='PanelDock').props.layout.length,0);h.dispose();
+});
+
+
+test('内置工具名称随语言切换，未知工具保留原名', async () => {
+  const i18next = require('i18next').createInstance();
+  const locales = ['zh','zh-Hant','zh-HK','zh-TW','zh-Neko','lzh','en','en-US','en-GB','ja','ja-Neko','ko','fr','de','it','es','pt','ru','ar','hi'];
+  const resources = Object.fromEntries(locales.map(lang => [lang, { translation: JSON.parse(readFileSync(new URL(`i18n/locales/${lang}.json`, base), 'utf8')) }]));
+  await i18next.init({ lng: 'zh', resources, fallbackLng: false });
+  const {getToolDisplayName} = harness().load('lib/toolDisplayName.ts');
+  const names = Object.keys(resources.zh.translation.tool.names);
+  for (const lang of locales) {
+    await i18next.changeLanguage(lang);
+    for (const name of names) {
+      const label = getToolDisplayName(name, i18next.t.bind(i18next));
+      assert.equal(label, resources[lang].translation.tool.names[name]);
+      assert.ok(label && !label.startsWith('tool.'));
+    }
+    assert.equal(getToolDisplayName('mcp__custom__Read', i18next.t.bind(i18next)), 'mcp__custom__Read');
+  }
+  await i18next.changeLanguage('zh');
+  assert.equal(getToolDisplayName('bash', i18next.t.bind(i18next)), '运行命令');
+  assert.equal(getToolDisplayName('Read', i18next.t.bind(i18next)), '读取文件');
+});
+
+test('工具调用行和授权标题使用翻译，命令与输出保持原文', async () => {
+  const i18next = require('i18next').createInstance();
+  await i18next.init({lng:'zh', resources:{zh:{translation:JSON.parse(readFileSync(new URL('i18n/locales/zh.json',base),'utf8'))}}});
+  const t = i18next.t.bind(i18next);
+  const common = harness().load('components/chat/tool-renderers/_shared.tsx');
+  const h = harness({'./_shared':common,'@/components/chat/tool-renderers/_shared.tsx':common,unidiff:require('unidiff')});
+  const text = tree => tree == null ? '' : Array.isArray(tree) ? tree.map(text).join(' ') : typeof tree === 'object' ? text(tree.props?.children) : String(tree);
+  for(const name of ['Bash','Read','Write','Edit','Glob','Grep','TaskCreate']) {
+    const renderer = h.load(`components/chat/tool-renderers/${name}Renderer.tsx`)[`${name}Renderer`];
+    const pair = {call:{id:'test', name, input:JSON.stringify({command:'echo Read', file_path:'/tmp/Read.txt', pattern:'Bash', old_string:'a',new_string:'b'})}, result:{state:'success',output:'1\tRead output'}};
+    const before = JSON.stringify(pair);
+    assert.equal(renderer.getDisplayName(pair.call,t), t(`tool.names.${name}`));
+    assert.ok(text(renderer.renderHeader(pair,t)).includes(t(`tool.names.${name}`)));
+    if(name==='Bash') {
+      assert.ok(text(renderer.renderHeader(pair,t)).includes('echo Read'));
+      const body=text(renderer.renderBody(pair,t));
+      assert.ok(body.includes('输入') && body.includes('输出') && body.includes('Read output'));
+    }
+    if(name==='Read') assert.ok(text(renderer.renderHeader(pair,t)).includes('读取 1 行'));
+    if(name==='TaskCreate') assert.ok(text(renderer.renderHeader(pair,t)).includes('未命名任务'));
+    assert.equal(JSON.stringify(pair),before);
+  }
+  const fallback=h.load('components/chat/tool-renderers/DefaultRenderer.tsx');
+  assert.equal(fallback.defaultGetDisplayName({name:'WebSearch'},t),'搜索网页');
+  assert.equal(fallback.defaultGetDisplayName({name:'mcp__custom__Read'},t),'mcp__custom__Read');
 });

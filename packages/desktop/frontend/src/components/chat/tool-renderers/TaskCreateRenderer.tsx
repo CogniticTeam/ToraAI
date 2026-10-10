@@ -1,5 +1,6 @@
 import { getResultText, parseInput, toolArgClass, toolLabelClass } from './_shared';
 import type { ToolCallWithResult, ToolRenderer } from './types';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 /**
  * Extract the numeric task id the backend echoes in its result text
@@ -11,15 +12,15 @@ function getTaskId(pair: ToolCallWithResult): string | null {
 }
 
 export const TaskCreateRenderer: ToolRenderer = {
-	getDisplayName: (_call, t) => t('tool.taskCreate.name'),
+	getDisplayName: (call, t) => getToolDisplayName(call.name, t),
 
 	// Trigger line: "Create task #{id} {subject}"
-	renderHeader: (pair) => {
-		const subject = (parseInput(pair.call.input).subject as string) || '(untitled)';
+	renderHeader: (pair, t) => {
+		const subject = (parseInput(pair.call.input).subject as string) || t('tool.untitledTask');
 		const taskId = getTaskId(pair);
 		return (
 			<>
-				<span className={toolLabelClass}>Create task</span>
+				<span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>
 				<span className={toolArgClass}>
 					{taskId && <span className="text-muted-foreground font-mono">#{taskId} </span>}
 					{subject}

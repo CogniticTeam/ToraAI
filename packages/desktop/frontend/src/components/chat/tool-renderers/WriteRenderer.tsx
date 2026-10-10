@@ -11,9 +11,10 @@ import {
 	tryGetFileName,
 	tryGetFilePath,
 } from '@/components/chat/tool-renderers/_shared.tsx';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 export const WriteRenderer: ToolRenderer = {
-	getDisplayName: (call) => call.name,
+	getDisplayName: (call, t) => getToolDisplayName(call.name, t),
 
 	renderConfirmBody: (call) => (
 		<div className="w-full max-w-full overflow-hidden break-words">
@@ -21,7 +22,7 @@ export const WriteRenderer: ToolRenderer = {
 		</div>
 	),
 
-	renderHeader: (pair) => {
+	renderHeader: (pair, t) => {
 		const fileName = tryGetFileName(pair.call.input);
 		// Pre-execution we only know the new ``content`` (not the previous file
 		// body), so any ``+N`` count would be misleading on overwrites. Show the
@@ -30,7 +31,7 @@ export const WriteRenderer: ToolRenderer = {
 		const stats = diff ? countDiffStats(diff) : null;
 		return (
 			<>
-				<span className={toolLabelClass}>{pair.call.name}</span>
+				<span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>
 				{fileName && <span className={toolArgClass}>{fileName}</span>}
 				{stats && <DiffStats insertions={stats.insertions} deletions={stats.deletions} />}
 			</>

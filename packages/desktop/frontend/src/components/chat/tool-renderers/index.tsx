@@ -33,7 +33,7 @@ function getRenderer(toolName: string): ToolRenderer {
 
 export function getDisplayName(call: ToolCallBlock, t: TFunction): string {
 	const r = getRenderer(call.name);
-	return r.getDisplayName?.(call, t) ?? defaultGetDisplayName(call);
+	return r.getDisplayName?.(call, t) ?? defaultGetDisplayName(call, t);
 }
 
 export function renderConfirmBody(call: ToolCallBlock, t: TFunction): ReactNode {

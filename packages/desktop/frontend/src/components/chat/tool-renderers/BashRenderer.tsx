@@ -1,5 +1,6 @@
 import { getResultText, parseInput, toolLabelClass } from './_shared';
 import type { ToolRenderer } from './types';
+import { getToolDisplayName } from '@/lib/toolDisplayName';
 
 function getCommand(input: string): string {
 	const { command } = parseInput(input) as { command?: string };
@@ -7,7 +8,7 @@ function getCommand(input: string): string {
 }
 
 export const BashRenderer: ToolRenderer = {
-	getDisplayName: () => 'Bash',
+	getDisplayName: (call, t) => getToolDisplayName(call.name, t),
 
 	renderConfirmBody: (call) => {
 		const { command, description } = parseInput(call.input) as {
@@ -22,9 +23,9 @@ export const BashRenderer: ToolRenderer = {
 		);
 	},
 
-	renderHeader: (pair) => (
+	renderHeader: (pair, t) => (
 		<>
-			<span className={toolLabelClass}>Bash</span>
+			<span className={toolLabelClass}>{getToolDisplayName(pair.call.name, t)}</span>
 			{/* The command is code, so it keeps a mono font rather than the shared
 			    argument style; it still brightens on hover like every other row. */}
 			<span className="font-mono min-w-0 truncate transition-colors group-hover:text-foreground">
@@ -33,17 +34,17 @@ export const BashRenderer: ToolRenderer = {
 		</>
 	),
 
-	renderBody: (pair) => {
+	renderBody: (pair, t) => {
 		if (!pair.result) return null;
 
 		const shellRes = getResultText(pair.result);
 		return (
 			<div className="flex flex-col bg-muted/40 rounded-sm p-2 text-xs">
-				<div className="text-muted-foreground">Input</div>
+				<div className="text-muted-foreground">{t('tool.input')}</div>
 				<pre className="overflow-x-auto p-2 rounded bg-muted/40 ">
 					{JSON.stringify(parseInput(pair.call.input), null, 2)}
 				</pre>
-				<div className="text-muted-foreground mt-2">Output</div>
+				<div className="text-muted-foreground mt-2">{t('tool.output')}</div>
 				<pre className="overflow-auto p-2 rounded bg-muted/40 max-h-[200px]">
 					{shellRes}
 				</pre>
