@@ -727,7 +727,9 @@
   "llm-select": {
     "requiresPlan": "需要 {{plan}} 或以上",
     "trialRemaining": "体验剩余 {{count}} 次",
-    "freeChatModelHint": "可用于 ToChat 聊天和工作模式。聊天永久免费；工作每天最多免费 10 条，不消耗订阅额度。",
+    "freeChatModelHint": "聊天永久免费。未订阅用户的工作模式每天最多免费 10 条；已订阅用户的工作模式消耗订阅额度。",
+    "workCredits": "按额度",
+    "paidWorkModelHint": "已订阅：工作模式按输入、缓存和输出用量消耗订阅额度，不受每日 10 条免费上限限制。",
     "freeWorkModelHint": "今日可用 {{remaining}} / {{total}} 条。工作每天最多免费 10 条，复杂任务还受免费用量限制；GMT+8 零点重置，不消耗订阅额度。",
     "freeWorkRemaining": "今日可用 {{remaining}} / {{total}} 条",
     "freeChatModel": "免费",

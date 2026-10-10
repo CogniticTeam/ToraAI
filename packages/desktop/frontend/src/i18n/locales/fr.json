@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "{{plan}} ou supérieur requis",
     "trialRemaining": "{{count}} messages d’essai restants",
-    "freeChatModelHint": "Disponible dans les modes chat et travail de ToChat. Le chat reste gratuit ; le travail inclut jusqu’à 10 messages gratuits par jour, sans utiliser les crédits d’abonnement.",
+    "freeChatModelHint": "Le chat reste gratuit. Sans abonnement, jusqu’à 10 messages de travail gratuits par jour ; avec abonnement, le travail utilise les crédits.",
+    "workCredits": "Crédits",
+    "paidWorkModelHint": "Avec un abonnement actif, le travail utilise les crédits selon les entrées, les entrées en cache et les sorties. La limite gratuite de 10 messages par jour ne s’applique pas.",
     "freeWorkModelHint": "Disponibles aujourd’hui : {{remaining}} / {{total}} messages. Jusqu’à 10 messages de travail gratuits par jour ; les tâches complexes ont aussi une limite d’usage gratuit. Réinitialisation à minuit GMT+8, sans crédits d’abonnement.",
     "freeWorkRemaining": "Disponibles aujourd’hui : {{remaining}} / {{total}}",
     "freeChatModel": "Gratuit",

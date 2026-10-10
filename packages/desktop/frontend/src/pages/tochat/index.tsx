@@ -207,11 +207,11 @@ function ToChatConversation() {
 				<WindowDragRegion className="min-w-6 flex-1 self-stretch" />
 				<Popover>
 					<PopoverTrigger className="flex max-w-[45%] items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-label={copy('quota')}>
-						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? selectedOfficial.id==='doubao-seed-2-1-lite-260915'?t('llm-select.freeWorkRemaining',{remaining:quota.doubaoWork?.canUse===false?0:quota.doubaoWork?.remaining??10,total:quota.doubaoWork?.total??10}):formatQuotaPercent(quota.remainingPercent) : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
+						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? selectedOfficial.id==='doubao-seed-2-1-lite-260915'&&!quota?.subscription?t('llm-select.freeWorkRemaining',{remaining:quota.doubaoWork?.canUse===false?0:quota.doubaoWork?.remaining??10,total:quota.doubaoWork?.total??10}):formatQuotaPercent(quota.remainingPercent) : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
 					</PopoverTrigger>
 					<PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-2 text-sm">
 						<h3 className="font-medium">{copy('quota')}</h3>
-						{work ? selectedOfficial.id==='doubao-seed-2-1-lite-260915'?<p>{t('llm-select.freeWorkModelHint',{remaining:quota?.doubaoWork?.canUse===false?0:quota?.doubaoWork?.remaining??10,total:quota?.doubaoWork?.total??10})}</p>:<AgentQuotaMeter quota={quota} /> : <p>{copy('chatUnlimited')}</p>}
+						{work ? selectedOfficial.id==='doubao-seed-2-1-lite-260915'&&!quota?.subscription?<p>{t('llm-select.freeWorkModelHint',{remaining:quota?.doubaoWork?.canUse===false?0:quota?.doubaoWork?.remaining??10,total:quota?.doubaoWork?.total??10})}</p>:<AgentQuotaMeter quota={quota} /> : <p>{copy('chatUnlimited')}</p>}
 						{quotaError && <p className="text-xs text-destructive">{quotaError}</p>}
 						<Button variant="ghost" size="sm" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}><RotateCw />{copy('retry')}</Button>
 					</PopoverContent>
@@ -229,7 +229,7 @@ function ToChatConversation() {
 					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={chatAttachmentTypes(attachmentModel,task)} fileProcessor={fileProcessor}
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} includeBuiltin={false} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
-						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} trial={!quota?.subscription?quota?.trial:undefined} freeWorkQuota={quota?.doubaoWork} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
+						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} trial={!quota?.subscription?quota?.trial:undefined} freeWorkQuota={quota?.doubaoWork} subscribed={!!quota?.subscription} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
 					footerSlot={phase==='idle'&&needsHumanVerification?<HumanVerificationControl onVerified={()=>refreshQuota()}/>:userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>

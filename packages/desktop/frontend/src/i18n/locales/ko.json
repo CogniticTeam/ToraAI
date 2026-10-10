@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "{{plan}} 이상 필요",
     "trialRemaining": "체험 {{count}}회 남음",
-    "freeChatModelHint": "ToChat 채팅 및 작업 모드에서 사용할 수 있습니다. 채팅은 무료이며, 작업은 하루 최대 10개 메시지까지 구독 할당량을 사용하지 않고 무료로 제공됩니다.",
+    "freeChatModelHint": "채팅은 무료입니다. 미구독자는 하루 최대 10개 작업 메시지가 무료이며, 구독자의 작업은 구독 할당량을 사용합니다.",
+    "workCredits": "할당량 사용",
+    "paidWorkModelHint": "구독 중에는 작업 모드의 입력, 캐시 입력, 출력 사용량에 따라 구독 할당량이 차감됩니다. 하루 무료 10개 제한은 적용되지 않습니다.",
     "freeWorkModelHint": "오늘 사용 가능: {{remaining}} / {{total}}개. 작업은 하루 최대 10개까지 무료이며 복잡한 작업에는 무료 사용량 제한도 적용됩니다. GMT+8 자정에 초기화됩니다.",
     "freeWorkRemaining": "오늘 사용 가능: {{remaining}} / {{total}}개",
     "freeChatModel": "무료",

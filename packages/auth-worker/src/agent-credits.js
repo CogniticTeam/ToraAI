@@ -14,8 +14,8 @@ export async function readAgentQuota(db,userId,now=Date.now()){
 export const publicQuota=quota=>({subscription:quota.subscription,remainingPercent:quota.remainingPercent,canUseAgent:quota.canUseAgent,windows:quota.windows.map(({key,remainingPercent,resetAt})=>({key,remainingPercent,resetAt}))});
 export function reserveCreditStatement(db,{userId,requestId,model,feature,reserved,now}){return db.prepare('INSERT INTO usage_log(user_id,request_id,model,feature,held_micro,created_at) VALUES(?,?,?,?,?,?)').bind(userId,requestId,model,feature,reserved,now);}
 export async function progressCredit(db,userId,requestId,estimated){await db.prepare("UPDATE usage_log SET credit_micro=MIN(credit_micro+held_micro,?),held_micro=MAX(0,credit_micro+held_micro-?) WHERE user_id=? AND request_id=? AND status='pending'").bind(estimated,estimated,userId,requestId).run();}
-export function settleCreditStatement(db,{userId,requestId,model,usage,failed=false,unknown=false,env={}}){
- const tokens=usageTokens(usage);const amount=tokens?usageCost(model,tokens,env):null;
+export function settleCreditStatement(db,{userId,requestId,model,usage,failed=false,unknown=false,env={},hasAudio=false}){
+ const tokens=usageTokens(usage,{audioRequired:hasAudio,withAudio:model==='doubao-seed-2-1-lite-260915'});const amount=tokens?usageCost(model,tokens,env):null;
  // Unknown/cancelled usage retains the reservation rather than permitting free retries.
  return db.prepare("UPDATE usage_log SET credit_micro=CASE WHEN ? THEN 0 WHEN ? IS NOT NULL THEN MIN(credit_micro+held_micro,?) ELSE credit_micro+held_micro END,held_micro=0,input_tokens=?,cached_tokens=?,output_tokens=?,status=?,finished_at=? WHERE user_id=? AND request_id=? AND status='pending'").bind(failed?1:0,amount,amount,tokens?.input??0,tokens?.cached??0,tokens?.output??0,failed?'failed':unknown||!tokens?'unknown':'settled',Date.now(),userId,requestId);
 }

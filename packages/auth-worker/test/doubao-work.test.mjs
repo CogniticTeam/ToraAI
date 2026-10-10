@@ -4,6 +4,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 import {handleToChat,quotaPeriods,reserveToChat,settleToChat,readToChatQuota} from '../src/tochat.js';
 import {doubaoWorkCost,DOUBAO_WORK_TURNS,DOUBAO_WORK_BUDGET_NANO,DOUBAO_WORK_ROUNDS} from '../src/doubao-work.js';
+import {PLANS,CREDIT_SCALE,usageCost,usageTokens} from '../src/subscription-plans.js';
 import {verificationSessionStatement} from '../src/human-verification.js';
 const model='doubao-seed-2-1-lite-260915';
 test('migration is executable one statement per line, matching the D1 startup exec contract',()=>{
@@ -23,19 +24,20 @@ const request=(id,{kind='work',feature='work',messages=[{role:'user',content:'Re
 const stream=(tool=false)=>new Response('data: '+JSON.stringify({type:'response.completed',response:{status:'completed',output:tool?[{type:'function_call',call_id:'read-fixture',name:'Read',arguments:'{}'}]:[{type:'message',role:'assistant',content:[{type:'output_text',text:'DOUBAO_WORK_OK'}]}],usage:{input_tokens:10,output_tokens:5,total_tokens:15}}})+'\n\n',{headers:{'content-type':'text/event-stream'}});
 async function consume(f,response){assert.equal(response.status,200);await response.text();await Promise.all(f.tasks);}
 
-test('free work accepts tools for unsubscribed and subscribed users, clamps output, never charges Credits or DeepSeek trials',async t=>{
+test('unsubscribed work uses daily free allowance; subscribed work charges Credits and does not consume free turns',async t=>{
  const f=fixture(t);let outgoing;
  t.mock.method(globalThis,'fetch',async(url,init)=>{outgoing=JSON.parse(init.body);assert.equal(url,'https://ark.cn-beijing.volces.com/api/v3/responses');return stream();});
  await consume(f,await handleToChat(request('free-work-first',{max_tokens:16000}),f.env,f.ctx,{id:1}));
  await settleToChat(f.DB,{userId:1,messageId:'free-work-first',requestId:f.sqlite.prepare("SELECT request_id FROM doubao_work_requests WHERE user_id=1").get().request_id,doubaoWork:true,failed:true});
  assert.equal((await readToChatQuota(f.DB,1)).doubaoWork.used,1);
  assert.equal(outgoing.max_output_tokens,4096);assert.equal(outgoing.tools[0].name,'Read');
- f.sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(2,'plus',Date.now()+86400000,500,1000,2000,Date.now());
+ f.sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(2,'plus',Date.now()+86400000,500000000,1000000000,2000000000,Date.now());
  await consume(f,await handleToChat(request('paid-free-work'),f.env,f.ctx,{id:2}));
- assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM usage_log').get().n,0);
+ assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM usage_log').get().n,1);
+ assert.equal(f.sqlite.prepare("SELECT credit_micro FROM usage_log WHERE user_id=2").get().credit_micro,usageCost(model,{input:10,cached:0,output:5}));
  assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM model_trial_turns').get().n,0);
  assert.equal((await readToChatQuota(f.DB,1)).doubaoWork.remaining,9);
- assert.equal((await readToChatQuota(f.DB,2)).doubaoWork.remaining,9);
+ assert.equal((await readToChatQuota(f.DB,2)).doubaoWork.remaining,10);
  assert.equal((await handleToChat(request('code-rejected',{feature:'tocode'}),f.env,f.ctx,{id:1})).status,403);
  const list=await(await handleToChat(new Request('https://test/tochat/v1/models',{headers:{'x-tora-feature':'tocode'}}),f.env,f.ctx,{id:1})).json();assert.deepEqual(list.data,[]);
 });
@@ -107,6 +109,38 @@ test('unsubscribed free-work requires verification; verified tool continuation s
  const messages=[{role:'user',content:'Read the test fixture'},{role:'assistant',content:null,tool_calls:[{id:'read-fixture',type:'function',function:{name:'Read',arguments:'{}'}}]},{role:'tool',tool_call_id:'read-fixture',content:'data'}];
  await consume(f,await handleToChat(req('verified-work',{messages}),f.env,f.ctx,{id:1}));
  assert.equal((await handleToChat(req('expired-new-work'),f.env,f.ctx,{id:1})).status,403);
- f.sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(2,'plus',Date.now()+86400000,500,1000,2000,Date.now());
+ f.sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(2,'plus',Date.now()+86400000,500000000,1000000000,2000000000,Date.now());
  await consume(f,await handleToChat(req('paid-no-challenge'),f.env,f.ctx,{id:2}));
+});
+
+test('every subscription meters Doubao after free allowance is exhausted; insufficient Credits never borrow the free pool',async t=>{
+ const f=fixture(t);let calls=0,lastBody;t.mock.method(globalThis,'fetch',async(_url,init)=>{calls++;lastBody=JSON.parse(init.body);return stream();});
+ const day=quotaPeriods().day;
+ for(let i=0;i<10;i++)f.sqlite.prepare('INSERT INTO doubao_work_turns VALUES(?,?,?,?,?)').run(1,'spent-free-'+i,day,'same',Date.now());
+ for(const plan of PLANS){
+  f.sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET plan_id=excluded.plan_id,expires_at=excluded.expires_at,five_hour_limit=excluded.five_hour_limit,week_limit=excluded.week_limit,month_limit=excluded.month_limit').run(1,plan.id,Date.now()+86400000,(plan.limits.fiveHour||0)*CREDIT_SCALE,(plan.limits.week||0)*CREDIT_SCALE,(plan.limits.month||0)*CREDIT_SCALE,Date.now());
+  const catalog=await(await handleToChat(new Request('https://test/tochat/quota'),f.env,f.ctx,{id:1})).json();assert.equal(catalog.models.find(m=>m.id===model).workAllowed,true);assert.equal(catalog.doubaoWork.remaining,0);
+  await consume(f,await handleToChat(request('paid-'+plan.id,{max_tokens:8192}),f.env,f.ctx,{id:1}));assert.equal(lastBody.max_output_tokens,8192);
+  assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM doubao_work_requests').get().n,0);
+ }
+ assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM usage_log').get().n,6);
+ f.sqlite.exec('UPDATE user_subscription SET five_hour_limit=1,week_limit=1,month_limit=1');
+ const before=calls;assert.equal((await handleToChat(request('paid-credit-exhausted'),f.env,f.ctx,{id:1})).status,429);assert.equal(calls,before);
+ assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM doubao_work_requests').get().n,0);
+ assert.equal((await readToChatQuota(f.DB,1)).doubaoWork.used,10);
+ await consume(f,await handleToChat(request('paid-chat-remains-free',{kind:'chat'}),f.env,f.ctx,{id:1}));assert.equal(f.sqlite.prepare('SELECT COUNT(*) AS n FROM usage_log').get().n,6);
+});
+
+test('text, cached input, audio and reasoning are priced separately; missing audio details retain the reservation',async t=>{
+ const f=fixture(t);f.sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(1,'plus',Date.now()+86400000,500000000,1000000000,2000000000,Date.now());
+ let details={cached_tokens:400,audio_tokens:300,audio_cached_tokens:100};
+ t.mock.method(globalThis,'fetch',async()=>new Response('data: '+JSON.stringify({type:'response.completed',response:{status:'completed',output:[{type:'message',role:'assistant',content:[{type:'output_text',text:'AUDIO_OK'}]}],usage:{input_tokens:1000,output_tokens:200,total_tokens:1200,input_tokens_details:details,output_tokens_details:{reasoning_tokens:180}}}})+'\n\n',{headers:{'content-type':'text/event-stream'}}));
+ const messages=[{role:'user',content:[{type:'input_audio',audio_url:'data:audio/wav;base64,aGVsbG8='}]}];
+ await consume(f,await handleToChat(request('paid-audio',{messages}),f.env,f.ctx,{id:1}));
+ const row=f.sqlite.prepare("SELECT * FROM usage_log WHERE user_id=1").get();assert.equal(row.credit_micro,1419200);assert.equal(row.cached_tokens,400);assert.equal(row.output_tokens,200);assert.equal(row.status,'settled');
+ assert.equal(usageCost(model,{input:1000,cached:400,output:200}),433600);
+ assert.equal(usageTokens({prompt_tokens:1000,completion_tokens:1,prompt_tokens_details:{cached_tokens:50,audio_tokens:100,audio_cached_tokens:80}},{withAudio:true}),null);
+ assert.equal(usageTokens({prompt_tokens:1000,completion_tokens:1},{audioRequired:true}),null);
+ details={cached_tokens:400};await consume(f,await handleToChat(request('paid-audio-missing-usage',{messages}),f.env,f.ctx,{id:1}));
+ const unknown=f.sqlite.prepare("SELECT * FROM usage_log WHERE request_id<>?").get(row.request_id);assert.equal(unknown.status,'unknown');assert.ok(unknown.credit_micro>row.credit_micro);assert.equal(unknown.held_micro,0);
 });

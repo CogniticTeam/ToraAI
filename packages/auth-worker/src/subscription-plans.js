@@ -11,6 +11,8 @@ export const PLANS = Object.freeze([
 ]);
 // Versioned service rates, not claims about OpenAI's internal prices.
 export const CREDIT_RATES = Object.freeze({
+ // Ark standard prices × 400 Credits/CNY; audio has a separate input/cache price.
+ 'doubao-seed-2-1-lite-260915':{input:320,cached:64,output:1080,audioInput:4800,audioCached:960},
  // Grok screenshot base rates; conservatively budget xAI's >=200k 2x long-context tier.
  'grok-4.7':{input:166,cached:42,output:497,longInput:332,longCached:83,longOutput:994,threshold:199999},
  // New channel rates: ceil(CNY per 1M tokens × 400 service Credits/CNY).
@@ -27,17 +29,26 @@ export const CREDIT_RATES = Object.freeze({
  'gemini-3.8-flash':{input:1000,cached:100,output:6000},
  'gpt-6.1-sol':{input:1200,cached:60,output:6000,longInput:2400,longCached:120,longOutput:9000,threshold:272000},
 });
-export function modelRates(model,input=0,env={}) {
+export function modelRates(model,input=0,env={}, {audio=false}={}) {
  let overrides={};try{overrides=JSON.parse(env.AGENT_CREDIT_RATES||'{}');}catch{throw Error('Invalid configured credit rates');}
  const rate=overrides[model]||CREDIT_RATES[model];if(!rate)throw Error('Unknown credit model');
- const result=rate.threshold&&input>rate.threshold?{input:rate.longInput,cached:rate.longCached,output:rate.longOutput}:rate;
+ const result=audio&&model==='doubao-seed-2-1-lite-260915'?{input:rate.audioInput??rate.input,cached:rate.audioCached??rate.cached,output:rate.output}:rate.threshold&&input>rate.threshold?{input:rate.longInput,cached:rate.longCached,output:rate.longOutput}:rate;
  for(const key of ['input','cached','output'])if(!Number.isSafeInteger(result[key])||result[key]<=0)throw Error('Invalid configured credit rates');
  return {input:result.input,cached:result.cached,output:result.output};
 }
-export function usageTokens(usage) {
+export function usageTokens(usage,{audioRequired=false,withAudio=audioRequired}={}) {
  const input=Number(usage?.prompt_tokens??usage?.input_tokens),output=Number(usage?.completion_tokens??usage?.output_tokens);
  if(!Number.isSafeInteger(input)||!Number.isSafeInteger(output)||input<0||output<0)return null;
  const cached=Math.min(input,Math.max(0,Number(usage?.prompt_cache_hit_tokens??usage?.prompt_tokens_details?.cached_tokens??usage?.input_tokens_details?.cached_tokens)||0));
- return {input,cached:Math.floor(cached),output}; // Output already includes reasoning; never count it twice.
+ if(!withAudio)return {input,cached:Math.floor(cached),output};
+ const details=usage?.prompt_tokens_details??usage?.input_tokens_details;
+ if(audioRequired&&details?.audio_tokens===undefined)return null;
+ const audio=Number(details?.audio_tokens??0),audioCached=Number(details?.audio_cached_tokens??0);
+ if(!Number.isSafeInteger(audio)||!Number.isSafeInteger(audioCached)||audio<0||audio>input||audioCached<0||audioCached>audio||audioCached>cached||cached-audioCached>input-audio)return null;
+ return {input,cached:Math.floor(cached),output,...(details?.audio_tokens!==undefined?{audio,audioCached}:{})}; // Output already includes reasoning; never count it twice.
 }
-export function usageCost(model,tokens,env={}){const rate=modelRates(model,tokens.input,env);return (tokens.input-tokens.cached)*rate.input+tokens.cached*rate.cached+tokens.output*rate.output;}
+export function usageCost(model,tokens,env={}){
+ const rate=modelRates(model,tokens.input,env);
+ if(model==='doubao-seed-2-1-lite-260915'&&tokens.audio){const audioRate=modelRates(model,tokens.input,env,{audio:true}),audio=tokens.audio,audioCached=tokens.audioCached||0;return (tokens.input-audio-tokens.cached+audioCached)*rate.input+(tokens.cached-audioCached)*rate.cached+(audio-audioCached)*audioRate.input+audioCached*audioRate.cached+tokens.output*rate.output;}
+ return (tokens.input-tokens.cached)*rate.input+tokens.cached*rate.cached+tokens.output*rate.output;
+}

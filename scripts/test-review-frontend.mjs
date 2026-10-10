@@ -792,6 +792,20 @@ test('Doubao work uses its daily quota instead of subscription Credits and block
  assert.equal(canUseWorkModel(id,quota),true);assert.equal(humanVerificationNeeded(id,quota,'work'),true);assert.equal(humanVerificationNeeded(id,quota,'chat'),false);
  const exhausted={...quota,models:[{id,enabled:true,allowed:true,workAllowed:false}],doubaoWork:{total:10,remaining:0,canUse:false}};
  assert.equal(canUseWorkModel(id,exhausted),false);assert.equal(modelAvailable(id,exhausted.models,'work'),false);assert.equal(modelAvailable(id,exhausted.models,'chat'),true);
+ const subscribed={...exhausted,subscription:{planId:'plus'},canUseAgent:true,models:[{id,enabled:true,allowed:true,workAllowed:true}]};
+ assert.equal(canUseWorkModel(id,subscribed),true);
+ assert.equal(canUseWorkModel(id,{...subscribed,canUseAgent:false}),false);
+ assert.equal(humanVerificationNeeded(id,subscribed,'work'),false);
+ h.dispose();
+});
+
+test('subscribed Doubao work is labelled as Credits; chat and unsubscribed work retain the Free label',()=>{
+ const h=harness(),{OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx'),id='doubao-seed-2-1-lite-260915';
+ const render=(mode,subscribed)=>h.render(()=>OfficialModelSelect({model:id,effort:'high',mode,subscribed,models:[{id,enabled:true,allowed:true,workAllowed:true}],onModel(){},onEffort(){}}));
+ assert.ok(find(render('work',true),node=>node.props?.['data-testid']==='doubao-credits-label'));
+ assert.equal(find(render('work',true),node=>node.props?.['data-testid']==='doubao-free-label'),null);
+ assert.ok(find(render('chat',true),node=>node.props?.['data-testid']==='doubao-free-label'));
+ assert.ok(find(render('work',false),node=>node.props?.['data-testid']==='doubao-free-label'));
  h.dispose();
 });
 

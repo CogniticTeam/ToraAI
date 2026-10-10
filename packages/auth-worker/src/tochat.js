@@ -25,7 +25,7 @@ const MODELS = Object.freeze({
   'gpt-6.1-sol': {name:'GPT-6.1 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
 });
 const modelConfig = id => Object.hasOwn(MODELS,id) ? MODELS[id] : null;
-export const toChatModels = (env,quota) => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,minimumPlan:MODEL_MINIMUM_PLAN[id],allowed:modelAccessAllowed(id,quota),...(id===DOUBAO_MODEL_ID?{workAllowed:quota?.doubaoWork?.canUse!==false}:{}),input_modalities:model.inputModalities||(model.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
+export const toChatModels = (env,quota) => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,minimumPlan:MODEL_MINIMUM_PLAN[id],allowed:modelAccessAllowed(id,quota),...(id===DOUBAO_MODEL_ID?{workAllowed:quota?.subscription?!!quota.canUseAgent:quota?.doubaoWork?.canUse!==false}:{}),input_modalities:model.inputModalities||(model.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','access-control-allow-origin':'*','cache-control':'no-store'}});
 const fail = (detail,status=400) => json({detail},status);
 export function quotaPeriods(now=Date.now()) {
@@ -146,7 +146,7 @@ export async function handleToChat(request,env,ctx,user) {
   if(!env[selected.secret]||env.TOCHAT_ENABLED==='0') return fail('官方模型暂不可用，请稍后重试或在设置中主动切换为自定义模型',503);
   let upstreamBody;
   try{if(selected.protocol==='responses')upstreamBody=toResponsesBody(body,checked.effort,checked.output,selected.adapter);}catch(error){return fail(error.message);}
-  const freeWork=body.model===DOUBAO_MODEL_ID&&kind==='work';
+  let freeWork=body.model===DOUBAO_MODEL_ID&&kind==='work';
   const lastUser=[...body.messages].reverse().find(m=>m.role==='user');
   if(!lastUser) return fail('缺少用户消息');
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(kind==='work'?messageId:JSON.stringify(lastUser.content)));
@@ -168,6 +168,7 @@ export async function handleToChat(request,env,ctx,user) {
     if(!expected.every(id=>body.messages.some(m=>m.role==='tool'&&m.tool_call_id===id))) return fail('缺少对应的联网工具结果');
   }
   const access=await readToChatQuota(env.DB,user.id,Date.now(),humanStatus);
+  freeWork=freeWork&&!access.subscription;
   const trial=body.model==='deepseek-flash'&&!hasModelSubscription(body.model,access.subscription);
   let trialFingerprint;
   if(trial){
@@ -193,18 +194,18 @@ export async function handleToChat(request,env,ctx,user) {
   }
   const metered=kind==='work'&&!trial&&!freeWork;
   const quota=metered?await readAgentQuota(env.DB,user.id):null;
-  const rate=metered?modelRates(body.model,checked.inputBound,env):{input:0,cached:0,output:0};
+  const hasAudio=body.model===DOUBAO_MODEL_ID&&body.messages.some(message=>Array.isArray(message.content)&&message.content.some(part=>part.type==='input_audio'));
+  const inputBound=hasAudio?Math.max(checked.inputBound,new TextEncoder().encode(raw).length):checked.inputBound;
+  const rate=metered?modelRates(body.model,inputBound,env,{audio:hasAudio}):{input:0,cached:0,output:0};
   const available=quota?.availableMicro??Infinity;
-  const inputCost=checked.inputBound*rate.input;
+  const inputCost=inputBound*rate.input;
   const output=metered?Math.min(checked.output,Math.floor((available-inputCost)/rate.output)):freeWork?Math.min(checked.output,4096):checked.output;
   if(output<1) return json({detail:quota?.subscription?'官方工作额度已耗尽或无法覆盖当前上下文，请等待滚动窗口释放额度':'请先订阅后使用官方工作模型',quota:quota?publicQuota(quota):null},429);
   const reserved=inputCost+output*rate.output;
-  const hasAudio=body.messages.some(message=>Array.isArray(message.content)&&message.content.some(part=>part.type==='input_audio'));
-  const freeWorkBound=hasAudio?Math.max(checked.inputBound,new TextEncoder().encode(raw).length):checked.inputBound;
-  const freeWorkCost=freeWork?doubaoWorkCost(freeWorkBound,output,hasAudio):0;
+  const freeWorkCost=freeWork?doubaoWorkCost(inputBound,output,hasAudio):0;
   try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,doubaoWork:freeWork?{fingerprint:freeWorkFingerprint,cost:freeWorkCost}:null,verifiedSessionHash:(trial||(freeWork&&!access.subscription))&&humanState.required?humanState.sessionHash:null,trial:trial?{fingerprint:trialFingerprint}:null,credit:metered?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
   catch(error){if(/DOUBAO_WORK/.test(error.message))return /ID_REUSED/.test(error.message)?fail('此工作消息标识已使用',409):json(doubaoWorkFailure(error.message.match(/DOUBAO_WORK_[A-Z_]+/)?.[0]),429);if(/MODEL_TRIAL/.test(error.message))return json(modelAccessFailure(body.model),/ID_REUSED/.test(error.message)?409:403);return fail(/LIMIT|SUBSCRIPTION/.test(error.message)?'官方工作额度或并发限制已达到，请等待额度释放':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT|SUBSCRIPTION/.test(error.message)?429:409);}
-  const settle=options=>settleToChat(env.DB,{userId:user.id,messageId,requestId,trial,doubaoWork:freeWork,...options,creditStatement:metered?settleCreditStatement(env.DB,{userId:user.id,requestId,model:body.model,env,...options}):null});
+  const settle=options=>settleToChat(env.DB,{userId:user.id,messageId,requestId,trial,doubaoWork:freeWork,...options,creditStatement:metered?settleCreditStatement(env.DB,{userId:user.id,requestId,model:body.model,env,hasAudio,...options}):null});
   const abort=new AbortController();
   let upstream;
   try{upstream=await fetch(selected.url,{

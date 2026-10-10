@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "Requiere {{plan}} o superior",
     "trialRemaining": "Quedan {{count}} mensajes de prueba",
-    "freeChatModelHint": "Disponible en los modos chat y trabajo de ToChat. El chat sigue siendo gratis; el trabajo incluye hasta 10 mensajes gratis al día sin consumir créditos de suscripción.",
+    "freeChatModelHint": "El chat sigue siendo gratis. Sin suscripción: hasta 10 mensajes de trabajo gratis al día; con suscripción: el trabajo consume créditos.",
+    "workCredits": "Créditos",
+    "paidWorkModelHint": "Con una suscripción activa, el trabajo consume créditos según entrada, entrada en caché y salida. No se aplica el límite gratuito de 10 mensajes diarios.",
     "freeWorkModelHint": "Disponibles hoy: {{remaining}} / {{total}} mensajes. Hasta 10 mensajes de trabajo gratis al día; las tareas complejas también tienen un límite de uso gratuito. Se reinicia a medianoche GMT+8 sin consumir créditos de suscripción.",
     "freeWorkRemaining": "Disponibles hoy: {{remaining}} / {{total}}",
     "freeChatModel": "Gratis",

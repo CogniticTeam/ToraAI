@@ -35,7 +35,7 @@ export const toChatEffort = (id: string, effort: string): ToChatEffort => {
 };
 
 export const canUseWorkModel = (id: string, quota?: BuiltinQuota | null) => !!quota && modelAvailable(id,quota.models,'work') &&
- (id===DOUBAO_MODEL_ID ? !!quota.doubaoWork?.canUse : quota.canUseAgent || (id==='deepseek-flash'&&!quota.subscription&&(quota.trial?.remaining||0)>0));
+ (id===DOUBAO_MODEL_ID ? (quota.subscription?quota.canUseAgent:!!quota.doubaoWork?.canUse) : quota.canUseAgent || (id==='deepseek-flash'&&!quota.subscription&&(quota.trial?.remaining||0)>0));
 export function modelRequirementLabel(id: string, models: ToChatModelAvailability[] | undefined, t: (key:string,params?:Record<string,unknown>)=>string){
  const info=models?.find(model=>model.id===id);
  if(info?.allowed!==false||!info.minimumPlan)return '';

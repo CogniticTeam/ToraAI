@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "Richiede {{plan}} o superiore",
     "trialRemaining": "{{count}} messaggi di prova rimasti",
-    "freeChatModelHint": "Disponibile nelle modalità chat e lavoro di ToChat. La chat resta gratuita; fino a 10 messaggi di lavoro gratuiti al giorno senza usare crediti dell’abbonamento.",
+    "freeChatModelHint": "La chat resta gratuita. Senza abbonamento: fino a 10 messaggi di lavoro gratuiti al giorno; con abbonamento: il lavoro usa crediti.",
+    "workCredits": "Crediti",
+    "paidWorkModelHint": "Con un abbonamento attivo, il lavoro usa crediti per input, input in cache e output. Il limite gratuito di 10 messaggi al giorno non si applica.",
     "freeWorkModelHint": "Disponibili oggi: {{remaining}} / {{total}} messaggi. Fino a 10 messaggi di lavoro gratuiti al giorno; le attività complesse hanno anche un limite di utilizzo gratuito. Ripristino a mezzanotte GMT+8, senza crediti dell’abbonamento.",
     "freeWorkRemaining": "Disponibili oggi: {{remaining}} / {{total}}",
     "freeChatModel": "Gratis",
