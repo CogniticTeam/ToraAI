@@ -58,7 +58,7 @@ jobs:
       - name: Verify code-review regression cases
         run: npm run test:review
       - name: Verify recorded changes in non-Git workspaces
-        run: node --test packages/core/test/session-diff.test.mjs
+        run: node --test packages/core/test/session-diff.test.mjs packages/core/test/builtin-quota.test.mjs
       - name: Verify ToChat built-in models and reasoning transport
         run: npm run test:tochat
       - name: Verify localized first-message naming

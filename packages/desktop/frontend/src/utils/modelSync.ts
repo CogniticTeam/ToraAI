@@ -36,6 +36,16 @@ export function syncBuiltinModelAuth(): Promise<void> {
 	return write;
 }
 
+/** Account key stays in the local runtime; desktop quota uses Node transport. */
+export async function fetchBuiltinQuota(signal?: AbortSignal): Promise<Response> {
+	const token=getToken();
+	await syncBuiltinModelAuth();
+	if(token!==getToken())throw new Error('Account changed during quota read');
+	const response=await fetch(`${localApi()}/admin/tochat-quota`,{signal:signal??AbortSignal.timeout(15000)});
+	if(token!==getToken())throw new Error('Account changed during quota read');
+	return response;
+}
+
 /** 带 Bearer token 的云端请求 */
 export async function cloudFetch(path: string, init?: RequestInit): Promise<Response> {
 	return fetch(`${cloudApi()}${path}`, {

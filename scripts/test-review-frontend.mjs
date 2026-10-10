@@ -431,9 +431,32 @@ test('ToCode picker offers model-specific built-in efforts and keeps custom mode
 
 test('model groups expose only available built-ins and keep personal credentials usable during quota outages',async()=>{
  let online=true;const quota={enabled:true,models:[{id:'deepseek-flash',enabled:true},{id:'gemini-3.8-flash',enabled:true},{id:'gpt-6.1-sol',enabled:false}],remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining:1000000,workWeeklyRemaining:10000000};
- const h=harness({'@/api':{credentialApi:{list:async()=>({credentials:[{id:'personal',data:{type:'openai_compatible'}},{id:'tora-official',data:{type:'tora_official'}}]})},modelApi:{list:async type=>({models:(type==='tora_official'?['gpt-6.1-sol','gemini-3.8-flash','deepseek-flash']:['own-model']).map(name=>({name}))})}},'@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},cloudFetch:async()=>online?Response.json(quota):Response.json({detail:'unavailable'},{status:503})}});
- const {fetchGroups}=h.load('hooks/useAvailableModels.ts','\nexport {fetchGroups};');let groups=await fetchGroups();assert.deepEqual(Array.from(groups.tora_official[0].models,model=>model.name),['deepseek-flash','gemini-3.8-flash']);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');
- online=false;groups=await fetchGroups();assert.equal(groups.tora_official[0].models.length,0);assert.equal(groups.tora_official[0].unavailable,true);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');h.dispose();
+ const h=harness({'@/api':{credentialApi:{list:async()=>({credentials:[{id:'personal',data:{type:'openai_compatible'}},{id:'tora-official',data:{type:'tora_official'}}]})},modelApi:{list:async type=>({models:(type==='tora_official'?['gpt-6.1-sol','gemini-3.8-flash','deepseek-flash']:['own-model']).map(name=>({name}))})}},'@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},fetchBuiltinQuota:async()=>online?Response.json(quota):Response.json({detail:'unavailable'},{status:503})}});
+ const {fetchGroups,modelGroupsWithQuota}=h.load('hooks/useAvailableModels.ts','\nexport {fetchGroups};');let groups=modelGroupsWithQuota(await fetchGroups(),quota,false);assert.deepEqual(Array.from(groups.tora_official[0].models,model=>model.name),['deepseek-flash','gemini-3.8-flash']);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');
+ online=false;groups=await fetchGroups();assert.equal(groups.tora_official[0].models.length,3,'a quota outage must retain the known model catalog');assert.equal(groups.tora_official[0].unavailable,true);assert.equal(groups.openai_compatible[0].models[0].name,'own-model');const recovered=modelGroupsWithQuota(groups,quota,false);assert.deepEqual(Array.from(recovered.tora_official[0].models,m=>m.name),['deepseek-flash','gemini-3.8-flash']);assert.equal(recovered.tora_official[0].unavailable,false);h.dispose();
+});
+
+test('ToCode shows a retry and keeps the known catalog disabled during an outage; healthy opens use the cache',()=>{
+ for(const unavailable of [true,false]){
+  let reloads=0;
+  const h=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:'gpt-6-sol'}]}]},loading:false,builtinUnavailable:unavailable,refetch(){reloads++;}})}},{document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}}});
+  const{LlmSelect}=h.load('components/select/LlmSelect.tsx');let tree=h.render(()=>LlmSelect({}));
+  find(tree,node=>node.type==='Popover').props.onOpenChange(true);assert.equal(reloads,unavailable?1:0,'opening a healthy menu must not add network traffic');
+  tree=h.render(()=>LlmSelect({}));const model=find(tree,node=>node.type==='button'&&find(node,child=>child.type==='span'&&child.props.children==='GPT-6 Sol'));
+  assert.equal(model.props.disabled,unavailable);
+  const retry=find(tree,node=>node.type==='button'&&node.props.children==='error.retry');assert.equal(!!retry,unavailable);
+  if(retry){retry.props.onClick();assert.equal(reloads,2);}h.dispose();
+ }
+});
+
+test('live quota recovery repopulates a cached failed official group without losing custom models',()=>{
+ const cached={tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:'gpt-6-sol'},{name:'gemini-3.8-flash'}],unavailable:true}],custom:[{credential:{id:'personal',data:{type:'custom'}},models:[{name:'personal-model'}]}]};
+ let live={isError:true,data:undefined,refetch(){}};
+ const h=harness({'@tanstack/react-query':{useQuery:options=>options.queryKey[0]==='available-models'?{data:cached,isPending:false,error:null,refetch(){}}:live},'@/lib/query-client':{queryClient:{invalidateQueries(){}}}});
+ const{useAvailableModels}=h.load('hooks/useAvailableModels.ts');const render=()=>h.render(()=>useAvailableModels());
+ assert.equal(render().builtinUnavailable,true);assert.equal(render().groups.tora_official[0].models.length,2);
+ live={isError:false,data:{enabled:true,models:[{id:'gpt-6-sol',enabled:true},{id:'gemini-3.8-flash',enabled:false}]},refetch(){}};
+ const recovered=render();assert.equal(recovered.builtinUnavailable,false);assert.deepEqual(Array.from(recovered.groups.tora_official[0].models,m=>m.name),['gpt-6-sol']);assert.equal(recovered.groups.custom[0].models[0].name,'personal-model');h.dispose();
 });
 
 test('fresh-session adoption recovers a fast reply already persisted before its SSE attachment',async()=>{

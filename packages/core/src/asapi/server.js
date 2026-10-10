@@ -418,12 +418,27 @@ async function route(req, res) {
     return json(res, 200, { baseURL: cfg.baseURL, model: cfg.model, apiKeySet: !!cfg.apiKey });
   }
   // 写入：apiKey 空字符串/缺省 = 保留原值
+  // Desktop quota reads use Node's transport, independent of Chromium TLS.
+  if(p==='/admin/tochat-quota' && method==='GET') {
+    const cfg=loadConfig(),auth=builtinAuth(cfg);
+    if(!auth.authToken)return apiError(res,503,'官方模型身份尚未同步');
+    try{
+      const response=await fetch(String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/quota',{headers:{authorization:`Bearer ${auth.authToken}`},signal:AbortSignal.timeout(10000),redirect:'error'});
+      if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账户已更改，请重试');
+      if(!response.ok)return apiError(res,response.status,'官方模型额度暂不可用');
+      if(!response.headers.get('content-type')?.includes('application/json'))return apiError(res,502,'官方模型额度响应无效');
+      const data=await response.json();
+      if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账户已更改，请重试');
+      return json(res,200,data);
+    }catch{return apiError(res,502,'官方模型连接失败，请稍后重试');}
+  }
   if(p==='/admin/tochat-config' && method==='POST') {
     const body=await readBody(req);
     const baseURL=String(body.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'');
     if(!/^https:\/\//.test(baseURL)&&!/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseURL)) return apiError(res,422,'官方服务地址必须使用 HTTPS');
     setBuiltinAuth({baseURL,authToken:String(body.authToken||'')});
-    saveConfig({tochat:{baseURL}}); // Account token lives in memory; Electron keeps its persistent copy encrypted.
+    // Quota polls refresh the runtime auth; unchanged addresses need no disk write.
+    if(loadConfig().tochat?.baseURL!==baseURL)saveConfig({tochat:{baseURL}}); // Account token lives in memory; Electron keeps its persistent copy encrypted.
     return json(res,200,{status:'ok'});
   }
   if (p === '/admin/config' && method === 'POST') {

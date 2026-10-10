@@ -120,7 +120,7 @@ export function LlmSelect({
 	className,
 	...props
 }: Props) {
-	const { groups, loading, refetch, builtinQuota } = useAvailableModels();
+	const { groups, loading, refetch, builtinQuota, builtinUnavailable, error } = useAvailableModels();
 	const { t } = useTranslation();
 	// 凭证的模型列表加载失败会带回空 models 数组；丢弃避免渲染死行
 	const groupEntries = Object.entries(groups)
@@ -199,7 +199,7 @@ export function LlmSelect({
 	}, [popOpen]);
 
 	return (
-		<Popover open={popOpen} onOpenChange={setPopOpen}>
+		<Popover open={popOpen} onOpenChange={open => {setPopOpen(open);if(open && (builtinUnavailable || error))refetch();}}>
 			<PopoverTrigger asChild>
 				<Button
 					variant="ghost"
@@ -249,9 +249,11 @@ export function LlmSelect({
 										<button
 											type="button"
 											onClick={() => handleSelect({ type, credential, model })}
+											disabled={isBuiltinCredential(credential.id) && builtinUnavailable}
 											className={cn(
 												'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm motion-safe:transition-colors',
 												selected ? 'bg-accent' : 'hover:bg-accent',
+												'disabled:cursor-not-allowed disabled:opacity-50',
 											)}
 										>
 											<ProviderIcon
@@ -267,6 +269,9 @@ export function LlmSelect({
 							})
 						)}
 						<div className="mt-1 border-t pt-1">
+							{(error || builtinUnavailable) && <div className="px-2 py-2 text-xs text-muted-foreground">
+								<p>{t('applicationModes.connectError')}</p><button type="button" className="mt-1 text-foreground underline" onClick={refetch}>{t('error.retry')}</button>
+							</div>}
 							{allowClear && (
 								<button
 									type="button"

@@ -26,7 +26,7 @@ import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments'
 import { openSettings } from '@/lib/openSettings';
 import { modelAllowedInMode, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
-import { cloudFetch, syncBuiltinModelAuth } from '@/utils/modelSync';
+import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 type Quota = BuiltinQuota;
@@ -77,7 +77,7 @@ function ToChatConversation() {
 
 	const refreshQuota = useCallback(async (signal?: AbortSignal) => {
 		try {
-			const response = await cloudFetch('/tochat/quota', { signal: signal ?? AbortSignal.timeout(10_000) });
+			const response = await fetchBuiltinQuota(signal ?? AbortSignal.timeout(15_000));
 			const data = await response.json();
 			if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
 			if (signal?.aborted) return;
