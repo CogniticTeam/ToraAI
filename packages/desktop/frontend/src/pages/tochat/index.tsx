@@ -28,6 +28,7 @@ import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from
 import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments';
 import {OPEN_PANEL_EVENT,type PanelOpenDetail} from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
+import {formatQuotaPercent} from '@/lib/subscription';
 import { modelAllowedInMode, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
@@ -203,7 +204,7 @@ function ToChatConversation() {
 				<WindowDragRegion className="min-w-6 flex-1 self-stretch" />
 				<Popover>
 					<PopoverTrigger className="flex max-w-[45%] items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-label={copy('quota')}>
-						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? `${(quota.remainingPercent??0).toFixed(1)}%` : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
+						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? formatQuotaPercent(quota.remainingPercent) : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
 					</PopoverTrigger>
 					<PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-2 text-sm">
 						<h3 className="font-medium">{copy('quota')}</h3>
