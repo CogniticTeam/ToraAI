@@ -41,3 +41,23 @@ test('Claude 5.5 screenshot rates charge cache and output separately',()=>{
   assert.equal(usageCost(model,{input:100,cached:80,output:20}),20*input+80*cached+20*output);
  }
 });
+
+test('Pro removes the monthly window for existing and new subscriptions without resetting usage',async()=>{
+ const {db,sqlite}=database(),plan=PLANS.find(plan=>plan.id==='pro');
+ assert.deepEqual(plan.limits,{fiveHour:1000,week:3200});
+ grant(sqlite,1,{month:14000});sqlite.exec("UPDATE user_subscription SET plan_id='pro' WHERE user_id=1");
+ grant(sqlite,2);grant(sqlite,3,{month:700000});sqlite.exec("UPDATE user_subscription SET plan_id='ultrax' WHERE user_id=3");
+ // Seed historical usage before applying today's short-window limits.
+ await reserve(db,1,'old-month-usage',14000*CREDIT_SCALE,now-8*86400000);
+ await settleCredit(db,{userId:1,requestId:'old-month-usage',model:'gpt-6.1-sol',unknown:true});
+ sqlite.prepare('UPDATE user_subscription SET five_hour_limit=?,week_limit=? WHERE user_id=1').run(plan.limits.fiveHour*CREDIT_SCALE,plan.limits.week*CREDIT_SCALE);
+ assert.equal((await readAgentQuota(db,1,now)).canUseAgent,false);
+ const before=sqlite.prepare('SELECT expires_at,updated_at FROM user_subscription WHERE user_id=1').get(),ledger=sqlite.prepare('SELECT * FROM usage_log').all();
+ const migration=readFileSync(new URL('../migrations/0005_pro_two_windows.sql',import.meta.url),'utf8');sqlite.exec(migration);sqlite.exec(migration);
+ const quota=await readAgentQuota(db,1,now);assert.deepEqual(quota.windows.map(window=>window.key),['fiveHour','week']);assert.equal(quota.canUseAgent,true);
+ assert.deepEqual(sqlite.prepare('SELECT expires_at,updated_at FROM user_subscription WHERE user_id=1').get(),before);assert.deepEqual(sqlite.prepare('SELECT * FROM usage_log').all(),ledger);
+ assert.equal(sqlite.prepare('SELECT month_limit FROM user_subscription WHERE user_id=2').get().month_limit,7000*CREDIT_SCALE);assert.equal(sqlite.prepare('SELECT month_limit FROM user_subscription WHERE user_id=3').get().month_limit,700000*CREDIT_SCALE);
+ const displayed=await(await handleSubscriptions(new Request('https://test/billing/subscription'),{DB:db},{},{id:1})).json();assert.deepEqual(displayed.plans.find(item=>item.id==='pro').windows,['fiveHour','week']);assert.deepEqual(displayed.windows.map(window=>window.key),['fiveHour','week']);
+ await reserve(db,1,'within-pro-five-hour',1000*CREDIT_SCALE,now);await assert.rejects(reserve(db,1,'over-pro-five-hour',1,now),/AGENT_CREDIT_LIMIT/);
+ sqlite.close();
+});

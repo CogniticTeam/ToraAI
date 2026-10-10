@@ -3,7 +3,7 @@ export const CREDIT_SCALE = 1000000;
 export const WINDOWS = { fiveHour: 5*3600000, week: 7*86400000, month: 30*86400000 };
 export const PLANS = Object.freeze([
  {id:'plus',name:'Tora Plus',price:70,usd:10,rank:1,afdianId:'a37febe4bfe511f18c5652540025c377',limits:{fiveHour:500,week:1600,month:7000}},
- {id:'pro',name:'Tora Pro',price:140,usd:20,rank:2,afdianId:'bcfa1d7ebfe511f1b2745254001e7c00',limits:{fiveHour:1000,week:3200,month:14000}},
+ {id:'pro',name:'Tora Pro',price:140,usd:20,rank:2,afdianId:'bcfa1d7ebfe511f1b2745254001e7c00',limits:{fiveHour:1000,week:3200}},
  {id:'max5',name:'Tora Max 5x',price:700,usd:100,rank:3,afdianId:'a4ddfb38bfe611f1891a52540025c377',limits:{week:16000}},
  {id:'max20',name:'Tora Max 20x',price:1400,usd:200,rank:4,afdianId:'cebe7f2cbfe611f1bc135254001e7c00',limits:{week:64000}},
  {id:'ultra',name:'Tora Ultra',price:3500,usd:500,rank:5,afdianId:'1627986cbfe711f18b0552540025c377',limits:{week:100000}},
