@@ -1,5 +1,6 @@
 // Claude 原生 Messages API 适配器。Agent 内部仍使用 OpenAI 风格消息，
 // 仅在边界转换输入、流式事件和工具调用；其他模型不经过此文件。
+import { modelFetch, modelConnectionError } from './model-transport.js';
 
 function clean(value) {
   const text = String(value ?? '');
@@ -220,7 +221,7 @@ export async function anthropicCompletion(client, { messages, tools, signal, onD
 
   let res;
   try {
-    res = await fetch(client.baseURL + '/messages', {
+    res = await modelFetch(client.baseURL + '/messages', {
       method: 'POST', signal,
       headers: {
         'content-type': 'application/json',
@@ -231,7 +232,7 @@ export async function anthropicCompletion(client, { messages, tools, signal, onD
     });
   } catch (error) {
     if (signal?.aborted) throw Object.assign(new Error('已中止'), { code: 'ABORTED' });
-    throw new Error(`无法连接 Claude 服务 ${client.baseURL}（${error.message}）`);
+    throw modelConnectionError(' Claude 服务', client.baseURL, error);
   }
   if (!res.ok) {
     let detail = '';

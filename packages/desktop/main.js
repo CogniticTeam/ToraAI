@@ -37,10 +37,11 @@ for (const chromiumSwitch of [
 // 打包后的 core 被放入 resources/core；开发态仍直接加载工作区的 packages/core。
 // 这样安装包不会依赖 app.asar 外的相对路径，且本地 `electron .` 调试保持不变。
 const coreRoot = app.isPackaged ? join(process.resourcesPath, 'core') : join(__dirname, '..', 'core');
-const [{ startASAPIServer, setDesktopAccessBlocked }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }] = await Promise.all([
+const [{ startASAPIServer, setDesktopAccessBlocked }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }, { setModelFetcher }] = await Promise.all([
   import(pathToFileURL(join(coreRoot, 'src', 'asapi', 'server.js')).href),
   import(pathToFileURL(join(coreRoot, 'src', 'tools', 'browser.js')).href),
   import(pathToFileURL(join(coreRoot, 'src', 'tools', 'web.js')).href),
+  import(pathToFileURL(join(coreRoot, 'src', 'model-transport.js')).href),
 ]);
 const { autoUpdater } = electronUpdater;
 
@@ -741,6 +742,11 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
+    // 模型生成与命名使用和登录相同的网络栈，保留流式响应及取消信号。
+    // 不附带浏览器 Cookie；鉴权仅来自请求中显式设置的 API Key。
+    setModelFetcher((url, init) => net.fetch(url, {
+      ...init, credentials: 'omit', bypassCustomProtocolHandlers: true,
+    }));
     // WebFetch/WebSearch 使用 Chromium 网络栈以继承系统代理；Node fetch 不会。
     // URL 与逐跳 DNS 安全校验仍由 core/src/tools/web.js 在请求前执行。
     // 不带内置浏览器的登录 Cookie，避免模型的网页读取继承用户会话。

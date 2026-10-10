@@ -68,7 +68,9 @@ jobs:
       - name: Verify desktop navigation security policy
         run: npm run test:desktop-security
       - name: Verify model-provider protocols without real credentials
-        run: npm run test:providers
+        run: |
+          npm run test:providers
+          node --test packages/core/test/model-transport.test.mjs
 
   frontend-build:
     name: Frontend production build

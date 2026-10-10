@@ -1,5 +1,6 @@
 import { anthropicCompletion } from './anthropic.js';
 import { randomUUID } from 'node:crypto';
+import { modelFetch, modelConnectionError } from './model-transport.js';
 
 // Tora 模型接入层：OpenAI 兼容 Chat Completions + Claude 原生 Messages API
 // 零依赖实现：fetch + 手写 SSE 解析，支持流式与工具调用聚合
@@ -248,7 +249,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
       const reqBody = { ...body, ...variant.extra };
       let detail = '';
       try {
-        res = await fetch(client.baseURL + '/chat/completions', {
+        res = await modelFetch(client.baseURL + '/chat/completions', {
           method: 'POST',
           signal,
           headers: {
@@ -263,7 +264,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
         });
       } catch (e) {
         if (signal?.aborted) throw Object.assign(new Error('已中止'), { code: 'ABORTED' });
-        throw new Error(`无法连接模型服务 ${client.baseURL}（${e.message}）。检查 baseURL / 网络 / 代理设置。`);
+        throw modelConnectionError('模型服务', client.baseURL, e);
       }
 
       if (res.ok) {
