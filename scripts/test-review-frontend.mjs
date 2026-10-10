@@ -54,7 +54,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   const flushEffects=()=>{for(const run of effects.splice(0))run();};
@@ -599,4 +599,23 @@ test('recorded diff renders without a Git error or a misleading refresh action',
  const h=harness(),{DiffPanel}=h.load('components/panel/DiffPanel.tsx');
  const tree=h.render(()=>DiffPanel({diff:'--- /dev/null\n+++ b/page.html\n@@ -0,0 +1 @@\n+<html>',error:null,loading:false,root:'/project/page.html'}));
  assert.equal(find(tree,node=>node.type==='PanelEmpty'),null);assert.equal(find(tree,node=>node.type==='Button'),null);h.dispose();
+});
+
+test('sidebar flattens Code/work histories and isolates ToChat chat, retaining session identity',()=>{
+ const rows=[['chat-only','tochat','chat','2026-10-10T04:00:00Z'],['work-only','tochat','work','2026-10-10T03:00:00Z'],['code-only','tocode','work','2026-10-10T02:00:00Z'],['legacy',undefined,undefined,'2026-10-10T01:00:00Z']].map(([id,application_mode,task_mode,updated_at])=>({session:{id,updated_at,created_at:updated_at,origin:{type:'user'},config:{name:id,application_mode,task_mode,cwd:id==='code-only'?'/project':null}}}));
+ for(const [pathname,search,expected] of [['/chat/agent/code-only','',['work-only','code-only','legacy']],['/tochat/agent/work-only','?task=work',['work-only','code-only','legacy']],['/tochat/agent/chat-only','?task=chat',['chat-only']]]){
+  const nav=[],h=harness({'date-fns':{format:()=>''},'react-router-dom':{useLocation:()=>({pathname,search}),useNavigate:()=>url=>nav.push(url)},'@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},'@/hooks/useSessions':{useSessions:()=>({sessions:rows,refetch(){},update(){},remove(){}})}});
+  const{SessionListSection}=h.load('components/layout/SessionListSection.tsx'),tree=h.render(()=>SessionListSection());
+  const buttons=[];function collect(node){if(!node)return;if(Array.isArray(node)){node.forEach(collect);return;}if(typeof node!=='object')return;if(node.type==='SidebarMenuButton')buttons.push(node);collect(node.props?.children);}collect(tree);
+  assert.deepEqual(buttons.map(node=>find(node,child=>child.type==='span')?.props.children),expected);
+  assert.equal(find(tree,node=>node.type==='SidebarGroupLabel').props.children,'conversationList.title');assert.equal(find(tree,node=>node.type==='section'&&node.props.className?.includes('group/project')),null);
+  buttons[0].props.onClick();assert.equal(nav[0],pathname.startsWith('/tochat')?`/tochat/agent/${expected[0]}?task=${search.includes('work')?'work':'chat'}`:`/chat/agent/${expected[0]}`);h.dispose();
+ }
+});
+
+test('switching between Code and ToChat work keeps the same ID; chat starts a separate Code draft',()=>{
+ for(const [pathname,search,kind,next,expected] of [['/chat/agent/work-id','','work','tochat','/tochat/agent/work-id?task=work'],['/tochat/agent/work-id','?task=work','work','tocode','/chat/agent/work-id'],['/tochat/agent/chat-id','?task=chat','chat','tocode','/chat/agent']]){
+  const nav=[],h=harness({'react-router-dom':{useLocation:()=>({pathname,search}),useNavigate:()=>url=>nav.push(url)},'@/hooks/useSessions':{useSessions:()=>({sessions:[{session:{id:kind==='work'?'work-id':'chat-id',config:{application_mode:kind==='chat'?'tochat':'tocode',task_mode:kind}}}]})},'@/lib/applicationModes':{modeCopy:()=>key=>key}});
+  const{ApplicationModeSwitcher}=h.load('components/layout/ApplicationModeSwitcher.tsx'),tree=h.render(()=>ApplicationModeSwitcher());const menu=find(tree,node=>node.type==='DropdownMenuContent');menu.props.children[next==='tochat'?0:1].props.onSelect();assert.deepEqual(nav,[expected]);h.dispose();
+ }
 });

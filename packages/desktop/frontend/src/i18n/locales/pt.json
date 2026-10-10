@@ -1,4 +1,5 @@
 {
+  "conversationList": {"title": "Conversas"},
   "releaseNotes": {
     "title": "Novidades",
     "forVersion": "Notas da versão {{version}}",

@@ -1,4 +1,5 @@
 {
+  "conversationList": {"title": "Диалоги"},
   "releaseNotes": {
     "title": "Что нового",
     "forVersion": "Примечания к версии {{version}}",

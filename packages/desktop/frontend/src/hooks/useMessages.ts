@@ -131,6 +131,7 @@ export function useMessages(
 	agentId: string | null,
 	sessionId: string | null,
 	options?: {
+		viewMode?: 'tocode' | 'tochat';
 		/**
 		 * Called when a ``CUSTOM`` event with ``name="team_updated"``
 		 * arrives — the team membership has changed (TeamCreate /
@@ -686,6 +687,7 @@ export function useMessages(
 				await chatApi.trigger({
 					agent_id: agentId,
 					session_id: realSessionId,
+					view_mode: sendOptions?.viewMode,
 					input: userMsg,
 					...(autoContext && autoContext.length > 0 ? { auto_context: autoContext } : {}),
 					...(selectedSkillIds.length > 0

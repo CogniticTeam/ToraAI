@@ -1,4 +1,5 @@
 {
+  "conversationList": {"title": "बातचीत"},
   "releaseNotes": {
     "title": "नया क्या है",
     "forVersion": "{{version}} के रिलीज़ नोट्स",

@@ -339,6 +339,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		interrupt,
 		reloadHistory,
 	} = useMessages(agentId, sessionId, {
+		viewMode: 'tocode',
 		onTeamUpdated: handleTeamUpdated,
 		onStateUpdated: handleStateUpdated,
 		onSessionUpdated: handleSessionUpdated,

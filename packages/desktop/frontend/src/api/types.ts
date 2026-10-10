@@ -485,6 +485,8 @@ import type {
 import type { ContentBlock, Msg } from '@agentscope-ai/agentscope/message';
 
 export interface ChatRequest {
+	/** Presentation for this run; work history keeps the same stored session. */
+	view_mode?: 'tocode' | 'tochat';
 	agent_id: string;
 	session_id: string;
 	input: Msg | Msg[] | UserConfirmResultEvent | ExternalExecutionResultEvent | null;

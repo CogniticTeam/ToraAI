@@ -18,6 +18,7 @@ import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
 import { builtinAuth, BUILTIN_MODELS, isBuiltinCredential, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
 import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
+import {sessionForView,sessionHistoryKind} from '../session-mode.js';
 import { recordUsage } from './usage-store.js';
 import { accessBlockReason } from './access.js';
 import { generateTitle, placeholderTitle } from '../title.js';
@@ -192,7 +193,7 @@ export function resolveRunCfg(session, agent) {
     cfg.webSearch=true;
     cfg.injectProjectContext=cfg.tochatMode==='work';cfg.defaultScopeFullDisk=false;
   }
-  const builtin=isBuiltinCredential(mc.credential_id)||(cfg.appMode==='tochat'&&session.config.model_source!=='custom');
+  const builtin=isBuiltinCredential(mc.credential_id)||(cfg.appMode==='tochat'&&session.config.model_source!=='custom')||(sessionHistoryKind(session.config)==='work'&&session.config.model_source==='official');
   if(builtin) {
     const model=mc.model||'deepseek-flash';
     if(!isBuiltinModel(model))throw Error('不支持的内置模型');
@@ -283,6 +284,7 @@ export function startChatRun(sessionId, agent, payload) {
   if (bus.running) return { error: '会话正在运行中，请稍候或先中止' };
   const session = loadSessionRecord(sessionId);
   if (!session) return { error: '会话不存在' };
+  try{sessionForView(session,typeof payload==='object'?payload?.viewMode:undefined);}catch(error){return {error:error.message};}
   _startChatRunAsync(sessionId, agent, payload).catch((e) => {
     // 取名/落盘等前置步骤失败：广播 error 事件而不是静默吞掉；
     // 同时复位运行态，避免 _runImpl 启动前抛错时该会话永久卡在"运行中"，
@@ -307,7 +309,7 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   const selectedSkillIds =
     typeof payload === 'string' ? [] : (Array.isArray(payload?.selected_skill_ids) ? payload.selected_skill_ids : []);
 
-  const cfg = resolveRunCfg(session, agent);
+  const cfg = resolveRunCfg(sessionForView(session,typeof payload==='object'?payload?.viewMode:undefined), agent);
   if(images.some(im=>/^audio\/|^video\//.test(im.media_type||im.data_url?.match(/^data:([^;,]+)/)?.[1]||''))&&!(cfg.model===DOUBAO_MODEL_ID&&cfg.appMode==='tochat'&&cfg.tochatMode==='chat'))throw Error('音频和视频附件仅支持豆包聊天模式');
 
   const replyId = `reply-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
 import { ChatViewport } from './ChatViewport';
+import {sessionHistoryKind} from '../../../../../core/src/session-mode.js';
 import { hasFreshlyCreated } from '@/api/session';
 import { AudioProvider } from '@/context/AudioContext';
 import { useAgents } from '@/hooks/useAgents';
@@ -36,6 +37,7 @@ const ChatPageInner = () => {
 	const { sessions, refetch: refetchSessions } = useSessions(urlAgentId ?? null);
 
 	const currentView = sessions.find((v) => v.session.id === urlSessionId) ?? null;
+	useEffect(()=>{if(currentView&&sessionHistoryKind(currentView.session.config)==='chat')navigate(`/tochat/${urlAgentId}/${urlSessionId}?task=chat`,{replace:true});},[currentView,urlAgentId,urlSessionId,navigate]);
 
 	// "Inner focus" — when the URL carries a third `:memberId` segment
 	// the user is drilling into a team member's chat. When `urlMemberId`

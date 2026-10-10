@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
+import {sessionHistoryKind,sessionModelSource} from '../../../../../core/src/session-mode.js';
 import { sessionApi, type ChatModelConfig, type ContentBlock, type UpdateSessionRequest } from '@/api';
 import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { ChatContent } from '@/components/chat/ChatContent';
@@ -50,10 +51,10 @@ function ToChatConversation() {
 	const copy = modeCopy(i18n.language);
 	const { effective, clickEnabled } = useMotionSettings();
 	const tabMotion = clickEnabled ? effective : 'off';
-	const task: ToChatTask = view?.session.config.task_mode ?? (params.get('task') === 'work' ? 'work' : 'chat');
+	const task: ToChatTask = view ? sessionHistoryKind(view.session.config) : (params.get('task') === 'work' ? 'work' : 'chat');
 	const work = task === 'work';
 	const [preference, setPreference] = useState(readToChatSource);
-	const source = view?.session.config.model_source ?? preference;
+	const source = view ? sessionModelSource(view.session.config) : preference;
 	const [effort, setEffort] = useState<Effort>('high');
 	const [officialModelId, setOfficialModelId] = useState<ToChatModelId>('deepseek-flash');
 	const [customModel, setCustomModel] = useState<ChatModelConfig | null>(null);
@@ -111,7 +112,6 @@ function ToChatConversation() {
 	}, []);
 	useEffect(() => {
 		if (!urlAgent && agentId) navigate(`/tochat/${agentId}?task=${task}`, { replace: true });
-		if (view && view.session.config.application_mode !== 'tochat') navigate(`/chat/${agentId}/${sessionId}`, { replace: true });
 	}, [urlAgent, agentId, task, navigate, view, sessionId]);
 
 	const onCreated = (id: string) => {
@@ -119,6 +119,7 @@ function ToChatConversation() {
 		void refetch();
 	};
 	const { msgs, loading, phase, send, onUserConfirm, interrupt, userQuestion, answerQuestion } = useMessages(agentId, sessionId ?? null, {
+		viewMode: 'tochat',
 		onSessionCreated: onCreated,
 		onSessionUpdated: () => { void refetch(); void refreshQuota(); },
 		beforeSend: async () => {

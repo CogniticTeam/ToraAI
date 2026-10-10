@@ -1,4 +1,5 @@
 {
+  "conversationList": {"title": "대화"},
   "releaseNotes": {
     "title": "업데이트 내용",
     "forVersion": "{{version}} 릴리스 노트",

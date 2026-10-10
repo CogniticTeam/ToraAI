@@ -5,18 +5,17 @@ import {
 	CalendarClock,
 	type LucideIcon,
 	Ellipsis,
-	FolderOpen,
 	MessageSquareDashed,
 	Pencil,
 	Trash2,
 	Users,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import {sessionHistoryKind} from '../../../../../core/src/session-mode.js';
 import type { SessionRecord, SessionSourceKind, SessionView } from '@/api';
 import { DeleteDialog } from '@/components/dialog/DeleteDialog';
-import { RenameProjectDialog } from '@/components/dialog/RenameProjectDialog';
 import { RenameSessionDialog } from '@/components/dialog/RenameSessionDialog';
 import {
 	DropdownMenu,
@@ -44,12 +43,6 @@ import {
 import { useAgents } from '@/hooks/useAgents';
 import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n.ts';
-import {
-	getProjectDisplayName,
-	projectKey,
-	PROJECT_NAMES_CHANGED_EVENT,
-	setProjectDisplayName,
-} from '@/lib/projectNaming';
 
 // Icon per session origin, shown only when a sidebar mixes sources.
 const SOURCE_ICON: Record<SessionSourceKind, LucideIcon> = {
@@ -57,13 +50,6 @@ const SOURCE_ICON: Record<SessionSourceKind, LucideIcon> = {
 	schedule: CalendarClock,
 	channel: Cable,
 	team: Users,
-};
-
-type ProjectGroup = {
-	key: string;
-	cwd: string | null;
-	name: string;
-	sessions: SessionView[];
 };
 
 /** Parse `/chat/:agentId/:sessionId?` out of the location. */
@@ -101,53 +87,27 @@ export function SessionListSection() {
 	const [renameSession, setRenameSession] = useState<SessionRecord | null>(null);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [sessionToDelete, setSessionToDelete] = useState<SessionRecord | null>(null);
-	const [renameProjectCwd, setRenameProjectCwd] = useState<string | null>(null);
-	const [projectRenameOpen, setProjectRenameOpen] = useState(false);
-	const [projectNamesVersion, setProjectNamesVersion] = useState(0);
-
-	useEffect(() => {
-		const refreshProjectNames = () => setProjectNamesVersion((version) => version + 1);
-		window.addEventListener(PROJECT_NAMES_CHANGED_EVENT, refreshProjectNames);
-		return () => window.removeEventListener(PROJECT_NAMES_CHANGED_EVENT, refreshProjectNames);
-	}, []);
-
 	// 单一列表按 updated_at desc 排；服务端 listSessionRecords 已按此序排过，
 	// 这里再 sort 一次保险（refetch 后可能保持原序）。
+	const selected = sessions.find(view=>view.session.id===urlSessionId);
+	const historyKind = tochat ? selected ? sessionHistoryKind(selected.session.config) : new URLSearchParams(location.search).get('task')==='work'?'work':'chat' : 'work';
+	const routeQuery = tochat ? `?task=${historyKind}` : '';
 	const sortedSessions = useMemo<SessionView[]>(
-		() => sessions.filter((view) => (view.session.config.application_mode === 'tochat') === tochat)
-			.sort((a, b) => (a.session.updated_at < b.session.updated_at ? 1 : -1)),
-		[sessions, tochat],
+		() => sessions.filter(view=>sessionHistoryKind(view.session.config)===historyKind)
+			.sort((a,b)=>String(b.session.updated_at??b.session.created_at??'').localeCompare(String(a.session.updated_at??a.session.created_at??''))),
+		[sessions,historyKind],
 	);
-
-	// 同一 cwd 的会话归到一个项目；无 cwd 的旧会话保留在独立的未分配分组，
-	// 既不丢历史，也不会被错误地归入任意一个已选择的文件夹。
-	const projectGroups = useMemo<ProjectGroup[]>(() => {
-		const groups = new Map<string, ProjectGroup>();
-		for (const view of sortedSessions) {
-			const cwd = view.session.config.cwd;
-			const key = projectKey(cwd) ?? '__unassigned__';
-			const group = groups.get(key) ?? {
-				key,
-				cwd,
-				name: cwd ? getProjectDisplayName(cwd) ?? cwd : t('chat.project.unassigned'),
-				sessions: [],
-			};
-			group.sessions.push(view);
-			groups.set(key, group);
-		}
-		return [...groups.values()];
-	}, [projectNamesVersion, sortedSessions, t]);
 
 	const handleDeleteSession = async (sessionId: string) => {
 		await removeSession(sessionId);
 		if (sessionId === urlSessionId && agentId) {
-			navigate(`${routeBase}/${agentId}`, { replace: true });
+			navigate(`${routeBase}/${agentId}${routeQuery}`, { replace: true });
 		}
 	};
 
 	const showSourceIcons = useMemo(
-		() => new Set(sessions.map((v) => v.session.origin.type)).size > 1,
-		[sessions],
+		() => new Set(sortedSessions.map((v) => v.session.origin.type)).size > 1,
+		[sortedSessions],
 	);
 
 	const renderSession = (view: SessionView, index: number) => {
@@ -163,7 +123,7 @@ export function SessionListSection() {
 				<SidebarMenuButton
 					className="text-muted-foreground transition-all duration-150 hover:translate-x-0.5 hover:text-foreground active:scale-[0.98] group-has-data-[sidebar=menu-action]/menu-item:pr-16"
 					isActive={active}
-					onClick={() => navigate(`${routeBase}/${agentId}/${session.id}`)}
+					onClick={() => navigate(`${routeBase}/${agentId}/${session.id}${routeQuery}`)}
 				>
 					{showSourceIcons && <SourceIcon />}
 					<span className="truncate">
@@ -205,57 +165,10 @@ export function SessionListSection() {
 		);
 	};
 
-	const renderProjectGroup = (project: ProjectGroup) => {
-		const firstSession = project.sessions[0];
-		return (
-			<section key={project.key} className="group/project mb-3 last:mb-0">
-				<div className="flex min-w-0 items-center gap-2 px-2 py-1.5 text-sm font-medium text-sidebar-foreground">
-					<FolderOpen className="size-4 shrink-0" />
-					<button
-						type="button"
-						className="min-w-0 flex-1 truncate text-left"
-						title={project.cwd ?? undefined}
-						onClick={() => {
-							if (agentId && firstSession) {
-								navigate(`${routeBase}/${agentId}/${firstSession.session.id}`);
-							}
-						}}
-					>
-						{project.name}
-					</button>
-					{project.cwd && (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<button
-									type="button"
-									aria-label={t('chat.project.rename')}
-									className="rounded-rect-sm p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-hover/project:opacity-100 focus-visible:opacity-100"
-								>
-									<Ellipsis className="size-3.5" />
-								</button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent className="w-44" side="right" align="start">
-								<DropdownMenuItem
-									onSelect={() => {
-										setRenameProjectCwd(project.cwd);
-										setProjectRenameOpen(true);
-									}}
-								>
-									<Pencil />
-									{t('chat.project.rename')}
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
-					)}
-				</div>
-				<SidebarMenu>{project.sessions.map((view, index) => renderSession(view, index))}</SidebarMenu>
-			</section>
-		);
-	};
 
 	return (
 		<SidebarGroup className="app-no-drag mt-1 min-h-0 flex-1 px-2 py-0">
-			<SidebarGroupLabel>{t('chat.project.label')}</SidebarGroupLabel>
+			<SidebarGroupLabel>{t('conversationList.title')}</SidebarGroupLabel>
 			<SidebarGroupContent className="flex min-h-0 flex-1 flex-col">
 				<div className="no-scrollbar min-h-0 flex-1 overflow-y-auto">
 					{sortedSessions.length === 0 ? (
@@ -272,7 +185,7 @@ export function SessionListSection() {
 								</EmptyDescription>
 							</EmptyHeader>
 						</Empty>
-					) : projectGroups.map(renderProjectGroup)}
+					) : <SidebarMenu>{sortedSessions.map(renderSession)}</SidebarMenu>}
 				</div>
 			</SidebarGroupContent>
 
@@ -285,16 +198,6 @@ export function SessionListSection() {
 					if (!renameSession) return;
 					await updateSession(renameSession.id, { name });
 					await refetchSessions();
-				}}
-			/>
-			<RenameProjectDialog
-				open={projectRenameOpen}
-				onOpenChange={setProjectRenameOpen}
-				currentName={renameProjectCwd ? getProjectDisplayName(renameProjectCwd) ?? '' : ''}
-				onConfirm={(name) => {
-					if (!renameProjectCwd) return;
-					setProjectDisplayName(renameProjectCwd, name);
-					setProjectNamesVersion((version) => version + 1);
 				}}
 			/>
 			<DeleteDialog

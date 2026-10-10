@@ -1264,6 +1264,7 @@ async function route(req, res) {
     const body = await readBody(req);
     const { agent_id, session_id, input, auto_context, selected_skill_ids } = body;
     if (!session_id || !agent_id) return apiError(res, 422, '需要 agent_id 与 session_id');
+    if(body.view_mode!==undefined&&!['tocode','tochat'].includes(body.view_mode))return apiError(res,422,'无效的应用视图');
 
     // AskUserQuestion 作答：前端把问题面板的答案当 input POST 回来（同
     // USER_CONFIRM_RESULT，不开启新 run，只唤醒挂起的那一轮）。
@@ -1313,6 +1314,7 @@ async function route(req, res) {
     if (!text && !contextText && !images.length) return json(res, 200, { status: 'ok', session_id }); // 续跑/空输入：no-op
     const run = startChatRun(session_id, agent, {
       userText: text,
+      viewMode: body.view_mode,
       contextText,
       images,
       // 只用于 display 气泡上的技能 chip；技能正文在 auto_context 里。
