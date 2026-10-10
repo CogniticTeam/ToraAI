@@ -1,7 +1,8 @@
 import { MotionConfig, motion } from 'framer-motion';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { hasFreshlyCreated } from '@/api/session';
 import { TokenMilestoneDialog } from '@/components/dialog/TokenMilestoneDialog';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { FirstRunTour } from '@/components/onboarding/FirstRunTour';
@@ -17,6 +18,17 @@ const ROUTE_MOTION = {
 
 export function AppLayout() {
 	const location = useLocation();
+	// Creating the first session changes only its URL, not the conversation.
+	// Remounting here discards the optimistic user message before /chat accepts it.
+	const [previous, setPrevious] = useState({ path: location.pathname, key: location.pathname });
+	const createdRoute = /^\/(chat|tochat)\/([^/]+)\/([^/]+)\/?$/.exec(location.pathname);
+	const previousPath = previous.path.replace(/\/+$/, '');
+	const adoptsDraft = createdRoute && hasFreshlyCreated(createdRoute[3]) &&
+		(previousPath === `/${createdRoute[1]}/${createdRoute[2]}` || previousPath === `/${createdRoute[1]}`);
+	const routeKey = previous.path === location.pathname || adoptsDraft ? previous.key : location.pathname;
+	if (previous.path !== location.pathname) {
+		setPrevious({ path: location.pathname, key: routeKey });
+	}
 	const { effective, pageEnabled } = useMotionSettings();
 	const routeMotion = ROUTE_MOTION[pageEnabled ? effective : 'off'];
 	const contentRef = useRef<HTMLDivElement>(null);
@@ -35,10 +47,10 @@ export function AppLayout() {
 					<AppSidebar navigationMotion={pageEnabled ? effective : 'off'} />
 					<SidebarInset className="flex-1 overflow-hidden bg-transparent">
 						{/* 始终只挂载一个 Outlet。退出页也会读取新路由，保留它会造成
-						   标题、输入框和订阅重复；切换时立即卸载旧页，仅播放新页入场。 */}
+						   标题、输入框和订阅重复。首次建会话只接管地址，保留消息；其它切换播放新页入场。 */}
 						<motion.div
 							ref={contentRef}
-							key={location.pathname}
+							key={routeKey}
 							data-app-route-content
 							tabIndex={-1}
 							initial={routeMotion.initial}

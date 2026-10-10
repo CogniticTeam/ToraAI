@@ -28,7 +28,7 @@ function harness(mocks = {}, globals = {}) {
     useEffect: effect(effects), useLayoutEffect: effect(layouts), useImperativeHandle() {},
     lazy: () => 'Lazy', memo: fn => fn, forwardRef: fn => fn, createContext: value => ({ Provider: 'Provider', value }), useContext: ctx => ctx.value,
   };
-  const jsx = (type, props) => ({ type, props });
+  const jsx = (type, props, key) => ({ type, props, ...(key === undefined ? {} : { key }) });
   const window = { addEventListener() {}, removeEventListener() {}, dispatchEvent() {}, setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {} };
   const audio = { disposeAll() {} };
   const imports = {
@@ -695,4 +695,47 @@ test('工具调用行和授权标题使用翻译，命令与输出保持原文',
   const fallback=h.load('components/chat/tool-renderers/DefaultRenderer.tsx');
   assert.equal(fallback.defaultGetDisplayName({name:'WebSearch'},t),'搜索网页');
   assert.equal(fallback.defaultGetDisplayName({name:'mcp__custom__Read'},t),'mcp__custom__Read');
+});
+
+
+test('首发替换 ToChat/ToCode 地址保留聊天实例，普通会话切换仍重新挂载',()=>{
+ for(const section of ['tochat','chat']){
+  let pathname=`/${section}/agent`;const fresh=new Set();
+  const h=harness({
+   'react-router-dom':{useLocation:()=>({pathname}),Outlet:'Outlet'},
+   'framer-motion':{MotionConfig:'MotionConfig',motion:{div:'motion.div'}},
+   '@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'standard',pageEnabled:true})},
+   '@/api/session':{hasFreshlyCreated:id=>fresh.has(id)},
+  });
+  const {AppLayout}=h.load('components/layout/AppLayout.tsx');
+  const route=()=>find(h.render(()=>AppLayout()),node=>node.props?.['data-app-route-content']!==undefined);
+  const draft=route().key;
+  fresh.add('first');pathname=`/${section}/agent/first`;
+  assert.equal(route().key,draft,'正式会话地址不能卸载仍持有首条消息的组件');
+  fresh.delete('first');assert.equal(route().key,draft,'接管标记消费后不能再次卸载');
+  pathname=`/${section}/agent/other`;assert.notEqual(route().key,draft,'切换其它会话保持隔离');
+  pathname=`/${section}/agent`;assert.equal(route().key,pathname,'返回空白对话重新挂载');
+  fresh.add('different-agent');pathname=`/${section}/another/different-agent`;assert.equal(route().key,pathname,'不同代理不能接管本地消息');
+  h.dispose();
+ }
+});
+
+test('桌面首条消息在账号同步与空历史响应期间保持显示，发送后不重复',async()=>{
+ let sessionId=null,fresh=false;const auth=deferred(),streamGate=deferred(),requests=[];
+ const h=harness({'@/api':{
+  takeFreshlyCreated:()=>{const value=fresh;fresh=false;return value;},
+  sessionApi:{create:async()=>{fresh=true;return{session_id:'first'};},messages:async()=>({messages:[],is_running:false}),async *streamEvents(){yield{kind:'status',mode:'initial',streamId:'first-stream'};await streamGate.promise;}},
+  chatApi:{trigger:async value=>requests.push(value)},
+ }});
+ const{useMessages}=h.load('hooks/useMessages.ts');
+ const options={viewMode:'tochat',beforeSend:()=>auth.promise,onSessionCreated:id=>{sessionId=id;}};
+ const render=()=>h.render(()=>useMessages('agent',sessionId,options));
+ const sending=render().send([{type:'text',text:'首条消息不能消失'}]);await tick();render();await tick();
+ assert.equal(requests.length,0,'账号同步未完成时尚未提交服务端');
+ assert.equal(render().msgs[0]?.content[0]?.text,'首条消息不能消失');
+ assert.equal(render().phase,'streaming');
+ auth.resolve();await sending;await tick();
+ assert.equal(requests.length,1);assert.equal(render().msgs.filter(m=>m.role==='user').length,1);
+ assert.equal(requests[0].input.id,render().msgs[0].id);
+ h.dispose();streamGate.resolve();
 });
