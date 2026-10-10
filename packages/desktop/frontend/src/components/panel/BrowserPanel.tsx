@@ -665,6 +665,14 @@ interface BrowserPanelProps {
 	enableElementPicker?: boolean;
 }
 
+/** Open a verified preview in a new persistent built-in browser tab. */
+// eslint-disable-next-line react-refresh/only-export-components -- Uses the component's persistent tab host.
+export async function openBuiltinBrowserTab(url: string) {
+	const tab=createTab(isElectron()?'webview':'iframe');
+	try {await tab.surface.navigate(url);notifyTabs();}
+	catch(error){closeTab(tab.id);throw error;}
+}
+
 export function BrowserPanel({ initialUrl, enableElementPicker = true }: BrowserPanelProps) {
 	const { t } = useTranslation();
 	const pageRef = useRef<HTMLDivElement | null>(null);

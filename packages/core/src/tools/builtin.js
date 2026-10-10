@@ -23,6 +23,7 @@ import { taskTools } from './tasks.js';
 import { memoryTools } from './memory.js';
 import { lspTools } from './lsp.js';
 import { semanticTools } from './semantic.js';
+import {webPreviewTool} from './web-preview.js';
 
 installShellExitHook();
 
@@ -46,6 +47,7 @@ const ALIASES = {
   lsp: 'Lsp', symbol: 'Lsp', symbols: 'Lsp', definition: 'Lsp', goto_definition: 'Lsp',
   find_references: 'Lsp', references: 'Lsp', diagnostics: 'Lsp', hover: 'Lsp',
   browser: 'Browser', browse: 'Browser', web_browser: 'Browser', webbrowser: 'Browser',
+  webpreview: 'WebPreview', web_preview: 'WebPreview',
   computer: 'Computer', desktop: 'Computer', screen: 'Computer', mouse: 'Computer', keyboard: 'Computer'
 };
 
@@ -62,7 +64,7 @@ export function canonicalToolName(name) {
 export function toolCategory(name, args = {}) {
   switch (canonicalToolName(name)) {
     case 'Read': case 'Glob': case 'Grep': case 'WebFetch': case 'WebSearch': case 'RepoMap':
-    case 'Lsp': case 'Search':
+    case 'Lsp': case 'Search': case 'WebPreview':
       return 'read';
     case 'Write': case 'Edit':
       return 'write';
@@ -707,6 +709,7 @@ export const builtinTools = [
   ...lspTools,
   ...semanticTools,
   ...browserTools,
+  webPreviewTool,
   ...computerTools,
   ...taskTools,
   ...memoryTools,

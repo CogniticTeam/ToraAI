@@ -619,3 +619,15 @@ test('switching between Code and ToChat work keeps the same ID; chat starts a se
   const{ApplicationModeSwitcher}=h.load('components/layout/ApplicationModeSwitcher.tsx'),tree=h.render(()=>ApplicationModeSwitcher());const menu=find(tree,node=>node.type==='DropdownMenuContent');menu.props.children[next==='tochat'?0:1].props.onSelect();assert.deepEqual(nav,[expected]);h.dispose();
  }
 });
+
+test('live webpage preview artifact survives reply completion and retains the reply identity',async()=>{
+ const messageSdk=await import(require.resolve('@agentscope-ai/agentscope/message'));
+ const preview={kind:'html',entry:'/project/index.html',url:'http://127.0.0.1:51111/index.html'};
+ const h=harness({'@agentscope-ai/agentscope/message':messageSdk,'@/lib/sound':{playNotificationSound(){}},'@/context/AudioContext':{useAudioManager:()=>null},'@/api':{takeFreshlyCreated:()=>false,sessionApi:{messages:async()=>({messages:[],is_running:false}),async *streamEvents(){
+  yield {kind:'event',event:{type:'REPLY_START',reply_id:'web-reply',name:'assistant'}};
+  yield {kind:'event',event:{type:'CUSTOM',name:'web_preview_ready',value:{reply_id:'web-reply',preview}}};
+  yield {kind:'event',event:{type:'REPLY_END',reply_id:'web-reply',finished_reason:'completed'}};
+ }},chatApi:{}}});
+ const{useMessages}=h.load('hooks/useMessages.ts');const render=()=>h.render(()=>useMessages('agent','site-session'));
+ render();await tick();await tick();const state=render();assert.equal(state.phase,'idle');assert.equal(state.msgs.length,1);assert.equal(state.msgs[0].id,'web-reply');assert.equal(state.msgs[0].metadata.web_preview,preview);h.dispose();
+});

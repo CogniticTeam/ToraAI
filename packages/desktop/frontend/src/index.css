@@ -1199,3 +1199,10 @@ body {
 	transition: none !important;
 	transform: none !important;
 }
+
+/* Dock width changes follow the existing interaction motion preference. */
+.chat-dock:not([data-motion="off"]) > [data-panel] { transition: flex-grow 220ms cubic-bezier(.2,.7,.2,1); }
+.chat-dock[data-motion="gentle"] > [data-panel] { transition-duration: 300ms; }
+.chat-dock[data-motion="fast"] > [data-panel] { transition-duration: 150ms; }
+.chat-dock:has(> [data-separator="active"]) > [data-panel] { transition: none; }
+@media (prefers-reduced-motion: reduce) { .chat-dock > [data-panel] { transition: none !important; } }

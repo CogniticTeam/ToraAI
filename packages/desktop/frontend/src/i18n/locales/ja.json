@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "サイドパネルを切り替える", "close": "パネルを閉じる"},
+  "webPreview": {"title": "ウェブプレビュー", "open": "内蔵ブラウザーで開く", "loading": "開いています", "error": "プレビューを利用できません。ローカルサーバーを確認して再試行してください。"},
   "conversationList": {"title": "会話"},
   "releaseNotes": {
     "title": "更新内容",

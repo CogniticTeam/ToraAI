@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "Mostra pannelli laterali", "close": "Chiudi pannello"},
+  "webPreview": {"title": "Anteprima del sito", "open": "Apri nel browser integrato", "loading": "Apertura", "error": "Anteprima non disponibile. Controlla il server locale e riprova."},
   "conversationList": {"title": "Conversazioni"},
   "releaseNotes": {
     "title": "Novità",

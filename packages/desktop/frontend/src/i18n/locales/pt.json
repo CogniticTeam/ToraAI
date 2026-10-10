@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "Alternar painéis laterais", "close": "Fechar painel"},
+  "webPreview": {"title": "Prévia do site", "open": "Abrir no navegador integrado", "loading": "A abrir", "error": "Prévia indisponível. Verifique o servidor local e tente novamente."},
   "conversationList": {"title": "Conversas"},
   "releaseNotes": {
     "title": "Novidades",

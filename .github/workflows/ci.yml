@@ -58,7 +58,7 @@ jobs:
       - name: Verify code-review regression cases
         run: npm run test:review
       - name: Verify recorded changes in non-Git workspaces
-        run: node --test packages/core/test/session-diff.test.mjs packages/core/test/builtin-quota.test.mjs packages/core/test/shared-work-history.test.mjs
+        run: node --test packages/core/test/session-diff.test.mjs packages/core/test/builtin-quota.test.mjs packages/core/test/shared-work-history.test.mjs packages/core/test/web-preview.test.mjs
       - name: Verify ToChat built-in models and reasoning transport
         run: npm run test:tochat
       - name: Verify localized first-message naming
@@ -145,6 +145,7 @@ jobs:
             /tmp/tora-chat-composer-multiline.png
             /tmp/tora-doubao-chat-picker.png
             /tmp/tora-official-picker-performance.json
+            /tmp/tora-web-preview-sidebar.png
             /tmp/tora-theme-font-settings.png
             /tmp/tora-settings-without-debug.png
             /tmp/tora-custom-background-dark.png

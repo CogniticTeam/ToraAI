@@ -274,6 +274,11 @@ export function useMessages(
 					optionsRef.current?.onStateUpdated?.(custom.value as Record<string, unknown>);
 				} else if (custom.name === 'session_updated') {
 					optionsRef.current?.onSessionUpdated?.();
+				} else if (custom.name === 'web_preview_ready' && custom.value) {
+					const value=custom.value as {reply_id:string;preview:Msg['metadata'][string]};
+					msgsRef.current=msgsRef.current.map(message=>message.id===value.reply_id?{...message,metadata:{...message.metadata,web_preview:value.preview}}:message);
+					currentReplyRef.current=msgsRef.current.find(message=>message.id===value.reply_id)??currentReplyRef.current;
+					scheduleUpdate();
 				} else if (custom.name === 'context_compacted' && custom.value) {
 					optionsRef.current?.onContextCompacted?.(
 						custom.value as {

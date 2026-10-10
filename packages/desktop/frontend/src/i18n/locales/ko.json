@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "사이드 패널 전환", "close": "패널 닫기"},
+  "webPreview": {"title": "웹페이지 미리보기", "open": "내장 브라우저로 열기", "loading": "여는 중", "error": "미리보기를 사용할 수 없습니다. 로컬 서버를 확인한 후 다시 시도하세요."},
   "conversationList": {"title": "대화"},
   "releaseNotes": {
     "title": "업데이트 내용",

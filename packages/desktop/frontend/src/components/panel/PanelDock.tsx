@@ -1,3 +1,4 @@
+import {motion} from 'framer-motion';
 import { X } from 'lucide-react';
 import { Fragment, Suspense, type ReactNode } from 'react';
 
@@ -8,6 +9,7 @@ import {
 	ResizablePanelGroup,
 } from '@/components/ui/resizable.tsx';
 import { Separator } from '@/components/ui/separator';
+import {useMotionSettings} from '@/hooks/useMotionSettings';
 import { useTranslation } from '@/i18n/useI18n';
 
 /**
@@ -112,6 +114,7 @@ interface PanelProps {
  * @returns The panel chrome element.
  */
 export const Panel = ({ title, icon, actions, onClose, children }: PanelProps) => {
+	const {t}=useTranslation();
 	return (
 		<div className="flex flex-1 flex-col h-full p-2 min-h-0 text-foreground">
 			<div className="flex items-center justify-between px-2">
@@ -127,7 +130,7 @@ export const Panel = ({ title, icon, actions, onClose, children }: PanelProps) =
 							className="mx-0.5 data-vertical:h-4 data-vertical:self-center"
 						/>
 					) : null}
-					<Button variant="ghost" size="icon-sm" onClick={onClose}>
+					<Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t('panelDock.close')}>
 						<X />
 					</Button>
 				</div>
@@ -157,6 +160,9 @@ export const Panel = ({ title, icon, actions, onClose, children }: PanelProps) =
  */
 export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 	const { t } = useTranslation();
+	const {effective,clickEnabled}=useMotionSettings();
+	const motionMode=clickEnabled?effective:'off';
+	const duration=motionMode==='off'?0:motionMode==='fast'?0.15:motionMode==='gentle'?0.3:0.22;
 	if (layout.length === 0) return null;
 
 	return (
@@ -167,6 +173,7 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 						<ResizableHandle withHandle className="bg-transparent w-1.5" />
 					)}
 					<ResizablePanel minSize={COLUMN_MIN_WIDTH} defaultSize="22rem">
+						<motion.div data-dock-motion={motionMode} className="h-full min-w-0" initial={{opacity:motionMode==='off'?1:0,x:motionMode==='off'?0:18}} animate={{opacity:1,x:0}} transition={{duration,ease:[0.2,0.7,0.2,1]}}>
 						<ResizablePanelGroup orientation="vertical">
 							{column.map((key, rowIndex) => {
 								const descriptor = panels[key];
@@ -199,6 +206,7 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 								);
 							})}
 						</ResizablePanelGroup>
+						</motion.div>
 					</ResizablePanel>
 				</Fragment>
 			))}

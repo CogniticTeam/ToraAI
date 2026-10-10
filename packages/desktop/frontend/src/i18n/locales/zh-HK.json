@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "切換右側欄", "close": "關閉側欄"},
+  "webPreview": {"title": "網頁預覽", "open": "用內建瀏覽器開啟", "loading": "正在開啟", "error": "預覽暫時無法使用，請檢查本機伺服器後重試。"},
   "conversationList": {"title": "對話"},
   "releaseNotes": {
     "title": "更新內容",

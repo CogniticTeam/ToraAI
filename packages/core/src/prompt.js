@@ -199,6 +199,7 @@ export function recentChanges(cwd, git, { limit = 12 } = {}) {
  */
 export function buildSystemPrompt({ basePrompt, projectContext, reactMode = false, toolNames = [], hookContext = '' }) {
   const parts = [String(basePrompt || '').trim()];
+  if(toolNames.includes('WebPreview'))parts.push('网页交付：创建或修改 HTML、官网、网页应用后，主动准备本地预览。独立 HTML 用 WebPreview 的 path 启动本地静态服务器；Vite、Next 等框架先按项目文档用 Bash 启动开发服务器（仅监听本机），确认页面就绪后用 WebPreview 的 url 登记。不要把需要构建的源码当成可用网页。完成回复时保留预览服务器，Tora 会提供内置浏览器打开卡片。');
   const ctxText = projectContext ? renderProjectContext(projectContext) : '';
   if (ctxText) parts.push(ctxText);
   if (hookContext) {

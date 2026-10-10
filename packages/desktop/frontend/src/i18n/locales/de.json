@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "Seitenleisten umschalten", "close": "Leiste schließen"},
+  "webPreview": {"title": "Website-Vorschau", "open": "Im integrierten Browser öffnen", "loading": "Wird geöffnet", "error": "Vorschau nicht verfügbar. Prüfe den lokalen Server und versuche es erneut."},
   "conversationList": {"title": "Gespräche"},
   "releaseNotes": {
     "title": "Neuerungen",

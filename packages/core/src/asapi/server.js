@@ -45,6 +45,8 @@ import { listServers as mcpListServers, addServer as mcpAddServer, updateServer 
 import { createTerminal, writeTerminal, interruptTerminal, killTerminal, getTerminal, subscribeTerminal, replayTerminal } from './terminal.js';
 import { listCheckpoints, restore as restoreCheckpoint, clearCheckpoints } from '../tools/checkpoint.js';
 import {recordedSessionDiff} from './session-diff.js';
+import {openReplyPreview} from '../web-preview.js';
+import {sessionHistoryKind} from '../session-mode.js';
 import { listBranches, createBranch, switchBranch, deleteBranch, listWorktrees, createWorktree, removeWorktree, stageFiles, unstageFiles, statusFiles, commit, log as gitLog } from '../tools/tora-git.js';
 import { listAutomations, createAutomation, updateAutomation, deleteAutomation, drainNotifications } from '../tools/automations.js';
 import {
@@ -1129,6 +1131,15 @@ async function route(req, res) {
     return json(res, 200, r);
   }
   // 检查点：列出 / 回滚到第 N 轮
+  if ((m=p.match(/^\/sessions\/([\w-]+)\/preview$/))&&method==='POST'){
+    const record=loadSessionRecord(m[1]);
+    if(!record)return apiError(res,404,'会话不存在');
+    if(sessionHistoryKind(record.config)==='chat')return apiError(res,403,'聊天模式不提供本地网页预览');
+    const body=await readBody(req),message=record.display.find(message=>message.id===body.reply_id&&message.role==='assistant');
+    if(!message)return apiError(res,404,'找不到此网页回复');
+    try{return json(res,200,await openReplyPreview(message,{cwd:record.config.cwd,allowedRoots:loadConfig().allowedRoots}));}
+    catch(error){return apiError(res,400,error.message);}
+  }
   if ((m = p.match(/^\/sessions\/([\w-]+)\/checkpoints$/)) && method === 'GET') {
     return json(res, 200, { checkpoints: listCheckpoints(m[1]) });
   }

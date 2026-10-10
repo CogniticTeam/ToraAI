@@ -51,6 +51,7 @@ import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useKnowledgeBaseMiddlewareSchema } from '@/hooks/useKnowledgeBaseMiddlewareSchema';
 import { useKnowledgeBases } from '@/hooks/useKnowledgeBases';
 import { useMessages } from '@/hooks/useMessages';
+import {useMotionSettings} from '@/hooks/useMotionSettings';
 import { useSessions } from '@/hooks/useSessions';
 import { useToraData } from '@/hooks/useToraData';
 import { useWorkspace } from '@/hooks/useWorkspace.ts';
@@ -204,6 +205,7 @@ function closePanelInLayout(layout: PanelKey[][], key: PanelKey): PanelKey[][] {
 export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionCreated }: ChatViewportProps) {
 	const { t } = useTranslation();
 	const { sessions, refetch: refetchSessions } = useSessions(agentId);
+	const {effective,clickEnabled}=useMotionSettings();
 	const [quotaLive,setQuotaLive] = useState(false);
 	const { groups, builtinQuota, builtinUnavailable, refetch: refreshAvailableModels } = useAvailableModels(quotaLive);
 
@@ -955,7 +957,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	return (
 		<>
 			<main className="flex size-full">
-				<ResizablePanelGroup orientation="horizontal">
+				<ResizablePanelGroup orientation="horizontal" className="chat-dock" data-motion={clickEnabled?effective:'off'}>
 					<ResizablePanel
 						className="flex flex-1 min-h-0 min-w-0"
 						minSize="24rem"
@@ -998,6 +1000,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 												variant="ghost"
 												size="sm"
 												className="gap-1 px-2"
+												aria-label={t('panelDock.toggle')}
 											>
 												<PanelRight />
 												<ChevronDown className="size-3 text-muted-foreground" />

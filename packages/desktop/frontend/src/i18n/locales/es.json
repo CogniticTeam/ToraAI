@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "Alternar paneles laterales", "close": "Cerrar panel"},
+  "webPreview": {"title": "Vista previa del sitio", "open": "Abrir en el navegador integrado", "loading": "Abriendo", "error": "Vista previa no disponible. Revisa el servidor local e inténtalo de nuevo."},
   "conversationList": {"title": "Conversaciones"},
   "releaseNotes": {
     "title": "Novedades",

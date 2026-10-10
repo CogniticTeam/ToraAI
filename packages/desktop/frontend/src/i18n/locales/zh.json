@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "切换右侧栏", "close": "关闭侧栏"},
+  "webPreview": {"title": "网页预览", "open": "用内置浏览器打开", "loading": "正在打开", "error": "预览暂时不可用，请检查本地服务器后重试。"},
   "conversationList": {"title": "对话"},
   "releaseNotes": {
     "title": "更新内容",

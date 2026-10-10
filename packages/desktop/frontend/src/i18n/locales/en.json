@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "Toggle side panels", "close": "Close panel"},
+  "webPreview": {"title": "Website preview", "open": "Open in built-in browser", "loading": "Opening", "error": "Preview is unavailable. Check the local server and try again."},
   "conversationList": {"title": "Conversations"},
   "releaseNotes": {
     "title": "What's new",

@@ -28,5 +28,13 @@ for(const size of [{width:880,height:600},{width:1024,height:720}]){
  }
 }
 await page.screenshot({path:'/tmp/tora-thinking-menu-edges.png'});await thinkingMenu.getByRole('button',{name:'极致',exact:true}).click();await selector.getByText('极致',{exact:true}).waitFor();await page.keyboard.press('Escape');
+// The chat column must retain padding when the resizable side panel opens.
+await page.getByRole('button',{name:'切换右侧栏',exact:true}).click();await page.getByRole('menuitemcheckbox',{name:'计划',exact:true}).click();await page.keyboard.press('Escape');await page.getByText('暂无任务',{exact:true}).waitFor();
+await page.waitForFunction(()=>{const panel=document.querySelector('.chat-dock > [data-panel]'),message=document.querySelector('[data-slot="message-content"]');if(!panel||!message)return false;const p=panel.getBoundingClientRect(),m=message.getBoundingClientRect();return m.left-p.left>=15&&p.right-m.right>=15;});
+const dock=await page.locator('.chat-dock').getAttribute('data-motion');assert.equal(dock,'standard');
+assert.equal(await page.locator('.chat-dock > [data-panel]').first().evaluate(el=>getComputedStyle(el).transitionProperty),'flex-grow');
+await page.screenshot({path:'/tmp/tora-web-preview-sidebar.png'});
+await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>document.querySelector('.chat-dock')?.getAttribute('data-motion')==='off');assert.equal(await page.locator('.chat-dock > [data-panel]').first().evaluate(el=>getComputedStyle(el).transitionProperty),'none');await page.emulateMedia({reducedMotion:'no-preference'});
+await page.getByRole('button',{name:'关闭侧栏',exact:true}).click();
 await page.screenshot({path:'/tmp/tora-tocode-builtin-model.png'});console.log('ToCode built-in selector, first-send model routing, work billing and full tool availability verified.');await context.close();
 }finally{await browser.close();core.closeAllConnections?.();cloud.closeAllConnections?.();await Promise.all([new Promise(resolve=>core.close(resolve)),new Promise(resolve=>cloud.close(resolve))]);rmSync(home,{recursive:true,force:true});}

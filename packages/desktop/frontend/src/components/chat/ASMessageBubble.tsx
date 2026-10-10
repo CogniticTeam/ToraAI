@@ -34,6 +34,7 @@ import {
 import { ChangedFilesCard } from './tool-renderers/ChangedFilesCard';
 import type { TFunction, ToolCallWithResult } from './tool-renderers/types';
 import type { SkillView } from '@/api';
+import {WebPreviewCard} from '@/components/chat/WebPreviewCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
 	Attachment,
@@ -637,6 +638,8 @@ function ASMessageBubbleComponent({
 					blocks.flatMap((b) => (b.type === 'tool_call_group' ? b.calls : [])),
 				)
 			: [];
+	const webPreview = message.metadata?.web_preview as {entry?:unknown} | undefined;
+	const htmlFile = changedFiles.find(file=>/\.html?$/i.test(file.path));
 
 	// What the copy button hands over — the prose of the message, without
 	// the tool calls and attachments around it.
@@ -701,6 +704,7 @@ function ASMessageBubbleComponent({
 					</p>
 				)}
 				{changedFiles.length > 0 && <ChangedFilesCard files={changedFiles} />}
+				{!isUser && replyFinished && (webPreview || htmlFile) && <WebPreviewCard replyId={message.id} entry={typeof webPreview?.entry === 'string' ? webPreview.entry : htmlFile?.path} />}
 				{message.finished_reason === ReplyFinishedReason.ERROR && (
 					<Alert
 						variant="destructive"

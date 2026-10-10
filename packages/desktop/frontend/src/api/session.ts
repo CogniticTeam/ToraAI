@@ -57,6 +57,7 @@ export function hasFreshlyCreated(sessionId: string): boolean {
 }
 
 export const sessionApi = {
+  preview: (sessionId: string, agentId: string, replyId: string) => client.post<{kind: 'html' | 'server';url: string;entry?: string}>(`/sessions/${sessionId}/preview`, {reply_id:replyId}, {agent_id:agentId}, {silent:true}),
 	list: (agentId: string) => client.get<SessionListResponse>('/sessions/', { agent_id: agentId }),
 
 	create: async (body: CreateSessionRequest) => {

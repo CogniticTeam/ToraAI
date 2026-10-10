@@ -1,4 +1,6 @@
 {
+  "panelDock": {"toggle": "Afficher les panneaux latéraux", "close": "Fermer le panneau"},
+  "webPreview": {"title": "Aperçu du site", "open": "Ouvrir dans le navigateur intégré", "loading": "Ouverture", "error": "Aperçu indisponible. Vérifiez le serveur local et réessayez."},
   "conversationList": {"title": "Conversations"},
   "releaseNotes": {
     "title": "Nouveautés",

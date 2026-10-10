@@ -19,6 +19,7 @@ import { builtinAuth, BUILTIN_MODELS, isBuiltinCredential, isBuiltinModel, built
 import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import {sessionForView,sessionHistoryKind} from '../session-mode.js';
+import {prepareReplyPreview} from '../web-preview.js';
 import { recordUsage } from './usage-store.js';
 import { accessBlockReason } from './access.js';
 import { generateTitle, placeholderTitle } from '../title.js';
@@ -806,6 +807,12 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   closeText();
   closeThinking();
   closeModel();
+  if(doneReason==='completed'&&!(cfg.appMode==='tochat'&&cfg.tochatMode==='chat')){
+    try {
+      bus.webPreview=await prepareReplyPreview(replyBlocks,{cwd:loadSessionRecord(sessionId)?.config.cwd??session.config.cwd,allowedRoots:cfg.allowedRoots});
+      if(bus.webPreview)push(bus,E.custom('web_preview_ready',{reply_id:replyId,preview:bus.webPreview}));
+    }catch {/* Preview failures never turn a completed reply into an error. */}
+  }
   // 用量持久化（使用统计的权威数据源，见 usage-store.js）
   if (inputTokens || outputTokens) {
     try { recordUsage({ tokens: inputTokens + outputTokens, runs: 1, model: cfg.model }); } catch { /* ignore */ }
@@ -839,6 +846,7 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
   // 事件流还原出来的视图同源）。不从 session.internal 反推，因为上下文
   // 自动压缩会在运行中 splice 掉中段历史，事后按索引或标记筛选都会错。
   const msg = assistantMsgShell(replyId);
+  if(bus.webPreview)msg.metadata.web_preview=bus.webPreview;
   msg.content = replyBlocks;
   msg.finished_at = new Date().toISOString();
   const end = bus.lastReplyEnd?.reply_id === replyId ? bus.lastReplyEnd : null;
@@ -882,6 +890,7 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
   bus.events = []; // 清空缓冲：历史接口已含该回复，重放会翻倍
   bus.lastReplyEnd = null;
   bus.replyId = null;
+  bus.webPreview = null;
   // 若已无订阅者，稍后回收 bus
   setTimeout(() => {
     if (bus.subs.size === 0 && !bus.running && buses.get(sessionId) === bus) buses.delete(sessionId);
