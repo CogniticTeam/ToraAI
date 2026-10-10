@@ -24,8 +24,10 @@ export function toResponsesBody(body, effort, maxOutput, adapter = 'openai') {
     if(content.some(part=>['input_image','input_audio','input_video'].includes(part.type)||part.text))input.push({...(adapter==='ark'?{type:'message'}:{}),role:message.role,content});
     for(const call of message.tool_calls||[])input.push({type:'function_call',call_id:call.id,name:call.function.name,arguments:call.function.arguments||'{}'});
   }
+  // xAI consumes system messages in input; its gateway may ignore OpenAI instructions.
+  if(adapter==='xai'&&instructions.length)input.unshift({role:'system',content:instructions.join('\n\n')});
   const tools=(body.tools||[]).map(tool=>({type:'function',name:tool.function.name,description:tool.function.description,parameters:tool.function.parameters,strict:false}));
-  return {model:body.model,instructions:instructions.join('\n\n'),input,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,reasoning:adapter==='ark'?{effort}:{effort,summary:'auto'},max_output_tokens:maxOutput,stream:true,store:false,include:['reasoning.encrypted_content']};
+  return {model:body.model,instructions:adapter==='xai'?undefined:instructions.join('\n\n'),input,tools:tools.length?tools:undefined,tool_choice:tools.length?'auto':undefined,reasoning:['ark','xai'].includes(adapter)?{effort}:{effort,summary:'auto'},max_output_tokens:maxOutput,stream:true,store:false,include:['reasoning.encrypted_content']};
 }
 
 /** Convert semantic Responses SSE into the existing Chat stream, preserving opaque reasoning. */
@@ -52,7 +54,7 @@ export function responsesChatStream(response, model) {
           for(const item of items)if(item.type==='function_call')tool(item);
           if(!textSeen){const text=items.filter(item=>item.type==='message').flatMap(item=>item.content||[]).map(part=>part.text||part.refusal||'').join('');if(text)delta({content:text});}
           if(!reasoningSeen){const text=items.filter(item=>item.type==='reasoning').flatMap(item=>item.summary||[]).map(part=>part.text||'').join('');if(text)delta({reasoning_content:text});}
-          const contexts=items.filter(item=>item.type==='reasoning'&&typeof item.encrypted_content==='string').map(item=>({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:item.summary||[],tora_provider:model.startsWith('doubao-')?'ark':'openai'}));
+          const contexts=items.filter(item=>item.type==='reasoning'&&typeof item.encrypted_content==='string').map(item=>({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:item.summary||[],tora_provider:model.startsWith('doubao-')?'ark':model.startsWith('grok-')?'xai':'openai'}));
           if(contexts.length)emit({choices:[],tora_response_items:contexts});
           const usage=event.response?.usage;
           emit({choices:[{index:0,delta:{},finish_reason:calls.size?'tool_calls':'stop'}],...(usage?{usage:{prompt_tokens:usage.input_tokens,completion_tokens:usage.output_tokens,total_tokens:usage.total_tokens??usage.input_tokens+usage.output_tokens,prompt_tokens_details:usage.input_tokens_details,completion_tokens_details:usage.output_tokens_details}}:{})});

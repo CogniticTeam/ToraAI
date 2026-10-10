@@ -23,7 +23,7 @@ test('内置 Gemini 独立 Secret、白名单、无隐式回退、流式工具�
  const request=(model,tag='gemini-first')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'chat','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,messages:[{role:'user',content:'hello'}],reasoning_effort:'max',tools:[{type:'function',function:{name:'WebSearch',parameters:{type:'object'}}}]})});
  try {
   const quota=await (await handleToChat(new Request('https://test/tochat/quota'),env,ctx,{id:1})).json();
-  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,8);assert.ok(!JSON.stringify(quota).includes('test-only'));
+  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,9);assert.ok(!JSON.stringify(quota).includes('test-only'));
   let calls=0;
   globalThis.fetch=async(url,init)=>{calls++;assert.equal(url,'https://shuliuyun.com/v1/chat/completions');assert.equal(init.headers.authorization,'Bearer gemini-test-only');const body=JSON.parse(init.body);assert.equal(body.model,'gemini-3.8-flash');assert.equal(body.thinking,undefined);assert.equal(body.reasoning_effort,'high');assert.equal(body.tool_choice,'auto');assert.equal(body.stream_options.include_usage,true);return new Response('data: '+JSON.stringify({choices:[{delta:{tool_calls:[{id:'search-call',index:0,type:'function',function:{name:'WebSearch',arguments:'{"query":"Tora"}'}}]},finish_reason:'tool_calls'}],usage:{total_tokens:300}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
   const response=await handleToChat(request('gemini-3.8-flash'),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/WebSearch/);await Promise.all(tasks);assert.equal((await readToChatQuota(db,1)).chatUnlimited,true);
@@ -105,5 +105,28 @@ test('Doubao is free without subscription, forwards multimodal Responses, and re
   assert.throws(()=>validateToChatBody({...body,model:'deepseek-flash',reasoning_effort:'high'},'chat'),/音频和视频/);
   assert.throws(()=>validateToChatBody({...body,messages:[{role:'user',content:[{type:'input_audio',audio_url:'https://private.invalid/audio.wav'}]}]},'chat'),/上传/);
   assert.throws(()=>validateToChatBody({...body,messages:[{role:'assistant',content:[{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8='}]}]},'chat'),/用户附件/);
+ }finally{globalThis.fetch=before;sqlite.close();}
+});
+
+test('Grok uses its dedicated secret, four efforts, Responses and server-selected cache affinity for work/ToCode',async()=>{
+ const{db,sqlite}=database();const before=globalThis.fetch,tasks=[],outgoing=[];
+ const env={DB:db,SHULIUYUN_GROK_API_KEY:'synthetic-grok-key'};const ctx={waitUntil(task){tasks.push(task);}};
+ const body={model:'grok-4.7',messages:[{role:'user',content:'Reply OK'}],reasoning_effort:'high',prompt_cache_key:'client-injected-cache-key'};
+ const request=(suffix,kind='work',effort='high')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':kind,'x-tora-feature':'tocode','x-tochat-message-id':'grok-message-'+suffix,'x-tochat-request-id':'grok-request-'+suffix},body:JSON.stringify({...body,reasoning_effort:effort})});
+ try{
+  for(const effort of ['low','medium','high','xhigh'])assert.equal(validateToChatBody({...body,reasoning_effort:effort},'work').effort,effort);
+  for(const effort of ['max','off'])assert.throws(()=>validateToChatBody({...body,reasoning_effort:effort},'chat'),/不支持/);
+  assert.equal((await handleToChat(request('missing'),{DB:db,SHULIUYUN_API_KEY:'unrelated-key'},ctx,{id:1})).status,503);
+  const catalog=await (await handleToChat(new Request('https://test/tochat/v1/models',{headers:{'x-tora-feature':'tocode'}}),env,ctx,{id:1})).json();
+  assert.deepEqual(catalog.data.map(model=>model.id),['grok-4.7']);assert.ok(!JSON.stringify(catalog).includes(env.SHULIUYUN_GROK_API_KEY));
+  globalThis.fetch=async(url,init)=>{outgoing.push({url,headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({type:'response.completed',response:{status:'completed',output:[{type:'message',content:[{type:'output_text',text:'GROK_OK'}]}],usage:{input_tokens:100,output_tokens:20,input_tokens_details:{cached_tokens:80},output_tokens_details:{reasoning_tokens:18}}}})+'\n\n',{headers:{'content-type':'text/event-stream'}});};
+  for(const [index,effort] of ['low','medium','high','xhigh'].entries()){const response=await handleToChat(request(String(index),index===0?'chat':'work',effort),env,ctx,{id:1});assert.equal(response.status,200);const raw=await response.text();assert.match(raw,/GROK_OK/);assert.ok(!raw.includes(env.SHULIUYUN_GROK_API_KEY));await Promise.all(tasks);}
+  assert.ok(outgoing.every(r=>r.url==='https://shuliuyun.com/v1/responses'&&r.headers.authorization==='Bearer '+env.SHULIUYUN_GROK_API_KEY));
+  assert.ok(outgoing.every(r=>!('summary' in r.body.reasoning)&&/^[a-f0-9]{64}$/.test(r.body.prompt_cache_key)));
+  assert.equal(new Set(outgoing.map(r=>r.body.prompt_cache_key)).size,1);
+  const rows=(await db.prepare('SELECT * FROM usage_log').bind().all()).results;assert.equal(rows.length,3);
+  assert.ok(rows.every(row=>row.model==='grok-4.7'&&row.feature==='tocode'&&row.credit_micro===20*166+80*42+20*497));
+  for(const status of [401,429,500]){globalThis.fetch=async()=>new Response(env.SHULIUYUN_GROK_API_KEY,{status});const response=await handleToChat(request('error-'+status),env,ctx,{id:1});assert.equal(response.status,status===429?429:502);assert.ok(!(await response.text()).includes(env.SHULIUYUN_GROK_API_KEY));}
+  assert.ok((await db.prepare("SELECT * FROM usage_log WHERE status='failed'").bind().all()).results.every(row=>row.credit_micro===0&&row.held_micro===0));
  }finally{globalThis.fetch=before;sqlite.close();}
 });

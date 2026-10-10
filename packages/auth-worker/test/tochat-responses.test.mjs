@@ -29,3 +29,18 @@ test('model switches never send another provider encrypted reasoning',()=>{
  assert.deepEqual(toResponsesBody({model:'gpt-6-sol',messages},'low',1024).input.filter(p=>p.type==='reasoning').map(p=>p.id),['rs_test']);
  assert.deepEqual(toResponsesBody({model:'doubao-seed-2-1-lite-260915',messages},'low',1024,'ark').input.filter(p=>p.type==='reasoning').map(p=>p.id),['ark_context']);
 });
+
+test('Grok Responses omits summary and isolates encrypted reasoning from GPT and Ark',async()=>{
+ const grok={...context,id:'rs_grok',tora_provider:'xai'},ark={...context,id:'rs_ark',tora_provider:'ark'};
+ const messages=[{role:'assistant',content:'previous',tora_response_items:[context,ark,grok]}];
+ const request=toResponsesBody({model:'grok-4.7',messages:[{role:'system',content:'Respect permissions.'},...messages]},'xhigh',1024,'xai');
+ assert.deepEqual(request.reasoning,{effort:'xhigh'});
+ assert.equal(request.instructions,undefined);assert.equal(request.input[0].role,'system');assert.equal(request.input[0].content,'Respect permissions.');
+ assert.deepEqual(request.input.filter(i=>i.type==='reasoning').map(i=>i.id),['rs_grok']);
+ assert.deepEqual(toResponsesBody({model:'gpt-6-sol',messages},'high',1024).input.filter(i=>i.type==='reasoning').map(i=>i.id),['rs_test']);
+ const response=responsesChatStream(new Response('data: '+JSON.stringify({type:'response.completed',response:{status:'completed',output:[grok],usage:{input_tokens:100,output_tokens:20,input_tokens_details:{cached_tokens:80},output_tokens_details:{reasoning_tokens:18}}}})+'\n\n',{headers:{'content-type':'text/event-stream'}}),'grok-4.7');
+ const data=(await response.text()).split('\n').filter(line=>line.startsWith('data: {')).map(line=>JSON.parse(line.slice(6)));
+ assert.equal(data.find(item=>item.tora_response_items).tora_response_items[0].tora_provider,'xai');
+ assert.equal(data.at(-1).usage.completion_tokens,20);
+ assert.equal(data.at(-1).usage.prompt_tokens_details.cached_tokens,80);
+});

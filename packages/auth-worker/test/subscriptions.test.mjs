@@ -22,3 +22,9 @@ test('new channel prices retain cache discount and conservative GPT long-context
   const base=usageCost(model,{input:100,cached:40,output:20});assert.equal(base,60*input+40*cached+20*output,model);
  }
 });
+
+test('Grok screenshot service rates discount cached input, include reasoning once and conservatively switch at 200k',()=>{
+ assert.equal(usageCost('grok-4.7',{input:100,cached:80,output:20}),20*166+80*42+20*497);
+ assert.equal(usageCost('grok-4.7',{input:199999,cached:0,output:1}),199999*166+497);
+ assert.equal(usageCost('grok-4.7',{input:200000,cached:100000,output:20}),100000*332+100000*83+20*994);
+});

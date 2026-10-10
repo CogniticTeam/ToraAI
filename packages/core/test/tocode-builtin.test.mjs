@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {mkdtempSync,mkdirSync,existsSync,rmSync} from 'node:fs';import {tmpdir} from 'node:os';import {join} from 'node:path';
 const home=mkdtempSync(join(tmpdir(),'tora-tocode-official-'));process.env.TORA_HOME=home;
-const {loadConfig,saveConfig}=await import('../src/config.js');const {startASAPIServer}=await import('../src/asapi/server.js');const {resolveRunCfg,isRunning,subscribe}=await import('../src/asapi/bridge.js');const {BUILTIN_MODELS}=await import('../src/builtin-models.js');
+const {loadConfig,saveConfig}=await import('../src/config.js');const {startASAPIServer}=await import('../src/asapi/server.js');const {resolveRunCfg,isRunning,subscribe}=await import('../src/asapi/bridge.js');const {BUILTIN_MODELS,builtinModelAllowed}=await import('../src/builtin-models.js');
 const originalFetch=globalThis.fetch;const server=await startASAPIServer({port:0});const base='http://127.0.0.1:'+server.address().port;
 const headers={'content-type':'application/json','x-user-id':'builtin-fixture'};
 const post=(path,body)=>originalFetch(base+path,{method:'POST',headers,body:JSON.stringify(body)});
@@ -89,3 +89,8 @@ try {
  // node:test cases execute asynchronously; cleanup is registered after them.
  test('fixture cleanup',async()=>{globalThis.fetch=originalFetch;server.closeAllConnections?.();await new Promise(resolve=>server.close(resolve));rmSync(home,{recursive:true,force:true});});
 }
+
+test('Grok built-in declares a 500k maximum context and is available to all official modes',()=>{
+ const model=BUILTIN_MODELS.find(model=>model.id==='grok-4.7');assert.equal(model.context,500000);assert.equal(model.provider,'xai');
+ assert.ok(builtinModelAllowed(model.id,'chat'));assert.ok(builtinModelAllowed(model.id,'work'));assert.ok(builtinModelAllowed(model.id,'tocode'));
+});

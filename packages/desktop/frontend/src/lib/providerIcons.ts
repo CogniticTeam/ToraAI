@@ -1,7 +1,9 @@
 // 各模型服务商品牌图标（本地打包，无运行时外链）
 // 来源：simpleicons.org（SVG）+ 各官网 favicon/logo（PNG/ICO）
 // StepFun: Lobe Icons (MIT)；OpenAI: 官方品牌包。
+// Grok: Lobe Icons (MIT).
 import gemini from '@/assets/providers/lobe-gemini-color.svg';
+import grok from '@/assets/providers/lobe-grok.svg';
 import stepfun from '@/assets/providers/lobe-stepfun.svg';
 import openai from '@/assets/providers/openai-black-monoblossom.svg';
 // Gemini: Lobe Icons (MIT)；Anthropic: Simple Icons (CC0)。
@@ -26,6 +28,8 @@ import zai from '@/assets/providers/site-zai.svg';
 /** provider key → 图标资源；未列出的（如自定义）由调用方渲染兜底图标 */
 export const PROVIDER_ICONS: Record<string, string> = {
 	openai,
+	xai: grok,
+	grok,
 	google: gemini,
 	gemini,
 	anthropic,

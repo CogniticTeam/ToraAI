@@ -491,3 +491,14 @@ test('retired developer settings and invalid external links fall back to General
  for(const value of ['quota','model','agent','usage'])assert.equal(normalizeSettingsSection(value),value);
  h.dispose();
 });
+
+test('Grok official picker retains four supported efforts and server availability across chat/work/ToCode',()=>{
+ const h=harness();const models=h.load('lib/tochatModels.ts');
+ assert.equal(models.toChatEffort('grok-4.7','xhigh'),'xhigh');assert.equal(models.toChatEffort('grok-4.7','max'),'high');
+ for(const mode of ['chat','work','tocode'])assert.equal(models.modelAllowedInMode('grok-4.7',mode),true);
+ assert.equal(models.modelAvailable('grok-4.7',[]),false);assert.equal(models.modelAvailable('grok-4.7',[{id:'grok-4.7',enabled:true}]),true);
+ const{OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx');
+ const tree=h.render(()=>OfficialModelSelect({model:'grok-4.7',effort:'xhigh',models:[{id:'grok-4.7',enabled:true}],onModel(){},onEffort(){}}));
+ const group=find(tree,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='xhigh');
+ assert.deepEqual(Array.from(group.props.children,item=>item.props.value),['low','medium','high','xhigh']);h.dispose();
+});

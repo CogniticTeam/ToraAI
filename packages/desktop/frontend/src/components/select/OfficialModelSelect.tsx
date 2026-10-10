@@ -1,6 +1,7 @@
 import {ChevronDown} from 'lucide-react';
 
 import GeminiLogo from '@/assets/providers/lobe-gemini-color.svg?react';
+import GrokLogo from '@/assets/providers/lobe-grok.svg?react';
 import OpenAILogo from '@/assets/providers/openai-black-monoblossom.svg?react';
 import AnthropicLogo from '@/assets/providers/si-anthropic.svg?react';
 import DeepSeekLogo from '@/assets/providers/si-deepseek.svg?react';
@@ -11,6 +12,7 @@ import {useTranslation} from '@/i18n/useI18n';
 import {TOCHAT_MODELS, modelAllowedInMode, modelAvailable, toChatModel, type ToChatModelId, type ToChatModelAvailability} from '@/lib/tochatModels';
 
 function ModelIcon({model}: {model: string}) {
+ if(model.startsWith('grok')) return <GrokLogo className="size-4 shrink-0 dark:invert" />;
  if(model.startsWith('doubao')) return <img src={VolcengineLogo} alt="" className="size-4 shrink-0" />;
  if(model.startsWith('gemini')) return <GeminiLogo className="size-4 shrink-0" />;
  if(model.startsWith('claude')) return <AnthropicLogo className="size-4 shrink-0 dark:invert" />;

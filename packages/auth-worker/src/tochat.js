@@ -11,6 +11,7 @@ const MODELS = Object.freeze({
   'gpt-6-sol': {name:'GPT-6 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-luna': {name:'GPT-6 Luna',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-astra': {name:'GPT-6 Astra',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
+  'grok-4.7': {name:'Grok 4.7',secret:'SHULIUYUN_GROK_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses',adapter:'xai',efforts:['low','medium','high','xhigh']},
   'claude-opus-5': {name:'Claude Opus 5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
   'deepseek-flash': {name:'DeepSeek Flash',secret:'DEEPSEEK_API_KEY',url:'https://api.deepseek.com/v1/chat/completions'},
   'gemini-3.8-flash': {name:'Gemini 3.8 Flash',secret:'SHULIUYUN_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
@@ -35,7 +36,7 @@ export function validateToChatBody(body,kind) {
   if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
   if(modelConfig(body.model).modes&&!modelConfig(body.model).modes.includes(kind))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
   const effort=body.reasoning_effort||'high';
-  const efforts=(body.model.startsWith('gpt-6')||body.model==='claude-opus-5')?['low','medium','high','xhigh','max']:[DOUBAO_MODEL_ID,'gemini-3.8-flash'].includes(body.model)?['low','medium','high','max']:['low','high','max'];
+  const efforts=modelConfig(body.model).efforts||((body.model.startsWith('gpt-6')||body.model==='claude-opus-5')?['low','medium','high','xhigh','max']:[DOUBAO_MODEL_ID,'gemini-3.8-flash'].includes(body.model)?['low','medium','high','max']:['low','high','max']);
   if (!efforts.includes(effort)) throw Error('此模型不支持该思考强度');
   if (body.tools && (!Array.isArray(body.tools)||body.tools.length>100)) throw Error('工具格式无效');
   if (kind==='chat' && (body.tools||[]).some(tool=>!['WebSearch','WebFetch'].includes(tool?.function?.name))) throw Error('聊天模式只允许联网搜索工具');
@@ -130,6 +131,10 @@ export async function handleToChat(request,env,ctx,user) {
   if(!lastUser) return fail('缺少用户消息');
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(kind==='work'?messageId:JSON.stringify(lastUser.content)));
   const fingerprint=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
+  if(selected.adapter==='xai'){
+    const cacheHash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('tora:grok:'+user.id));
+    upstreamBody.prompt_cache_key=Array.from(new Uint8Array(cacheHash),n=>n.toString(16).padStart(2,'0')).join('');
+  }
   // An abandoned stream retains its conservative reservation, never refunds unknown usage.
   await env.DB.batch([
     env.DB.prepare("UPDATE tochat_requests SET status='unknown',finished_at=? WHERE user_id=? AND status='pending' AND created_at<?").bind(Date.now(),user.id,Date.now()-300000),
