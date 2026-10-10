@@ -10,6 +10,10 @@ test('legacy/code and ToChat work share a kind while ordinary chat stays separat
  const session={id:'same-id',config:{application_mode:'tocode',cwd:'/project',chat_model_config:{credential_id:'personal'},model_source:'official'}};
  const view=sessionForView(session,'tochat');assert.equal(view.id,session.id);assert.equal(view.config.cwd,'/project');assert.equal(view.config.task_mode,'work');assert.equal(view.config.model_source,'custom');assert.equal(session.config.application_mode,'tocode');
  assert.equal(sessionModelSource({application_mode:'tochat',chat_model_config:{credential_id:'tora-official'}}),'official');assert.throws(()=>sessionForView({config:{application_mode:'tochat',task_mode:'chat'}},'tocode'),/聊天对话/);
+ const legacyCode={config:{application_mode:'tocode',model_source:'official',chat_model_config:{credential_id:'',model:'custom-model'}}};
+ assert.equal(sessionModelSource(legacyCode.config),'custom');assert.equal(sessionForView(legacyCode,'tochat').config.model_source,'custom');
+ const legacyWork={config:{application_mode:'tochat',task_mode:'work',model_source:'official',chat_model_config:{model:'deepseek-flash'}}};
+ const codeView=sessionForView(legacyWork,'tocode');assert.equal(codeView.config.chat_model_config.credential_id,'tora-official');assert.equal(sessionModelSource(codeView.config),'official');assert.equal(legacyWork.config.chat_model_config.credential_id,undefined);
 });
 
 const home=mkdtempSync(join(tmpdir(),'tora-shared-work-'));process.env.TORA_HOME=home;

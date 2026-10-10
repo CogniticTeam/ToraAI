@@ -15,10 +15,10 @@ import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
-import { builtinAuth, BUILTIN_MODELS, isBuiltinCredential, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
+import { builtinAuth, BUILTIN_MODELS, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
 import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
-import {sessionForView,sessionHistoryKind} from '../session-mode.js';
+import {sessionForView,sessionModelSource} from '../session-mode.js';
 import {prepareReplyPreview} from '../web-preview.js';
 import { recordUsage } from './usage-store.js';
 import { accessBlockReason } from './access.js';
@@ -194,7 +194,7 @@ export function resolveRunCfg(session, agent) {
     cfg.webSearch=true;
     cfg.injectProjectContext=cfg.tochatMode==='work';cfg.defaultScopeFullDisk=false;
   }
-  const builtin=isBuiltinCredential(mc.credential_id)||(cfg.appMode==='tochat'&&session.config.model_source!=='custom')||(sessionHistoryKind(session.config)==='work'&&session.config.model_source==='official');
+  const builtin=sessionModelSource(session.config)==='official';
   if(builtin) {
     const model=mc.model||'deepseek-flash';
     if(!isBuiltinModel(model))throw Error('不支持的内置模型');
