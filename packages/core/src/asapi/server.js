@@ -28,7 +28,7 @@ import {
 import { HubError } from './hub-error.js';
 import { accessBlockReason, setAccessBlock } from './access.js';
 import { HUBS, providerFor } from './hubs.js';
-import { toSessionView, inputToText, systemNoticeMsg } from './protocol.js';
+import { toSessionView, inputToText } from './protocol.js';
 import { startChatRun, isRunning, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools, updateRunningPermissionMode } from './bridge.js';
 import { readGitInfo, runGit } from '../tools/git.js';
 import { realpathAllowMissing } from '../security.js';
@@ -1160,23 +1160,7 @@ async function route(req, res) {
         s.config.naming = { auto: false };
       }
       if (body.chat_model_config) {
-        const prev = s.config.chat_model_config;
-        const next = body.chat_model_config;
-        // 首次选模型（此前未设置，或仅有会话创建时注入的默认模型——
-        // 用户从未主动选过）不算"切换"，不提示；只有用户上一次主动
-        // 选择过的模型名发生变更才提示。user_selected 标记随上次
-        // PATCH 写入，是"这次变更是否值得提示"的判据。
-        const hadUserSelected = !!prev?.model && !!prev.user_selected;
-        const changed = hadUserSelected && String(prev.model) !== String(next.model || '');
-        s.config.chat_model_config = { ...next, user_selected: true };
-        if (changed) {
-          // 模型切换提示（会话级事实，落盘进 display：刷新后仍可见）。
-          // 只记录模型名维度；credential/参数等静默变更不打扰时间线。
-          (s.display ||= []).push(systemNoticeMsg(
-            `模型已从 ${prev?.model || '（未设置）'} 更改为 ${next.model || '（未设置）'}`,
-            { kind: 'model_switch', from: prev?.model ?? null, to: next.model ?? null },
-          ));
-        }
+        s.config.chat_model_config = { ...body.chat_model_config, user_selected: true };
       }
       if ('fallback_chat_model_config' in body) s.config.fallback_chat_model_config = body.fallback_chat_model_config ?? null;
       if (s.config.application_mode === 'tochat' && typeof body.web_search === 'boolean') {

@@ -165,7 +165,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	composerVariant = 'default',
 	alwaysShowMessageTimestamps = false,
 	autoFocusInput = true,
-	msgs,
+	msgs: allMessages,
 	loading = false,
 	phase,
 	disabled,
@@ -189,6 +189,8 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	userCommands,
 }) => {
 	const { t, i18n } = useTranslation();
+	// Hide retired model-switch notices without modifying saved conversation history.
+	const msgs = useMemo(() => allMessages.filter(message => !(message.role === 'system' && message.metadata?.kind === 'model_switch')), [allMessages]);
 	// 空态没有消息视口；进入会话后跟随新消息，手动上滑时暂停。
 	const isEmpty = !loading && msgs.length === 0;
 	const { viewportRef, contentRef, onScroll, onWheel, onKeyDown, pause, resume: resumeAutoScroll } = useChatAutoScroll(!loading && !isEmpty);

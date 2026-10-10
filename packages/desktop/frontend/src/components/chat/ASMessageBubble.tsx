@@ -16,7 +16,6 @@ import {
 	Copy,
 	FileText,
 	FileVideo2,
-	Info,
 	TriangleAlert,
 } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
@@ -55,7 +54,6 @@ import {
 } from '@/components/ui/collapsible.tsx';
 import { Marker, MarkerContent } from '@/components/ui/marker';
 import { Message, MessageFooter, MessageContent } from '@/components/ui/message';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAudioBlock, useReplayController } from '@/context/AudioContext';
 import { useTranslation } from '@/i18n/useI18n';
 import { cn } from '@/lib/utils';
@@ -574,7 +572,7 @@ function ASMessageBubbleComponent({
 		(message as Msg & { __sendEntrance?: boolean }).__sendEntrance === true &&
 		sendMotionEnabled();
 
-	// 系统提示条（role=system，如「模型已从 X 更改为 Y」）：居中分隔线样式，
+	// 系统提示条（role=system）：居中分隔线样式，
 	// 不渲染成气泡。放在 hooks 之后、其余渲染之前，保证不破坏条件一致性。
 	const systemText = message.role === 'system'
 		? message.content
@@ -601,7 +599,6 @@ function ASMessageBubbleComponent({
 	// useTranslation/useMemo）必须无条件先执行完，此处返回
 	// 才不会造成渲染间 hooks 数量不稳定。
 	if (message.role === 'system') {
-		const meta = (message as Msg & { metadata?: Record<string, unknown> }).metadata;
 		return (
 			<motion.div
 				initial={{ opacity: 0, y: 4 }}
@@ -611,16 +608,6 @@ function ASMessageBubbleComponent({
 				<Marker variant="separator" className="my-4 text-xs font-normal text-muted-foreground">
 					<MarkerContent className="inline-flex items-center gap-1.5">
 						<span>{systemText}</span>
-						{meta?.kind === 'model_switch' && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<Info className="size-3 opacity-60 hover:opacity-100" />
-								</TooltipTrigger>
-								<TooltipContent side="top" className="max-w-xs font-normal">
-									{t('common.model-switch-warning')}
-								</TooltipContent>
-							</Tooltip>
-						)}
 					</MarkerContent>
 				</Marker>
 			</motion.div>
