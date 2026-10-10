@@ -3,28 +3,12 @@ import {readAgentQuota,publicQuota} from './agent-credits.js';
 const json=(value,status=200)=>new Response(JSON.stringify(value),{status,headers:{'content-type':'application/json','cache-control':'no-store','access-control-allow-origin':'*'}});
 const failure=error=>json({code:/BUSY/.test(error.message)?'busy':/CARD/.test(error.message)?'card_unavailable':/SUBSCRIPTION/.test(error.message)?'subscription_required':'invalid',detail:/BUSY/.test(error.message)?'请先结束正在运行的官方模型任务，再重置额度':/CARD/.test(error.message)?'重置卡已使用、已过期或不属于此账号':/DOWNGRADE/.test(error.message)?'不能覆盖已有的更高档订阅':/SUBSCRIPTION/.test(error.message)?'请先开通订阅':error.message},/BUSY|CARD|SUBSCRIPTION/.test(error.message)?409:400);
 function targets(body){if(body.scope==='all')return{where:'1=1',args:[],scope:'all'};const ids=[...new Set(body.userIds||[])];if(!ids.length||ids.length>500||ids.some(id=>!Number.isSafeInteger(id)||id<=0))throw Error('请选择有效用户，单次最多500人');return{where:'id IN ('+ids.map(()=>'?').join(',')+')',args:ids,scope:'selected'};}
-async function handleNewUserCards(request,env){
- try{
-  if(request.method==='GET'){
-   const settings=await env.DB.prepare('SELECT new_user_cards_enabled FROM quota_settings WHERE id=1').bind().first();
-   return json({enabled:settings?.new_user_cards_enabled===1,count:1,validDays:30});
-  }
-  if(request.method!=='POST')return json({detail:'Not Found'},404);
-  let body;try{body=await request.json();}catch{return json({detail:'请求格式无效'},400);}
-  if(typeof body?.enabled!=='boolean')throw Error('请选择是否自动发放');
-  const now=Date.now();
-  await env.DB.batch([
-   env.DB.prepare('UPDATE quota_settings SET new_user_cards_enabled=?,updated_at=? WHERE id=1').bind(Number(body.enabled),now),
-   env.DB.prepare('INSERT INTO admin_audit(action,user_id,detail,created_at) VALUES(?,NULL,?,?)').bind('quota-new-user-cards',JSON.stringify({enabled:body.enabled,count:1,validDays:30}),new Date(now).toISOString()),
-  ]);
-  return json({ok:true,enabled:body.enabled,count:1,validDays:30});
- }catch(error){return failure(error);}
-}
 export async function handleAdminQuota(request,env){
- if(new URL(request.url).pathname.replace(/\/+$/,'')==='/admin/quota/new-user-cards')return handleNewUserCards(request,env);
+ const kind=new URL(request.url).pathname.replace(/\/+$/,'').split('/').pop();
+ if(!['reset','cards','subscription','cancel-subscription'].includes(kind))return json({detail:'Not Found'},404);
  if(request.method!=='POST')return json({detail:'Not Found'},404);let body;try{body=await request.json();}catch{return json({detail:'请求格式无效'},400);}
  try{
- const target=targets(body),kind=new URL(request.url).pathname.replace(/\/+$/,'').split('/').pop();if(!['reset','cards','subscription','cancel-subscription'].includes(kind))throw Error('操作无效');
+ const target=targets(body);
  const op=body.operationId||crypto.randomUUID();if(!/^[\w-]{8,100}$/.test(op))throw Error('操作标识无效');
  const now=Date.now(),detail=JSON.stringify({scope:target.scope,userIds:target.args,planId:body.planId,days:body.days,count:body.count});
  const existing=await env.DB.prepare('SELECT * FROM quota_admin_operations WHERE id=?').bind(op).first();if(existing){if(existing.kind!==kind||existing.detail!==detail)throw Error('操作标识已用于其它请求');return json({ok:true,replayed:true,operationId:op});}

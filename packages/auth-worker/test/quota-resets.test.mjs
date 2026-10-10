@@ -1,6 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import {DatabaseSync} from 'node:sqlite';import {readFileSync} from 'node:fs';
 import {handleAdminQuota,handleUserQuota} from '../src/quota-management.js';import {readAgentQuota,reserveCreditStatement,settleCredit} from '../src/agent-credits.js';import {WINDOWS} from '../src/subscription-plans.js';
-function fixture(){const sql=new DatabaseSync(':memory:');sql.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2),(3); CREATE TABLE admin_audit(id INTEGER PRIMARY KEY,action TEXT,user_id INTEGER,detail TEXT,created_at TEXT);');for(const file of ['0003_subscriptions.sql','0004_quota_resets.sql','0006_new_user_reset_cards.sql'])sql.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));const db={prepare(query){const q=sql.prepare(query);return{bind(...args){return{run:()=>({meta:{changes:q.run(...args).changes}}),first:()=>q.get(...args)||null,all:()=>({results:q.all(...args)})};}};},async batch(items){sql.exec('BEGIN');try{const r=items.map(item=>item.run());sql.exec('COMMIT');return r;}catch(error){sql.exec('ROLLBACK');throw error;}}};return{sql,db,env:{DB:db}};}
+function fixture(){const sql=new DatabaseSync(':memory:');sql.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2),(3); CREATE TABLE admin_audit(id INTEGER PRIMARY KEY,action TEXT,user_id INTEGER,detail TEXT,created_at TEXT);');for(const file of ['0003_subscriptions.sql','0004_quota_resets.sql','0006_new_user_reset_cards.sql','0007_remove_new_user_reset_cards.sql'])sql.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));const db={prepare(query){const q=sql.prepare(query);return{bind(...args){return{run:()=>({meta:{changes:q.run(...args).changes}}),first:()=>q.get(...args)||null,all:()=>({results:q.all(...args)})};}};},async batch(items){sql.exec('BEGIN');try{const r=items.map(item=>item.run());sql.exec('COMMIT');return r;}catch(error){sql.exec('ROLLBACK');throw error;}}};return{sql,db,env:{DB:db}};}
 const admin=(env,kind,body)=>handleAdminQuota(new Request('https://test/admin/quota/'+kind,{method:'POST',body:JSON.stringify(body)}),env);const user=(env,id,path,body)=>handleUserQuota(new Request('https://test/quota/'+path,body?{method:'POST',body:JSON.stringify(body)}:undefined),env,{id});
 async function grant(env,scope='all',userIds=[]){const r=await admin(env,'subscription',{scope,userIds,planId:'plus',days:30,operationId:crypto.randomUUID()});assert.equal(r.status,200);}
 async function spend(db,id,requestId,now=Date.now()){await db.batch([reserveCreditStatement(db,{userId:id,requestId,model:'gpt-6.1-sol',feature:'tocode',reserved:500000000,now})]);await settleCredit(db,{userId:id,requestId,model:'gpt-6.1-sol',unknown:true});}
@@ -40,36 +40,28 @@ test('取消订阅拒绝无效目标和重复标识冲突；不撤销无关用�
  assert.ok((await readAgentQuota(db,2)).subscription);sql.close();
 });
 
-test('新注册用户原子获得一张30天卡；迁移和更新不会给旧用户补发或重复发卡',async()=>{
- const{sql,env}=fixture();assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards').get().n,0);
- const before=Date.now();sql.exec('INSERT INTO users VALUES(4)');
- let cards=sql.prepare('SELECT * FROM quota_reset_cards WHERE user_id=4').all();assert.equal(cards.length,1);
- assert.equal(cards[0].expires_at-cards[0].issued_at,WINDOWS.month);
- assert.ok(cards[0].issued_at>=before-1000 && cards[0].issued_at<=Date.now());
- assert.equal(cards[0].operation_id,'new-user-registration');assert.match(cards[0].id,/^[a-f0-9]{32}$/);
- sql.exec(readFileSync(new URL('../migrations/0006_new_user_reset_cards.sql',import.meta.url),'utf8'));
- sql.exec('UPDATE users SET id=id WHERE id=4');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards').get().n,1);
- assert.throws(()=>sql.exec('INSERT INTO users VALUES(4)'),/UNIQUE/);
- assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards').get().n,1);
- sql.exec('BEGIN; INSERT INTO users VALUES(5); ROLLBACK;');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=5').get().n,0);
- assert.equal((await user(env,4,'cards/use',{cardId:cards[0].id})).status,409);
- await grant(env,'selected',[4]);assert.equal((await user(env,4,'cards/use',{cardId:cards[0].id})).status,200);
- assert.equal((await user(env,4,'cards/use',{cardId:cards[0].id})).status,409);sql.close();
+test('移除自动发卡保留已发卡，新注册用户不再自动领取，手动发卡仍可用',async()=>{
+ const{sql,env}=fixture();
+ const migration=name=>sql.exec(readFileSync(new URL('../migrations/'+name,import.meta.url),'utf8'));
+ migration('0006_new_user_reset_cards.sql');sql.exec('UPDATE quota_settings SET new_user_cards_enabled=1');
+ sql.exec('INSERT INTO users VALUES(4)');const before=sql.prepare('SELECT * FROM quota_reset_cards WHERE user_id=4').get();assert.ok(before);
+ migration('0007_remove_new_user_reset_cards.sql');migration('0007_remove_new_user_reset_cards.sql');
+ assert.deepEqual(sql.prepare('SELECT * FROM quota_reset_cards WHERE user_id=4').get(),before);
+ assert.equal(sql.prepare('SELECT new_user_cards_enabled FROM quota_settings').get().new_user_cards_enabled,0);
+ assert.equal(sql.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type='trigger' AND name='quota_new_user_card'").get().n,0);
+ sql.exec('INSERT INTO users VALUES(5)');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=5').get().n,0);
+ await grant(env,'selected',[4,5]);assert.equal((await user(env,4,'cards/use',{cardId:before.id})).status,200);
+ assert.equal((await admin(env,'cards',{scope:'selected',userIds:[5],count:1,operationId:'manual-only-123'})).status,200);
+ const manual=sql.prepare('SELECT * FROM quota_reset_cards WHERE user_id=5').get();assert.equal(manual.expires_at-manual.issued_at,WINDOWS.month);
+ assert.equal((await user(env,5,'cards/use',{cardId:manual.id})).status,200);
+ // A stale bootstrap may recreate the historical trigger, but cannot re-enable issuance.
+ migration('0006_new_user_reset_cards.sql');sql.exec('INSERT INTO users VALUES(6)');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=6').get().n,0);
+ sql.close();
 });
 
-test('管理端开关只影响未来注册，持久化关闭且保留已发卡',async()=>{
+test('旧自动发卡接口不能重新开启功能',async()=>{
  const{sql,env}=fixture();
- const settings=()=>handleAdminQuota(new Request('https://test/admin/quota/new-user-cards'),env);
- assert.deepEqual(await(await settings()).json(),{enabled:true,count:1,validDays:30});
- sql.exec('INSERT INTO users VALUES(4)');
- assert.equal((await admin(env,'new-user-cards',{enabled:false})).status,200);
- sql.exec(readFileSync(new URL('../migrations/0006_new_user_reset_cards.sql',import.meta.url),'utf8'));
- assert.equal((await(await settings()).json()).enabled,false);
- sql.exec('INSERT INTO users VALUES(5)');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=5').get().n,0);
- assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=4').get().n,1);
- await admin(env,'new-user-cards',{enabled:true});sql.exec('INSERT INTO users VALUES(6)');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=6').get().n,1);
- assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards WHERE user_id=5').get().n,0);
- for(const body of [null,{}, {enabled:'false'},{enabled:0}])assert.equal((await admin(env,'new-user-cards',body)).status,400);
- assert.equal((await(await settings()).json()).enabled,true);
- assert.equal(sql.prepare("SELECT COUNT(*) AS n FROM admin_audit WHERE action='quota-new-user-cards'").get().n,2);sql.close();
+ assert.equal((await handleAdminQuota(new Request('https://test/admin/quota/new-user-cards'),env)).status,404);
+ assert.equal((await admin(env,'new-user-cards',{enabled:true})).status,404);
+ sql.exec('INSERT INTO users VALUES(4)');assert.equal(sql.prepare('SELECT COUNT(*) AS n FROM quota_reset_cards').get().n,0);sql.close();
 });

@@ -49,7 +49,7 @@ import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
 import { handleToChat } from './tochat.js';
 import subscriptionSchemaSql from '../migrations/0003_subscriptions.sql';
 import quotaResetSchemaSql from '../migrations/0004_quota_resets.sql';
-import newUserResetCardsSql from '../migrations/0006_new_user_reset_cards.sql';
+import removeNewUserResetCardsSql from '../migrations/0007_remove_new_user_reset_cards.sql';
 import proTwoWindowsSql from '../migrations/0005_pro_two_windows.sql';
 import {handleAdminQuota,handleUserQuota} from './quota-management.js';
 import {handleSubscriptions} from './subscriptions.js';
@@ -339,7 +339,7 @@ async function ensureSchema(db) {
   await db.exec(subscriptionSchemaSql.split('\n').filter(line=>!line.startsWith('CREATE TRIGGER IF NOT EXISTS agent_credit_quota ')).join('\n'));
   await db.exec(quotaResetSchemaSql);
   await db.exec(proTwoWindowsSql);
-  await db.exec(newUserResetCardsSql);
+  await db.exec(removeNewUserResetCardsSql);
   // 旧版本自动发放的官方模型是生成数据；自定义模型模式下直接清理。
   await db.prepare(
     "DELETE FROM user_models WHERE id LIKE 'official-%' OR base_url LIKE '%/official/v1%'"
