@@ -15,6 +15,10 @@ export const CREDIT_RATES = Object.freeze({
  'grok-4.7':{input:166,cached:42,output:497,longInput:332,longCached:83,longOutput:994,threshold:199999},
  // New channel rates: ceil(CNY per 1M tokens × 400 service Credits/CNY).
  'glm-5.3':{input:480,cached:48,output:1920},
+ 'claude-haiku-5-5':{input:65,cached:7,output:322},
+ 'claude-opus-5-5':{input:231,cached:12,output:1152},
+ 'claude-sonnet-5-5':{input:116,cached:12,output:576},
+ // Retained for auditing historical Opus 5 usage; new calls are rejected.
  'claude-opus-5':{input:288,cached:29,output:1440},
  'gpt-6-sol':{input:68,cached:7,output:336,longInput:135,longCached:14,longOutput:504,threshold:272000},
  'gpt-6-luna':{input:135,cached:14,output:672,longInput:269,longCached:27,longOutput:1008,threshold:272000},

@@ -57,7 +57,8 @@ function harness(mocks = {}, globals = {}) {
     vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
-  return { load, render(fn) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); for (const run of effects.splice(0)) run(); return result; },
+  const flushEffects=()=>{for(const run of effects.splice(0))run();};
+  return { load, render(fn,{deferEffects=false}={}) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); if(!deferEffects)flushEffects(); return result; }, flushEffects,
     dispose() { for (const slot of slots) slot?.cleanup?.(); }, context };
 }
 function find(tree, predicate) {
@@ -303,6 +304,42 @@ test('ToChat 工作任务运行中权限选择保持可用并提交修改',async
   assert.equal(writes.length,1);assert.equal(writes[0][2].permission_mode,'bypass');h.dispose();
 });
 
+test('web first send immediately after a new draft never reuses the previous conversation before passive effects', {skip: !existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))},async()=>{
+ const oldUser={id:'old-user',role:'user',content:[{type:'text',text:'old message'}],finished_at:'old'};
+ let active={id:'old-conversation',owner:'fixture',title:'old',mode:'chat',effort:'high',messages:[oldUser],wire:[{role:'user',content:'old message'}]},sent=[],saved=[];
+ const h=harness({
+  '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},
+  './i18n.ts':{webText:value=>value},'./api':{webFetch:async(_path,init)=>{sent.push(JSON.parse(init.body));return {};},webJSON:async()=>({title:null})},
+  './storage':{saveConversation:async value=>saved.push(structuredClone(value)),applyConversationTitle:async()=>null},
+  './stream':{readChatStream:async()=>({content:'new reply',reasoning:'',tools:[]})},
+ },{structuredClone});
+ const{useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+ const options={mode:'chat',model:'deepseek-flash',effort:'high',search:false,confirmWrites:true,onUpdate:value=>{active=value;},onQuota(){}};
+ const render=(config)=>h.render(()=>useWebConversation('fixture',active,options),config);
+ render();render();active=null;render({deferEffects:true});
+ const task=render({deferEffects:true}).send([{type:'text',text:'first new message'}]);await task;h.flushEffects();
+ assert.notEqual(active.id,'old-conversation','fresh draft must create its own conversation');
+ assert.deepEqual(sent[0].messages.map(message=>message.content),[[{type:'text',text:'first new message'}]],'first request must contain only its own user message');
+ assert.equal(saved.at(-1).messages.filter(message=>message.role==='user').length,1);
+ assert.equal(render().msgs[0].content[0].text,'first new message');h.dispose();
+});
+
+test('web fast first reply survives a delayed initial draft effect', {skip: !existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))},async()=>{
+ let active=null;
+ const h=harness({
+  '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},
+  './i18n.ts':{webText:value=>value},'./api':{webFetch:async()=>({}),webJSON:async()=>({title:null})},
+  './storage':{saveConversation:async()=>{},applyConversationTitle:async()=>null},
+  './stream':{readChatStream:async()=>({content:'instant reply',reasoning:'',tools:[]})},
+ },{structuredClone});
+ const{useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+ const options={mode:'chat',model:'deepseek-flash',effort:'high',search:false,confirmWrites:true,onUpdate:value=>{active=value;},onQuota(){}};
+ const render=(config)=>h.render(()=>useWebConversation('fixture',active,options),config);
+ await render({deferEffects:true}).send([{type:'text',text:'visible first message'}]);h.flushEffects();
+ assert.equal(render({deferEffects:true}).msgs[0]?.content[0]?.text,'visible first message','a late draft effect must not clear a completed first turn');
+ h.flushEffects();h.dispose();
+});
+
 test('网页工作中切为允许修改会恢复待审批并让同轮后续调用使用新模式', {skip: !existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))}, async()=>{
   let round=0,approved=0,opts={mode:'work',effort:'high',search:false,confirmWrites:true,onUpdate(){},onQuota(){}};
   const h=harness({
@@ -512,4 +549,17 @@ test('GLM preserves the original picker with only low/high/max and text-only GLM
   const group=find(tree,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='max');assert.deepEqual(Array.from(group.props.children,item=>item.props.value),['low','high','max']);
  }
  assert.equal(chatAttachmentTypes('glm-5.3').length,0);h.dispose();
+});
+
+test('Claude 5.5 picker replaces Opus 5 without silently changing saved selections',()=>{
+ const h=harness(),models=h.load('lib/tochatModels.ts'),{OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx');
+ assert.equal(models.TOCHAT_MODELS.some(m=>m.id==='claude-opus-5'),false);
+ assert.equal(models.toChatModel('claude-opus-5').id,'claude-opus-5');
+ assert.equal(models.modelAvailable('claude-opus-5',[{id:'claude-opus-5',enabled:true}]),false);
+ for(const id of ['claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5']){
+  assert.equal(models.modelAvailable(id,[{id,enabled:true}]),true);
+  const tree=h.render(()=>OfficialModelSelect({model:id,effort:'max',models:[{id,enabled:true}],onModel(){},onEffort(){}}));
+  const group=find(tree,node=>node.type==='DropdownMenuRadioGroup'&&node.props.value==='max');assert.deepEqual(Array.from(group.props.children,item=>item.props.value),['low','medium','high','xhigh','max']);
+  assert.equal(find(tree,node=>node.type==='DropdownMenuRadioItem'&&node.props.value==='claude-opus-5'),null);
+ }h.dispose();
 });

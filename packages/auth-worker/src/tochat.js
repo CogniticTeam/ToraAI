@@ -12,7 +12,9 @@ const MODELS = Object.freeze({
   'gpt-6-luna': {name:'GPT-6 Luna',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-astra': {name:'GPT-6 Astra',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'grok-4.7': {name:'Grok 4.7',secret:'SHULIUYUN_GROK_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses',adapter:'xai',efforts:['low','medium','high','xhigh']},
-  'claude-opus-5': {name:'Claude Opus 5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
+  'claude-opus-5-5': {name:'Claude Opus 5.5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions',efforts:['low','medium','high','xhigh','max'],thinking:{type:'adaptive'},effortParameter:'output_config'},
+  'claude-sonnet-5-5': {name:'Claude Sonnet 5.5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions',efforts:['low','medium','high','xhigh','max'],thinking:{type:'adaptive'},effortParameter:'output_config'},
+  'claude-haiku-5-5': {name:'Claude Haiku 5.5',secret:'SHULIUYUN_CLAUDE_API_KEY',url:'https://shuliuyun.com/v1/chat/completions',efforts:['low','medium','high','xhigh','max'],thinking:{type:'adaptive'},effortParameter:'output_config'},
   'glm-5.3': {name:'GLM 5.3',secret:'SHULIUYUN_GLM_API_KEY',url:'https://shuliuyun.com/v1/chat/completions',efforts:['low','high','max'],thinking:{type:'enabled'},inputModalities:['text']},
   'deepseek-flash': {name:'DeepSeek Flash',secret:'DEEPSEEK_API_KEY',url:'https://api.deepseek.com/v1/chat/completions'},
   'gemini-3.8-flash': {name:'Gemini 3.8 Flash',secret:'SHULIUYUN_API_KEY',url:'https://shuliuyun.com/v1/chat/completions'},
@@ -34,10 +36,11 @@ export async function readToChatQuota(db,userId,now=Date.now()) {
   return {...publicQuota(quota),chatUnlimited:true};
 }
 export function validateToChatBody(body,kind) {
+  if(body?.model==='claude-opus-5')throw Error('Claude Opus 5 已下架，请选择其他官方模型');
   if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
   if(modelConfig(body.model).modes&&!modelConfig(body.model).modes.includes(kind))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
   const effort=body.reasoning_effort||'high';
-  const efforts=modelConfig(body.model).efforts||((body.model.startsWith('gpt-6')||body.model==='claude-opus-5')?['low','medium','high','xhigh','max']:[DOUBAO_MODEL_ID,'gemini-3.8-flash'].includes(body.model)?['low','medium','high','max']:['low','high','max']);
+  const efforts=modelConfig(body.model).efforts||(body.model.startsWith('gpt-6')?['low','medium','high','xhigh','max']:[DOUBAO_MODEL_ID,'gemini-3.8-flash'].includes(body.model)?['low','medium','high','max']:['low','high','max']);
   if (!efforts.includes(effort)) throw Error('此模型不支持该思考强度');
   if (body.tools && (!Array.isArray(body.tools)||body.tools.length>100)) throw Error('工具格式无效');
   if (kind==='chat' && (body.tools||[]).some(tool=>!['WebSearch','WebFetch'].includes(tool?.function?.name))) throw Error('聊天模式只允许联网搜索工具');
@@ -162,7 +165,7 @@ export async function handleToChat(request,env,ctx,user) {
   let upstream;
   try{upstream=await fetch(selected.url,{
     method:'POST',headers:{'content-type':'application/json',authorization:`Bearer ${env[selected.secret]}`},signal:AbortSignal.any([abort.signal,AbortSignal.timeout(300000)]),
-    body:JSON.stringify(selected.protocol==='responses'?{...upstreamBody,max_output_tokens:output}:{model:body.model,messages:body.messages.map(({tora_response_items,...message})=>message),tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,...(selected.thinking?{thinking:selected.thinking}:body.model==='deepseek-flash'?{thinking:{type:'enabled'}}:{}),reasoning_effort:body.model==='gemini-3.8-flash'&&checked.effort==='max'?'high':checked.effort,max_tokens:output,stream:true,stream_options:{include_usage:true}}),
+    body:JSON.stringify(selected.protocol==='responses'?{...upstreamBody,max_output_tokens:output}:{model:body.model,messages:body.messages.map(({tora_response_items,...message})=>message),tools:body.tools,tool_choice:body.tools?.length?'auto':undefined,...(selected.thinking?{thinking:selected.thinking}:body.model==='deepseek-flash'?{thinking:{type:'enabled'}}:{}),...(selected.effortParameter==='output_config'?{output_config:{effort:checked.effort}}:{reasoning_effort:body.model==='gemini-3.8-flash'&&checked.effort==='max'?'high':checked.effort}),max_tokens:output,stream:true,stream_options:{include_usage:true}}),
   });}catch{await settle({unknown:true});return fail('官方模型连接失败，请稍后重试',502);}
   if(!upstream.ok){await settle({failed:true});return fail(`官方模型请求失败（HTTP ${upstream.status}）`,upstream.status===429?429:502);}
   if(selected.protocol==='responses'){try{upstream=responsesChatStream(upstream,body.model);}catch{await settle({unknown:true});return fail('模型未返回有效的流式响应',502);}}

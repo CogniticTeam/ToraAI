@@ -104,3 +104,11 @@ test('Grok built-in declares a 500k maximum context and is available to all offi
  const model=BUILTIN_MODELS.find(model=>model.id==='grok-4.7');assert.equal(model.context,500000);assert.equal(model.provider,'xai');
  assert.ok(builtinModelAllowed(model.id,'chat'));assert.ok(builtinModelAllowed(model.id,'work'));assert.ok(builtinModelAllowed(model.id,'tocode'));
 });
+
+test('official Claude 5.5 models replace Opus 5 and retain maximum context in all modes',()=>{
+ assert.equal(BUILTIN_MODELS.some(m=>m.id==='claude-opus-5'),false);
+ for(const id of ['claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5']){
+  const model=BUILTIN_MODELS.find(m=>m.id===id);assert.equal(model.context,1000000);assert.equal(model.provider,'anthropic');
+  for(const mode of ['chat','work','tocode'])assert.equal(builtinModelAllowed(id,mode),true);
+ }
+});

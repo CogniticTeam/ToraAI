@@ -35,3 +35,9 @@ test('GLM screenshot rates charge uncached input, discounted cache and output on
   assert.equal(usageCost(model,{input:1000000,cached:1000000,output:0}),48000000);
  }
 });
+
+test('Claude 5.5 screenshot rates charge cache and output separately',()=>{
+ for(const [model,input,cached,output] of [['claude-haiku-5-5',65,7,322],['claude-opus-5-5',231,12,1152],['claude-sonnet-5-5',116,12,576]]){
+  assert.equal(usageCost(model,{input:100,cached:80,output:20}),20*input+80*cached+20*output);
+ }
+});

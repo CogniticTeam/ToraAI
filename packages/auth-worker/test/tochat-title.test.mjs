@@ -3,10 +3,10 @@ import {generateOfficialTitle} from '../src/tochat-title.js';import {handleToCha
 import {reserveTitlePermit} from '../src/account-events.js';import {sanitizeTitle,TITLE_PROMPT} from '../../core/src/title-rules.js';
 const permit=allowed=>({idFromName:key=>key,get:()=>({fetch:async()=>Response.json({allowed})})});
 test('selected providers generate a short first-message title, tool-free and isolated from main usage',async()=>{
- for(const id of ['deepseek-flash','gemini-3.8-flash','gpt-6.1-sol','gpt-6-astra','gpt-6-sol','gpt-6-luna','claude-opus-5']){
+ for(const id of ['deepseek-flash','gemini-3.8-flash','gpt-6.1-sol','gpt-6-astra','gpt-6-sol','gpt-6-luna','claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5']){
   const responses=id.startsWith('gpt');const model={secret:'KEY',url:'https://provider.invalid',...(responses?{protocol:'responses'}:{})};
   const result=await generateOfficialTitle({KEY:'private-fixture'}, {model:id,userText:'手机键盘打开后输入框被遮挡，请帮我修复'},model,async(url,options)=>{
-   assert.equal(url,model.url);assert.equal(options.headers.authorization,'Bearer private-fixture');const body=JSON.parse(options.body);assert.equal(body.model,id);if(id==='claude-opus-5'){assert.equal(body.tools[0].function.name,'return_title');}else if(responses){assert.deepEqual(body.tools,[]);assert.equal(body.tool_choice,'none');}else{assert.equal(body.tools,undefined);}assert.ok((responses?body.instructions:body.messages[0].content).includes(TITLE_PROMPT));assert.equal(body.stream,true);
+   assert.equal(url,model.url);assert.equal(options.headers.authorization,'Bearer private-fixture');const body=JSON.parse(options.body);assert.equal(body.model,id);if(responses){assert.deepEqual(body.tools,[]);assert.equal(body.tool_choice,'none');}else{assert.equal(body.tools,undefined);}assert.ok((responses?body.instructions:body.messages[0].content).includes(TITLE_PROMPT));assert.equal(body.stream,true);
    const data=responses?{type:'response.completed',response:{status:'completed',output:[{type:'message',content:[{type:'output_text',text:'标题：修复手机键盘遮挡。'}]}]}}:{choices:[{delta:{content:'标题：修复手机键盘遮挡。'},finish_reason:'stop'}]};
    return new Response('data: '+JSON.stringify(data)+'\n\n'+(responses?'':'data: [DONE]\n\n'),{headers:{'content-type':'text/event-stream'}});
   });assert.equal(result.status,200);assert.equal(result.data.title,'修复手机键盘遮挡');
@@ -35,12 +35,12 @@ test('title gateway preserves locale across chat, Responses and structured Claud
   ['deepseek-flash','en-GB','Fix mobile keyboard overlap',null],
   ['gemini-3.8-flash','fr','Adapter le clavier mobile',null],
   ['gpt-6-sol','ja','スマホのキーボード修正','responses'],
-  ['claude-opus-5','zh-HK','修正手機鍵盤遮擋',null],
+  ['claude-opus-5-5','zh-HK','修正手機鍵盤遮擋',null],
  ]){
   const result=await generateOfficialTitle({KEY:'fixture'},{model:id,userText:'Please fix my keyboard',language},{secret:'KEY',url:'https://fixture.invalid',protocol},async(_url,init)=>{
    const body=JSON.parse(init.body),prompt=protocol?body.instructions:body.messages[0].content;
    assert.ok(prompt.includes(`(${language})`));
-   if(id==='claude-opus-5')return new Response('data: '+JSON.stringify({choices:[{delta:{tool_calls:[{index:0,function:{name:'return_title',arguments:JSON.stringify({title})}}]}}]})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});
+
    return Response.json(protocol?{output:[{type:'message',content:[{text:title}]}]}:{choices:[{message:{content:title}}]});
   });assert.equal(result.status,200);assert.equal(result.data.title,title);
  }
@@ -50,4 +50,13 @@ test('title gateway preserves locale across chat, Responses and structured Claud
 
 test('official gateway uses configured fast Gemini for GPT metadata without changing Agent requests',async()=>{
  const previous=globalThis.fetch;try{globalThis.fetch=async(url,init)=>{assert.equal(url,'https://shuliuyun.com/v1/chat/completions');assert.equal(init.headers.authorization,'Bearer gemini-fixture');assert.equal(JSON.parse(init.body).model,'gemini-3.8-flash');return Response.json({choices:[{message:{content:'手机键盘适配'}}]});};const response=await handleToChat(new Request('https://service/tochat/title',{method:'POST',body:JSON.stringify({model:'gpt-6.1-sol',userText:'修复手机键盘'})}),{ACCOUNT_EVENTS:permit(true),SHULIUYUN_API_KEY:'gemini-fixture',SHULIUYUN_GPT_API_KEY:'gpt-fixture'},{},{id:1});assert.equal(response.status,200);assert.equal((await response.json()).title,'手机键盘适配');}finally{globalThis.fetch=previous;}
+});
+
+test('Claude 5.5 title requests use adaptive thinking without forced tools',async()=>{
+ const before=globalThis.fetch,env={SHULIUYUN_CLAUDE_API_KEY:'private-title-fixture',ACCOUNT_EVENTS:permit(true)};
+ try{globalThis.fetch=async(url,init)=>{assert.equal(url,'https://shuliuyun.com/v1/chat/completions');const body=JSON.parse(init.body);assert.deepEqual(body.thinking,{type:'adaptive'});assert.deepEqual(body.output_config,{effort:'low'});assert.equal(body.reasoning_effort,undefined);assert.equal(body.tool_choice,undefined);assert.equal(body.tools,undefined);return new Response('data: '+JSON.stringify({choices:[{delta:{content:'Fix keyboard'},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+ for(const model of ['claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5']){
+  const response=await handleToChat(new Request('https://test/tochat/title',{method:'POST',body:JSON.stringify({model,userText:'Fix the keyboard',language:'en-US'})}),env,{}, {id:1});assert.equal(response.status,200);assert.equal((await response.json()).title,'Fix keyboard');
+ }
+ }finally{globalThis.fetch=before;}
 });

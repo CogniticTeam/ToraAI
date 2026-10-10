@@ -6,6 +6,29 @@ import { quotaPeriods, readToChatQuota, reserveToChat, settleToChat, totalUsage,
 import {usageCost} from '../src/subscription-plans.js';
 function database(){const sqlite=new DatabaseSync(':memory:');sqlite.exec(readFileSync(new URL('../migrations/0003_subscriptions.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0004_quota_resets.sql',import.meta.url),'utf8'));sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(1,'plus',Date.now()+2592000000,500000000,1600000000,7000000000,Date.now());const db={prepare(sql){return{bind(...args){return{run(){return{meta:{changes:sqlite.prepare(sql).run(...args).changes}};},first(){return sqlite.prepare(sql).get(...args)||null;},all(){return{results:sqlite.prepare(sql).all(...args)};}};}};},async batch(statements){sqlite.exec('BEGIN');try{const result=statements.map(statement=>statement.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};return{db,sqlite};}
 const now=Date.parse('2026-10-02T01:00:00Z');
+test('Claude 5.5 routes adaptive thinking, protects secrets and charges actual cached/input/output usage; Opus 5 is retired',async()=>{
+ const{db,sqlite}=database(),before=globalThis.fetch,tasks=[],sent=[];
+ const env={DB:db,SHULIUYUN_CLAUDE_API_KEY:'synthetic-claude-secret'},ctx={waitUntil(p){tasks.push(p);}};
+ const ids=['claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5'];
+ const req=(model,tag,kind='work',effort='high')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':kind,'x-tora-feature':'tocode','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,reasoning_effort:effort,thinking:{type:'disabled'},output_config:{effort:'none'},max_tokens:256,messages:[{role:'user',content:'Inspect the test file'}],...(kind==='work'?{tools:[{type:'function',function:{name:'Read',parameters:{type:'object'}}}]}:{})})});
+ try{
+  const catalog=await(await handleToChat(new Request('https://test/tochat/v1/models'),env,ctx,{id:1})).json();assert.deepEqual(catalog.data.map(m=>m.id),ids);assert.ok(!JSON.stringify(catalog).includes(env.SHULIUYUN_CLAUDE_API_KEY));
+  const fetchMock=async(url,init)=>{sent.push({url,headers:init.headers,body:JSON.parse(init.body)});return new Response('data: '+JSON.stringify({choices:[{delta:{content:'CLAUDE_OK'},finish_reason:'stop'}],usage:{prompt_tokens:100,prompt_tokens_details:{cached_tokens:80},completion_tokens:20,input_tokens:1,output_tokens:0,total_tokens:120,completion_tokens_details:{reasoning_tokens:15}}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
+  globalThis.fetch=fetchMock;
+  assert.equal((await handleToChat(req('claude-opus-5','retired-opus'),env,ctx,{id:1})).status,400);assert.equal(sent.length,0);assert.equal(sqlite.prepare('SELECT count(*) AS n FROM usage_log').get().n,0);
+  for(const model of ids){
+   assert.equal((await handleToChat(req(model,model+'-missing'),{DB:db,SHULIUYUN_GPT_API_KEY:'unrelated'},ctx,{id:1})).status,503);
+   for(const effort of ['low','medium','high','xhigh','max']){
+    const tag=model+'-'+effort,response=await handleToChat(req(model,tag,'work',effort),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/CLAUDE_OK/);await Promise.all(tasks);
+    const outgoing=sent.at(-1);assert.equal(outgoing.url,'https://shuliuyun.com/v1/chat/completions');assert.equal(outgoing.headers.authorization,'Bearer '+env.SHULIUYUN_CLAUDE_API_KEY);assert.deepEqual(outgoing.body.thinking,{type:'adaptive'});assert.deepEqual(outgoing.body.output_config,{effort});assert.equal(outgoing.body.reasoning_effort,undefined);assert.equal(outgoing.body.tool_choice,'auto');
+    const row=sqlite.prepare('SELECT * FROM usage_log WHERE request_id=?').get(tag+'-request');assert.equal(row.cached_tokens,80);assert.equal(row.output_tokens,20);assert.equal(row.credit_micro,usageCost(model,{input:100,cached:80,output:20}));
+   }
+   const free=await handleToChat(req(model,model+'-free','chat'),env,ctx,{id:1});assert.equal(free.status,200);await free.text();await Promise.all(tasks);assert.equal(sqlite.prepare('SELECT count(*) AS n FROM usage_log WHERE request_id=?').get(model+'-free-request').n,0);
+   for(const status of [401,429,500]){globalThis.fetch=async()=>new Response(env.SHULIUYUN_CLAUDE_API_KEY,{status});const failed=await handleToChat(req(model,model+'-error-'+status),env,ctx,{id:1});assert.equal(failed.status,status===429?429:502);assert.ok(!(await failed.text()).includes(env.SHULIUYUN_CLAUDE_API_KEY));}globalThis.fetch=fetchMock;
+  }
+  assert.ok(sqlite.prepare("SELECT * FROM usage_log WHERE status='failed'").all().every(row=>row.credit_micro===0&&row.held_micro===0));
+ }finally{globalThis.fetch=before;sqlite.close();}
+});
 test('GLM uses only its dedicated secret, retain thinking/tool history and settle actual work usage',async()=>{
  const{db,sqlite}=database(),before=globalThis.fetch,tasks=[],sent=[];
  const env={DB:db,SHULIUYUN_GLM_API_KEY:'synthetic-cn-secret'},ctx={waitUntil(p){tasks.push(p);}};
@@ -49,7 +72,7 @@ test('内置 Gemini 独立 Secret、白名单、无隐式回退、流式工具�
  const request=(model,tag='gemini-first')=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'chat','x-tochat-message-id':tag,'x-tochat-request-id':tag+'-request'},body:JSON.stringify({model,messages:[{role:'user',content:'hello'}],reasoning_effort:'max',tools:[{type:'function',function:{name:'WebSearch',parameters:{type:'object'}}}]})});
  try {
   const quota=await (await handleToChat(new Request('https://test/tochat/quota'),env,ctx,{id:1})).json();
-  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,10);assert.ok(!JSON.stringify(quota).includes('test-only'));
+  assert.deepEqual(quota.models.filter(item=>item.enabled).map(item=>item.id),['deepseek-flash','gemini-3.8-flash']);assert.equal(quota.models.length,12);assert.ok(!JSON.stringify(quota).includes('test-only'));
   let calls=0;
   globalThis.fetch=async(url,init)=>{calls++;assert.equal(url,'https://shuliuyun.com/v1/chat/completions');assert.equal(init.headers.authorization,'Bearer gemini-test-only');const body=JSON.parse(init.body);assert.equal(body.model,'gemini-3.8-flash');assert.equal(body.thinking,undefined);assert.equal(body.reasoning_effort,'high');assert.equal(body.tool_choice,'auto');assert.equal(body.stream_options.include_usage,true);return new Response('data: '+JSON.stringify({choices:[{delta:{tool_calls:[{id:'search-call',index:0,type:'function',function:{name:'WebSearch',arguments:'{"query":"Tora"}'}}]},finish_reason:'tool_calls'}],usage:{total_tokens:300}})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};
   const response=await handleToChat(request('gemini-3.8-flash'),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/WebSearch/);await Promise.all(tasks);assert.equal((await readToChatQuota(db,1)).chatUnlimited,true);
@@ -94,14 +117,14 @@ test('official work permits review after a completed reply, charges actual token
 test('new GPT family and Claude use dedicated secrets and charge cached/input/output tokens', async()=>{
  const {db,sqlite}=database(),before=globalThis.fetch,tasks=[];const ctx={waitUntil(task){tasks.push(task);}};
  try {
-  for(const model of ['gpt-6-sol','gpt-6-luna','gpt-6-astra','claude-opus-5']){
+  for(const model of ['gpt-6-sol','gpt-6-luna','gpt-6-astra','claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5']){
    const gpt=model.startsWith('gpt'),secret=gpt?'SHULIUYUN_GPT_API_KEY':'SHULIUYUN_CLAUDE_API_KEY';
    const request=()=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':'work','x-tora-feature':'tocode','x-tochat-message-id':model,'x-tochat-request-id':model+'-request'},body:JSON.stringify({model,reasoning_effort:'medium',max_tokens:256,messages:[{role:'user',content:'hello'}],tools:[{type:'function',function:{name:'Read',parameters:{type:'object'}}}]})});
    assert.equal((await handleToChat(request(),{DB:db,SHULIUYUN_API_KEY:'unrelated-gemini-key'},ctx,{id:1})).status,503);
    globalThis.fetch=async(url,init)=>{
     const body=JSON.parse(init.body);assert.equal(init.headers.authorization,'Bearer dedicated-fixture-key');assert.equal(body.model,model);
     assert.equal(url,'https://shuliuyun.com/v1/'+(gpt?'responses':'chat/completions'));
-    assert.equal(gpt?body.reasoning.effort:body.reasoning_effort,'medium');assert.equal(gpt?body.tools[0].name:body.tools[0].function.name,'Read');
+    assert.equal(gpt?body.reasoning.effort:body.output_config.effort,'medium');assert.equal(gpt?body.tools[0].name:body.tools[0].function.name,'Read');
     const event=gpt?{type:'response.completed',response:{status:'completed',output:[{type:'message',content:[{type:'output_text',text:'OK'}]}],usage:{input_tokens:100,output_tokens:10,total_tokens:110,input_tokens_details:{cached_tokens:80}}}}:{choices:[{delta:{content:'OK'},finish_reason:'stop'}],usage:{prompt_tokens:100,completion_tokens:10,total_tokens:110,prompt_tokens_details:{cached_tokens:80}}};
     return new Response('data: '+JSON.stringify(event)+'\n\n'+(gpt?'':'data: [DONE]\n\n'),{headers:{'content-type':'text/event-stream'}});
    };

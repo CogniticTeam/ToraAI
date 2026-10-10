@@ -9,7 +9,7 @@ const home=mkdtempSync(join(tmpdir(),'tora-picker-perf-'));process.env.TORA_HOME
 const {startASAPIServer}=await import('../packages/core/src/asapi/server.js');
 const {loadSessionRecord,saveSessionRecord}=await import('../packages/core/src/asapi/store.js');
 const {userMsg}=await import('../packages/core/src/asapi/protocol.js');
-const modelIds=['deepseek-flash','doubao-seed-2-1-lite-260915','gemini-3.8-flash','gpt-6.1-sol','gpt-6-sol','gpt-6-luna','gpt-6-astra','claude-opus-5'];
+const modelIds=['deepseek-flash','doubao-seed-2-1-lite-260915','gemini-3.8-flash','gpt-6.1-sol','gpt-6-sol','gpt-6-luna','gpt-6-astra','claude-opus-5-5','claude-sonnet-5-5','claude-haiku-5-5','glm-5.3','grok-4.7'];
 const cloud=createServer((req,res)=>{const path=new URL(req.url,'http://fixture').pathname;let data={};if(path==='/auth/me')data={id:'picker-perf',username:'picker-perf'};if(path==='/tochat/quota')data={enabled:true,models:modelIds.map(id=>({id,enabled:true})),chatUnlimited:true,canUseAgent:false,remainingPercent:0,subscription:null,windows:[]};if(path==='/models')data={models:[]};if(path==='/polls/config')data={enabled:false};if(path==='/account/messages')data={messages:[],unread:0};res.writeHead(200,{'content-type':'application/json','access-control-allow-origin':'*','access-control-allow-headers':'authorization,content-type'});res.end(JSON.stringify(data));});
 await new Promise(resolve=>cloud.listen(0,'127.0.0.1',resolve));const cloudBase='http://127.0.0.1:'+cloud.address().port;
 const core=await startASAPIServer({port:0}),base='http://127.0.0.1:'+core.address().port;
