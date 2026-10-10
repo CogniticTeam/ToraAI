@@ -1968,6 +1968,7 @@
     "planultrax": "Per progetti di grande portata"
   },
   "quotaSettings": {
+    "cardExpires": "Scade il {{time}}",
     "title": "Quota",
     "usage": "Utilizzo",
     "currentPlan": "Piano attuale",

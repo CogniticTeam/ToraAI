@@ -1968,6 +1968,7 @@
     "planultrax": "विशाल परियोजनाओं के लिए"
   },
   "quotaSettings": {
+    "cardExpires": "{{time}} को समाप्त होगी",
     "title": "उपयोग सीमा",
     "usage": "उपयोग",
     "currentPlan": "वर्तमान प्लान",

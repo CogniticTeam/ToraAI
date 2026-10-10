@@ -1980,6 +1980,7 @@
     "planultrax": "للمشاريع الضخمة"
   },
   "quotaSettings": {
+    "cardExpires": "تنتهي في {{time}}",
     "title": "الحصة",
     "usage": "الاستخدام",
     "currentPlan": "الباقة الحالية",

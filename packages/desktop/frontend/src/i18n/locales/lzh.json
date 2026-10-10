@@ -1968,6 +1968,7 @@
     "planultrax": "供超大之業"
   },
   "quotaSettings": {
+    "cardExpires": "將於 {{time}} 到期",
     "title": "額度",
     "usage": "使用情況",
     "currentPlan": "現行套餐",

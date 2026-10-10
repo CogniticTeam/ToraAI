@@ -1968,6 +1968,7 @@
     "planultrax": "さらに大きなプロジェクトに"
   },
   "quotaSettings": {
+    "cardExpires": "{{time}} に有効期限が切れます",
     "title": "利用枠",
     "usage": "利用状況",
     "currentPlan": "現在のプラン",

@@ -1826,6 +1826,7 @@
     "planultrax": "Capacity for major projects"
   },
   "quotaSettings": {
+    "cardExpires": "Expires on {{time}}",
     "title": "Allowance",
     "usage": "Usage",
     "currentPlan": "Current plan",

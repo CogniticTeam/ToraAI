@@ -1968,6 +1968,7 @@
     "planultrax": "Para grandes projetos"
   },
   "quotaSettings": {
+    "cardExpires": "Expira em {{time}}",
     "title": "Cota",
     "usage": "Uso",
     "currentPlan": "Plano atual",

@@ -1968,6 +1968,7 @@
     "planultrax": "아주 큰 프로젝트를 위한 용량"
   },
   "quotaSettings": {
+    "cardExpires": "{{time}}에 만료",
     "title": "사용 한도",
     "usage": "사용 현황",
     "currentPlan": "현재 요금제",

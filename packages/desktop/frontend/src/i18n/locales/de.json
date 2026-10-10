@@ -1968,6 +1968,7 @@
     "planultrax": "Für sehr große Projekte"
   },
   "quotaSettings": {
+    "cardExpires": "Läuft am {{time}} ab",
     "title": "Kontingent",
     "usage": "Nutzung",
     "currentPlan": "Aktueller Tarif",

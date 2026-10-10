@@ -1974,6 +1974,7 @@
     "planultrax": "Для масштабных проектов"
   },
   "quotaSettings": {
+    "cardExpires": "Истекает {{time}}",
     "title": "Квота",
     "usage": "Использование",
     "currentPlan": "Текущий тариф",
