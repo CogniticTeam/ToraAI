@@ -77,7 +77,7 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix packages/desktop/frontend
       - run: npm run release:mac -w @tora/desktop
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: tora-windows-*
           path: windows-release
