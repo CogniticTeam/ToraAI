@@ -872,6 +872,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "Требуется {{plan}} или выше",
+    "trialRemaining": "Осталось пробных сообщений: {{count}}",
     "freeChatModelHint": "Только для режима чата ToChat. Эта модель всегда бесплатна и не расходует вашу квоту.",
     "freeChatModel": "Бесплатно",
     "builtinModels": "Встроенные модели",

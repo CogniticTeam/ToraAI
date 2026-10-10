@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { credentialApi, modelApi } from '@/api';
 import type { CredentialView, ModelCard } from '@/api';
 import { queryClient } from '@/lib/query-client';
-import { TOCHAT_MODELS, isBuiltinCredential, modelAvailable, type BuiltinQuota } from '@/lib/tochatModels';
+import { TOCHAT_MODELS, isBuiltinCredential, type BuiltinQuota } from '@/lib/tochatModels';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
 export interface CredentialWithModels {
@@ -72,7 +72,7 @@ export const AVAILABLE_MODELS_KEY = ['available-models'];
 export function modelGroupsWithQuota(groups: Record<string, CredentialWithModels[]>, quota: BuiltinQuota | undefined, unavailable: boolean) {
 	return Object.fromEntries(Object.entries(groups).map(([type,items]) => [type,items.map(item => !isBuiltinCredential(item.credential.id) ? item : {
 		...item,quota,unavailable,
-		models:item.models.filter(model => TOCHAT_MODELS.some(active=>active.id===model.name) && (unavailable || !quota?.enabled || modelAvailable(model.name,quota.models))).sort((a,b)=>TOCHAT_MODELS.findIndex(model=>model.id===a.name)-TOCHAT_MODELS.findIndex(model=>model.id===b.name)),
+		models:item.models.filter(model => TOCHAT_MODELS.some(active=>active.id===model.name) && (unavailable || !quota?.enabled || quota.models?.some(item=>item.id===model.name&&item.enabled))).sort((a,b)=>TOCHAT_MODELS.findIndex(model=>model.id===a.name)-TOCHAT_MODELS.findIndex(model=>model.id===b.name)),
 	})]));
 }
 

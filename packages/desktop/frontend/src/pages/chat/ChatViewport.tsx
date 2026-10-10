@@ -59,6 +59,7 @@ import { useTranslation } from '@/i18n/useI18n';
 import { OPEN_PANEL_EVENT, type PanelOpenDetail } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
+import { canUseWorkModel, modelRequirementLabel, modelAllowedInMode } from '@/lib/tochatModels';
 import { isBuiltinCredential } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { syncBuiltinModelAuth } from '@/utils/modelSync';
@@ -214,7 +215,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(null);
 	const builtinAccountToken = getToken();
 	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
-	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !builtinQuota.canUseAgent);
+	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !canUseWorkModel(selectedModel?.model||'',builtinQuota));
 	const [selectedKnowledgeConfig, setSelectedKnowledgeConfig] =
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>('default');
@@ -765,21 +766,17 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	 *   no credentials / models are configured.
 	 */
 	const getFirstAvailableModel = (): ChatModelConfig | null => {
-		const firstType = Object.keys(groups)[0];
-		if (!firstType) return null;
-		const items = groups[firstType];
-		if (!items || items.length === 0) return null;
-		const firstItem = items[0];
-		const firstModel = (firstItem.models as { name?: string; id?: string }[])[0];
-		if (!firstModel) return null;
-		const modelName = firstModel.name ?? firstModel.id ?? null;
-		if (!modelName) return null;
-		return {
-			type: firstType,
-			credential_id: firstItem.credential.id,
-			model: modelName,
-			parameters: {},
-		};
+		for (const [type, items] of Object.entries(groups)) {
+			for (const item of items) {
+				for (const model of item.models) {
+					const modelName = model.name;
+					if (!modelName) continue;
+					if (isBuiltinCredential(item.credential.id) && (!modelAllowedInMode(modelName, 'work') || !canUseWorkModel(modelName, builtinQuota))) continue;
+					return { type, credential_id: item.credential.id, model: modelName, parameters: {} };
+				}
+			}
+		}
+		return null;
 	};
 
 	// Seed tasks + permission from the session snapshot ONCE per
@@ -1107,7 +1104,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								// 模型是否可用由 TextInput 内部的 send 按钮
 								// 单独判定（无模型时禁发，不锁 textarea）。
 								disabled={!agentId || (phase === 'idle' && builtinBlocked)}
-									composerNotice={phase === 'idle' && builtinBlocked ? t(builtinQuota && !builtinQuota.canUseAgent ? 'applicationModes.limitReached' : 'applicationModes.connectError') : undefined}
+									composerNotice={phase === 'idle' && builtinBlocked ? modelRequirementLabel(selectedModel?.model||'',builtinQuota?.models,t) || t(builtinQuota && !builtinQuota.canUseAgent ? 'applicationModes.limitReached' : 'applicationModes.connectError') : undefined}
 									onSend={send}
 									onUserConfirm={onUserConfirm}
 									onInterrupt={interrupt}

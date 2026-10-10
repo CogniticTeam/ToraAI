@@ -866,6 +866,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "{{plan}} oder höher erforderlich",
+    "trialRemaining": "Noch {{count}} Testnachrichten",
     "freeChatModelHint": "Nur für den Chatmodus von ToChat. Dieses Modell ist dauerhaft kostenlos und verbraucht kein Kontingent.",
     "freeChatModel": "Kostenlos",
     "builtinModels": "Integrierte Modelle",

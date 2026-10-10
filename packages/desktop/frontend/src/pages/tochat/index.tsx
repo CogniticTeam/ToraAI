@@ -29,7 +29,7 @@ import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments'
 import {OPEN_PANEL_EVENT,type PanelOpenDetail} from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import {formatQuotaPercent} from '@/lib/subscription';
-import { modelAllowedInMode, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
+import { modelAllowedInMode, canUseWorkModel, modelRequirementLabel, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
 import { getToken } from '@/utils/authStore';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
@@ -147,7 +147,7 @@ function ToChatConversation() {
 	const busy = phase !== 'idle' || configPending;
 	// Hide during optimistic first-send, before session creation or history loads.
 	const showTaskSwitcher = !sessionId && msgs.length === 0 && phase === 'idle';
-	const limitReached = source === 'official' && work && quota && !quota.canUseAgent;
+	const limitReached = source === 'official' && work && quota && !canUseWorkModel(selectedOfficial.id,quota);
 	useEffect(() => {if(source !== 'official' || !work)return;const timer=window.setInterval(()=>void refreshQuota(),phase==='idle'?30000:2000);return()=>window.clearInterval(timer);},[source,work,phase,refreshQuota]);
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
 	const disabled = !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || (phase==='idle'&&!!limitReached)));
@@ -218,7 +218,7 @@ function ToChatConversation() {
 			<ResizablePanel className="flex min-h-0 min-w-0" minSize={work?'24rem':0}>
 			<div className="canvas-glow relative flex min-h-0 flex-1 justify-center overflow-hidden [--chat-content-w:54rem]">
 				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled}
-					composerNotice={missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached)) ? copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
+					composerNotice={missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached)) ? modelRequirementLabel(selectedOfficial.id,quota?.models,t) || copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
 					greetingOverride={copy(work ? 'workReady' : 'ready')} showWorkspace={work} cwd={work ? selectedCwd : null}
 					composerVariant={work ? 'default' : 'capsule'}
 					onCwdChange={async (next) => { if (await patch({ cwd: next })) setCwd(next); }}
@@ -226,7 +226,7 @@ function ToChatConversation() {
 					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={chatAttachmentTypes(attachmentModel,task)} fileProcessor={fileProcessor}
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} includeBuiltin={false} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
-						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
+						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} trial={!quota?.subscription?quota?.trial:undefined} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
 					footerSlot={userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>

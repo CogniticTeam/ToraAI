@@ -866,6 +866,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "Requer {{plan}} ou superior",
+    "trialRemaining": "Restam {{count}} mensagens de teste",
     "freeChatModelHint": "Apenas no modo de chat do ToChat. Este modelo é gratuito para sempre e não consome sua cota.",
     "freeChatModel": "Grátis",
     "builtinModels": "Modelos integrados",

@@ -439,7 +439,7 @@ test('model groups expose only available built-ins and keep personal credentials
 test('ToCode shows a retry and keeps the known catalog disabled during an outage; healthy opens use the cache',()=>{
  for(const unavailable of [true,false]){
   let reloads=0;
-  const h=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:'gpt-6-sol'}]}]},loading:false,builtinUnavailable:unavailable,refetch(){reloads++;}})}},{document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}}});
+  const h=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:'gpt-6-sol'}]}]},loading:false,builtinQuota:{enabled:true,models:[{id:'gpt-6-sol',enabled:true,allowed:true}]},builtinUnavailable:unavailable,refetch(){reloads++;}})}},{document:{visibilityState:'visible',addEventListener(){},removeEventListener(){}}});
   const{LlmSelect}=h.load('components/select/LlmSelect.tsx');let tree=h.render(()=>LlmSelect({}));
   find(tree,node=>node.type==='Popover').props.onOpenChange(true);assert.equal(reloads,unavailable?1:0,'opening a healthy menu must not add network traffic');
   tree=h.render(()=>LlmSelect({}));const model=find(tree,node=>node.type==='button'&&find(node,child=>child.type==='span'&&child.props.children==='GPT-6 Sol'));
@@ -738,4 +738,22 @@ test('桌面首条消息在账号同步与空历史响应期间保持显示，�
  assert.equal(requests.length,1);assert.equal(render().msgs.filter(m=>m.role==='user').length,1);
  assert.equal(requests[0].input.id,render().msgs[0].id);
  h.dispose();streamGate.resolve();
+});
+
+
+test('模型权限与 DeepSeek 体验控制选择和工作发送，自定义模型不受限制',()=>{
+ const h=harness();const{modelAvailable,canUseWorkModel,modelRequirementLabel}=h.load('lib/tochatModels.ts');
+ const quota={enabled:true,canUseAgent:false,subscription:null,trial:{remaining:5},models:[{id:'deepseek-flash',enabled:true,allowed:true,minimumPlan:'plus'},{id:'gpt-6-astra',enabled:true,allowed:false,minimumPlan:'max5'}]};
+ assert.equal(modelAvailable('gpt-6-astra',quota.models),false);assert.equal(canUseWorkModel('gpt-6-astra',quota),false);assert.equal(canUseWorkModel('deepseek-flash',quota),true);
+ assert.equal(modelRequirementLabel('gpt-6-astra',quota.models,(_key,params)=>params.plan),'Max 5x');
+ assert.equal(canUseWorkModel('deepseek-flash',{...quota,trial:{remaining:0}}),false);
+ assert.equal(canUseWorkModel('deepseek-flash',{...quota,subscription:{planId:'plus'},trial:{remaining:5}}),false,'订阅额度耗尽不能切换到免费体验绕过限额');
+ h.dispose();
+});
+
+test('锁定的官方模型保留在列表中显示套餐门槛，个人模型仍可选择',()=>{
+ const quota={enabled:true,models:[{id:'deepseek-flash',enabled:true,allowed:true},{id:'gpt-6-astra',enabled:true,allowed:false,minimumPlan:'max5'}]};
+ const groups={tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:'deepseek-flash'},{name:'gpt-6-astra'}]}],custom:[{credential:{id:'personal',data:{type:'openai_compatible'}},models:[{name:'personal-model'}]}]};
+ const h=harness();const{modelGroupsWithQuota}=h.load('hooks/useAvailableModels.ts');const result=modelGroupsWithQuota(groups,quota,false);
+ assert.equal(result.tora_official[0].models.length,2);assert.equal(result.custom[0].models[0].name,'personal-model');h.dispose();
 });

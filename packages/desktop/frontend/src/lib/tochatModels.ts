@@ -22,13 +22,23 @@ export const modelAllowedInMode = (id: string, mode: string) => id !== DOUBAO_MO
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
 export const isBuiltinCredential = (id?: string) => id === BUILTIN_CREDENTIAL_ID || id === 'tora-tochat-official';
 export type AgentQuota = { remainingPercent: number; canUseAgent: boolean; chatUnlimited?: boolean; subscription: { planId: string; name: string; expiresAt: string } | null; windows: { key: 'fiveHour' | 'week' | 'month'; remainingPercent: number; resetAt: string | null }[] };
-export type BuiltinQuota = AgentQuota & { enabled: boolean; models?: ToChatModelAvailability[] };
-export type ToChatModelAvailability = { id: string; enabled: boolean };
+export type ModelTrial = {model:string;total:number;used:number;remaining:number};
+export type BuiltinQuota = AgentQuota & { enabled: boolean; models?: ToChatModelAvailability[]; trial?: ModelTrial };
+export type ToChatModelAvailability = { id: string; enabled: boolean; allowed?: boolean; minimumPlan?: string | null };
 export const toChatModel = (id?: string) => id === RETIRED_OPUS.id ? RETIRED_OPUS : TOCHAT_MODELS.find(model => model.id === id) ?? TOCHAT_MODELS.find(model => model.id === 'deepseek-flash')!;
-export const modelAvailable = (id: string, models?: ToChatModelAvailability[]) => id !== RETIRED_OPUS.id && (models ? models.some(model => model.id === id && model.enabled) : id === 'deepseek-flash');
+export const modelAvailable = (id: string, models?: ToChatModelAvailability[]) => id !== RETIRED_OPUS.id && (models ? models.some(model => model.id === id && model.enabled && model.allowed !== false) : id === 'deepseek-flash');
 
 export type ToChatEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export const toChatEffort = (id: string, effort: string): ToChatEffort => {
 	const levels: readonly string[] = toChatModel(id).efforts;
 	return levels.includes(effort) ? effort as ToChatEffort : 'high';
 };
+
+export const canUseWorkModel = (id: string, quota?: BuiltinQuota | null) => !!quota && modelAvailable(id,quota.models) &&
+ (quota.canUseAgent || (id==='deepseek-flash'&&!quota.subscription&&(quota.trial?.remaining||0)>0));
+export function modelRequirementLabel(id: string, models: ToChatModelAvailability[] | undefined, t: (key:string,params?:Record<string,unknown>)=>string){
+ const info=models?.find(model=>model.id===id);
+ if(info?.allowed!==false||!info.minimumPlan)return '';
+ const plan=({plus:'Plus',pro:'Pro',max5:'Max 5x'} as Record<string,string>)[info.minimumPlan]||info.minimumPlan;
+ return t('llm-select.requiresPlan',{plan});
+}

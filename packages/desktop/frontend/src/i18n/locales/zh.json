@@ -725,6 +725,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "需要 {{plan}} 或以上",
+    "trialRemaining": "体验剩余 {{count}} 次",
     "freeChatModelHint": "仅限ToChat聊天模式使用，本模型永久免费，不消耗你的额度",
     "freeChatModel": "免费",
     "builtinModels": "内置模型",

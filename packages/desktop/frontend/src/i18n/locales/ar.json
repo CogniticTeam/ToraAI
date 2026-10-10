@@ -878,6 +878,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "يتطلب {{plan}} أو أعلى",
+    "trialRemaining": "رسائل تجريبية متبقية: {{count}}",
     "freeChatModelHint": "متاح فقط في وضع الدردشة في ToChat. هذا النموذج مجاني دائمًا ولا يستهلك حصتك.",
     "freeChatModel": "مجاني",
     "builtinModels": "النماذج المدمجة",

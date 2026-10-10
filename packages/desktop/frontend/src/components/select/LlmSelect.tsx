@@ -11,7 +11,7 @@ import { ProviderIcon } from '@/components/ui/provider-icon';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTranslation } from '@/i18n/useI18n.ts';
 import { OPEN_SETTINGS_EVENT } from '@/lib/openSettings';
-import { isBuiltinCredential, modelAllowedInMode, toChatEffort, toChatModel } from '@/lib/tochatModels';
+import { isBuiltinCredential, modelAllowedInMode, modelAvailable, modelRequirementLabel, toChatEffort, toChatModel } from '@/lib/tochatModels';
 import { cn } from '@/lib/utils';
 import { credentialLabel } from '@/utils/common';
 
@@ -249,7 +249,7 @@ export function LlmSelect({
 										<button
 											type="button"
 											onClick={() => handleSelect({ type, credential, model })}
-											disabled={isBuiltinCredential(credential.id) && builtinUnavailable}
+											disabled={isBuiltinCredential(credential.id) && (builtinUnavailable || !modelAvailable(model.name,builtinQuota?.models))}
 											className={cn(
 												'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm motion-safe:transition-colors',
 												selected ? 'bg-accent' : 'hover:bg-accent',
@@ -262,6 +262,8 @@ export function LlmSelect({
 												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
 											/>
 											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name).name : model.name}</span>
+											{isBuiltinCredential(credential.id)&&modelRequirementLabel(model.name,builtinQuota?.models,t)&&<span className="text-xs text-muted-foreground">{modelRequirementLabel(model.name,builtinQuota?.models,t)}</span>}
+											{isBuiltinCredential(credential.id)&&model.name==='deepseek-flash'&&!builtinQuota?.subscription&&(builtinQuota?.trial?.remaining||0)>0&&<span className="text-xs text-muted-foreground">{t('llm-select.trialRemaining',{count:builtinQuota?.trial?.remaining})}</span>}
 											{selected && <Check className="size-4 shrink-0 text-primary" />}
 										</button>
 									</div>

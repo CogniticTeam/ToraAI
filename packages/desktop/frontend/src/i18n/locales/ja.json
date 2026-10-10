@@ -866,6 +866,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "{{plan}} 以上が必要",
+    "trialRemaining": "体験の残り {{count}} 回",
     "freeChatModelHint": "ToChatのチャットモード専用です。このモデルは永久に無料で、利用枠を消費しません。",
     "freeChatModel": "無料",
     "builtinModels": "内蔵モデル",

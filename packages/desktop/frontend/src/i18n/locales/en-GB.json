@@ -866,6 +866,8 @@
     }
   },
   "llm-select": {
+    "requiresPlan": "Requires {{plan}} or higher",
+    "trialRemaining": "{{count}} trial messages left",
     "freeChatModelHint": "For ToChat chat mode only. This model is permanently free and does not use your quota.",
     "freeChatModel": "Free",
     "builtinModels": "Built-in models",
