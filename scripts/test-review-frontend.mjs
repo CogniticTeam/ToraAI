@@ -534,13 +534,13 @@ test('IME candidate Enter never sends, including Safari compositionend ordering;
   h.dispose();
 });
 
-test('Doubao appears only in chat model menus; attachment capabilities include audio/video only there',()=>{
+test('Doubao appears in ToChat chat/work menus with audio/video, and remains hidden in ToCode',()=>{
  const id='doubao-seed-2-1-lite-260915',h=harness();
  const {OfficialModelSelect}=h.load('components/select/OfficialModelSelect.tsx');
  const render=mode=>h.render(()=>OfficialModelSelect({model:'deepseek-flash',effort:'high',mode,onModel(){},onEffort(){}}));
  assert.ok(find(render('chat'),node=>node.type==='DropdownMenuRadioItem'&&node.props.value===id));
- assert.equal(find(render('work'),node=>node.type==='DropdownMenuRadioItem'&&node.props.value===id),null);
- const {chatAttachmentTypes}=h.load('lib/chatAttachments.ts');assert.ok(chatAttachmentTypes(id,'chat').includes('audio/wav'));assert.ok(chatAttachmentTypes(id,'chat').includes('video/mp4'));assert.ok(!chatAttachmentTypes(id,'work').includes('video/mp4'));assert.ok(!chatAttachmentTypes('gpt-6-sol','chat').includes('audio/wav'));h.dispose();
+ assert.ok(find(render('work'),node=>node.type==='DropdownMenuRadioItem'&&node.props.value===id));
+ const {chatAttachmentTypes}=h.load('lib/chatAttachments.ts');assert.ok(chatAttachmentTypes(id,'chat').includes('audio/wav'));assert.ok(chatAttachmentTypes(id,'chat').includes('video/mp4'));assert.ok(chatAttachmentTypes(id,'work').includes('video/mp4'));assert.ok(!chatAttachmentTypes('gpt-6-sol','chat').includes('audio/wav'));h.dispose();
  const code=harness({'@/hooks/useAvailableModels':{useAvailableModels:()=>({groups:{tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:id,input_types:['text']},{name:'gpt-6-sol',input_types:['text']}]}]},loading:false,refetch(){}})}});
  const {LlmSelect}=code.load('components/select/LlmSelect.tsx');const tree=code.render(()=>LlmSelect({}));assert.equal(find(tree,node=>node.type==='button'&&find(node,child=>child.props?.children==='Doubao Seed 2.1 Lite')),null);code.dispose();
 });
@@ -782,6 +782,16 @@ test('模型权限与 DeepSeek 体验控制选择和工作发送，自定义模�
  assert.equal(modelRequirementLabel('gpt-6-astra',quota.models,(_key,params)=>params.plan),'Max 5x');
  assert.equal(canUseWorkModel('deepseek-flash',{...quota,trial:{remaining:0}}),false);
  assert.equal(canUseWorkModel('deepseek-flash',{...quota,subscription:{planId:'plus'},trial:{remaining:5}}),false,'订阅额度耗尽不能切换到免费体验绕过限额');
+ h.dispose();
+});
+
+test('Doubao work uses its daily quota instead of subscription Credits and blocks only work after exhaustion',()=>{
+ const h=harness(),{modelAvailable,canUseWorkModel,humanVerificationNeeded}=h.load('lib/tochatModels.ts');
+ const id='doubao-seed-2-1-lite-260915';
+ const quota={subscription:null,canUseAgent:false,models:[{id,enabled:true,allowed:true,workAllowed:true}],doubaoWork:{total:10,remaining:10,canUse:true},humanVerification:{required:true,verified:false}};
+ assert.equal(canUseWorkModel(id,quota),true);assert.equal(humanVerificationNeeded(id,quota,'work'),true);assert.equal(humanVerificationNeeded(id,quota,'chat'),false);
+ const exhausted={...quota,models:[{id,enabled:true,allowed:true,workAllowed:false}],doubaoWork:{total:10,remaining:0,canUse:false}};
+ assert.equal(canUseWorkModel(id,exhausted),false);assert.equal(modelAvailable(id,exhausted.models,'work'),false);assert.equal(modelAvailable(id,exhausted.models,'chat'),true);
  h.dispose();
 });
 

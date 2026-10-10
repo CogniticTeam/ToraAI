@@ -130,7 +130,7 @@ export function LlmSelect({
 	const allEntries: ModelEntry[] = groupEntries.flatMap(([type, usable]) =>
 		usable.flatMap(({ credential, models }) => models.map((model) => ({ type, credential, model }))),
 	);
-	const entries: ModelEntry[] = allEntries.filter(entry => !isBuiltinCredential(entry.credential.id) || modelAllowedInMode(entry.model.name,'work'));
+	const entries: ModelEntry[] = allEntries.filter(entry => !isBuiltinCredential(entry.credential.id) || modelAllowedInMode(entry.model.name,'tocode'));
 	// 每个凭证首次出现的下标 —— 左列在组首渲染凭证标题
 	const firstIdxByCredential = new Map<string, number>();
 	entries.forEach((e, idx) => {

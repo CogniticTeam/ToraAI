@@ -18,15 +18,15 @@ export const TOCHAT_MODELS = [
 // replacement; never quietly render or bill it as DeepSeek.
 const RETIRED_OPUS = {id:'claude-opus-5',name:'Claude Opus 5',efforts:['low','medium','high','xhigh','max']} as const;
 export type ToChatModelId = (typeof TOCHAT_MODELS)[number]['id'] | typeof RETIRED_OPUS.id;
-export const modelAllowedInMode = (id: string, mode: string) => id !== DOUBAO_MODEL_ID || mode === 'chat';
+export const modelAllowedInMode = (id: string, mode: string) => id !== DOUBAO_MODEL_ID || mode === 'chat' || mode === 'work';
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
 export const isBuiltinCredential = (id?: string) => id === BUILTIN_CREDENTIAL_ID || id === 'tora-tochat-official';
 export type AgentQuota = { remainingPercent: number; canUseAgent: boolean; chatUnlimited?: boolean; subscription: { planId: string; name: string; expiresAt: string } | null; windows: { key: 'fiveHour' | 'week' | 'month'; remainingPercent: number; resetAt: string | null }[] };
 export type ModelTrial = {model:string;total:number;used:number;remaining:number};
-export type BuiltinQuota = AgentQuota & { enabled: boolean; models?: ToChatModelAvailability[]; trial?: ModelTrial; humanVerification?: {required:boolean;verified:boolean;expiresAt:string|null} };
-export type ToChatModelAvailability = { id: string; enabled: boolean; allowed?: boolean; minimumPlan?: string | null };
+export type BuiltinQuota = AgentQuota & { enabled: boolean; models?: ToChatModelAvailability[]; trial?: ModelTrial; doubaoWork?: {total:number;used:number;remaining:number;resetAt:string;canUse:boolean}; humanVerification?: {required:boolean;verified:boolean;expiresAt:string|null} };
+export type ToChatModelAvailability = { id: string; enabled: boolean; allowed?: boolean; workAllowed?: boolean; minimumPlan?: string | null };
 export const toChatModel = (id?: string) => id === RETIRED_OPUS.id ? RETIRED_OPUS : TOCHAT_MODELS.find(model => model.id === id) ?? TOCHAT_MODELS.find(model => model.id === 'deepseek-flash')!;
-export const modelAvailable = (id: string, models?: ToChatModelAvailability[]) => id !== RETIRED_OPUS.id && (models ? models.some(model => model.id === id && model.enabled && model.allowed !== false) : id === 'deepseek-flash');
+export const modelAvailable = (id: string, models?: ToChatModelAvailability[], mode = 'chat') => id !== RETIRED_OPUS.id && (models ? models.some(model => model.id === id && model.enabled && model.allowed !== false && (mode !== 'work' || model.workAllowed !== false)) : id === 'deepseek-flash');
 
 export type ToChatEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 export const toChatEffort = (id: string, effort: string): ToChatEffort => {
@@ -34,8 +34,8 @@ export const toChatEffort = (id: string, effort: string): ToChatEffort => {
 	return levels.includes(effort) ? effort as ToChatEffort : 'high';
 };
 
-export const canUseWorkModel = (id: string, quota?: BuiltinQuota | null) => !!quota && modelAvailable(id,quota.models) &&
- (quota.canUseAgent || (id==='deepseek-flash'&&!quota.subscription&&(quota.trial?.remaining||0)>0));
+export const canUseWorkModel = (id: string, quota?: BuiltinQuota | null) => !!quota && modelAvailable(id,quota.models,'work') &&
+ (id===DOUBAO_MODEL_ID ? !!quota.doubaoWork?.canUse : quota.canUseAgent || (id==='deepseek-flash'&&!quota.subscription&&(quota.trial?.remaining||0)>0));
 export function modelRequirementLabel(id: string, models: ToChatModelAvailability[] | undefined, t: (key:string,params?:Record<string,unknown>)=>string){
  const info=models?.find(model=>model.id===id);
  if(info?.allowed!==false||!info.minimumPlan)return '';
@@ -43,4 +43,4 @@ export function modelRequirementLabel(id: string, models: ToChatModelAvailabilit
  return t('llm-select.requiresPlan',{plan});
 }
 
-export const humanVerificationNeeded=(model:string,quota?:BuiltinQuota|null)=>model==='deepseek-flash'&&!quota?.subscription&&(quota?.trial?.remaining||0)>0&&!!quota?.humanVerification?.required&&!quota.humanVerification.verified;
+export const humanVerificationNeeded=(model:string,quota?:BuiltinQuota|null,mode='chat')=>!quota?.subscription&&((model==='deepseek-flash'&&(quota?.trial?.remaining||0)>0)||(model===DOUBAO_MODEL_ID&&mode==='work'&&!!quota?.doubaoWork?.canUse))&&!!quota?.humanVerification?.required&&!quota.humanVerification.verified;

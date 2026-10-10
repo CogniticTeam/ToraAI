@@ -3,7 +3,7 @@ import {DOUBAO_MODEL_ID,DOUBAO_INPUT_TYPES} from './chat-media.js';
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
 export const BUILTIN_PROVIDER_TYPE = 'tora_official';
 export const BUILTIN_MODELS = [
-  {id:DOUBAO_MODEL_ID,name:'Doubao Seed 2.1 Lite',provider:'volcengine',context:1048576,modes:['chat'],inputTypes:DOUBAO_INPUT_TYPES},
+  {id:DOUBAO_MODEL_ID,name:'Doubao Seed 2.1 Lite',provider:'volcengine',context:1048576,modes:['chat','work'],inputTypes:DOUBAO_INPUT_TYPES},
   {id:'gpt-6.1-sol',name:'GPT-6.1 Sol',provider:'openai',context:1050000},
   {id:'gpt-6-astra',name:'GPT-6 Astra',provider:'openai',context:1050000},
   {id:'gpt-6-sol',name:'GPT-6 Sol',provider:'openai',context:1050000},

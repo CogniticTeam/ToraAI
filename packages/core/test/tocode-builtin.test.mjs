@@ -71,11 +71,11 @@ try {
   await post('/admin/tochat-config',{baseURL:'https://builtin-fixture.invalid',authToken:''});const result=await (await get('/credential/')).json();assert.ok(!result.credentials.some(credential=>credential.id==='tora-official'));assert.equal((await (await get('/model/?provider=tora_official')).json()).models.length,0);
   const cfg=resolveRunCfg({config:{chat_model_config:{credential_id:'tora-official',model:'gpt-6.1-sol'}}},null);assert.equal(cfg.apiKey,'');assert.notEqual(cfg.apiKey,loadConfig().apiKey);
  });
- test('Doubao is chat-only and desktop audio/video retain MIME instead of becoming images',async()=>{
+ test('Doubao supports ToChat chat/work, rejects ToCode, and retains audio/video MIME',async()=>{
   await post('/admin/tochat-config',{baseURL:'https://builtin-fixture.invalid',authToken:'account-token-only'});
   const model='doubao-seed-2-1-lite-260915',mc={credential_id:'tora-official',model,parameters:{thinkingEffort:'high'}};
   assert.throws(()=>resolveRunCfg({config:{application_mode:'tocode',chat_model_config:mc}}),/仅支持/);
-  assert.throws(()=>resolveRunCfg({config:{application_mode:'tochat',task_mode:'work',model_source:'official',chat_model_config:mc}}),/仅支持/);
+  assert.equal(resolveRunCfg({config:{application_mode:'tochat',task_mode:'work',model_source:'official',chat_model_config:mc}}).model,model);
   const cfg=resolveRunCfg({config:{application_mode:'tochat',task_mode:'chat',model_source:'official',chat_model_config:mc}});assert.equal(cfg.maxTokensBudget,1048576-24576);
   const agent=(await (await get('/agent/')).json()).agents[0];let wire;
   globalThis.fetch=async(url,init)=>{if(String(url).endsWith('/title'))return Response.json({title:null});wire=JSON.parse(init.body);return new Response('data: '+JSON.stringify({choices:[{delta:{content:'media accepted'},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n',{headers:{'content-type':'text/event-stream'}});};

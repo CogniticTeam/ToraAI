@@ -6,7 +6,7 @@ import {verifyTurnstile,readHumanVerification,handleHumanVerification,HUMAN_VERI
 import {handleToChat} from '../src/tochat.js';
 function fixture(){
  const sql=new DatabaseSync(':memory:');sql.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2);');
- for(const name of ['0003_subscriptions.sql','0004_quota_resets.sql','0008_model_access_trials.sql','0009_human_verification.sql'])sql.exec(readFileSync(new URL('../migrations/'+name,import.meta.url),'utf8'));
+ for(const name of ['0003_subscriptions.sql','0004_quota_resets.sql','0008_model_access_trials.sql','0009_human_verification.sql','0010_doubao_work.sql'])sql.exec(readFileSync(new URL('../migrations/'+name,import.meta.url),'utf8'));
  const DB={prepare(query){const statement=args=>({bind:(...v)=>statement(v),first:async()=>sql.prepare(query).get(...args)||null,all:async()=>({results:sql.prepare(query).all(...args)}),run:async()=>({meta:sql.prepare(query).run(...args)})});return statement([]);},async batch(items){sql.exec('BEGIN');try{const result=[];for(const item of items)result.push(await item.run());sql.exec('COMMIT');return result;}catch(e){sql.exec('ROLLBACK');throw e;}}};
  const env={DB,TURNSTILE_SECRET:'fixture-only-secret',TURNSTILE_HOSTNAMES:'fixture.invalid',DEEPSEEK_API_KEY:'fixture-model-key'};return{sql,DB,env};
 }

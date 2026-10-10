@@ -204,7 +204,7 @@ export function resolveRunCfg(session, agent) {
     // Context selection was removed; legacy smaller choices no longer cap a run.
     cfg.maxTokensBudget=Math.max(1024,maximum-16384-8192);
     cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=metadata.inputTypes?.some(type=>type.startsWith('image/'))??true;cfg.thinking=true;
-    if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'work':cfg.tochatMode))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
+    if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'tocode':cfg.tochatMode))throw Error('豆包免费模型仅支持 ToChat 聊天和工作模式');
     if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
   }
   if (visionOverride !== undefined && cfg.provider!=='tochat-official') cfg.vision = visionOverride;
@@ -311,7 +311,7 @@ async function _startChatRunAsync(sessionId, agent, payload) {
     typeof payload === 'string' ? [] : (Array.isArray(payload?.selected_skill_ids) ? payload.selected_skill_ids : []);
 
   const cfg = resolveRunCfg(sessionForView(session,typeof payload==='object'?payload?.viewMode:undefined), agent);
-  if(images.some(im=>/^audio\/|^video\//.test(im.media_type||im.data_url?.match(/^data:([^;,]+)/)?.[1]||''))&&!(cfg.model===DOUBAO_MODEL_ID&&cfg.appMode==='tochat'&&cfg.tochatMode==='chat'))throw Error('音频和视频附件仅支持豆包聊天模式');
+  if(images.some(im=>/^audio\/|^video\//.test(im.media_type||im.data_url?.match(/^data:([^;,]+)/)?.[1]||''))&&!(cfg.model===DOUBAO_MODEL_ID&&cfg.appMode==='tochat'&&['chat','work'].includes(cfg.tochatMode)))throw Error('音频和视频附件仅支持豆包 ToChat 模式');
 
   const replyId = `reply-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   bus.replyId = replyId;

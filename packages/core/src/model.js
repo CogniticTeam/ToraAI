@@ -298,10 +298,10 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
       let bizCode = '';
       try {
         const j = JSON.parse(detail);
-        const msg = j?.message || j?.error?.message || j?.detail?.message;
+        const msg = j?.message || j?.error?.message || (typeof j?.detail === 'string' ? j.detail : j?.detail?.message);
+        bizCode = String(j?.code || j?.error?.code || '');
         if (msg) {
           shown = String(msg);
-          bizCode = String(j?.code || j?.error?.code || '');
         }
       } catch { /* 非 JSON 响应体，保持原文 */ }
       const err = new Error(hint ? `模型服务错误 ${res.status}：${hint}（${shown}）` : shown);

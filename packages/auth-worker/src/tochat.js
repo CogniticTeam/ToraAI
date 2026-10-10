@@ -1,3 +1,4 @@
+import {readDoubaoWorkQuota,reserveDoubaoWorkStatements,settleDoubaoWorkStatements,doubaoWorkCost,doubaoWorkFailure} from './doubao-work.js';
 import {readHumanVerification,publicHumanVerification,verificationRequired,trialTurnVerified,verifiedTrialStatement} from './human-verification.js';
 import {MODEL_MINIMUM_PLAN,hasModelSubscription} from '../../core/src/model-access.js';
 import {readDeepSeekTrial,modelAccessAllowed,modelAccessFailure,reserveTrialStatement} from './model-access.js';
@@ -10,7 +11,7 @@ import {modelRates} from './subscription-plans.js';
 
 // Shared official key never crosses this server boundary.
 const MODELS = Object.freeze({
-  [DOUBAO_MODEL_ID]: {name:'Doubao Seed 2.1 Lite',secret:'ARK_API_KEY',url:'https://ark.cn-beijing.volces.com/api/v3/responses',protocol:'responses',adapter:'ark',modes:['chat']},
+  [DOUBAO_MODEL_ID]: {name:'Doubao Seed 2.1 Lite',secret:'ARK_API_KEY',url:'https://ark.cn-beijing.volces.com/api/v3/responses',protocol:'responses',adapter:'ark',modes:['chat','work']},
   'gpt-6-sol': {name:'GPT-6 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-luna': {name:'GPT-6 Luna',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
   'gpt-6-astra': {name:'GPT-6 Astra',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
@@ -24,7 +25,7 @@ const MODELS = Object.freeze({
   'gpt-6.1-sol': {name:'GPT-6.1 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},
 });
 const modelConfig = id => Object.hasOwn(MODELS,id) ? MODELS[id] : null;
-export const toChatModels = (env,quota) => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,minimumPlan:MODEL_MINIMUM_PLAN[id],allowed:modelAccessAllowed(id,quota),input_modalities:model.inputModalities||(model.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
+export const toChatModels = (env,quota) => Object.entries(MODELS).map(([id,model]) => ({id,name:model.name,minimumPlan:MODEL_MINIMUM_PLAN[id],allowed:modelAccessAllowed(id,quota),...(id===DOUBAO_MODEL_ID?{workAllowed:quota?.doubaoWork?.canUse!==false}:{}),input_modalities:model.inputModalities||(model.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:model.modes||['chat','work'],free:!!model.modes,enabled:!!env[model.secret]&&env.TOCHAT_ENABLED!=='0'}));
 const json = (data,status=200) => new Response(JSON.stringify(data),{status,headers:{'content-type':'application/json','access-control-allow-origin':'*','cache-control':'no-store'}});
 const fail = (detail,status=400) => json({detail},status);
 export function quotaPeriods(now=Date.now()) {
@@ -36,12 +37,12 @@ export function quotaPeriods(now=Date.now()) {
 }
 export async function readToChatQuota(db,userId,now=Date.now(),humanVerification={required:false,verified:true,expiresAt:null}) {
   const quota=await readAgentQuota(db,userId,now);
-  return {...publicQuota(quota),chatUnlimited:true,trial:await readDeepSeekTrial(db,userId),humanVerification};
+  return {...publicQuota(quota),chatUnlimited:true,trial:await readDeepSeekTrial(db,userId),humanVerification,doubaoWork:await readDoubaoWorkQuota(db,userId,quotaPeriods(now))};
 }
 export function validateToChatBody(body,kind) {
   if(body?.model==='claude-opus-5')throw Error('Claude Opus 5 已下架，请选择其他官方模型');
   if (!body || !modelConfig(body.model) || !Array.isArray(body.messages) || !body.messages.length || body.messages.length>1000) throw Error('模型或消息格式无效');
-  if(modelConfig(body.model).modes&&!modelConfig(body.model).modes.includes(kind))throw Error('豆包免费模型仅支持 ToChat 聊天模式');
+  if(modelConfig(body.model).modes&&!modelConfig(body.model).modes.includes(kind))throw Error('豆包免费模型仅支持 ToChat 聊天和工作模式');
   const effort=body.reasoning_effort||'high';
   const efforts=modelConfig(body.model).efforts||(body.model.startsWith('gpt-6')?['low','medium','high','xhigh','max']:[DOUBAO_MODEL_ID,'gemini-3.8-flash'].includes(body.model)?['low','medium','high','max']:['low','high','max']);
   if (!efforts.includes(effort)) throw Error('此模型不支持该思考强度');
@@ -61,7 +62,7 @@ export function validateToChatBody(body,kind) {
         if(++images>20) throw Error('单次最多20张图片');
         part.image_url.url='[image]';
       } else if(['input_audio','input_video'].includes(part.type)) {
-        if(body.model!==DOUBAO_MODEL_ID||message.role!=='user')throw Error('音频和视频仅支持豆包聊天的用户附件');
+        if(body.model!==DOUBAO_MODEL_ID||message.role!=='user')throw Error('音频和视频仅支持豆包的用户附件');
         const audio=part.type==='input_audio',field=audio?'audio_url':'video_url',url=part[field];
         const match=typeof url==='string'&&url.match(/^data:([^;,]+);base64,([A-Za-z0-9+/]+={0,2})$/);
         if(!match||!(audio?AUDIO_MIME_TYPES:VIDEO_MIME_TYPES).includes(match[1]))throw Error('请上传受支持的音频或视频附件');
@@ -81,6 +82,7 @@ export async function reserveToChat(db,params) {
   const p=quotaPeriods(now);
   const credit=params.credit;
   await db.batch([
+    ...(params.doubaoWork?reserveDoubaoWorkStatements(db,{userId,messageId,requestId,day:p.day,fingerprint:params.doubaoWork.fingerprint,now,cost:params.doubaoWork.cost}):[]),
     ...(params.verifiedSessionHash?[verifiedTrialStatement(db,userId,messageId,params.verifiedSessionHash,now)]:[]),
     ...(params.trial?[reserveTrialStatement(db,{userId,messageId,fingerprint:params.trial.fingerprint,now})]:[]),
     ...(credit?[reserveCreditStatement(db,{userId,requestId,now,...credit})]:[]),
@@ -99,6 +101,7 @@ export async function settleToChat(db,params) {
   const tokens=totalUsage(usage);
   await db.batch([
     ...(params.creditStatement?[params.creditStatement]:[]),
+    ...(params.doubaoWork?settleDoubaoWorkStatements(db,{userId,messageId,requestId,failed,unknown:unknown||tokens===null}):[]),
     ...(params.trial&&failed?[db.prepare('DELETE FROM model_trial_turns WHERE user_id=? AND message_id=? AND EXISTS(SELECT 1 FROM tochat_turns WHERE user_id=? AND message_id=? AND current_request=? AND rounds=1)').bind(userId,messageId,userId,messageId,requestId)]:[]),
     db.prepare("UPDATE tochat_requests SET charged=CASE WHEN ? THEN 0 WHEN kind='work' AND ? IS NOT NULL THEN ? ELSE charged END,status=?,finished_at=? WHERE user_id=? AND request_id=? AND status='pending'").bind(failed?1:0,tokens,tokens,failed?'failed':unknown||tokens===null?'unknown':'settled',Date.now(),userId,requestId),
     db.prepare("UPDATE tochat_turns SET state=?,expected_tools=?,counted=CASE WHEN ? AND rounds=1 THEN 0 ELSE counted END WHERE user_id=? AND message_id=? AND current_request=? AND state='active'").bind(failed?'failed':tools.length&&!unknown?'waiting_tools':'done',JSON.stringify(tools),failed?1:0,userId,messageId,requestId),
@@ -128,7 +131,7 @@ export async function handleToChat(request,env,ctx,user) {
     const result=await generateOfficialTitle(env,namingInput,fast);return json(result.data,result.status);
   }
   if(path==='/tochat/quota'&&request.method==='GET') {const quota=await readToChatQuota(env.DB,user.id,Date.now(),humanStatus),models=toChatModels(env,quota);return json({...quota,enabled:models.some(model=>model.enabled),model:'deepseek-flash',models});}
-  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env,await readToChatQuota(env.DB,user.id,Date.now(),humanStatus)).filter(model=>model.enabled&&(!(request.headers.get('x-tochat-mode')==='work'||request.headers.get('x-tora-feature')==='tocode')||model.modes.includes('work')))});
+  if(path==='/tochat/v1/models'&&request.method==='GET') return json({data:toChatModels(env,await readToChatQuota(env.DB,user.id,Date.now(),humanStatus)).filter(model=>model.enabled&&!(request.headers.get('x-tora-feature')==='tocode'&&model.id===DOUBAO_MODEL_ID)&&(!(request.headers.get('x-tochat-mode')==='work'||request.headers.get('x-tora-feature')==='tocode')||model.modes.includes('work')))});
   if(path!=='/tochat/v1/chat/completions'||request.method!=='POST') return fail('Not Found',404);
   const kind=request.headers.get('x-tochat-mode');
   const messageId=request.headers.get('x-tochat-message-id');
@@ -139,10 +142,11 @@ export async function handleToChat(request,env,ctx,user) {
   let body,checked;
   try{body=JSON.parse(raw);checked=validateToChatBody(body,kind);}catch(error){return fail(error.message);}
   const selected=modelConfig(body.model);
-  if(selected.modes&&request.headers.get('x-tora-feature')==='tocode')return fail('豆包免费模型仅支持 ToChat 聊天模式',403);
+  if(selected.modes&&request.headers.get('x-tora-feature')==='tocode')return fail('豆包免费模型不支持 ToCode',403);
   if(!env[selected.secret]||env.TOCHAT_ENABLED==='0') return fail('官方模型暂不可用，请稍后重试或在设置中主动切换为自定义模型',503);
   let upstreamBody;
   try{if(selected.protocol==='responses')upstreamBody=toResponsesBody(body,checked.effort,checked.output,selected.adapter);}catch(error){return fail(error.message);}
+  const freeWork=body.model===DOUBAO_MODEL_ID&&kind==='work';
   const lastUser=[...body.messages].reverse().find(m=>m.role==='user');
   if(!lastUser) return fail('缺少用户消息');
   const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(kind==='work'?messageId:JSON.stringify(lastUser.content)));
@@ -153,6 +157,7 @@ export async function handleToChat(request,env,ctx,user) {
   }
   // An abandoned stream retains its conservative reservation, never refunds unknown usage.
   await env.DB.batch([
+    env.DB.prepare("UPDATE doubao_work_requests SET status='unknown' WHERE user_id=? AND status='pending' AND created_at<?").bind(user.id,Date.now()-300000),
     env.DB.prepare("UPDATE tochat_requests SET status='unknown',finished_at=? WHERE user_id=? AND status='pending' AND created_at<?").bind(Date.now(),user.id,Date.now()-300000),
     env.DB.prepare("UPDATE usage_log SET credit_micro=credit_micro+held_micro,held_micro=0,status='unknown',finished_at=? WHERE user_id=? AND status='pending' AND created_at<?").bind(Date.now(),user.id,Date.now()-300000),
     env.DB.prepare("UPDATE tochat_turns SET state='done' WHERE user_id=? AND state='active' AND current_request IN (SELECT request_id FROM tochat_requests WHERE user_id=? AND status='unknown')").bind(user.id,user.id),
@@ -177,17 +182,29 @@ export async function handleToChat(request,env,ctx,user) {
     const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(lastUser.content)));
     trialFingerprint=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
   }else if(!modelAccessAllowed(body.model,access))return json(modelAccessFailure(body.model),403);
-  const metered=kind==='work'&&!trial;
+  let freeWorkFingerprint;
+  if(freeWork){
+    const prior=await env.DB.prepare('SELECT fingerprint FROM doubao_work_turns WHERE user_id=? AND message_id=?').bind(user.id,messageId).first();
+    const hash=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(lastUser.content)));
+    freeWorkFingerprint=Array.from(new Uint8Array(hash),n=>n.toString(16).padStart(2,'0')).join('');
+    if(prior&&(prior.fingerprint!==freeWorkFingerprint||existing?.state!=='waiting_tools'))return fail('此工作消息已完成、正在执行或内容已更改，请发送新消息',409);
+    if(existing?.state==='waiting_tools'){const expected=JSON.parse(existing.expected_tools||'[]');if(!prior||!expected.length||!expected.every(id=>body.messages.some(m=>m.role==='tool'&&m.tool_call_id===id)))return fail('缺少对应工具结果',409);}
+    if(!access.subscription&&humanState.required&&!humanState.verified&&!await trialTurnVerified(env.DB,user.id,messageId,humanState.sessionHash))return json(verificationRequired(),403);
+  }
+  const metered=kind==='work'&&!trial&&!freeWork;
   const quota=metered?await readAgentQuota(env.DB,user.id):null;
   const rate=metered?modelRates(body.model,checked.inputBound,env):{input:0,cached:0,output:0};
   const available=quota?.availableMicro??Infinity;
   const inputCost=checked.inputBound*rate.input;
-  const output=metered?Math.min(checked.output,Math.floor((available-inputCost)/rate.output)):checked.output;
+  const output=metered?Math.min(checked.output,Math.floor((available-inputCost)/rate.output)):freeWork?Math.min(checked.output,4096):checked.output;
   if(output<1) return json({detail:quota?.subscription?'官方工作额度已耗尽或无法覆盖当前上下文，请等待滚动窗口释放额度':'请先订阅后使用官方工作模型',quota:quota?publicQuota(quota):null},429);
   const reserved=inputCost+output*rate.output;
-  try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,verifiedSessionHash:trial&&humanState.required?humanState.sessionHash:null,trial:trial?{fingerprint:trialFingerprint}:null,credit:metered?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
-  catch(error){if(/MODEL_TRIAL/.test(error.message))return json(modelAccessFailure(body.model),/ID_REUSED/.test(error.message)?409:403);return fail(/LIMIT|SUBSCRIPTION/.test(error.message)?'官方工作额度或并发限制已达到，请等待额度释放':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT|SUBSCRIPTION/.test(error.message)?429:409);}
-  const settle=options=>settleToChat(env.DB,{userId:user.id,messageId,requestId,trial,...options,creditStatement:metered?settleCreditStatement(env.DB,{userId:user.id,requestId,model:body.model,env,...options}):null});
+  const hasAudio=body.messages.some(message=>Array.isArray(message.content)&&message.content.some(part=>part.type==='input_audio'));
+  const freeWorkBound=hasAudio?Math.max(checked.inputBound,new TextEncoder().encode(raw).length):checked.inputBound;
+  const freeWorkCost=freeWork?doubaoWorkCost(freeWorkBound,output,hasAudio):0;
+  try{await reserveToChat(env.DB,{userId:user.id,messageId,requestId,kind,fingerprint,reserved:0,doubaoWork:freeWork?{fingerprint:freeWorkFingerprint,cost:freeWorkCost}:null,verifiedSessionHash:(trial||(freeWork&&!access.subscription))&&humanState.required?humanState.sessionHash:null,trial:trial?{fingerprint:trialFingerprint}:null,credit:metered?{model:body.model,feature:request.headers.get('x-tora-feature')==='tocode'?'tocode':'work',reserved}:null});}
+  catch(error){if(/DOUBAO_WORK/.test(error.message))return /ID_REUSED/.test(error.message)?fail('此工作消息标识已使用',409):json(doubaoWorkFailure(error.message.match(/DOUBAO_WORK_[A-Z_]+/)?.[0]),429);if(/MODEL_TRIAL/.test(error.message))return json(modelAccessFailure(body.model),/ID_REUSED/.test(error.message)?409:403);return fail(/LIMIT|SUBSCRIPTION/.test(error.message)?'官方工作额度或并发限制已达到，请等待额度释放':'此消息已经完成、正在执行或标识重复，请勿重复提交',/LIMIT|SUBSCRIPTION/.test(error.message)?429:409);}
+  const settle=options=>settleToChat(env.DB,{userId:user.id,messageId,requestId,trial,doubaoWork:freeWork,...options,creditStatement:metered?settleCreditStatement(env.DB,{userId:user.id,requestId,model:body.model,env,...options}):null});
   const abort=new AbortController();
   let upstream;
   try{upstream=await fetch(selected.url,{

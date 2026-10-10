@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "{{plan}} 以上が必要",
     "trialRemaining": "体験の残り {{count}} 回",
-    "freeChatModelHint": "ToChatのチャットモード専用です。このモデルは永久に無料で、利用枠を消費しません。",
+    "freeChatModelHint": "ToChat のチャットと作業モードで利用できます。チャットは無料、作業は1日最大10件まで無料で、契約の利用枠を消費しません。",
+    "freeWorkModelHint": "本日利用可能：{{remaining}} / {{total}} 件。作業は1日最大10件まで無料。複雑なタスクには無料使用量の制限もあります。GMT+8 の午前0時にリセットされ、契約の利用枠は消費しません。",
+    "freeWorkRemaining": "本日利用可能：{{remaining}} / {{total}} 件",
     "freeChatModel": "無料",
     "builtinModels": "内蔵モデル",
     "builtinQuotaHint": "ToChatの作業とToCodeは利用枠を共有します。",

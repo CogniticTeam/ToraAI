@@ -151,9 +151,9 @@ function ToChatConversation() {
 	const limitReached = source === 'official' && work && quota && !canUseWorkModel(selectedOfficial.id,quota);
 	useEffect(() => {if(source !== 'official' || !work)return;const timer=window.setInterval(()=>void refreshQuota(),phase==='idle'?30000:2000);return()=>window.clearInterval(timer);},[source,work,phase,refreshQuota]);
 	const missingSession = !!sessionId && !view && !sessionsLoading && !loading;
-	const needsHumanVerification=source==='official'&&humanVerificationNeeded(selectedOfficial.id,quota);
-	const disabled = (phase==='idle'&&needsHumanVerification) || !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models) || !!quotaError || (phase==='idle'&&!!limitReached)));
-	const modelLocked = source === 'official' && !!quota && !modelAvailable(selectedOfficial.id,quota.models);
+	const needsHumanVerification=source==='official'&&humanVerificationNeeded(selectedOfficial.id,quota,task);
+	const disabled = (phase==='idle'&&needsHumanVerification) || !agentId || !model || missingSession || configPending || (source === 'official' && (!authReady || !quota?.enabled || !modelAvailable(selectedOfficial.id, quota?.models,task) || !!quotaError || (phase==='idle'&&!!limitReached)));
+	const modelLocked = source === 'official' && !!quota && !modelAvailable(selectedOfficial.id,quota.models,task);
 	const patch = async (config: UpdateSessionRequest) => {
 		if (busy && !(Object.keys(config).length === 1 && 'permission_mode' in config)) return false;
 		setConfigPending(true);
@@ -171,7 +171,7 @@ function ToChatConversation() {
 		if (await patch({ chat_model_config: { ...officialModel, parameters: { thinking: true, thinkingEffort: next } } })) setEffort(next);
 	};
 	const chooseOfficialModel = async (id: ToChatModelId) => {
-		if (!modelAllowedInMode(id,task) || !modelAvailable(id,quota?.models)) return;
+		if (!modelAllowedInMode(id,task) || !modelAvailable(id,quota?.models,task)) return;
 		const nextEffort = toChatEffort(id, selectedEffort);
 		if (await patch({ chat_model_config: { ...officialModel, model: id, parameters: { thinking: true, thinkingEffort: nextEffort } } })) { setOfficialModelId(id); setEffort(nextEffort); }
 	};
@@ -207,11 +207,11 @@ function ToChatConversation() {
 				<WindowDragRegion className="min-w-6 flex-1 self-stretch" />
 				<Popover>
 					<PopoverTrigger className="flex max-w-[45%] items-center gap-1 rounded-md px-1 py-1 text-xs text-muted-foreground hover:text-foreground" aria-label={copy('quota')}>
-						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? formatQuotaPercent(quota.remainingPercent) : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
+						<span className="truncate">{source === 'custom' ? copy('customQuota') : quotaError ? copy('quotaError') : !quota ? copy('quotaLoading') : work ? selectedOfficial.id==='doubao-seed-2-1-lite-260915'?t('llm-select.freeWorkRemaining',{remaining:quota.doubaoWork?.canUse===false?0:quota.doubaoWork?.remaining??10,total:quota.doubaoWork?.total??10}):formatQuotaPercent(quota.remainingPercent) : copy('chatUnlimited')}</span><ChevronDown className="size-3 shrink-0" />
 					</PopoverTrigger>
 					<PopoverContent align="end" className="w-80 max-w-[calc(100vw-2rem)] space-y-2 text-sm">
 						<h3 className="font-medium">{copy('quota')}</h3>
-						{work ? <AgentQuotaMeter quota={quota} /> : <p>{copy('chatUnlimited')}</p>}
+						{work ? selectedOfficial.id==='doubao-seed-2-1-lite-260915'?<p>{t('llm-select.freeWorkModelHint',{remaining:quota?.doubaoWork?.canUse===false?0:quota?.doubaoWork?.remaining??10,total:quota?.doubaoWork?.total??10})}</p>:<AgentQuotaMeter quota={quota} /> : <p>{copy('chatUnlimited')}</p>}
 						{quotaError && <p className="text-xs text-destructive">{quotaError}</p>}
 						<Button variant="ghost" size="sm" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}><RotateCw />{copy('retry')}</Button>
 					</PopoverContent>
@@ -221,7 +221,7 @@ function ToChatConversation() {
 			<ResizablePanel className="flex min-h-0 min-w-0" minSize={work?'24rem':0}>
 			<div className="canvas-glow relative flex min-h-0 flex-1 justify-center overflow-hidden [--chat-content-w:54rem]">
 				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled && !modelLocked} sendDisabled={disabled}
-					composerNotice={!modelLocked && (missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models))) || limitReached))) ? modelRequirementLabel(selectedOfficial.id,quota?.models,t) || copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
+					composerNotice={!modelLocked && (missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models,task))) || limitReached))) ? modelRequirementLabel(selectedOfficial.id,quota?.models,t) || copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
 					greetingOverride={copy(work ? 'workReady' : 'ready')} showWorkspace={work} cwd={work ? selectedCwd : null}
 					composerVariant={work ? 'default' : 'capsule'}
 					onCwdChange={async (next) => { if (await patch({ cwd: next })) setCwd(next); }}
@@ -229,7 +229,7 @@ function ToChatConversation() {
 					onUserConfirm={onUserConfirm} onInterrupt={interrupt} allowedInputTypes={chatAttachmentTypes(attachmentModel,task)} fileProcessor={fileProcessor}
 					permissionControl={work ? <PermissionModeSelect composer value={selectedPermission} disabled={configPending} onChange={async (next) => { if (await patch({ permission_mode: next })) setPermission(next); }} /> : undefined}
 					modelControl={source === 'custom' ? <LlmSelect id="tour-model-selector" composer value={model} includeBuiltin={false} disabled={busy} onChange={async (next) => { if (next && await patch({ chat_model_config: next })) setCustomModel(next); }} onAddCredential={() => openSettings('model')} /> :
-						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} trial={!quota?.subscription?quota?.trial:undefined} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
+						<OfficialModelSelect mode={task} model={selectedOfficial.id} effort={selectedEffort} models={quota?.models} trial={!quota?.subscription?quota?.trial:undefined} freeWorkQuota={quota?.doubaoWork} disabled={busy} onModel={id => void chooseOfficialModel(id)} onEffort={level => void chooseEffort(level as Effort)} />}
 					footerSlot={phase==='idle'&&needsHumanVerification?<HumanVerificationControl onVerified={()=>refreshQuota()}/>:userQuestion ? <QuestionPanel entry={userQuestion} onSubmit={(answers, note) => answerQuestion(userQuestion, { answers, note })} onCancel={() => answerQuestion(userQuestion, { answers: [], cancelled: true })} /> : undefined}
 				/>
 			</div>

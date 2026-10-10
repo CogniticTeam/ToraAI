@@ -880,7 +880,9 @@
   "llm-select": {
     "requiresPlan": "يتطلب {{plan}} أو أعلى",
     "trialRemaining": "رسائل تجريبية متبقية: {{count}}",
-    "freeChatModelHint": "متاح فقط في وضع الدردشة في ToChat. هذا النموذج مجاني دائمًا ولا يستهلك حصتك.",
+    "freeChatModelHint": "متاح في وضعي الدردشة والعمل في ToChat. الدردشة مجانية، والعمل يشمل حتى 10 رسائل مجانية يومياً دون استهلاك رصيد الاشتراك.",
+    "freeWorkModelHint": "المتاح اليوم: {{remaining}} / {{total}} رسالة. حتى 10 رسائل عمل مجانية يومياً، مع حد إضافي للاستخدام المجاني للمهام المعقدة. يُعاد الضبط منتصف الليل GMT+8 دون استهلاك رصيد الاشتراك.",
+    "freeWorkRemaining": "المتاح اليوم: {{remaining}} / {{total}}",
     "freeChatModel": "مجاني",
     "builtinModels": "النماذج المدمجة",
     "builtinQuotaHint": "يشترك عمل ToChat وToCode في هذه الحصة.",

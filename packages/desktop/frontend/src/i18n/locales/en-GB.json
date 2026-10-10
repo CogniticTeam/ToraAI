@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "Requires {{plan}} or higher",
     "trialRemaining": "{{count}} trial messages left",
-    "freeChatModelHint": "For ToChat chat mode only. This model is permanently free and does not use your quota.",
+    "freeChatModelHint": "Available in ToChat chat and work modes. Chat remains free; work includes up to 10 free messages daily without using subscription credits.",
+    "freeWorkModelHint": "Available today: {{remaining}} / {{total}} messages. Up to 10 free work messages daily; complex tasks also have a free usage cap. Resets at midnight GMT+8 without using subscription credits.",
+    "freeWorkRemaining": "Available today: {{remaining}} / {{total}}",
     "freeChatModel": "Free",
     "builtinModels": "Built-in models",
     "builtinQuotaHint": "ToChat work and ToCode share this allowance.",

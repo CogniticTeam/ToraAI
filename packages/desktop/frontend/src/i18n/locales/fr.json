@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "{{plan}} ou supérieur requis",
     "trialRemaining": "{{count}} messages d’essai restants",
-    "freeChatModelHint": "Réservé au mode chat de ToChat. Ce modèle est gratuit à vie et ne consomme pas votre quota.",
+    "freeChatModelHint": "Disponible dans les modes chat et travail de ToChat. Le chat reste gratuit ; le travail inclut jusqu’à 10 messages gratuits par jour, sans utiliser les crédits d’abonnement.",
+    "freeWorkModelHint": "Disponibles aujourd’hui : {{remaining}} / {{total}} messages. Jusqu’à 10 messages de travail gratuits par jour ; les tâches complexes ont aussi une limite d’usage gratuit. Réinitialisation à minuit GMT+8, sans crédits d’abonnement.",
+    "freeWorkRemaining": "Disponibles aujourd’hui : {{remaining}} / {{total}}",
     "freeChatModel": "Gratuit",
     "builtinModels": "Modèles intégrés",
     "builtinQuotaHint": "ToChat travail et ToCode partagent ce quota.",

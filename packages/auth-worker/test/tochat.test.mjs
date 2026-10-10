@@ -4,7 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import { quotaPeriods, readToChatQuota, reserveToChat, settleToChat, totalUsage, validateToChatBody, handleToChat as realHandleToChat } from '../src/tochat.js';
 import {usageCost} from '../src/subscription-plans.js';
-function database(){const sqlite=new DatabaseSync(':memory:');sqlite.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2);');sqlite.exec(readFileSync(new URL('../migrations/0003_subscriptions.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0004_quota_resets.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0008_model_access_trials.sql',import.meta.url),'utf8'));sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(1,'ultrax',Date.now()+2592000000,500000000,1600000000,7000000000,Date.now());const db={prepare(sql){return{bind(...args){return{run(){return{meta:{changes:sqlite.prepare(sql).run(...args).changes}};},first(){return sqlite.prepare(sql).get(...args)||null;},all(){return{results:sqlite.prepare(sql).all(...args)};}};}};},async batch(statements){sqlite.exec('BEGIN');try{const result=statements.map(statement=>statement.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};return{db,sqlite};}
+function database(){const sqlite=new DatabaseSync(':memory:');sqlite.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2);');sqlite.exec(readFileSync(new URL('../migrations/0003_subscriptions.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0004_quota_resets.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0008_model_access_trials.sql',import.meta.url),'utf8'));sqlite.exec(readFileSync(new URL('../migrations/0010_doubao_work.sql',import.meta.url),'utf8'));sqlite.prepare('INSERT INTO user_subscription VALUES(?,?,?,?,?,?,?)').run(1,'ultrax',Date.now()+2592000000,500000000,1600000000,7000000000,Date.now());const db={prepare(sql){return{bind(...args){return{run(){return{meta:{changes:sqlite.prepare(sql).run(...args).changes}};},first(){return sqlite.prepare(sql).get(...args)||null;},all(){return{results:sqlite.prepare(sql).all(...args)};}};}};},async batch(statements){sqlite.exec('BEGIN');try{const result=statements.map(statement=>statement.run());sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};return{db,sqlite};}
 const now=Date.parse('2026-10-02T01:00:00Z');
 test('Claude 5.5 routes adaptive thinking, protects secrets and charges actual cached/input/output usage; Opus 5 is retired',async()=>{
  const{db,sqlite}=database(),before=globalThis.fetch,tasks=[],sent=[];
@@ -134,7 +134,7 @@ test('new GPT family and Claude use dedicated secrets and charge cached/input/ou
  }finally{globalThis.fetch=before;sqlite.close();}
 });
 
-test('Doubao is free without subscription, forwards multimodal Responses, and rejects Work/ToCode before upstream or quota writes',async()=>{
+test('Doubao is free without subscription, forwards multimodal Responses, and rejects ToCode before upstream or quota writes',async()=>{
  const {db,sqlite}=database(),before=globalThis.fetch,tasks=[],sent=[];
  sqlite.exec('DELETE FROM user_subscription');
  const env={DB:db,ARK_API_KEY:'synthetic-ark-secret'},ctx={waitUntil(p){tasks.push(p);}};
@@ -142,15 +142,14 @@ test('Doubao is free without subscription, forwards multimodal Responses, and re
  const req=(mode='chat',feature)=>new Request('https://test/tochat/v1/chat/completions',{method:'POST',headers:{'x-tochat-mode':mode,'x-tochat-message-id':'doubao-message','x-tochat-request-id':'doubao-request',...(feature?{'x-tora-feature':feature}:{})},body:JSON.stringify(body)});
  try{
   globalThis.fetch=async(url,init)=>{sent.push({url,body:JSON.parse(init.body),headers:init.headers});return new Response('data: '+JSON.stringify({type:'response.output_text.delta',delta:'Attachments understood'})+'\n\ndata: '+JSON.stringify({type:'response.completed',response:{status:'completed',output:[],usage:{input_tokens:200,output_tokens:20,total_tokens:220}}})+'\n\n',{headers:{'content-type':'text/event-stream'}});};
-  assert.equal((await handleToChat(req('work'),env,ctx,{id:1})).status,400);
   assert.equal((await handleToChat(req('chat','tocode'),env,ctx,{id:1})).status,403);
   assert.equal(sent.length,0);assert.equal(sqlite.prepare('SELECT count(*) AS n FROM tochat_requests').get().n,0);
   const response=await handleToChat(req(),env,ctx,{id:1});assert.equal(response.status,200);assert.match(await response.text(),/Attachments understood/);await Promise.all(tasks);
   assert.equal(sent[0].url,'https://ark.cn-beijing.volces.com/api/v3/responses');assert.equal(sent[0].headers.authorization,'Bearer synthetic-ark-secret');assert.equal(sent[0].body.reasoning.effort,'medium');assert.equal(sent[0].body.reasoning.summary,undefined);
   assert.deepEqual(sent[0].body.input[0].content.map(p=>p.type),['input_text','input_image','input_audio','input_video']);assert.equal(sent[0].body.input[0].content[3].fps,1);assert.equal(sent[0].body.store,false);
   assert.equal(sqlite.prepare('SELECT count(*) AS n FROM usage_log').get().n,0);assert.equal(sqlite.prepare('SELECT charged FROM tochat_requests').get().charged,0);
-  const list=await (await handleToChat(new Request('https://test/tochat/v1/models'),env,ctx,{id:1})).json();assert.equal(list.data[0].free,true);assert.deepEqual(list.data[0].modes,['chat']);assert.deepEqual(list.data[0].input_modalities,['text','image','audio','video']);assert.ok(!JSON.stringify(list).includes(env.ARK_API_KEY));
-  const work=await (await handleToChat(new Request('https://test/tochat/v1/models',{headers:{'x-tochat-mode':'work'}}),env,ctx,{id:1})).json();assert.deepEqual(work.data,[]);
+  const list=await (await handleToChat(new Request('https://test/tochat/v1/models'),env,ctx,{id:1})).json();assert.equal(list.data[0].free,true);assert.deepEqual(list.data[0].modes,['chat','work']);assert.deepEqual(list.data[0].input_modalities,['text','image','audio','video']);assert.ok(!JSON.stringify(list).includes(env.ARK_API_KEY));
+  const work=await (await handleToChat(new Request('https://test/tochat/v1/models',{headers:{'x-tochat-mode':'work'}}),env,ctx,{id:1})).json();assert.deepEqual(work.data.map(model=>model.id),['doubao-seed-2-1-lite-260915']);
   assert.throws(()=>validateToChatBody({...body,model:'deepseek-flash',reasoning_effort:'high'},'chat'),/音频和视频/);
   assert.throws(()=>validateToChatBody({...body,messages:[{role:'user',content:[{type:'input_audio',audio_url:'https://private.invalid/audio.wav'}]}]},'chat'),/上传/);
   assert.throws(()=>validateToChatBody({...body,messages:[{role:'assistant',content:[{type:'input_video',video_url:'data:video/mp4;base64,aGVsbG8='}]}]},'chat'),/用户附件/);

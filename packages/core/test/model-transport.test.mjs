@@ -75,3 +75,11 @@ test('cancelled model requests remain ABORTED and are never retried', async () =
   await assert.rejects(chatCompletion(createClient(cfg), { messages, signal: controller.signal }), { code: 'ABORTED' });
   assert.equal(attempts, 1);
 });
+
+test('free-work quota errors retain the business code and show readable detail',async()=>{
+  setModelFetcher(async()=>Response.json({code:'doubao_work_limit',detail:'今日豆包工作额度已用完'},{status:429}));
+  await assert.rejects(chatCompletion(createClient(cfg),{messages}),error=>{
+    assert.equal(error.code,'doubao_work_limit');assert.match(error.message,/今日豆包工作额度已用完/);
+    assert.ok(!error.message.includes('{'));return true;
+  });
+});

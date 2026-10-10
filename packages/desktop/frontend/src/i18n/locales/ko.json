@@ -868,7 +868,9 @@
   "llm-select": {
     "requiresPlan": "{{plan}} 이상 필요",
     "trialRemaining": "체험 {{count}}회 남음",
-    "freeChatModelHint": "ToChat 채팅 모드 전용입니다. 이 모델은 영구 무료이며 사용 한도를 소모하지 않습니다.",
+    "freeChatModelHint": "ToChat 채팅 및 작업 모드에서 사용할 수 있습니다. 채팅은 무료이며, 작업은 하루 최대 10개 메시지까지 구독 할당량을 사용하지 않고 무료로 제공됩니다.",
+    "freeWorkModelHint": "오늘 사용 가능: {{remaining}} / {{total}}개. 작업은 하루 최대 10개까지 무료이며 복잡한 작업에는 무료 사용량 제한도 적용됩니다. GMT+8 자정에 초기화됩니다.",
+    "freeWorkRemaining": "오늘 사용 가능: {{remaining}} / {{total}}개",
     "freeChatModel": "무료",
     "builtinModels": "기본 제공 모델",
     "builtinQuotaHint": "ToChat 작업과 ToCode는 한도를 공유합니다.",

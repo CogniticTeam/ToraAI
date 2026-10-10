@@ -8,7 +8,7 @@ import {MODEL_MINIMUM_PLAN,hasModelSubscription} from '../../core/src/model-acce
 function fixture(beforeMigration=''){
  const sqlite=new DatabaseSync(':memory:');
  sqlite.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1),(2),(3);');
- for(const file of ['0003_subscriptions.sql','0004_quota_resets.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
+ for(const file of ['0003_subscriptions.sql','0004_quota_resets.sql','0010_doubao_work.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+file,import.meta.url),'utf8'));
  if(beforeMigration)sqlite.exec(beforeMigration);
  const migrate=()=>sqlite.exec(readFileSync(new URL('../migrations/0008_model_access_trials.sql',import.meta.url),'utf8'));migrate();
  let queue=Promise.resolve();
@@ -87,11 +87,11 @@ test('体验预留和请求锁在同一事务，并发拒绝不占次数，累�
  assert.equal(f.sqlite.prepare("SELECT COUNT(*) AS n FROM tochat_requests WHERE request_id IN ('request-5','reused-message')").get().n,0);
 });
 
-test('免费豆包不要求套餐、不扣体验，仍然禁止工作和ToCode',async t=>{
+test('免费豆包不要求套餐、不扣体验，工作有独立限额且禁止ToCode',async t=>{
  const f=fixture();t.after(()=>f.sqlite.close());
  const model='doubao-seed-2-1-lite-260915';
  const quota=await(await handleToChat(new Request('https://test/tochat/quota'),f.env,f.ctx,{id:1})).json();assert.equal(quota.models.find(m=>m.id===model).allowed,true);
- assert.equal((await handleToChat(request(model,'doubao-work','work'),f.env,f.ctx,{id:1})).status,400);
+ assert.equal(quota.doubaoWork.total,10);assert.equal(quota.doubaoWork.canUse,true);
  assert.equal((await handleToChat(request(model,'doubao-code','chat',undefined,'tocode'),f.env,f.ctx,{id:1})).status,403);
  assert.equal((await readToChatQuota(f.DB,1)).trial.remaining,5);
 });
