@@ -1,6 +1,6 @@
 {
   "name": "@tora/desktop",
-  "version": "1.0.8",
+  "version": "1.1.0",
   "type": "module",
   "description": "Tora 桌面版（Electron 壳：启动本地 ASAPI 服务并托管 agentscope 风格前端）",
   "main": "main.js",
