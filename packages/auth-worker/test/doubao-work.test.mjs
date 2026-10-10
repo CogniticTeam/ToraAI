@@ -6,6 +6,12 @@ import {handleToChat,quotaPeriods,reserveToChat,settleToChat,readToChatQuota} fr
 import {doubaoWorkCost,DOUBAO_WORK_TURNS,DOUBAO_WORK_BUDGET_NANO,DOUBAO_WORK_ROUNDS} from '../src/doubao-work.js';
 import {verificationSessionStatement} from '../src/human-verification.js';
 const model='doubao-seed-2-1-lite-260915';
+test('migration is executable one statement per line, matching the D1 startup exec contract',()=>{
+ const sqlite=new DatabaseSync(':memory:');
+ try{for(const line of readFileSync(new URL('../migrations/0010_doubao_work.sql',import.meta.url),'utf8').trim().split('\n'))sqlite.exec(line);
+ assert.equal(sqlite.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE name LIKE 'doubao_work_%' AND type='table'").get().n,2);
+ }finally{sqlite.close();}
+});
 function fixture(t){
  const sqlite=new DatabaseSync(':memory:');sqlite.exec('CREATE TABLE users(id INTEGER PRIMARY KEY);INSERT INTO users VALUES(1),(2);');
  for(const name of ['0003_subscriptions.sql','0004_quota_resets.sql','0008_model_access_trials.sql','0009_human_verification.sql','0010_doubao_work.sql'])sqlite.exec(readFileSync(new URL('../migrations/'+name,import.meta.url),'utf8'));
