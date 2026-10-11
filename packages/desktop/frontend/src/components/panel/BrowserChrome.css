@@ -25,3 +25,5 @@
 @media(prefers-reduced-motion:reduce){.browser-chrome *{scroll-behavior:auto;animation:none!important;transition:none!important}}
 
 .browser-tab-bar:has(> .browser-icon-button + .browser-icon-button)>.browser-icon-button:nth-child(3){margin-inline-start:auto}
+
+.browser-toolbar-actions>.browser-icon-button[aria-pressed=true]{background:var(--surface-muted);border-color:var(--ring);color:var(--foreground)}

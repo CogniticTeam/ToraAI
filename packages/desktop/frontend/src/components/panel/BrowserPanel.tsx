@@ -14,7 +14,7 @@
 // 页面动作默认作用于活动标签（params.tab 可指定），另有 tabs / new_tab /
 // switch_tab / close_tab 四个管理动作。
 
-import { ArrowLeft, ArrowRight, ExternalLink, Globe, LoaderCircle, Maximize2, MessageSquarePlus, Minimize2, MoreHorizontal, Plus, RotateCw, Settings2, SquareDashedMousePointer, TriangleAlert, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink, Globe, LoaderCircle, Maximize2, Minimize2, MoreHorizontal, Plus, RotateCw, Settings2, SquareDashedMousePointer, TriangleAlert, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {useLocation,useNavigate} from 'react-router-dom';
 
@@ -23,7 +23,7 @@ import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuSeparator,
 import './BrowserChrome.css';
 import { useTranslation } from '@/i18n/useI18n';
 import {browserConversationPath,browserRecommendations,queueBrowserPanel} from '@/lib/browserStart';
-import { insertElementRef } from '@/lib/insertChatText';
+import { insertElementRef, type ElementRef } from '@/lib/insertChatText';
 import {requestPanel} from '@/lib/openPanel';
 import {openSettings} from '@/lib/openSettings';
 import { normalizeUrl, resolveAddressInput } from '@/lib/searchEngine';
@@ -518,6 +518,7 @@ interface BrowserTab {
 	loading: boolean;
 }
 
+let pendingPickedElement:{path:string;ref:ElementRef;created:number}|null=null;
 let persistentHost: HTMLElement | null = null;
 const tabs: BrowserTab[] = [];
 let activeTabId: number | null = null;
@@ -729,7 +730,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 	}, []);
 
 	const startPicking = async () => {
-		if (!enableElementPicker) return;
+		if (!enableElementPicker||!canDock) return;
 		const tab = getActiveTab();
 		if (!tab) {
 			setError(t('browserPanel.noTabPick'));
@@ -756,13 +757,24 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 				const pick = data.pick;
 				if (pick?.selector) {
 					stopPicking();
-					insertElementRef({ selector: pick.selector, tag: pick.tag ?? '', text: pick.text ?? '' });
+					const ref={ selector: pick.selector, tag: pick.tag ?? '', text: pick.text ?? '' };
+					if(presentation==='page'&&contextPath){pendingPickedElement={path:contextPath,ref,created:Date.now()};queueBrowserPanel(contextPath,'browser');navigate(contextPath);}
+					else insertElementRef(ref);
 				} else if (pick?.cancelled || !data.active) {
 					stopPicking();
 				}
 			}).catch(() => undefined);
 		}, 200);
 	};
+
+	// A selection from the full browser is delivered once its conversation mounts.
+	useEffect(()=>{
+		const pending=pendingPickedElement;
+		if(presentation!=='panel'||!pending||pending.path!==contextPath)return;
+		if(Date.now()-pending.created>15000){pendingPickedElement=null;return;}
+		const frame=requestAnimationFrame(()=>{if(pendingPickedElement===pending){pendingPickedElement=null;insertElementRef(pending.ref);}});
+		return()=>cancelAnimationFrame(frame);
+	},[contextPath,presentation]);
 
 	// 切换标签页时把地址栏同步成新活动页的地址（编辑中途不抢焦点、不强改）。
 	useEffect(() => {
@@ -1088,11 +1100,11 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 				}} spellCheck={false}/>
 			</div>
 			<div className="browser-toolbar-actions">
-				{contextPath&&<button type="button" className="browser-icon-button" aria-label={t(canDock?'browserPanel.redesign.sideChat':'browserPanel.redesign.returnChat')} title={t('browserPanel.redesign.sideChat')} onClick={returnToChat}><MessageSquarePlus/></button>}
+				<button type="button" className="browser-icon-button" disabled={!enableElementPicker||!current||!canDock} aria-pressed={picking} aria-label={t('browserPanel.pickElement')} title={t('browserPanel.pickElementHint')} onClick={()=>picking?stopPicking():void startPicking()}><SquareDashedMousePointer/></button>
 				<DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.more')}><MoreHorizontal/></button></DropdownMenuTrigger><DropdownMenuContent align="end">
 					<DropdownMenuItem onSelect={createHomeTab}><Plus/>{t('browserPanel.newTab')}</DropdownMenuItem>
 					<DropdownMenuItem disabled={!current} onSelect={()=>{if(current)window.open(current,'_blank','noopener,noreferrer');}}><ExternalLink/>{t('browserPanel.openInBrowser')}</DropdownMenuItem>
-					{enableElementPicker&&<DropdownMenuItem disabled={!current} onSelect={()=>picking?stopPicking():void startPicking()}><SquareDashedMousePointer/>{t('browserPanel.pickElement')}</DropdownMenuItem>}
+					{enableElementPicker&&<DropdownMenuItem disabled={!current||!canDock} onSelect={()=>picking?stopPicking():void startPicking()}><SquareDashedMousePointer/>{t('browserPanel.pickElement')}</DropdownMenuItem>}
 					<DropdownMenuSeparator/><DropdownMenuItem onSelect={()=>openSettings('general')}><Settings2/>{t('common.settings')}</DropdownMenuItem>
 				</DropdownMenuContent></DropdownMenu>
 			</div>

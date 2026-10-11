@@ -16,7 +16,7 @@ export function BrowserPage() {
 			    当拖拽区在 Electron 里不可靠（见 AppSidebar 同款教训）。 */}
 			<WindowDragRegion className="h-6 shrink-0" />
 			<div className="flex min-h-0 flex-1 flex-col px-2 pb-2">
-				<BrowserPanel presentation="page" enableElementPicker={false} />
+				<BrowserPanel presentation="page" />
 			</div>
 		</div>
 	);
