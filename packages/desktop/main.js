@@ -1,4 +1,6 @@
 import {createSystemFontService} from './system-fonts.js';
+import {createUIUpdater} from './ui-updates.js';
+import {createUIUpdateController} from './ui-update-controller.js';
 // Tora 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
 // 渲染层无任何 Node 集成（contextIsolation 默认开启）；前端通过 127.0.0.1 HTTP/SSE 通信，
 // 与浏览器打开完全同构。preload 在页面脚本执行前预置本地服务连接，首屏只加载一次。
@@ -37,7 +39,7 @@ for (const chromiumSwitch of [
 // 打包后的 core 被放入 resources/core；开发态仍直接加载工作区的 packages/core。
 // 这样安装包不会依赖 app.asar 外的相对路径，且本地 `electron .` 调试保持不变。
 const coreRoot = app.isPackaged ? join(process.resourcesPath, 'core') : join(__dirname, '..', 'core');
-const [{ startASAPIServer, setDesktopAccessBlocked }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }, { setModelFetcher }] = await Promise.all([
+const [{ startASAPIServer, setDesktopAccessBlocked, acquireUIUpdateLock }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }, { setModelFetcher }] = await Promise.all([
   import(pathToFileURL(join(coreRoot, 'src', 'asapi', 'server.js')).href),
   import(pathToFileURL(join(coreRoot, 'src', 'tools', 'browser.js')).href),
   import(pathToFileURL(join(coreRoot, 'src', 'tools', 'web.js')).href),
@@ -50,6 +52,38 @@ let serverUrl = '';
 let localServer = null;
 let windowCreation = null;
 let notificationLanguage = 'zh';
+let uiUpdater=null,uiController=null,uiInitialization=null,uiTimersStarted=false;
+const bundledUI=join(app.isPackaged?process.resourcesPath:join(__dirname,'..'),'desktop','frontend','dist');
+const UI_UPDATE_FEED='https://ohfun.online/tora-updates/ui/stable.json';
+async function initializeUIUpdates(){
+ if(!app.isPackaged&&process.env.TORA_HOT_UI_DEV!=='1')return;
+ if(!uiInitialization)uiInitialization=(async()=>{
+  try{
+   const html=readFileSync(join(bundledUI,'index.html'),'utf8'),build=Number(/name="tora-ui-build" content="(\d+)"/.exec(html)?.[1]||0);
+   uiUpdater=createUIUpdater({directory:join(app.getPath('userData'),'ui-updates'),publicKey:readFileSync(join(__dirname,'assets','hot-ui-public-key.pem'),'utf8'),shellVersion:app.getVersion(),bundledDirectory:bundledUI,bundledBuild:build,feed:UI_UPDATE_FEED,fetcher:(url,init)=>net.fetch(url,{...init,credentials:'omit',bypassCustomProtocolHandlers:true})});
+   await uiUpdater.initialize();uiController=createUIUpdateController({updater:uiUpdater,getWindow:()=>win,acquireLock:acquireUIUpdateLock});
+  }catch(error){uiUpdater=null;console.warn('[ui-update] Initialization failed; using bundled UI:',error.message);}
+ })();
+ await uiInitialization;
+}
+async function checkUIUpdates(){
+ await initializeUIUpdates();if(!uiUpdater)return {status:'disabled'};
+ try{const state=await uiUpdater.check();uiController.request();return state;}
+ catch(error){console.warn('[ui-update]',error.message);return {...uiUpdater.info(),status:'error'};}
+}
+function scheduleUIUpdates(){
+ if(!uiUpdater||uiTimersStarted)return;uiTimersStarted=true;
+ void checkUIUpdates();setInterval(()=>void checkUIUpdates(),6*60*60*1000).unref();
+ setInterval(()=>uiController?.request(),30000).unref();
+}
+ipcMain.on('ui-updates:state',event=>{event.returnValue=isMainWindowSender(event)?uiController?.state()||null:null;});
+ipcMain.handle('ui-updates:check',event=>isMainWindowSender(event)?checkUIUpdates():{status:'denied'});
+ipcMain.handle('ui-updates:prepared',(event,nonce,ready)=>isMainWindowSender(event)?uiController?.prepared(nonce,ready===true):false);
+ipcMain.handle('ui-updates:ready',async(event,version,nonce)=>{
+  if(!isMainWindowSender(event))return false;
+  const ready=await uiController?.ready(version,nonce);if(ready)console.info('[ui-update] Activated',version);return ready;
+});
+ipcMain.handle('ui-updates:failed',(event,version)=>isMainWindowSender(event)?uiController?.failed(version):false);
 const activeMessageNotifications = new Set();
 
 function isMainWindowSender(event) {
@@ -321,7 +355,12 @@ function scheduleUpdateChecks() {
   setInterval(() => { void checkForUpdates(); }, UPDATE_INTERVAL_MS).unref();
 }
 
-ipcMain.handle('updates:check', () => checkForUpdates());
+ipcMain.handle('updates:check', async event => {
+  if(!isMainWindowSender(event))return {status:'unavailable'};
+  const ui=await checkUIUpdates(),shellResult=await checkForUpdates();
+  if(['ready','applying'].includes(ui.status)&&['up-to-date','development'].includes(shellResult.status))return {status:'ui-ready'};
+  return shellResult;
+});
 
 // 窗口原生背景 = 「加载页」：首帧渲染前用户看到的就是这块底色，必须跟深浅色。
 // 取值与前端 index.css 的 --bg 保持一致（浅 #f4f5f6 / 深 #0c0d10），转场无缝。
@@ -379,6 +418,8 @@ ipcMain.on('app:language', (_event, language) => {
 app.setAboutPanelOptions({ applicationName: 'Tora', applicationVersion: app.getVersion() });
 
 async function createWindow() {
+  await initializeUIUpdates();
+  await uiController?.bootstrap();
   notificationLanguage = normalizeNativeLanguage(app.getLocale());
   installApplicationMenu(notificationLanguage);
   scheduleUpdateChecks();
@@ -403,10 +444,10 @@ async function createWindow() {
   // 3210 被占用（比如浏览器直连着 dev 服务）时退回随机端口，保证能启动。
   if (!localServer) {
     try {
-      localServer = await startASAPIServer({ port: 3210 });
+      localServer = await startASAPIServer({ port: 3210,uiResources:()=>uiUpdater?.resources() });
     } catch (e) {
       if (e?.code !== 'EADDRINUSE') throw e;
-      localServer = await startASAPIServer({ port: 0 });
+      localServer = await startASAPIServer({ port: 0,uiResources:()=>uiUpdater?.resources() });
     }
   }
   const { port } = localServer.address();
@@ -642,6 +683,7 @@ async function createWindow() {
   // Register cleanup before loading: the user may close the window mid-load.
   const createdWindow = win;
   win.on('closed', () => {
+    uiController?.close();
     windowIpc.dispose();
     nativeTheme.removeListener('updated', updateNativeBackground);
     win = null;
@@ -662,6 +704,7 @@ async function createWindow() {
   }
   attachBrowserDriver(win);
   scheduleUpdateChecks();
+  scheduleUIUpdates();
 }
 
 function ensureWindow() {

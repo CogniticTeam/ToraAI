@@ -32,6 +32,19 @@ contextBridge.exposeInMainWorld('toraWindow', {
 	// 更新检查由主进程完成：macOS / Windows 均使用 electron-updater 后台下载。
 	// 渲染层无权访问更新源或直接执行安装。
 	checkForUpdates: () => ipcRenderer.invoke('updates:check'),
+	checkUIUpdates: () => ipcRenderer.invoke('ui-updates:check'),
+	getUIUpdateState: () => ipcRenderer.sendSync('ui-updates:state'),
+	onPrepareUIUpdate: cb => {
+		const handler = (_event,nonce) => {
+			Promise.resolve().then(()=>cb(nonce)).then(ready=>ipcRenderer.invoke('ui-updates:prepared',nonce,ready===true)).catch(()=>ipcRenderer.invoke('ui-updates:prepared',nonce,false));
+		};
+		ipcRenderer.on('ui-updates:prepare',handler);return ()=>ipcRenderer.removeListener('ui-updates:prepare',handler);
+	},
+	onResumeUIUpdate: cb => {
+		const handler=(_event,nonce)=>cb(nonce);ipcRenderer.on('ui-updates:resume',handler);return ()=>ipcRenderer.removeListener('ui-updates:resume',handler);
+	},
+	uiUpdateReady: (version,nonce) => ipcRenderer.invoke('ui-updates:ready',version,nonce),
+	uiUpdateFailed: version => ipcRenderer.invoke('ui-updates:failed',version),
 	getAppVersion: () => ipcRenderer.sendSync('app:get-version'),
 	getReleaseNotes: (version) => ipcRenderer.invoke('updates:release-notes', version),
 	getInstalledReleaseNotes: () => ipcRenderer.invoke('updates:installed-notes'),

@@ -1608,6 +1608,7 @@
         "desc": "Nach einer neuen Tora-Version suchen. macOS und Windows laden im Hintergrund herunter und fordern dich dann zum Neustart und Installieren auf.",
         "check": "Nach Updates suchen",
         "checking": "Suche…",
+        "uiReady": "Oberflächenupdate heruntergeladen. Es wird bei Inaktivität automatisch angewendet.",
         "upToDate": "Du bist auf dem neuesten Stand.",
         "available": "Tora {{version}} ist verfügbar. Folge der Update-Aufforderung, um fortzufahren.",
         "downloading": "Tora {{version}} ist verfügbar und wird im Hintergrund heruntergeladen.",

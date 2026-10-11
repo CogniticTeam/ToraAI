@@ -1608,6 +1608,7 @@
         "desc": "Controlla se è disponibile una nuova versione di Tora. Su macOS e Windows il download avviene in background, poi ti viene chiesto di riavviare e installare.",
         "check": "Controlla aggiornamenti",
         "checking": "Controllo in corso…",
+        "uiReady": "Aggiornamento dell’interfaccia scaricato. Verrà applicato automaticamente quando inattivo.",
         "upToDate": "È tutto aggiornato.",
         "available": "Tora {{version}} è disponibile. Segui il prompt di aggiornamento per continuare.",
         "downloading": "Tora {{version}} è disponibile e il download è in corso in background.",

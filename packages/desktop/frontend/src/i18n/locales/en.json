@@ -1466,6 +1466,7 @@
 				"desc": "Check for a new Tora release. macOS and Windows download in the background, then prompt you to restart and install.",
 				"check": "Check for updates",
 				"checking": "Checking…",
+				"uiReady": "Interface update downloaded. It will be applied automatically when idle.",
 				"upToDate": "You're up to date.",
 				"available": "Tora {{version}} is available. Follow the update prompt to continue.",
 				"downloading": "Tora {{version}} is available and downloading in the background.",

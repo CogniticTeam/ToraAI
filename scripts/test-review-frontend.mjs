@@ -32,6 +32,7 @@ function harness(mocks = {}, globals = {}) {
   const window = { addEventListener() {}, removeEventListener() {}, dispatchEvent() {}, setTimeout: () => 1, clearTimeout() {}, setInterval: () => 1, clearInterval() {} };
   const audio = { disposeAll() {} };
   const imports = {
+    '@/lib/uiCheckpoint':{restoreUIState:(_key,fallback)=>fallback,useUICheckpoint(){},restoreUIScroll:()=>()=>{},reportUIFailure(){}},
     './adapters/authStore': {getToken:()=> 'fixture-web-token'},
     '@/i18n': {__esModule:true,default:{language:'zh'}},
     react: { ...react, default: react }, 'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
@@ -58,7 +59,7 @@ function harness(mocks = {}, globals = {}) {
     return exports;
   }
   const flushEffects=()=>{for(const run of effects.splice(0))run();};
-  return { load, render(fn,{deferEffects=false}={}) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); if(!deferEffects)flushEffects(); return result; }, flushEffects,
+  return { load, mock:(name,value)=>{imports[name]=value;}, render(fn,{deferEffects=false}={}) { cursor = 0; const result = fn(); for (const run of layouts.splice(0)) run(); if(!deferEffects)flushEffects(); return result; }, flushEffects,
     dispose() { for (const slot of slots) slot?.cleanup?.(); }, context };
 }
 function find(tree, predicate) {
@@ -67,6 +68,24 @@ function find(tree, predicate) {
   if (typeof tree !== 'object') return null;
   return predicate(tree) ? tree : find(tree.props?.children, predicate);
 }
+
+test('hot UI checkpoint preserves a real composer draft, refuses busy/files/forms, and isolates route and account',()=>{
+ const storage=new Map(),listeners=new Map();let owner='fixture-one',blockedForm=false;
+ const window={location:{pathname:'/tochat/agent',search:'?task=work'},toraAuth:{getEmail:()=>owner},addEventListener:(name,cb)=>{if(!listeners.has(name))listeners.set(name,new Set());listeners.get(name).add(cb);},removeEventListener:(name,cb)=>listeners.get(name)?.delete(cb),dispatchEvent:event=>{for(const cb of listeners.get(event.type)||[])cb(event);}};
+ const document={querySelector:()=>blockedForm?{}:null,querySelectorAll:selector=>selector==='input,textarea'?[]:[{scrollTop:42}]};
+ const h=harness({}, {window,document,sessionStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value)},CustomEvent:class{constructor(type,{detail}){this.type=type;this.detail=detail;}}});
+ const state=h.load('lib/uiCheckpoint.ts');h.mock('@/lib/uiCheckpoint',state);
+ const{TextInput}=h.load('components/chat/TextInput.tsx');let phase='idle';
+ const render=()=>h.render(()=>TextInput({phase,onSend(){}},null));
+ find(render(),node=>node.type==='textarea').props.onChange({target:{value:'热更新不能丢草稿'}});render();
+ assert.equal(state.captureUICheckpoint(),true);assert.equal(state.restoreUIState('draft-text',''),'热更新不能丢草稿');
+ find(render(),node=>node.type==='textarea').props.onChange({target:{value:''}});render();assert.equal(state.restoreUIState('draft-text','fallback'),'');
+ find(render(),node=>node.type==='textarea').props.onChange({target:{value:'新草稿'}});render();assert.equal(state.restoreUIState('draft-text','fallback'),'新草稿');
+ phase='streaming';render();assert.equal(state.captureUICheckpoint(),false);
+ phase='idle';render();blockedForm=true;assert.equal(state.captureUICheckpoint(),false);blockedForm=false;
+ owner='fixture-two';assert.equal(state.restoreUIState('draft-text','fallback'),'fallback');owner='fixture-one';window.location.pathname='/tochat/other';assert.equal(state.restoreUIState('draft-text','fallback'),'fallback');
+ h.dispose();
+});
 
 test('迟到的旧账号模型响应不覆盖当前账号；镜像 PUT 按顺序完成', async () => {
   let token = 'A'; const a = deferred(), writes = [], firstWrite = deferred();

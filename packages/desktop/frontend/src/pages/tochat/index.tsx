@@ -31,6 +31,7 @@ import {OPEN_PANEL_EVENT,type PanelOpenDetail} from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import {formatQuotaPercent} from '@/lib/subscription';
 import { modelAllowedInMode, humanVerificationNeeded, canUseWorkModel, modelRequirementLabel, modelAvailable, toChatEffort, toChatModel, type ToChatModelId, type BuiltinQuota } from '@/lib/tochatModels';
+import {restoreUIState,useUICheckpoint} from '@/lib/uiCheckpoint';
 import { getToken } from '@/utils/authStore';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
@@ -69,11 +70,12 @@ function ToChatConversation() {
 	},[work]);
 	const [preference, setPreference] = useState(readToChatSource);
 	const source = view ? sessionModelSource(view.session.config) : preference;
-	const [effort, setEffort] = useState<Effort>('high');
-	const [officialModelId, setOfficialModelId] = useState<ToChatModelId>('deepseek-flash');
-	const [customModel, setCustomModel] = useState<ChatModelConfig | null>(null);
-	const [cwd, setCwd] = useState<string | null>(null);
-	const [permission, setPermission] = useState('default');
+	const [effort, setEffort] = useState<Effort>(()=>restoreUIState('tochat-effort','high'));
+	const [officialModelId, setOfficialModelId] = useState<ToChatModelId>(()=>restoreUIState('tochat-model','deepseek-flash'));
+	const [customModel, setCustomModel] = useState<ChatModelConfig | null>(()=>restoreUIState('tochat-custom',null));
+	const [cwd, setCwd] = useState<string | null>(()=>restoreUIState('tochat-cwd',null));
+	const [permission, setPermission] = useState(()=>restoreUIState('tochat-permission','default'));
+	useUICheckpoint('tochat-effort',effort);useUICheckpoint('tochat-model',officialModelId);useUICheckpoint('tochat-custom',customModel);useUICheckpoint('tochat-cwd',cwd);useUICheckpoint('tochat-permission',permission);
 	const [quota, setQuota] = useState<Quota | null>(null);
 	const [quotaError, setQuotaError] = useState('');
 	const [authReady, setAuthReady] = useState(false);

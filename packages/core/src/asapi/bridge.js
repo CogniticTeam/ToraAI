@@ -74,6 +74,9 @@ export function isRunning(sessionId) {
   return !!b?.running;
 }
 
+/** Includes background and approval-waiting runs; renderer reload must not disrupt them. */
+export function hasActiveRuns(){return [...buses.values()].some(bus=>bus.running);}
+
 /** 该会话是否正在等用户确认（前端可用于显示提示） */
 export function isAwaitingConfirm(sessionId) {
   const b = buses.get(sessionId);

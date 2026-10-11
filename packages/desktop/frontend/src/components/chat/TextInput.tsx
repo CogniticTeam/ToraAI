@@ -52,6 +52,7 @@ import {
 	INSERT_ELEMENT_REF_EVENT,
 	type ElementRef,
 } from '@/lib/insertChatText';
+import {restoreUIState,useUICheckpoint} from '@/lib/uiCheckpoint';
 import { cn } from '@/lib/utils';
 
 /**
@@ -186,7 +187,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		};
 		const noticeId = useId();
 		const defaultPlaceholder = placeholder || t('chat.inputPlaceholder');
-		const [value, setValue] = useState('');
+		const [value, setValue] = useState(()=>restoreUIState('draft-text',''));
 		const [files, setFiles] = useState<ProcessedFile[]>([]);
 		const [isFocused, setIsFocused] = useState(false);
 		const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -235,7 +236,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		// a chip row above the textarea, then send with all of them at once.
 		// `slashOpen` is derived rather than stored, so closing the menu is just a
 		// matter of emptying the trigger character.
-		const [selectedCommands, setSelectedCommands] = useState<SlashItem[]>([]);
+		const [selectedCommands, setSelectedCommands] = useState<SlashItem[]>(()=>restoreUIState('draft-commands',[]));
 		// Slash items are addressed by id; we keep a Set for O(1) membership tests
 		// when rendering the row's checkbox state.
 		const selectedIds = useMemo(
@@ -258,7 +259,10 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 
 		// 从浏览器面板「选择元素」投递来的元素引用：以 chip 附加，不占 textarea。
 		// 发送时拼回内联文本（见 handleSend），对模型与历史消息保持纯文本可读。
-		const [elementRefs, setElementRefs] = useState<ElementRef[]>([]);
+		const [elementRefs, setElementRefs] = useState<ElementRef[]>(()=>restoreUIState('draft-elements',[]));
+		useUICheckpoint('draft-text',value,()=>files.length>0||voiceBusy||voiceRecording||composing.current||phase!=='idle');
+		useUICheckpoint('draft-commands',selectedCommands);
+		useUICheckpoint('draft-elements',elementRefs);
 
 		useImperativeHandle(ref, () => ({
 			focus: () => textareaRef.current?.focus(),

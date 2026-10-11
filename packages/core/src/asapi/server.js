@@ -7,7 +7,7 @@
 import { createServer } from 'node:http';
 import { readFile, stat } from 'node:fs/promises';
 import { readdirSync, statSync, readFileSync, existsSync } from 'node:fs';
-import { join, dirname, extname } from 'node:path';
+import { join, dirname, extname, resolve, relative, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { discoverSessionImports, previewSessionImports, commitSessionImports, readSessionImportBody } from './session-import.js';
@@ -29,7 +29,7 @@ import { HubError } from './hub-error.js';
 import { accessBlockReason, setAccessBlock } from './access.js';
 import { HUBS, providerFor } from './hubs.js';
 import { toSessionView, inputToText } from './protocol.js';
-import { startChatRun, isRunning, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools, updateRunningPermissionMode } from './bridge.js';
+import { startChatRun, isRunning, hasActiveRuns, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools, updateRunningPermissionMode } from './bridge.js';
 import { readGitInfo, runGit } from '../tools/git.js';
 import { realpathAllowMissing } from '../security.js';
 import { listMemories, saveMemory, updateMemory, deleteMemory, searchMemories, loadMemoryConfig, saveMemoryConfig, MemoryValidationError } from './memory.js';
@@ -57,6 +57,7 @@ import { buildSemanticIndex, indexStats } from '../tools/semantic.js';
 import {
   listSchedules, createSchedule, updateSchedule, deleteSchedule,
   listRuns, validateCron, startScheduler, setScheduleFireHandler,
+  setSchedulePauseProvider,evaluateSchedules,
 } from './schedules.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -120,6 +121,7 @@ function loadSymbolIndexStats(cwd) {
   } catch (e) { return { error: e?.message || String(e) }; }
 }
 const DIST_DIR = join(__dirname, '..', '..', '..', 'desktop', 'frontend', 'dist');
+let uiUpdatePaused=false;
 
 /**
  * 会返回 JSON 的路径前缀。没进这张表的 GET 会落到静态托管（返回 index.html）。
@@ -276,9 +278,10 @@ function isLoopbackHost(req) {
   return host === '127.0.0.1' || host === 'localhost' || host === '';
 }
 
-export function startASAPIServer({ port = 0, host = '127.0.0.1' } = {}) {
+export function startASAPIServer({ port = 0, host = '127.0.0.1', uiResources } = {}) {
+  setSchedulePauseProvider(()=>uiUpdatePaused);
   const server = createServer(async (req, res) => {
-    try { await route(req, res); }
+    try { await route(req, res, uiResources); }
     catch (e) { apiError(res, 500, e?.message || String(e)); }
   });
   // 定时任务到点：建一个归属该 agent 的会话，用任务描述当首条消息跑一轮。
@@ -316,12 +319,21 @@ export function setDesktopAccessBlocked(source, message) {
   if (message && previous !== accessBlockReason()) for (const session of listSessionRecords()) interrupt(session.id);
 }
 
-async function route(req, res) {
+// Pause new mutations atomically after all runs finish; never interrupts an existing run.
+export function acquireUIUpdateLock(){
+  if(hasActiveRuns()||uiUpdatePaused)return null;
+  uiUpdatePaused=true;
+  setAccessBlock('ui-update','界面正在更新，请稍后重试');
+  return ()=>{uiUpdatePaused=false;setAccessBlock('ui-update','');void evaluateSchedules().catch(()=>{});};
+}
+
+async function route(req, res, uiResources) {
   const url = new URL(req.url, 'http://localhost');
   const p = url.pathname;
   const method = req.method;
   const q = Object.fromEntries(url.searchParams);
-  if (accessBlockReason() && method !== 'GET' && method !== 'OPTIONS' && !p.endsWith('/interrupt')) {
+  const uiBootstrapWrite=uiUpdatePaused&&!accessBlockReason('ui-update')&&['/admin/tochat-config','/admin/models-config'].includes(p);
+  if (accessBlockReason() && !uiBootstrapWrite && method !== 'GET' && method !== 'OPTIONS' && !p.endsWith('/interrupt')) {
     return apiError(res, 403, accessBlockReason());
   }
 
@@ -355,14 +367,14 @@ async function route(req, res) {
   // ---------- 静态前端 ----------
   // 带文件扩展名的 GET（favicon、资源文件）优先走静态，避免 /agent 等前缀误吞
   if (method === 'GET' && /\.[a-zA-Z0-9]+$/.test(p)) {
-    return serveStatic(p, res);
+    return serveStatic(p, res, uiResources);
   }
   // 无扩展名的 GET：API 前缀走路由，其余当 SPA 路由丢给静态托管。
   // 注意：这张表必须覆盖**所有** API 前缀 —— 漏一个就会被 serveStatic 吃掉并
   // 返回 index.html，前端拿到 HTML 去 JSON.parse，症状是莫名其妙的
   // "Unexpected token '<'，<!doctype ... is not valid JSON"。
   if (method === 'GET' && !API_PREFIXES.some((pre) => p.startsWith(pre))) {
-    return serveStatic(p, res);
+    return serveStatic(p, res, uiResources);
   }
 
   if (p === '/health' && method === 'GET') {
@@ -1861,7 +1873,7 @@ async function route(req, res) {
 
 // ---------- 用户 library：/skill ----------
   // /skill（GET）—— 硬导航走 SPA，XHR/fetch 走 JSON 列表
-  if (p === '/skill' && method === 'GET' && isPageNavigation(req)) return serveStatic(p, res);
+  if (p === '/skill' && method === 'GET' && isPageNavigation(req)) return serveStatic(p, res, uiResources);
   if (p === '/skill' && method === 'GET') {
     return json(res, 200, listSkills());
   }
@@ -1963,7 +1975,7 @@ async function route(req, res) {
     } catch (e) { return apiError(res, 400, e.message); }
   }
   if (p === '/mcp') {
-    if (method === 'GET' && isPageNavigation(req)) return serveStatic(p, res);
+    if (method === 'GET' && isPageNavigation(req)) return serveStatic(p, res, uiResources);
     return json(res, 200, []);
   }
   if (p === '/knowledge_bases/' || p === '/knowledge_bases') {
@@ -1977,7 +1989,7 @@ async function route(req, res) {
   // 未被任何 handler 匹配的 API 调用（典型：旧进程缺新端点），必须回 404 JSON，
   // 否则前端 res.json() 会因 "<!doctype" 抛出无从定位的 SyntaxError。
   if (method === 'GET' && !/\.[a-zA-Z0-9]+$/.test(p) && isPageNavigation(req)) {
-    return serveStatic(p, res);
+    return serveStatic(p, res, uiResources);
   }
   apiError(res, 404, `接口不存在: ${method} ${p}`);
 }
@@ -2028,30 +2040,25 @@ function modelCards(cfg) {
   }));
 }
 
-async function serveStatic(path, res) {
-  let file = path === '/' ? '/index.html' : path;
-  const full = join(DIST_DIR, file);
-  if (!full.startsWith(DIST_DIR)) return apiError(res, 403, 'forbidden');
-  try {
-    const st = await stat(full);
-    if (st.isDirectory()) throw new Error('dir');
-    const data = await readFile(full);
-    const isHtml = (MIME[extname(full)] || '').startsWith('text/html');
-    res.writeHead(200, {
-      'content-type': MIME[extname(full)] || 'application/octet-stream',
-      ...(isHtml ? { 'cache-control': 'no-cache' } : {})
-    });
+async function serveStatic(path, res, uiResources) {
+  const resources=uiResources?.()||{},versioned=/^\/ui\/(ui-\d+)\/(.*)$/.exec(path);
+  let root=DIST_DIR,file;
+  if(path.startsWith('/ui/')){
+    if(!versioned||!resources.versions?.has(versioned[1]))return apiError(res,404,'UI version not found');
+    root=resources.versions.get(versioned[1]);file=versioned[2];
+  }else if(path==='/'||path==='/index.html'||!extname(path)){
+    root=resources.activeDirectory||DIST_DIR;file='index.html';
+  }else file=path.slice(1); // /assets always serves bundled resources for old windows.
+  try{file=decodeURIComponent(file);}catch{return apiError(res,400,'Invalid asset path');}
+  if(file.includes('\\')||file.split('/').some(part=>part==='..')||file==='release.json')return apiError(res,403,'forbidden');
+  const full=resolve(root,file),within=relative(resolve(root),full);
+  if(!within||within.startsWith('..')||isAbsolute(within))return apiError(res,403,'forbidden');
+  try{
+    const st=await stat(full);if(!st.isFile())return apiError(res,404,'Asset not found');
+    const data=await readFile(full),isHtml=(MIME[extname(full)]||'').startsWith('text/html');
+    res.writeHead(200,{'content-type':MIME[extname(full)]||'application/octet-stream','cache-control':isHtml?'no-store':versioned?'public, max-age=31536000, immutable':'no-cache','x-content-type-options':'nosniff'});
     return res.end(data);
-  } catch {
-    // SPA fallback
-    try {
-      const data = await readFile(join(DIST_DIR, 'index.html'));
-      res.writeHead(200, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-cache' });
-      return res.end(data);
-    } catch {
-      return apiError(res, 404, '前端未构建：请先在 packages/desktop/frontend 执行 npm run build');
-    }
-  }
+  }catch{return apiError(res,404,'前端资源不存在或尚未构建');}
 }
 
 // CLI 直跑入口：node asapi/server.js [port]

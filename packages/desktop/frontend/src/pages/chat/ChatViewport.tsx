@@ -62,6 +62,7 @@ import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
 import { humanVerificationNeeded, canUseWorkModel, modelAvailable, modelRequirementLabel, modelAllowedInMode } from '@/lib/tochatModels';
 import { isBuiltinCredential } from '@/lib/tochatModels';
+import {restoreUIState,useUICheckpoint} from '@/lib/uiCheckpoint';
 import { getToken } from '@/utils/authStore';
 import { syncBuiltinModelAuth } from '@/utils/modelSync';
 
@@ -213,7 +214,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	// 还没有会话时，模型/工作目录/权限模式先记在这里；第一条消息发送、
 	// 会话被自动创建时经 newSessionExtras 一起带过去 —— 否则三个控件在
 	// 空状态下要么禁用、要么选了被静默丢掉。
-	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(null);
+	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(()=>restoreUIState('code-model',null));
 	const builtinAccountToken = getToken();
 	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
 	const needsHumanVerification=builtinSelected&&humanVerificationNeeded(selectedModel?.model||'',builtinQuota);
@@ -221,8 +222,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !canUseWorkModel(selectedModel?.model||'',builtinQuota));
 	const [selectedKnowledgeConfig, setSelectedKnowledgeConfig] =
 		useState<SessionKnowledgeConfig | null>(null);
-	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>('default');
-	const [selectedCwd, setSelectedCwd] = useState<string | null>(null);
+	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>(()=>restoreUIState('code-permission','default'));
+	const [selectedCwd, setSelectedCwd] = useState<string | null>(()=>restoreUIState('code-cwd',null));
+	useUICheckpoint('code-model',selectedModel);useUICheckpoint('code-cwd',selectedCwd);useUICheckpoint('code-permission',selectedPermissionMode);
 	const [projectNamesVersion, setProjectNamesVersion] = useState(0);
 	const [credentialRefetchTrigger] = useState(0);
 	const [tasksContext, setTasksContext] = useState<TaskContext | null>(null);
@@ -743,6 +745,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	useEffect(() => {
 		const prev = prevSessionIdRef.current;
 		prevSessionIdRef.current = sessionId;
+		if (prev === undefined && !sessionId && (restoreUIState('code-model',null)||restoreUIState('code-cwd',null))) return;
 		if (prev === null && sessionId !== null) return;
 		setSelectedModel(null);
 		setSelectedKnowledgeConfig(null);

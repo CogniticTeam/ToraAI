@@ -1608,6 +1608,7 @@
         "desc": "Rechercher une nouvelle version de Tora. Sous macOS et Windows, le téléchargement se fait en arrière-plan, puis vous êtes invité à redémarrer et à installer.",
         "check": "Rechercher des mises à jour",
         "checking": "Vérification…",
+        "uiReady": "Mise à jour de l’interface téléchargée. Elle sera appliquée automatiquement au repos.",
         "upToDate": "Vous êtes à jour.",
         "available": "Tora {{version}} est disponible. Suivez l'invite de mise à jour pour continuer.",
         "downloading": "Tora {{version}} est disponible et se télécharge en arrière-plan.",

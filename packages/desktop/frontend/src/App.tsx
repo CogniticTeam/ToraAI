@@ -9,6 +9,7 @@ import { LoginGate } from '@/components/auth/LoginGate';
 import { RequiredUpdate } from '@/components/auth/RequiredUpdate';
 import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { FirstLaunchIntro } from '@/components/onboarding/FirstLaunchIntro';
+import {HotUIBridge,HotUIErrorBoundary} from '@/components/updates/HotUIBridge';
 import { refreshCatgirlSettings } from '@/lib/catgirl';
 import { queryClient } from '@/lib/query-client';
 
@@ -20,15 +21,16 @@ export default function App() {
 	useEffect(() => { void refreshCatgirlSettings().catch(() => {}); }, []);
 	return (
 		<QueryClientProvider client={queryClient}>
+			<HotUIBridge />
 			<WindowDragRegion data-testid="global-window-drag-region" className="fixed inset-x-0 top-0 z-[200] h-4" />
-			<RequiredUpdate><FirstLaunchIntro><FirstUseConsent><AccountPresence>
+			<HotUIErrorBoundary><RequiredUpdate><FirstLaunchIntro><FirstUseConsent><AccountPresence>
 				<LoginGate>
 					<Suspense fallback={<div className="grid h-screen place-items-center bg-background"><LogoLoader /></div>}>
 						<Workspace />
 						<WhatsNew />
 					</Suspense>
 				</LoginGate>
-			</AccountPresence></FirstUseConsent></FirstLaunchIntro></RequiredUpdate>
+			</AccountPresence></FirstUseConsent></FirstLaunchIntro></RequiredUpdate></HotUIErrorBoundary>
 			<Toaster richColors position="top-right" />
 		</QueryClientProvider>
 	);

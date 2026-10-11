@@ -3,4 +3,4 @@ const blocks = new Map();
 export function setAccessBlock(source, message) {
   if (message) blocks.set(source, message); else blocks.delete(source);
 }
-export function accessBlockReason() { return blocks.values().next().value || ''; }
+export function accessBlockReason(exceptSource) { for(const [source,reason] of blocks)if(source!==exceptSource)return reason;return ''; }

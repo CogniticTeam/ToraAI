@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
+
 import {
 	type SlashItem,
 	commandsToSlashItems,
@@ -40,6 +41,7 @@ import { Spinner } from '@/components/ui/spinner';
 import type { ReplyPhase } from '@/hooks/useMessages';
 import { useSkills } from '@/hooks/useSkills';
 import { useTranslation } from '@/i18n/useI18n';
+import {restoreUIScroll} from '@/lib/uiCheckpoint';
 import { cn } from '@/lib/utils';
 
 /** How long a load may run before it is worth showing a spinner. */
@@ -190,6 +192,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	workspaceKnowledgeBases,
 	userCommands,
 }) => {
+	useEffect(()=>restoreUIScroll(),[]);
 	const { t, i18n } = useTranslation();
 	// Hide retired model-switch notices without modifying saved conversation history.
 	const msgs = useMemo(() => allMessages.filter(message => !(message.role === 'system' && message.metadata?.kind === 'model_switch')), [allMessages]);

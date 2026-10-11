@@ -1608,6 +1608,7 @@
         "desc": "檢查 Tora 新版本。macOS 和 Windows 均會在後台下載，並在下載完成後提示重啓安裝。",
         "check": "檢查更新",
         "checking": "檢查中…",
+        "uiReady": "介面更新已下載，將在閒置時自動套用。",
         "upToDate": "當前已是最新版本。",
         "available": "發現 Tora {{version}}，請按更新提示繼續。",
         "downloading": "發現 Tora {{version}}，正在後台下載。",

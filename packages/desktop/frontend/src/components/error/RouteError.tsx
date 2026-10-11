@@ -3,6 +3,7 @@ import { isRouteErrorResponse, useNavigate, useRouteError } from 'react-router-d
 
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useI18n';
+import {reportUIFailure} from '@/lib/uiCheckpoint';
 
 /**
  * Reduce an unknown route error to a one-line, human-readable detail.
@@ -32,6 +33,7 @@ export function RouteError() {
 
 	useEffect(() => {
 		console.error(error);
+		if(!isRouteErrorResponse(error)&&!(error&&typeof error==='object'&&'status' in error))reportUIFailure();
 	}, [error]);
 
 	const detail = formatErrorDetail(error);

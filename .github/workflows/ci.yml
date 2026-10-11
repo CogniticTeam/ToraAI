@@ -71,6 +71,8 @@ jobs:
         run: |
           npm run test:providers
           node --test packages/core/test/model-transport.test.mjs
+      - name: Verify signed UI update, idle activation and rollback
+        run: node --test scripts/test-ui-updates.mjs packages/core/test/ui-resources.test.mjs
 
   frontend-build:
     name: Frontend production build

@@ -1608,6 +1608,7 @@
         "desc": "Busca una nueva versión de Tora. macOS y Windows descargan en segundo plano, luego te piden reiniciar e instalar.",
         "check": "Buscar actualizaciones",
         "checking": "Comprobando…",
+        "uiReady": "Actualización de interfaz descargada. Se aplicará automáticamente cuando no esté en uso.",
         "upToDate": "Estás al día.",
         "available": "Tora {{version}} está disponible. Sigue el aviso de actualización para continuar.",
         "downloading": "Tora {{version}} está disponible y descargándose en segundo plano.",

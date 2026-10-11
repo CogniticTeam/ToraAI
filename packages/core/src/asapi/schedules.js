@@ -240,16 +240,27 @@ export function listRuns(scheduleId) {
 export function setScheduleFireHandler(fn) {
   fireHandler = typeof fn === 'function' ? fn : null;
 }
+let schedulePaused=()=>false;
+const deferredSchedules=new Map();
+export function setSchedulePauseProvider(fn){schedulePaused=typeof fn==='function'?fn:()=>false;}
 
 /** 评估一轮：匹配到点的任务并触发（供定时器与测试调用）。 */
 export async function evaluateSchedules(now = new Date()) {
   const fired = [];
-  for (const sched of listSchedules()) {
+  const current=listSchedules(),due=new Map();
+  for(const [key,id] of deferredSchedules){const sched=current.find(item=>item.id===id&&item.data?.enabled);if(sched&&!firedKeys.has(key))due.set(key,sched);else deferredSchedules.delete(key);}
+  for (const sched of current) {
     if (!sched.data?.enabled) continue;
     const parts = tzParts(now, sched.data.timezone || 'UTC');
     const key = `${sched.id}:${parts.year}-${parts.month}-${parts.day} ${parts.hour}:${parts.minute}`;
     if (firedKeys.has(key)) continue;
     if (!cronMatches(sched.data.cron_expression, parts)) continue;
+    due.set(key,sched);
+  }
+  for(const [key,sched] of due){
+    if(!getSchedule(sched.id)?.data?.enabled){deferredSchedules.delete(key);continue;}
+    if(schedulePaused()){deferredSchedules.set(key,sched.id);continue;}
+    deferredSchedules.delete(key);
     firedKeys.add(key);
     let sessionId = null;
     try {

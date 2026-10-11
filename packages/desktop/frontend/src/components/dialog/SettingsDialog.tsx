@@ -69,7 +69,7 @@ const apiUrl = (p: string) => `${apiBase()}${p}`;
 type Section = SettingsSection;
 
 type UpdateResult = {
-	status: 'available' | 'development' | 'downloading' | 'ready' | 'error' | 'unavailable' | 'up-to-date';
+	status: 'available' | 'development' | 'downloading' | 'ready' | 'ui-ready' | 'error' | 'unavailable' | 'up-to-date';
 	version?: string;
 	message?: string;
 };
@@ -1117,7 +1117,9 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 		setUpdateMessage(null);
 		try {
 			const result = await bridge.checkForUpdates();
-			if (result.status === 'available') {
+			if (result.status === 'ui-ready') {
+				setUpdateMessage(t('settings.about.update.uiReady'));
+			} else if (result.status === 'available') {
 				setUpdateMessage(t('settings.about.update.available', { version: result.version || '' }));
 			} else if (result.status === 'downloading') {
 				setUpdateMessage(t('settings.about.update.downloading', { version: result.version || '' }));
