@@ -1,0 +1,6 @@
+CREATE TABLE IF NOT EXISTS enforcement_cases(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,signal_id TEXT NOT NULL UNIQUE,rule TEXT NOT NULL,level INTEGER NOT NULL,status TEXT NOT NULL,reason TEXT NOT NULL,evidence TEXT NOT NULL,policy_version TEXT NOT NULL,limited_until INTEGER,ban_until INTEGER,observation_until INTEGER,permanent INTEGER NOT NULL DEFAULT 0,acknowledged_at INTEGER,review_note TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL,reviewed_at INTEGER);
+CREATE INDEX IF NOT EXISTS idx_enforcement_cases_user ON enforcement_cases(user_id,created_at);
+CREATE TABLE IF NOT EXISTS enforcement_appeals(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,case_id TEXT NOT NULL,statement TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'pending',response TEXT NOT NULL DEFAULT '',created_at INTEGER NOT NULL,reviewed_at INTEGER);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_enforcement_pending_appeal ON enforcement_appeals(user_id,case_id) WHERE status='pending';
+CREATE TABLE IF NOT EXISTS enforcement_audit(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL,case_id TEXT,action TEXT NOT NULL,detail TEXT NOT NULL,created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS manual_ban_versions(user_id INTEGER PRIMARY KEY,version TEXT NOT NULL);

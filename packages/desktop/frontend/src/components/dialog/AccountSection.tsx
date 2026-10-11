@@ -1,3 +1,4 @@
+
 /**
  * 设置窗口「账号」板块 & 启动登录门槛共用的登录/注册界面。
  * 登录/注册一体流：首页输入「用户名或邮箱」→ 服务端 /auth/check 分流——
@@ -18,6 +19,7 @@ import { lazy, Suspense, useEffect, useId, useRef, useState } from 'react';
 import '../auth/login-surface.css';
 
 import {AccountBenefits} from './AccountBenefits';
+import {EnforcementPanel} from '@/components/auth/EnforcementPanel';
 import { AuthBackdrop, BrandLogo, DotPulse } from '@/components/auth/LoginAnimation';
 import { Turnstile, type TurnstileHandle } from '@/components/auth/Turnstile';
 import { Button } from '@/components/ui/button';
@@ -1012,6 +1014,7 @@ function AccountManager({
 					</DialogFooter>
 				</DialogContent>
 			</Dialog>
+			<EnforcementPanel always/>
 		</div>
 	);
 }

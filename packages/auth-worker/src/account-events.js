@@ -1,3 +1,4 @@
+import {measureFairUse,readEnforcement,recordRateIncident} from './enforcement.js';
 // 仅由已鉴权的 Worker 路由调用。每个连接使用用户 ID 标签，支持休眠。
 export function snapshotAccountPresence(ctx, now = Date.now()) {
   const users = new Set();
@@ -32,6 +33,22 @@ export class AccountEvents {
 
   async fetch(request) {
     const path = new URL(request.url).pathname;
+    if(path==='/fair-use'&&request.method==='POST'){
+      const input=await request.json();
+      if(!Number.isSafeInteger(input.userId)||input.userId<1||!/^[a-f0-9]{32}$/.test(input.requestHash)||input.messageHash!==null&&!/^[a-f0-9]{32}$/.test(input.messageHash))return new Response('Invalid metadata',{status:400});
+      const run=(this.fairUseQueue||Promise.resolve()).then(async()=>{
+        let counters=await this.ctx.storage.get('fair-use-window')||{},changed=false;
+        const settlePending=async()=>{if(!counters.pending)return;await recordRateIncident(this.env.DB,counters.pending);delete counters.pending;await this.ctx.storage.put('fair-use-window',counters);changed=true;};
+        await settlePending();const now=Date.now(),status=await readEnforcement(this.env.DB,input.userId,now);
+        if(status.banned)return Response.json({allowed:false,banned:true,enforcement:status,reason:status.case?.reason,changed});
+        const decision=measureFairUse(counters,{...input,now},status.limited);counters=decision.state;
+        if(decision.incident)counters.pending={userId:input.userId,signalId:'fair-use:'+input.userId+':'+crypto.randomUUID(),rule:decision.rule,evidence:decision.evidence,now};
+        await this.ctx.storage.put('fair-use-window',counters);await settlePending();
+        const current=changed?await readEnforcement(this.env.DB,input.userId,now):status;
+        return Response.json({allowed:decision.allowed&&!current.banned,banned:current.banned,changed,enforcement:current,reason:changed?current.case?.reason:undefined,retryAfter:decision.retryAfter});
+      });
+      this.fairUseQueue=run.catch(()=>{});return run;
+    }
     if(path==='/title-permit'&&request.method==='POST')return Response.json({allowed:await reserveTitlePermit(this.ctx.storage)});
     if (path === '/presence' && request.method === 'GET') {
       return Response.json(snapshotAccountPresence(this.ctx));

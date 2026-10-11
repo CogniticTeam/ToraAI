@@ -1901,5 +1901,29 @@
     "busy": "请先结束正在运行的官方模型任务，再使用重置卡",
     "resetSuccess": "额度已重置",
     "cardsInfo": "管理员发放的重置卡有效期30天，使用后恢复所有滚动窗口额度并重新计时。"
+  },
+    "enforcement": {
+    "title": "账号状态与申诉",
+    "limited": "公平使用限流",
+    "until": "临时封禁将于 {{date}} 结束",
+    "caseId": "事件编号：{{id}}",
+    "policy": "查看使用准则",
+    "appeal": "查看事件／申诉",
+    "read": "标记已读",
+    "chooseCase": "申诉事件",
+    "manual": "当前人工处罚",
+    "statement": "请说明需要复核的原因",
+    "privacy": "请勿提交密码、API Key、证件号码或私密文件内容。",
+    "submit": "提交申诉",
+    "submitted": "申诉已提交，可在此查看复核结果。",
+    "error": "请求失败，请稍后重试。",
+    "appealState": "申诉状态：{{status}}",
+    "state": {
+      "pending": "待复核",
+      "accepted": "已采纳",
+      "rejected": "已驳回"
+    },
+    "autoRestore": "到期后将自动解除对应限制；其他独立处罚需分别复核。",
+    "observing": "当前为观察期，请按公开的限流阈值使用服务。"
   }
 }

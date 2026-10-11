@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import {EnforcementPanel,type EnforcementState} from './EnforcementPanel';
 import { useTranslation } from '@/i18n/useI18n';
 import { systemMessageNotificationsEnabled } from '@/lib/systemNotifications';
 import { clearAll, getToken } from '@/utils/authStore';
@@ -9,13 +10,21 @@ import { cloudApi, cloudFetch } from '@/utils/modelSync';
 const AccountContext = createContext({ unread: 0, revision: 0 });
 export const useAccountPresence = () => useContext(AccountContext);
 
-export function AccountPresence({ children }: { children: React.ReactNode }) {
+export function AccountPresence({ children,pollOnly=false }: { children: React.ReactNode;pollOnly?:boolean }) {
   const { t } = useTranslation();
   const [token, setToken] = useState(getToken);
   const [blocked, setBlocked] = useState(false);
   const [reason, setReason] = useState('');
   const [unread, setUnread] = useState(0);
   const [revision, setRevision] = useState(0);
+  const [manual,setManual]=useState(false);
+  const [enforcement,setEnforcement]=useState<EnforcementState|undefined>();
+  useEffect(()=>{
+    if(!blocked||manual||!enforcement?.banUntil)return;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const tick=()=>{const remaining=new Date(enforcement.banUntil!).getTime()-Date.now();if(remaining<=0)window.dispatchEvent(new Event('tora-enforcement-refresh'));else timer=setTimeout(tick,Math.min(remaining+500,3600000));};
+    tick();return()=>clearTimeout(timer);
+  },[blocked,manual,enforcement?.banUntil]);
   useEffect(() => {
     const changed = () => setToken(getToken());
     window.addEventListener('tora-auth-changed', changed);
@@ -30,7 +39,7 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
     let lastPong = Date.now();
     let attempt = 0;
     const controller = new AbortController();
-    setBlocked(false); setReason(''); setUnread(0);
+    setBlocked(false); setReason(''); setUnread(0);setEnforcement(undefined);
     if (!token) return;
     const desktop = (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<unknown>; notifyNewMessage?: () => Promise<{ status: string }> } }).toraWindow;
     async function refresh() {
@@ -44,8 +53,10 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
         const account = await response.json();
         if (!alive) return;
         setBlocked(!!account.banned); setReason(account.banReason || '');
+        setEnforcement(account.enforcement);setManual(account.manualBanned??(!!account.banned&&!account.enforcement?.banned));
         // 主进程独立向服务器确认，暂停正在运行的任务并阻止新任务。
         void desktop?.refreshAccount?.();
+        if(pollOnly)return;
         const messages = await cloudFetch('/account/messages', { signal: controller.signal });
         if (messages.ok) {
           const data = await messages.json();
@@ -98,7 +109,7 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
       clearTimeout(reconnect);
       reconnect = setTimeout(connect, Math.min(15000, 1000 * 2 ** attempt++));
     }
-    void refresh(); void connect();
+    void refresh(); if(!pollOnly)void connect();
     const interval = setInterval(() => {
       if (socket?.readyState === WebSocket.OPEN) {
         if (Date.now() - lastPong > 45000) socket.close();
@@ -110,17 +121,20 @@ export function AccountPresence({ children }: { children: React.ReactNode }) {
     const validation = setInterval(() => void refresh(), 60000);
     const focus = () => void refresh();
     window.addEventListener('focus', focus);
-    return () => { alive = false; controller.abort(); clearTimeout(reconnect); clearInterval(interval); clearInterval(validation); socket?.close(); window.removeEventListener('focus', focus); };
-  }, [token, t]);
+    const refreshEvent=()=>void refresh();window.addEventListener('tora-enforcement-refresh',refreshEvent);
+    return () => { alive = false; controller.abort(); clearTimeout(reconnect); clearInterval(interval); clearInterval(validation); socket?.close(); window.removeEventListener('focus', focus);window.removeEventListener('tora-enforcement-refresh',refreshEvent); };
+  }, [token, t,pollOnly]);
   return <AccountContext.Provider value={{ unread, revision }}>
     {!blocked && children}
     {blocked && <div role="alertdialog" aria-modal="true" aria-labelledby="account-blocked-title" className="fixed inset-0 z-[250] grid place-items-center bg-background p-8">
       <div className="max-w-md space-y-5 text-center">
         <h1 id="account-blocked-title" className="text-xl font-medium">{t('inbox.blocked')}</h1>
         <p className="whitespace-pre-wrap text-sm text-muted-foreground">{reason || t('inbox.blockedReason')}</p>
-        <p className="text-xs text-muted-foreground">{t('inbox.unbanHint')}</p>
+        <p className="text-xs text-muted-foreground">{t(!manual&&enforcement?.banUntil?'enforcement.autoRestore':'inbox.unbanHint')}</p>
+        <EnforcementPanel state={enforcement} manual={manual} blocked onChanged={()=>window.dispatchEvent(new Event('tora-enforcement-refresh'))}/>
         <button className="rounded-xl border border-border px-4 py-2 text-sm" onClick={() => void clearAll()}>{t('inbox.signOut')}</button>
       </div>
     </div>}
+    {!blocked&&<EnforcementPanel state={enforcement} onChanged={()=>window.dispatchEvent(new Event('tora-enforcement-refresh'))}/>}
   </AccountContext.Provider>;
 }

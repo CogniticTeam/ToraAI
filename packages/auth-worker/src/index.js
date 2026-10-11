@@ -48,6 +48,7 @@ import { editMessage, ensureMessageCampaigns, listSentMessages, recallMessage, s
 import { handleAdminPoll, handleUserPoll } from './polls.js';
 import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
 import { handleToChat } from './tochat.js';
+import {ensureEnforcement,readEnforcement,gateOfficialRequest,handleUserEnforcement,handleAdminEnforcement} from './enforcement.js';
 import {handleAdminModels} from './official-model-catalog.js';
 import subscriptionSchemaSql from '../migrations/0003_subscriptions.sql';
 import quotaResetSchemaSql from '../migrations/0004_quota_resets.sql';
@@ -314,6 +315,7 @@ async function ensureSchema(db) {
   await db.exec(modelAccessTrialsSql);
   await db.exec(humanVerificationSql);
   await db.exec(doubaoWorkSql);
+  await ensureEnforcement(db);
   // 旧版本自动发放的官方模型是生成数据；自定义模型模式下直接清理。
   await db.prepare(
     "DELETE FROM user_models WHERE id LIKE 'official-%' OR base_url LIKE '%/official/v1%'"
@@ -378,6 +380,10 @@ async function userFromRequest(db, req, allowBanned = false) {
     await db.prepare('DELETE FROM sessions WHERE token = ?').bind(token).run();
     return null;
   }
+  row.manual_banned=!!row.banned;
+  const enforcement=await readEnforcement(db,row.id);
+  if(enforcement.banned){row.banned=1;if(!row.manual_banned)row.ban_reason=enforcement.case?.reason||'账号已被临时限制';}
+  row.enforcement=enforcement;
   if (row.banned && !allowBanned) {
     const error = new Error(row.ban_reason || '账户已被封禁');
     error.code = 'ACCOUNT_BANNED';
@@ -454,6 +460,7 @@ async function handle(request, env, ctx) {
     if (p.startsWith('/admin/')) {
       const key = request.headers.get('authorization')?.replace(/^Bearer /, '') || '';
       if (!env.ADMIN_TOKEN || !timingSafeEqual(key, env.ADMIN_TOKEN)) return bad('管理密钥无效', 401);
+      if(p.startsWith('/admin/enforcement'))return handleAdminEnforcement(request,env);
       if(p.startsWith('/admin/official-models')||p.startsWith('/admin/model-channels'))return handleAdminModels(request,env);
       if (p.startsWith('/admin/quota/')) return handleAdminQuota(request,env);
       if (p.startsWith('/admin/polls')) return handleAdminPoll(request, env, url);
@@ -467,7 +474,11 @@ async function handle(request, env, ctx) {
         const search = (url.searchParams.get('q') || '').trim().slice(0, 254);
         const offset = Math.max(0, Number.parseInt(url.searchParams.get('offset') || '0', 10) || 0);
         const { results } = await env.DB.prepare("SELECT id, email, username, banned, ban_reason, created_at FROM users WHERE instr(lower(email), lower(?)) > 0 OR instr(lower(coalesce(username, '')), lower(?)) > 0 ORDER BY id DESC LIMIT 100 OFFSET ?").bind(search, search, offset).all();
-        return json({ users: results, nextOffset: results.length === 100 ? offset + 100 : null });
+        const ids=results.map(user=>user.id);
+        const restrictions=ids.length?await env.DB.prepare("SELECT user_id,MAX(ban_until) ban_until,MAX(limited_until) limited_until,MAX(observation_until) observation_until,MAX(permanent) permanent FROM enforcement_cases WHERE status IN ('automatic','confirmed') AND user_id IN ("+ids.map(()=>'?').join(',')+") GROUP BY user_id").bind(...ids).all():{results:[]};
+        const state=new Map((restrictions.results||[]).map(row=>[row.user_id,row]));
+        const users=results.map(user=>{const row=state.get(user.id);return {...user,enforcement:row?{banned:!!row.permanent||row.ban_until>Date.now(),limited:row.limited_until>Date.now()||row.observation_until>Date.now(),banUntil:row.ban_until}:null};});
+        return json({ users, nextOffset: results.length === 100 ? offset + 100 : null });
       }
       const banMatch = p.match(/^\/admin\/users\/(\d+)\/ban$/);
       if (banMatch && method === 'POST') {
@@ -475,7 +486,8 @@ async function handle(request, env, ctx) {
         if (typeof body.banned !== 'boolean') return bad('banned 必须为布尔值', 422);
         const userId = Number(banMatch[1]);
         const reason = body.banned ? String(body.reason || '').trim().slice(0, 500) : '';
-        const result = await env.DB.prepare('UPDATE users SET banned = ?, ban_reason = ? WHERE id = ?').bind(body.banned ? 1 : 0, reason, userId).run();
+        const results=await env.DB.batch([env.DB.prepare('UPDATE users SET banned = ?, ban_reason = ? WHERE id = ?').bind(body.banned ? 1 : 0, reason, userId),env.DB.prepare('INSERT INTO manual_ban_versions(user_id,version) SELECT ?,? WHERE EXISTS(SELECT 1 FROM users WHERE id=?) ON CONFLICT(user_id) DO UPDATE SET version=excluded.version').bind(userId,crypto.randomUUID(),userId)]);
+        const result=results[0];
         if (!result.meta.changes) return bad('账户不存在', 404);
         await env.DB.prepare('INSERT INTO admin_audit (action, user_id, detail, created_at) VALUES (?, ?, ?, ?)').bind(body.banned ? 'ban' : 'unban', userId, reason, new Date().toISOString()).run();
         const push = await publishAccountEvent(env, userId, { type: 'account-changed' });
@@ -608,7 +620,12 @@ async function handle(request, env, ctx) {
     if (p==='/auth/human-verification')return handleHumanVerification(request,env,await userFromRequest(env.DB,request,true));
     if (p.startsWith('/quota/')) return handleUserQuota(request,env,await userFromRequest(env.DB,request,true));
     if (p.startsWith('/billing/')) return handleSubscriptions(request,env,ctx,p==='/billing/afdian/webhook'?null:await userFromRequest(env.DB,request,true));
-    if (p.startsWith('/tochat/')) return handleToChat(request,env,ctx,await userFromRequest(env.DB,request,true));
+    if(p.startsWith('/account/enforcement'))return handleUserEnforcement(request,env,await userFromRequest(env.DB,request,true));
+    if (p.startsWith('/tochat/')) {
+      const user=await userFromRequest(env.DB,request,true);
+      if(p==='/tochat/v1/chat/completions'&&method==='POST'){const gate=await gateOfficialRequest(request,env,ctx,user);if(gate)return gate;}
+      return handleToChat(request,env,ctx,user);
+    }
 
     // 「登录或注册」第一步：查账号是否已注册。只回 registered 布尔——
     // 不回 email/username，避免用用户名反查邮箱的账号枚举与邮箱泄露。
@@ -703,7 +720,7 @@ async function handle(request, env, ctx) {
     if (p === '/auth/me' && method === 'GET') {
       const user = await userFromRequest(env.DB, request, true);
       if (!user) return bad('未登录或会话已过期', 401);
-      return json({ email: user.email, username: user.username, createdAt: user.created_at, avatar: user.avatar ?? null, banned: !!user.banned, banReason: user.ban_reason || '' });
+      return json({ email: user.email, username: user.username, createdAt: user.created_at, avatar: user.avatar ?? null, banned: !!user.banned, banReason: user.ban_reason || '', enforcement:user.enforcement,manualBanned:user.manual_banned });
     }
 
     if (p === '/supporters' && method === 'GET') {

@@ -1901,5 +1901,29 @@
     "busy": "Finish the active built-in model task before resetting",
     "resetSuccess": "Allowance reset",
     "cardsInfo": "Admin-issued cards expire after 30 days. Using one restores all rolling-window allowances and starts their timing again."
+  },
+    "enforcement": {
+    "title": "Account status and appeals",
+    "limited": "Fair-use rate limit",
+    "until": "Temporary restriction ends at {{date}}",
+    "caseId": "Case: {{id}}",
+    "policy": "Read the usage policy",
+    "appeal": "View cases / Appeal",
+    "read": "Mark as read",
+    "chooseCase": "Case to appeal",
+    "manual": "Current manual restriction",
+    "statement": "Explain why this decision should be reviewed",
+    "privacy": "Do not submit passwords, API keys, identity documents or private file contents.",
+    "submit": "Submit appeal",
+    "submitted": "Appeal received. You can view the review result here.",
+    "error": "The request failed. Please retry.",
+    "appealState": "Appeal: {{status}}",
+    "state": {
+      "pending": "Pending review",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "autoRestore": "This automatic restriction expires at its deadline. Other independent restrictions require separate review.",
+    "observing": "This account is in its observation period and uses the published lower rate limits."
   }
 }

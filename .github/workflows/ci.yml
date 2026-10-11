@@ -75,6 +75,8 @@ jobs:
         run: node --test scripts/test-ui-updates.mjs packages/core/test/ui-resources.test.mjs
       - name: Verify remote model catalog, permissions and pinned Credits
         run: node --test packages/auth-worker/test/official-model-catalog.test.mjs packages/core/test/remote-builtin-catalog.test.mjs
+      - name: Verify fair-use enforcement, expiry and account appeals
+        run: node --test packages/auth-worker/test/enforcement.test.mjs
 
   frontend-build:
     name: Frontend production build
