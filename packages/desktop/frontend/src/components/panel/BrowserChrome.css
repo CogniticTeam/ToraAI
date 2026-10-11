@@ -24,4 +24,4 @@
 @container(max-width:440px){.browser-toolbar{grid-template-columns:112px minmax(0,1fr);row-gap:8px}.browser-toolbar-actions{justify-self:end}.browser-address{grid-column:1/-1;grid-row:2;height:34px}.browser-start-tools{grid-template-columns:1fr}.browser-start{padding-inline:18px}.browser-start section+section{margin-top:28px}.browser-tab{flex-basis:160px}.browser-start-site{gap:12px}}
 @media(prefers-reduced-motion:reduce){.browser-chrome *{scroll-behavior:auto;animation:none!important;transition:none!important}}
 
-.browser-tab-bar:has(> .browser-icon-button + .browser-icon-button)>.browser-icon-button:last-child{margin-inline-start:auto}
+.browser-tab-bar:has(> .browser-icon-button + .browser-icon-button)>.browser-icon-button:nth-child(3){margin-inline-start:auto}

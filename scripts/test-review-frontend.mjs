@@ -698,7 +698,7 @@ test('ToChat work hosts the same right browser dock and closes it without naviga
  const h=harness({'react-router-dom':{useNavigate:()=>url=>navigations.push(url),useParams:()=>({agentId:'agent',sessionId:'work'}),useSearchParams:()=>[new URLSearchParams('task=work')]},'@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},'@/hooks/useSessions':{useSessions:()=>({sessions:[view],loading:false,refetch(){}})},'@/hooks/useMessages':{useMessages:()=>({msgs:[],loading:false,phase:'idle',send(){},interrupt(){}})},'@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'standard',clickEnabled:true})},'@/utils/authStore':{getToken:()=> 'fixture'},'@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},fetchBuiltinQuota:async()=>Response.json({enabled:true,canUseAgent:true,models:[{id:'gpt-6.1-sol',enabled:true}]})},'@/lib/applicationModes':{modeCopy:()=>key=>key,readToChatSource:()=> 'official',TOCHAT_SOURCE_EVENT:'source'},'@/lib/openPanel':{OPEN_PANEL_EVENT:'open-panel'}},{window:{addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name),setInterval:()=>1,clearInterval(){}}});
  const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');const render=()=>h.render(()=>ToChatConversation());render();await tick();
  listeners.get('open-panel')({detail:{key:'browser',exclusive:true}});const dock=find(render(),node=>node.type==='PanelDock');assert.ok(dock);assert.equal(JSON.stringify(dock.props.layout),'[["browser"]]');assert.ok(dock.props.panels.browser);assert.deepEqual(navigations,[]);
- dock.props.onClosePanel('browser');assert.equal(find(render(),node=>node.type==='PanelDock').props.layout.length,0);h.dispose();
+ assert.equal(typeof dock.props.panels.browser.content.props.onClose,'function');dock.props.panels.browser.content.props.onClose();assert.equal(find(render(),node=>node.type==='PanelDock').props.layout.length,0);h.dispose();
 });
 
 
@@ -890,4 +890,13 @@ test('Browser iframe new tabs stay local while a navigation is pending',async()=
  const listeners=new Map();const el={src:'',contentWindow:{location:{href:'about:blank'}},contentDocument:{title:''},addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name),getAttribute:name=>name==='src'?el.src:null};
  const surface=createIframeSurface(el);assert.equal(surface.currentUrl(),'');assert.equal(surface.canGoBack(),false);
  const pending=surface.navigate('https://example.test/');assert.equal(surface.currentUrl(),'https://example.test/');listeners.get('load')();await pending;h.dispose();
+});
+
+test('Browser dock mounts the built-in browser directly while other panels retain chrome',()=>{
+ const h=harness({'@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})}});
+ const {PanelDock,Panel}=h.load('components/panel/PanelDock.tsx');const browser={type:'BuiltinBrowser',props:{}};
+ const tree=h.render(()=>PanelDock({layout:[['browser']],panels:{browser:{title:'Browser',content:browser}},onClosePanel(){}}));
+ assert.equal(find(tree,node=>node.type===Panel),null);assert.equal(find(tree,node=>node===browser),browser);
+ const plan=h.render(()=>PanelDock({layout:[['plan']],panels:{plan:{title:'Plan',content:'Plan content'}},onClosePanel(){}}));
+ assert.ok(find(plan,node=>node.type===Panel));h.dispose();
 });

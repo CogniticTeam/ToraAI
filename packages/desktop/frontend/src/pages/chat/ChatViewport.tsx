@@ -665,7 +665,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			browser: {
 				title: t('panel.workspace.browser'),
 				icon: <Globe className="size-4" />,
-				content: <BrowserPanel />,
+				content: <BrowserPanel onClose={()=>togglePanel('browser')} />,
 			},
 			terminal: {
 				title: t('panel.workspace.terminal'),
@@ -715,6 +715,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			view,
 			tora,
 			selectedDiff,
+			togglePanel,
 			workspaceStatus?.cwd,
 			activeCwd,
 		],

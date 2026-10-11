@@ -189,10 +189,10 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 										)}
 
 										<ResizablePanel
-											className="rounded-[22px] bg-card shadow-panel"
+											className={key==='browser'?'flex min-h-0 min-w-0 flex-col overflow-hidden':'rounded-[22px] bg-card shadow-panel'}
 											minSize={PANEL_MIN_HEIGHT}
 										>
-											<Panel
+											{key==='browser'?<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>{descriptor.content}</Suspense>:<Panel
 												title={descriptor.title}
 												icon={descriptor.icon}
 												actions={descriptor.actions}
@@ -201,7 +201,7 @@ export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
 												<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>
 													{descriptor.content}
 												</Suspense>
-											</Panel>
+											</Panel>}
 										</ResizablePanel>
 									</Fragment>
 								);

@@ -238,7 +238,7 @@ function ToChatConversation() {
 				/>
 			</div>
 			</ResizablePanel>
-			<PanelDock layout={work&&browserOpen?[['browser']]:[]} panels={{browser:{title:t('panel.workspace.browser'),icon:<Globe className="size-4" />,content:<BrowserPanel />}}} onClosePanel={()=>setBrowserOpen(false)} />
+			<PanelDock layout={work&&browserOpen?[['browser']]:[]} panels={{browser:{title:t('panel.workspace.browser'),icon:<Globe className="size-4" />,content:<BrowserPanel onClose={()=>setBrowserOpen(false)} />}}} onClosePanel={()=>setBrowserOpen(false)} />
 			</ResizablePanelGroup>
 		</main>
 	);

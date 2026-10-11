@@ -673,6 +673,7 @@ interface BrowserPanelProps {
 	/** 是否提供将网页元素附加到聊天输入框的选取工具。 */
 	enableElementPicker?: boolean;
 	presentation?: 'page'|'panel';
+	onClose?:()=>void;
 }
 
 /** Open a verified preview in a new persistent built-in browser tab. */
@@ -683,7 +684,7 @@ export async function openBuiltinBrowserTab(url: string) {
 	catch(error){closeTab(tab.id);throw error;}
 }
 
-export function BrowserPanel({ initialUrl, enableElementPicker = true, presentation='panel' }: BrowserPanelProps) {
+export function BrowserPanel({ initialUrl, enableElementPicker = true, presentation='panel', onClose }: BrowserPanelProps) {
 	const { t } = useTranslation();
 	const navigate=useNavigate();
 	const location=useLocation();
@@ -1071,6 +1072,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 			</div>
 			<button type="button" className="browser-icon-button" aria-label={t('browserPanel.createTab')} title={t('browserPanel.createTab')} onClick={createHomeTab}><Plus/></button>
 			{presentation==='panel'?<button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.expand')} title={t('browserPanel.redesign.expand')} onClick={()=>navigate('/browser',{state:{browserReturnTo:contextPath}})}><Maximize2/></button>:contextPath?<button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.sideChat')} title={t('browserPanel.redesign.sideChat')} onClick={returnToChat}><Minimize2/></button>:null}
+			{onClose&&<button type="button" className="browser-icon-button browser-close-panel" aria-label={t('panelDock.close')} title={t('panelDock.close')} onClick={onClose}><X/></button>}
 		</div>
 		<div className="browser-toolbar">
 			<div className="browser-navigation">
