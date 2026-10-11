@@ -451,6 +451,20 @@
     "optimizeBy": "由 DeepSeek 最佳化"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "工具",
+      "recommended": "推薦",
+      "changes": "變更",
+      "terminal": "終端",
+      "sideChat": "側邊聊天",
+      "returnChat": "返回對話",
+      "sourceCode": "Tora 開源代碼",
+      "tabs": "標籤頁",
+      "expand": "擴大瀏覽器",
+      "address": "搜索或輸入網址",
+      "more": "瀏覽器菜單",
+      "webHint": "部分網站無法在網頁內打開，可使用桌面版內置瀏覽器。"
+    },
     "newTab": "新標籤頁",
     "createTab": "新建標籤頁",
     "closeTab": "關閉標籤頁",

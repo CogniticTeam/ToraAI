@@ -26,6 +26,7 @@ import { useMotionSettings } from '@/hooks/useMotionSettings';
 import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n';
 import { modeCopy, readToChatSource, TOCHAT_SOURCE_EVENT, type ToChatTask } from '@/lib/applicationModes';
+import {takeBrowserPanel} from '@/lib/browserStart';
 import {chatAttachmentTypes, processChatAttachment} from '@/lib/chatAttachments';
 import {OPEN_PANEL_EVENT,type PanelOpenDetail} from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
@@ -66,6 +67,7 @@ function ToChatConversation() {
 		if(!work)return;
 		const open=(event:Event)=>{const detail=(event as CustomEvent<PanelOpenDetail>).detail;if((typeof detail==='string'?detail:detail?.key)==='browser')setBrowserOpen(true);};
 		window.addEventListener(OPEN_PANEL_EVENT,open);
+		if(work&&takeBrowserPanel((window.location?.pathname??'')+(window.location?.search??''))==='browser')setBrowserOpen(true);
 		return()=>window.removeEventListener(OPEN_PANEL_EVENT,open);
 	},[work]);
 	const [preference, setPreference] = useState(readToChatSource);

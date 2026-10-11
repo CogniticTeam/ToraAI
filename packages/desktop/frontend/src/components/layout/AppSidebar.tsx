@@ -305,7 +305,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 								<SidebarMenuButton
 									id="tour-browser-nav"
 									isActive={location.pathname.startsWith('/browser')}
-									onClick={() => navigate('/browser')}
+									onClick={() => navigate('/browser',{state:{browserReturnTo:location.pathname.startsWith('/browser')?(location.state as {browserReturnTo?:string}|null)?.browserReturnTo:location.pathname+location.search}})}
 								>
 									<Globe />
 									<span>{t('common.browser')}</span>

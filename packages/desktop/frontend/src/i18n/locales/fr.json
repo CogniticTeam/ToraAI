@@ -451,6 +451,20 @@
     "optimizeBy": "Optimisé par DeepSeek"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "Outils",
+      "recommended": "Recommandé",
+      "changes": "Modifications",
+      "terminal": "Terminal",
+      "sideChat": "Chat latéral",
+      "returnChat": "Retour à la conversation",
+      "sourceCode": "Code source Tora",
+      "tabs": "Onglets",
+      "expand": "Agrandir le navigateur",
+      "address": "Rechercher ou saisir une adresse",
+      "more": "Options du navigateur",
+      "webHint": "Certains sites ne peuvent pas être intégrés au web. Ouvrez-les dans le navigateur de bureau."
+    },
     "newTab": "Nouvel onglet",
     "createTab": "Nouvel onglet",
     "closeTab": "Fermer l’onglet",

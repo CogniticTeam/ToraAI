@@ -451,6 +451,20 @@
     "optimizeBy": "DeepSeek로 최적화됨"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "도구",
+      "recommended": "추천",
+      "changes": "변경 사항",
+      "terminal": "터미널",
+      "sideChat": "사이드 채팅",
+      "returnChat": "대화로 돌아가기",
+      "sourceCode": "Tora 소스 코드",
+      "tabs": "탭",
+      "expand": "브라우저 확장",
+      "address": "주소 검색 또는 입력",
+      "more": "브라우저 옵션",
+      "webHint": "일부 웹사이트는 웹에 포함할 수 없습니다. 데스크톱 브라우저에서 여세요."
+    },
     "newTab": "새 탭",
     "createTab": "새 탭",
     "closeTab": "탭 닫기",

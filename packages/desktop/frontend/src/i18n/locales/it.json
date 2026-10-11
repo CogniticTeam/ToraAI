@@ -451,6 +451,20 @@
     "optimizeBy": "Ottimizzato da DeepSeek"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "Strumenti",
+      "recommended": "Consigliati",
+      "changes": "Modifiche",
+      "terminal": "Terminale",
+      "sideChat": "Chat laterale",
+      "returnChat": "Torna alla conversazione",
+      "sourceCode": "Codice sorgente Tora",
+      "tabs": "Schede",
+      "expand": "Espandi browser",
+      "address": "Cerca o inserisci indirizzo",
+      "more": "Opzioni browser",
+      "webHint": "Alcuni siti web non possono essere incorporati sul web. Aprili nel browser desktop."
+    },
     "newTab": "Nuova scheda",
     "createTab": "Nuova scheda",
     "closeTab": "Chiudi scheda",

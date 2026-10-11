@@ -310,6 +310,20 @@
     "optimizeBy": "由 DeepSeek 优化"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "工具",
+      "recommended": "推荐",
+      "changes": "变更",
+      "terminal": "终端",
+      "sideChat": "侧边聊天",
+      "returnChat": "返回对话",
+      "sourceCode": "Tora 开源代码",
+      "tabs": "标签页",
+      "expand": "扩大浏览器",
+      "address": "搜索或输入网址",
+      "more": "浏览器菜单",
+      "webHint": "部分网站无法在网页内打开，可使用桌面版内置浏览器。"
+    },
     "newTab": "新标签页",
     "createTab": "新建标签页",
     "closeTab": "关闭标签页",

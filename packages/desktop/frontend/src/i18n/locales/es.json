@@ -451,6 +451,20 @@
     "optimizeBy": "Optimizado por DeepSeek"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "Herramientas",
+      "recommended": "Recomendado",
+      "changes": "Cambios",
+      "terminal": "Terminal",
+      "sideChat": "Chat lateral",
+      "returnChat": "Volver a la conversación",
+      "sourceCode": "Código fuente de Tora",
+      "tabs": "Pestañas",
+      "expand": "Expandir navegador",
+      "address": "Buscar o introducir dirección",
+      "more": "Opciones del navegador",
+      "webHint": "Algunos sitios web no se pueden incrustar en la web. Ábrelos en el navegador de escritorio."
+    },
     "newTab": "Nueva pestaña",
     "createTab": "Nueva pestaña",
     "closeTab": "Cerrar pestaña",

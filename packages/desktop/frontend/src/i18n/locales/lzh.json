@@ -451,6 +451,20 @@
     "optimizeBy": "DeepSeek 所精炼"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "器",
+      "recommended": "薦",
+      "changes": "變",
+      "terminal": "終端",
+      "sideChat": "側談",
+      "returnChat": "返談",
+      "sourceCode": "Tora 源碼",
+      "tabs": "頁籤",
+      "expand": "展瀏覽器",
+      "address": "搜或輸址",
+      "more": "瀏覽器選",
+      "webHint": "有網站不能嵌於網，請於桌面瀏覽器啟之。"
+    },
     "newTab": "新签页",
     "createTab": "新开签页",
     "closeTab": "闭签页",

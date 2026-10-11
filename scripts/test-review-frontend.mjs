@@ -55,7 +55,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name === '@/lib/subscription' ? load('lib/subscription.ts') : name === '@/lib/toolDisplayName' ? load('lib/toolDisplayName.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/browserStart' ? load('lib/browserStart.ts') : name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name === '@/lib/subscription' ? load('lib/subscription.ts') : name === '@/lib/toolDisplayName' ? load('lib/toolDisplayName.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   const flushEffects=()=>{for(const run of effects.splice(0))run();};
@@ -882,4 +882,12 @@ test('remote catalog adds new models and updates labels, efforts, permissions, m
  const emptied=modelGroupsWithQuota(groups,{catalogRevision:11,models:[],enabled:false},true);assert.equal(emptied.tora_official[0].models.length,0);
  const {chatAttachmentTypes}=h.load('lib/chatAttachments.ts');assert.deepEqual(Array.from(chatAttachmentTypes('remote-new','chat',models)),[]);
  h.dispose();
+});
+
+
+test('Browser iframe new tabs stay local while a navigation is pending',async()=>{
+ const h=harness();const {createIframeSurface}=h.load('components/panel/BrowserPanel.tsx','\nexport {createIframeSurface};');
+ const listeners=new Map();const el={src:'',contentWindow:{location:{href:'about:blank'}},contentDocument:{title:''},addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name),getAttribute:name=>name==='src'?el.src:null};
+ const surface=createIframeSurface(el);assert.equal(surface.currentUrl(),'');assert.equal(surface.canGoBack(),false);
+ const pending=surface.navigate('https://example.test/');assert.equal(surface.currentUrl(),'https://example.test/');listeners.get('load')();await pending;h.dispose();
 });

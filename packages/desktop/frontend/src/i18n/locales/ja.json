@@ -451,6 +451,20 @@
     "optimizeBy": "DeepSeek による最適化"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "ツール",
+      "recommended": "おすすめ",
+      "changes": "変更",
+      "terminal": "ターミナル",
+      "sideChat": "サイドチャット",
+      "returnChat": "会話に戻る",
+      "sourceCode": "Toraのソースコード",
+      "tabs": "タブ",
+      "expand": "ブラウザを展開",
+      "address": "検索またはアドレスを入力",
+      "more": "ブラウザのオプション",
+      "webHint": "一部のウェブサイトはウェブに埋め込めません。デスクトップブラウザで開いてください。"
+    },
     "newTab": "新しいタブ",
     "createTab": "新しいタブ",
     "closeTab": "タブを閉じる",

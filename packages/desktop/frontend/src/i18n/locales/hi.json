@@ -451,6 +451,20 @@
     "optimizeBy": "DeepSeek द्वारा ऑप्टिमाइज़्ड"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "उपकरण",
+      "recommended": "अनुशंसित",
+      "changes": "परिवर्तन",
+      "terminal": "टर्मिनल",
+      "sideChat": "साइड चैट",
+      "returnChat": "बातचीत पर लौटें",
+      "sourceCode": "Tora स्रोत कोड",
+      "tabs": "टैब",
+      "expand": "ब्राउज़र फैलाएँ",
+      "address": "पता खोजें या दर्ज करें",
+      "more": "ब्राउज़र विकल्प",
+      "webHint": "कुछ वेबसाइटें वेब पर एम्बेड नहीं की जा सकतीं। उन्हें डेस्कटॉप ब्राउज़र में खोलें।"
+    },
     "newTab": "नया टैब",
     "createTab": "नया टैब",
     "closeTab": "टैब बंद करें",

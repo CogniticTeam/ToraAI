@@ -451,6 +451,20 @@
     "optimizeBy": "Optimiert von DeepSeek"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "Tools",
+      "recommended": "Empfohlen",
+      "changes": "Änderungen",
+      "terminal": "Terminal",
+      "sideChat": "Seitenchat",
+      "returnChat": "Zurück zum Gespräch",
+      "sourceCode": "Tora-Quellcode",
+      "tabs": "Tabs",
+      "expand": "Browser erweitern",
+      "address": "Adresse suchen oder eingeben",
+      "more": "Browseroptionen",
+      "webHint": "Einige Websites können nicht im Web eingebettet werden. Öffne sie im Desktop-Browser."
+    },
     "newTab": "Neuer Tab",
     "createTab": "Neuer Tab",
     "closeTab": "Tab schließen",

@@ -310,6 +310,20 @@
 		"optimizeBy": "Optimized by DeepSeek"
 	},
 	"browserPanel": {
+		"redesign": {
+			"tools": "Tools",
+			"recommended": "Recommended",
+			"changes": "Changes",
+			"terminal": "Terminal",
+			"sideChat": "Side chat",
+			"returnChat": "Return to conversation",
+			"sourceCode": "Tora source code",
+			"tabs": "Tabs",
+			"expand": "Expand browser",
+			"address": "Search or enter address",
+			"more": "Browser options",
+			"webHint": "Some websites cannot be embedded on the web. Open them in the desktop browser."
+		},
 		"newTab": "New tab",
 		"createTab": "New tab",
 		"closeTab": "Close tab",

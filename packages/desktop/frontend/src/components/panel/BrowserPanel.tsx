@@ -14,14 +14,19 @@
 // 页面动作默认作用于活动标签（params.tab 可指定），另有 tabs / new_tab /
 // switch_tab / close_tab 四个管理动作。
 
-import { ArrowLeft, ArrowRight, ExternalLink, Globe, LoaderCircle, Plus, RotateCw, SquareDashedMousePointer, TriangleAlert, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ExternalLink, Globe, LoaderCircle, Maximize2, MessageSquarePlus, Minimize2, MoreHorizontal, Plus, RotateCw, Settings2, SquareDashedMousePointer, TriangleAlert, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import {useLocation,useNavigate} from 'react-router-dom';
 
-import { Button } from '@/components/ui/button';
+import {BrowserNewTab} from './BrowserNewTab';
+import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuSeparator,DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
+import './BrowserChrome.css';
 import { useTranslation } from '@/i18n/useI18n';
+import {browserConversationPath,browserRecommendations,queueBrowserPanel} from '@/lib/browserStart';
 import { insertElementRef } from '@/lib/insertChatText';
-import { getSearchEngineHomeUrl, normalizeUrl, resolveAddressInput } from '@/lib/searchEngine';
-import { cn } from '@/lib/utils';
+import {requestPanel} from '@/lib/openPanel';
+import {openSettings} from '@/lib/openSettings';
+import { normalizeUrl, resolveAddressInput } from '@/lib/searchEngine';
 
 /** 在页面里"读正文"的脚本。返回 JSON 字符串（跨进程传输更稳）。 */
 const READ_SCRIPT = `JSON.stringify({
@@ -440,8 +445,10 @@ function createIframeSurface(el: HTMLIFrameElement): Surface {
 		canGoBack: () => cursor > 0,
 		canGoForward: () => cursor < stack.length - 1,
 		currentUrl: () => {
+			if(cursor<0)return '';
 			try {
-				return el.contentWindow?.location.href || el.src;
+				const url=el.contentWindow?.location.href;
+				return (url==='about:blank'?'':url)||el.getAttribute('src')||'';
 			} catch {
 				return el.src;
 			}
@@ -519,6 +526,7 @@ let tabsVersion = 0;
 const tabListeners = new Set<() => void>();
 
 function notifyTabs() {
+	applyTabVisibility();
 	tabsVersion += 1;
 	tabListeners.forEach((fn) => fn());
 }
@@ -545,7 +553,8 @@ function ensurePersistentHost(): HTMLElement {
 }
 
 function applyTabVisibility() {
-	for (const t of tabs) t.el.style.display = t.id === activeTabId ? '' : 'none';
+	for (const t of tabs) t.el.style.display = t.id === activeTabId && !!t.surface.currentUrl() ? '' : 'none';
+	if(persistentHost&&!getActiveTab()?.surface.currentUrl())persistentHost.style.visibility='hidden';
 }
 
 function getActiveTab(): BrowserTab | null {
@@ -663,6 +672,7 @@ interface BrowserPanelProps {
 	initialUrl?: string;
 	/** 是否提供将网页元素附加到聊天输入框的选取工具。 */
 	enableElementPicker?: boolean;
+	presentation?: 'page'|'panel';
 }
 
 /** Open a verified preview in a new persistent built-in browser tab. */
@@ -673,8 +683,14 @@ export async function openBuiltinBrowserTab(url: string) {
 	catch(error){closeTab(tab.id);throw error;}
 }
 
-export function BrowserPanel({ initialUrl, enableElementPicker = true }: BrowserPanelProps) {
+export function BrowserPanel({ initialUrl, enableElementPicker = true, presentation='panel' }: BrowserPanelProps) {
 	const { t } = useTranslation();
+	const navigate=useNavigate();
+	const location=useLocation();
+	const addressRef=useRef<HTMLInputElement>(null);
+	const contextPath=browserConversationPath(presentation==='page'?(location.state as {browserReturnTo?:string}|null)?.browserReturnTo:location.pathname+location.search);
+	const canUseWorkTools=!!contextPath&&contextPath.startsWith('/chat/');
+	const canDock=!!contextPath&&(canUseWorkTools||new URL(contextPath,window.location.origin).searchParams.get('task')==='work');
 	const pageRef = useRef<HTMLDivElement | null>(null);
 	const [draft, setDraft] = useState('');
 	const [editing, setEditing] = useState(false);
@@ -691,7 +707,6 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 	const active = infos.find((t) => t.active) ?? null;
 	const activeTab = getActiveTab();
 	const current = active?.url ?? '';
-	const title = active?.title ?? '';
 	const loading = activeTab?.loading ?? false;
 	const nav = activeTab
 		? { back: activeTab.surface.canGoBack(), forward: activeTab.surface.canGoForward() }
@@ -793,11 +808,13 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 			if (host.style.height !== height) host.style.height = height;
 			const opacity = dock ? getComputedStyle(dock).opacity : '1';
 			if (host.style.opacity !== opacity) host.style.opacity = opacity;
-			if (host.style.visibility !== 'visible') host.style.visibility = 'visible';
+			const visibility=getActiveTab()?.surface.currentUrl()?'visible':'hidden';
+			if (host.style.visibility !== visibility) host.style.visibility = visibility;
 			const pointerEvents = dock?.dataset.dockExiting === 'true' ? 'none' : 'auto';
 			if (host.style.pointerEvents !== pointerEvents) host.style.pointerEvents = pointerEvents;
 			if (performance.now() < followUntil) schedule();
 		};
+		const unsubscribe=subscribeTabs(followTransition);
 		const observer = new ResizeObserver(followTransition);
 		observer.observe(placeholder);
 		const motionObserver = new MutationObserver(followTransition);
@@ -808,6 +825,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		schedule();
 		return () => {
 			cancelAnimationFrame(raf);
+			unsubscribe();
 			observer.disconnect();
 			motionObserver.disconnect();
 			window.removeEventListener('resize', followTransition);
@@ -839,25 +857,12 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 
 	const createHomeTab = useCallback(() => {
 		createTab(kind);
-		void go(getSearchEngineHomeUrl());
-	}, [go, kind]);
+		setError(null);
+		requestAnimationFrame(()=>addressRef.current?.focus());
+	}, [kind]);
 
-	// 默认开始页（/browser 全屏入口传入）：先让标签栏与工具栏完成首帧绘制，
-	// 再在浏览器空闲期创建 guest。WebView/网页初始化会抢主线程和 GPU，
-	// 与路由入场动画同时启动会被感知成整个应用卡住。
-	useEffect(() => {
-		if (!initialUrl || listTabs().length > 0) return;
-		let cancelled = false;
-		const openHome = () => {
-			if (!cancelled && listTabs().length === 0) void go(initialUrl);
-		};
-		if (typeof window.requestIdleCallback === 'function') {
-			const idle = window.requestIdleCallback(openHome, { timeout: 450 });
-			return () => { cancelled = true; window.cancelIdleCallback(idle); };
-		}
-		const timer = window.setTimeout(openHome, 100);
-		return () => { cancelled = true; window.clearTimeout(timer); };
-	}, [go, initialUrl]);
+	// Local new tabs do not create a guest until the user opens a URL.
+	useEffect(()=>{if(listTabs().length===0){createTab(kind);if(initialUrl)void go(initialUrl);}},[kind,initialUrl,go,infos.length]);
 
 	// Agent 的入口。挂成全局桥，桌面端主进程的 Browser 工具通过它落地动作。
 	// 桥只随面板挂载存在：面板没开时主进程找不到它，会先派发事件把面板打开
@@ -1037,180 +1042,63 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true }: Browser
 		}
 	};
 
-	return (
-		<div className="flex min-h-0 flex-1 flex-col gap-1.5 pb-2">
-			{/* 标签页栏：各标签平铺（过长自动收缩截断），尾部是新建按钮；关闭按钮悬停才出现 */}
-			<div className="flex min-w-0 items-stretch gap-x-1 overflow-x-auto">
-				{infos.map((tab) => (
-					<div
-						key={tab.id}
-						role="button"
-						tabIndex={0}
-						onClick={() => setActiveTab(tab.id)}
-						onKeyDown={(e) => {
-							if (e.key === 'Enter' || e.key === ' ') setActiveTab(tab.id);
-						}}
-						onAuxClick={(e) => {
-							// 中键关闭：浏览器老惯例，成本为零
-							if (e.button === 1) closeTab(tab.id);
-						}}
-						title={tab.url || tab.title}
-						className={cn(
-							'group flex h-7 min-w-0 max-w-36 basis-28 shrink cursor-pointer items-center gap-x-1 rounded-t-md border-x border-t px-2 text-[11px] outline-none',
-							'focus-visible:ring-1 focus-visible:ring-ring',
-							tab.active
-								? 'border-border bg-background text-foreground'
-								: 'border-transparent bg-surface-muted text-muted-foreground hover:text-foreground',
-						)}
-					>
-						{tab.loading ? (
-							<LoaderCircle className="size-3 shrink-0 animate-spin" />
-						) : (
-							<Globe className="size-3 shrink-0" />
-						)}
-						<span className="min-w-0 flex-1 truncate">{tab.title || tab.url || t('browserPanel.newTab')}</span>
-						<button
-							className="flex size-4 shrink-0 cursor-pointer items-center justify-center rounded opacity-0 hover:bg-sidebar-accent focus-visible:opacity-100 group-hover:opacity-100"
-							aria-label={t('browserPanel.closeTab')}
-							onClick={(e) => {
-								e.stopPropagation();
-								closeTab(tab.id);
-							}}
-						>
-							<X className="size-3" />
-						</button>
-					</div>
-				))}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					className="shrink-0 self-center"
-					aria-label={t('browserPanel.createTab')}
-					onClick={createHomeTab}
-				>
-					<Plus />
-				</Button>
+	const returnToChat=()=>{
+		if(!contextPath)return;
+		if(presentation==='page'){if(canDock)queueBrowserPanel(contextPath,'browser');navigate(contextPath);}
+		else document.querySelector<HTMLTextAreaElement>('textarea')?.focus();
+	};
+	const openTool=(key:'diff'|'terminal')=>{
+		if(!contextPath)return;
+		if(presentation==='page'){queueBrowserPanel(contextPath,key);navigate(contextPath);}
+		else requestPanel(key);
+	};
+	const recommendations=browserRecommendations(infos.filter(tab=>tab.id!==active?.id),[
+		{url:'https://ohfun.online/',title:'Cognitic'},
+		{url:'https://ohfun.online/products/tora/',title:'Tora'},
+		{url:'https://ohfun.online/policies/agent-model-usage/',title:t('settings.about.usagePolicy')},
+		{url:'https://github.com/CogniticTeam/ToraAI',title:t('browserPanel.redesign.sourceCode')},
+	]);
+	return <section className="browser-chrome" aria-label={t('common.browser')} data-presentation={presentation}>
+		<div className="browser-tab-bar">
+			<div className="browser-tabs" role="tablist" aria-label={t('browserPanel.redesign.tabs')}>
+				{infos.map((tab,index)=><div key={tab.id} className="browser-tab" data-active={tab.active}>
+					<button type="button" className="browser-tab-select" role="tab" aria-selected={tab.active} tabIndex={tab.active?0:-1} aria-controls="browser-current-page" title={tab.url||t('browserPanel.newTab')} onClick={()=>setActiveTab(tab.id)} onAuxClick={event=>{if(event.button===1)closeTab(tab.id);}} onKeyDown={event=>{
+						const target=event.key==='ArrowRight'?(index+1)%infos.length:event.key==='ArrowLeft'?(index+infos.length-1)%infos.length:event.key==='Home'?0:event.key==='End'?infos.length-1:null;
+						if(target!==null){event.preventDefault();setActiveTab(infos[target].id);event.currentTarget.closest('[role=tablist]')?.querySelectorAll<HTMLButtonElement>('[role=tab]')[target]?.focus();}
+					}}>{tab.loading?<LoaderCircle className="animate-spin"/>:<Globe/>}<span>{tab.title||tab.url||t('browserPanel.newTab')}</span></button>
+					<button type="button" className="browser-tab-close" aria-label={t('browserPanel.closeTab')} onClick={()=>closeTab(tab.id)}><X/></button>
+				</div>)}
 			</div>
-
-			{/* 工具栏：后退/前进/刷新 + 地址胶囊。未编辑时显示紧凑地址（省协议），
-			    点击后显示完整 URL 并全选，Esc 还原，回车导航（作用于活动标签） */}
-			<div className="flex items-center gap-x-0.5">
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					disabled={!nav.back}
-					onClick={() => surfaceAction((s) => s.back())}
-					aria-label={t('browserPanel.back')}
-				>
-					<ArrowLeft />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					disabled={!nav.forward}
-					onClick={() => surfaceAction((s) => s.forward())}
-					aria-label={t('browserPanel.forward')}
-				>
-					<ArrowRight />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					// 没加载过任何页面时禁用：webview 上「刷新一个不存在的页面」
-					// 只能如实报错（见 createWebviewSurface 的 requireOpened）
-					disabled={!current}
-					onClick={() => surfaceAction((s) => s.reload())}
-					aria-label={t('browserPanel.reload')}
-				>
-					{loading ? <LoaderCircle className="animate-spin" /> : <RotateCw />}
-				</Button>
-				{enableElementPicker ? (
-					<Button
-						variant="ghost"
-						size="icon-sm"
-						disabled={!current}
-						aria-pressed={picking}
-						className={cn(picking && 'bg-primary/10 text-primary')}
-						title={t('browserPanel.pickElementHint')}
-						onClick={() => (picking ? stopPicking() : void startPicking())}
-						aria-label={t('browserPanel.pickElement')}
-					>
-						<SquareDashedMousePointer />
-					</Button>
-				) : null}
-				<Button
-					variant="ghost"
-					size="icon-sm"
-					disabled={!current}
-					title={t('browserPanel.openInBrowserHint')}
-					onClick={() => {
-						if (current) window.open(current, '_blank', 'noopener,noreferrer');
-					}}
-					aria-label={t('browserPanel.openInBrowser')}
-				>
-					<ExternalLink />
-				</Button>
-				<div
-					title={title || current || undefined}
-					className={cn(
-						'flex h-7 min-w-0 flex-1 items-center gap-x-1.5 rounded-rect px-2.5 transition-colors',
-						editing ? 'bg-background ring-1 ring-ring' : 'bg-surface-muted',
-					)}
-				>
-					{loading ? (
-						<LoaderCircle className="size-3 shrink-0 animate-spin text-muted-foreground" />
-					) : (
-						<Globe className="size-3 shrink-0 text-muted-foreground" />
-					)}
-					<input
-						className="h-full min-w-0 flex-1 cursor-text bg-transparent text-[11px] outline-none placeholder:text-muted-foreground"
-						placeholder={t('browserPanel.urlPlaceholder')}
-						value={editing ? draft : prettyUrl(draft)}
-						readOnly={!editing}
-						onFocus={(e) => {
-							setEditing(true);
-							e.currentTarget.select();
-						}}
-						onChange={(e) => setDraft(e.target.value)}
-						onBlur={() => setEditing(false)}
-						onKeyDown={(e) => {
-							if (e.key === 'Enter') {
-								setEditing(false);
-								void go(draft);
-							}
-							if (e.key === 'Escape') {
-								setDraft(current);
-								setEditing(false);
-								e.currentTarget.blur();
-							}
-						}}
-						spellCheck={false}
-					/>
-				</div>
-			</div>
-
-			{error ? (
-				<div className="flex items-start gap-x-1.5 rounded-md border border-destructive bg-destructive-soft px-2 py-1.5 text-[11px] text-destructive">
-					<TriangleAlert className="mt-0.5 size-3 shrink-0" />
-					<span className="min-w-0 break-words">{error}</span>
-				</div>
-			) : null}
-
-			{/* 页面占位区。真正的 webview 常驻在 body 下的宿主里（见模块级标签管理），
-			    打开时逐帧对齐到这里；关闭/切页时宿主藏起来但页面不销毁。 */}
-			<div
-				ref={pageRef}
-				data-browser-placeholder="true"
-				className={cn(
-					'min-h-0 flex-1 overflow-hidden rounded-md border border-border bg-background',
-				)}
-			/>
-
-			{kind === 'iframe' ? (
-				<p className="px-0.5 text-[10px] leading-relaxed text-muted-foreground">
-					{t('browserPanel.iframeFallbackHint')}
-				</p>
-			) : null}
+			<button type="button" className="browser-icon-button" aria-label={t('browserPanel.createTab')} title={t('browserPanel.createTab')} onClick={createHomeTab}><Plus/></button>
+			{presentation==='panel'?<button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.expand')} title={t('browserPanel.redesign.expand')} onClick={()=>navigate('/browser',{state:{browserReturnTo:contextPath}})}><Maximize2/></button>:contextPath?<button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.sideChat')} title={t('browserPanel.redesign.sideChat')} onClick={returnToChat}><Minimize2/></button>:null}
 		</div>
-	);
+		<div className="browser-toolbar">
+			<div className="browser-navigation">
+				<button type="button" className="browser-icon-button" disabled={!nav.back} onClick={()=>surfaceAction(surface=>surface.back())} aria-label={t('browserPanel.back')}><ArrowLeft/></button>
+				<button type="button" className="browser-icon-button" disabled={!nav.forward} onClick={()=>surfaceAction(surface=>surface.forward())} aria-label={t('browserPanel.forward')}><ArrowRight/></button>
+				<span className="browser-navigation-separator"/>
+				<button type="button" className="browser-icon-button" disabled={!current} onClick={()=>surfaceAction(surface=>surface.reload())} aria-label={t('browserPanel.reload')}>{loading?<LoaderCircle className="animate-spin"/>:<RotateCw/>}</button>
+			</div>
+			<div className="browser-address" data-editing={editing}>
+				<input ref={addressRef} aria-label={t('browserPanel.redesign.address')} placeholder={t('browserPanel.redesign.address')} value={editing?draft:prettyUrl(current)} onFocus={()=>{setDraft(current);setEditing(true);requestAnimationFrame(()=>addressRef.current?.select());}} onChange={event=>setDraft(event.target.value)} onBlur={()=>setEditing(false)} onKeyDown={event=>{
+					if(event.key==='Enter'&&!event.nativeEvent.isComposing&&event.nativeEvent.keyCode!==229){event.preventDefault();setEditing(false);event.currentTarget.blur();void go(draft);}
+					if(event.key==='Escape'){setEditing(false);event.currentTarget.blur();}
+				}} spellCheck={false}/>
+			</div>
+			<div className="browser-toolbar-actions">
+				{contextPath&&<button type="button" className="browser-icon-button" aria-label={t(canDock?'browserPanel.redesign.sideChat':'browserPanel.redesign.returnChat')} title={t('browserPanel.redesign.sideChat')} onClick={returnToChat}><MessageSquarePlus/></button>}
+				<DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.more')}><MoreHorizontal/></button></DropdownMenuTrigger><DropdownMenuContent align="end">
+					<DropdownMenuItem onSelect={createHomeTab}><Plus/>{t('browserPanel.newTab')}</DropdownMenuItem>
+					<DropdownMenuItem disabled={!current} onSelect={()=>{if(current)window.open(current,'_blank','noopener,noreferrer');}}><ExternalLink/>{t('browserPanel.openInBrowser')}</DropdownMenuItem>
+					{enableElementPicker&&<DropdownMenuItem disabled={!current} onSelect={()=>picking?stopPicking():void startPicking()}><SquareDashedMousePointer/>{t('browserPanel.pickElement')}</DropdownMenuItem>}
+					<DropdownMenuSeparator/><DropdownMenuItem onSelect={()=>openSettings('general')}><Settings2/>{t('common.settings')}</DropdownMenuItem>
+				</DropdownMenuContent></DropdownMenu>
+			</div>
+		</div>
+		{error&&<div className="browser-error" role="alert"><TriangleAlert/><span>{error}</span></div>}
+		<div ref={pageRef} id="browser-current-page" role="tabpanel" data-browser-placeholder="true" className="browser-page-area">
+			{!current&&<BrowserNewTab recommendations={recommendations} onNavigate={url=>void go(url)} onNewTab={createHomeTab} onSettings={()=>openSettings('general')} onChat={canDock?returnToChat:undefined} onTool={canUseWorkTools?openTool:undefined}/>}
+		</div>
+		{kind==='iframe'&&current&&<p className="browser-fallback-hint">{t('browserPanel.redesign.webHint')}</p>}
+	</section>;
 }

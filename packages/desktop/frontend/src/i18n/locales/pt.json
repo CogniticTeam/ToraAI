@@ -451,6 +451,20 @@
     "optimizeBy": "Otimizado por DeepSeek"
   },
   "browserPanel": {
+    "redesign": {
+      "tools": "Ferramentas",
+      "recommended": "Recomendado",
+      "changes": "Alterações",
+      "terminal": "Terminal",
+      "sideChat": "Chat lateral",
+      "returnChat": "Voltar à conversa",
+      "sourceCode": "Código-fonte do Tora",
+      "tabs": "Abas",
+      "expand": "Expandir navegador",
+      "address": "Pesquisar ou inserir endereço",
+      "more": "Opções do navegador",
+      "webHint": "Alguns sites não podem ser incorporados na web. Abra-os no navegador do desktop."
+    },
     "newTab": "Nova aba",
     "createTab": "Nova aba",
     "closeTab": "Fechar aba",

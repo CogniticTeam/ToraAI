@@ -57,6 +57,7 @@ import { useToraData } from '@/hooks/useToraData';
 import { useWorkspace } from '@/hooks/useWorkspace.ts';
 import { useWorkspaceStatus } from '@/hooks/useWorkspaceStatus';
 import { useTranslation } from '@/i18n/useI18n';
+import {takeBrowserPanel} from '@/lib/browserStart';
 import { OPEN_PANEL_EVENT, type PanelOpenDetail } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
@@ -396,6 +397,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			setPanelLayout((layout) => key === 'browser' && typeof detail === 'object' && detail.exclusive ? [['browser']] : openPanelInLayout(layout, key));
 		};
 		window.addEventListener(OPEN_PANEL_EVENT, handler);
+		const pending=takeBrowserPanel((window.location?.pathname??'')+(window.location?.search??''));
+		if(pending)handler(new CustomEvent(OPEN_PANEL_EVENT,{detail:pending==='browser'?{key:pending,exclusive:true}:pending}));
 		return () => window.removeEventListener(OPEN_PANEL_EVENT, handler);
 	}, [diffScope]);
 
