@@ -12,7 +12,10 @@ const args=Object.fromEntries(process.argv.slice(2).map(value=>{const i=value.in
 if(!process.env.TORA_UI_SIGNING_KEY_FILE)throw Error('Set TORA_UI_SIGNING_KEY_FILE to a private publisher key outside the repository');
 const build=Number(args['--build']||Date.now()),version=`ui-${build}`,base=`/ui/${version}/`;
 const work=join(root,'.tmp','ui-release-build',version),out=resolve(args['--out']||join(root,'.tmp','ui-release',version));
-const minimumShell=args['--minimum-shell']||'1.1.0';
+// This UI depends on the dynamic core catalog delivered by the next installer.
+const minimumShell=args['--minimum-shell']||'1.1.1';
+const parts=/^(\d+)\.(\d+)\.(\d+)$/.exec(minimumShell)?.slice(1).map(Number);
+if(!parts||parts[0]<1||parts[0]===1&&(parts[1]<1||parts[1]===1&&parts[2]<1))throw Error('This renderer requires shell 1.1.1 or newer (dynamic model catalog)');
 await mkdir(out,{recursive:true});await rm(work,{recursive:true,force:true});
 const result=spawnSync('npm',['run','build','--prefix',join(root,'packages/desktop/frontend'),'--','--outDir',work],{stdio:'inherit',env:{...process.env,TORA_UI_BASE:base,TORA_UI_VERSION:version,TORA_UI_BUILD:String(build)}});
 if(result.status!==0)throw Error('UI build failed');

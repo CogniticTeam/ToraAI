@@ -17,11 +17,13 @@
 私钥首次在开发机的 `~/.config/tora-release/ui-signing-key.pem` 生成，权限为 0600。请通过组织既有的保密备份方式保存；丢失后需要更新安装包里的公钥。
 
 ```bash
-TORA_UI_SIGNING_KEY_FILE="$HOME/.config/tora-release/ui-signing-key.pem" node scripts/build-ui-update.mjs --minimum-shell=1.1.0
+TORA_UI_SIGNING_KEY_FILE="$HOME/.config/tora-release/ui-signing-key.pem" node scripts/build-ui-update.mjs --minimum-shell=1.1.1
 ```
 
 构建输出在 `.tmp/ui-release/<version>/`。包采用不可变版本文件名，上传包之后再更新 `stable.json`。在此项目中把二者放入私有官网的 `public/tora-updates/ui/` 并部署 Pages；不能把私有官网加入开源仓库。版本清单应不缓存，版本包可以长期缓存。
 
 若新增 UI 依赖新的 preload/core API，必须提高最低客户端版本或协议版本，并先发布包含对应接口的签名安装包。不能为了热更新把文件工具、凭证或 Node 能力开放给远程网页。
+
+当前 UI 已依赖动态模型目录，需要含对应 core 的新安装包（至少 1.1.1）。发布脚本默认使用并强制这个最低版本，避免把新模型菜单下发给只认识静态白名单的旧壳。已发布的旧 UI 包继续使用其原有兼容范围。
 
 开发验收应覆盖：合法升级、签名/哈希错误、路径穿越、离线启动、兼容拒绝、更新超时、回滚、任务忙碌、附件/录音等待、草稿及账号隔离、旧资源保持可读。完整安装包仍使用现有 `electron-updater`，此功能不改变它的安装策略。
