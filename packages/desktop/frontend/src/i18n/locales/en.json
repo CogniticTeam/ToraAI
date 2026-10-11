@@ -1460,6 +1460,10 @@
 			"title": "About",
 			"tora": "Local Agent workspace · v{{version}}",
 			"runtime": "Electron desktop · Local ASAPI service · Bring your own model",
+			"websiteTitle": "Official website",
+			"website": "Open website",
+			"usagePolicy": "AI model usage policy",
+			"viewPolicy": "View policy",
 			"runtimeTitle": "Runtime",
 			"update": {
 				"title": "Software update",

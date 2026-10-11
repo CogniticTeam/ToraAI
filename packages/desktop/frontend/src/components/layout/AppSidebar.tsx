@@ -362,6 +362,13 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							onSelect={() => void disableCatgirl()}>
 							<Cat /><span className="whitespace-normal">{catgirlBusy ? catgirlLabels.disabling : catgirlLabels.disable}</span>
 						</DropdownMenuItem>}
+						<DropdownMenuSeparator />
+						<DropdownMenuItem asChild className="py-1 text-[13px]">
+							<a href="https://ohfun.online" target="_blank" rel="noopener noreferrer"><Globe /><span>{t('settings.about.website')}</span></a>
+						</DropdownMenuItem>
+						<DropdownMenuItem asChild className="py-1 text-[13px]">
+							<a href="https://ohfun.online/policies/agent-model-usage/" target="_blank" rel="noopener noreferrer"><BookText /><span>{t('settings.about.usagePolicy')}</span></a>
+						</DropdownMenuItem>
 						<AccountUsageMenu />
 						<DropdownMenuSeparator />
 						<DropdownMenuItem className="py-1 text-[13px]" data-testid="account-sign-out" onSelect={() => void signOutAccount().catch(() => toast.error(t('common.error')))}>

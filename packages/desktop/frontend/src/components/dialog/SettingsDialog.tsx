@@ -1376,6 +1376,12 @@ export function SettingsDialog({ open, onOpenChange, initialTab = 'general', onI
 								<h3 className="text-lg font-semibold">{t('settings.about.title')}</h3>
 								<div className="mt-3 space-y-3">
 									<Row title="Tora" description={t('settings.about.tora', { version: getUpdateBridge()?.getAppVersion?.() ?? '1.0.0' })} />
+									<Row title={t('settings.about.websiteTitle')} description="ohfun.online">
+										<Button variant="outline" size="sm" asChild><a href="https://ohfun.online" target="_blank" rel="noopener noreferrer">{t('settings.about.website')}<ExternalLink /></a></Button>
+									</Row>
+									<Row title={t('settings.about.usagePolicy')}>
+										<Button variant="outline" size="sm" asChild><a href="https://ohfun.online/policies/agent-model-usage/" target="_blank" rel="noopener noreferrer">{t('settings.about.viewPolicy')}<ExternalLink /></a></Button>
+									</Row>
 									<Row title={t('settings.about.runtimeTitle')} description={t('settings.about.runtime')} />
 									<Row title={t('settings.about.update.title')} description={t('settings.about.update.desc')}>
 										<Button variant="outline" size="sm" onClick={handleCheckForUpdates} disabled={checkingUpdate}>

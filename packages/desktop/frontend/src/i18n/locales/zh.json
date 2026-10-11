@@ -1460,6 +1460,10 @@
       "title": "关于",
       "tora": "本地 Agent 工作台 · 版本 {{version}}",
       "runtime": "Electron 桌面端 · 本地 ASAPI 服务 · 自接入模型",
+      "websiteTitle": "官网",
+      "website": "打开官网",
+      "usagePolicy": "AI 模型使用准则",
+      "viewPolicy": "查看准则",
       "runtimeTitle": "运行方式",
       "update": {
         "title": "软件更新",
