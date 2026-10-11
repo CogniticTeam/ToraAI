@@ -1,5 +1,6 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';
 import {generateOfficialTitle} from '../src/tochat-title.js';import {handleToChat as realHandleToChat} from '../src/tochat.js';
+import {defaultCatalog} from '../src/official-model-catalog.js';
 import {reserveTitlePermit} from '../src/account-events.js';import {sanitizeTitle,TITLE_PROMPT} from '../../core/src/title-rules.js';
 const permit=allowed=>({idFromName:key=>key,get:()=>({fetch:async()=>Response.json({allowed})})});
 test('selected providers generate a short first-message title, tool-free and isolated from main usage',async()=>{
@@ -62,5 +63,5 @@ test('Claude 5.5 title requests use adaptive thinking without forced tools',asyn
 });
 
 // Title tests use an active paid account; routing tests remain independent of billing schema.
-const titleDB={prepare(sql){return{bind(){return{first:async()=>sql.includes('FROM user_subscription')?{plan_id:'ultrax',expires_at:Date.now()+86400000,five_hour_limit:0,week_limit:0,month_limit:0}:null};}};}};
+const titleDB={prepare(sql){return{bind(){return{run:async()=>({meta:{changes:1}}),first:async()=>sql.includes('FROM official_model_catalog')?{revision:1,document:JSON.stringify(defaultCatalog())}:sql.includes('FROM user_subscription')?{plan_id:'ultrax',expires_at:Date.now()+86400000,five_hour_limit:0,week_limit:0,month_limit:0}:null};}};}};
 const handleToChat=(request,env,ctx,user)=>realHandleToChat(request,{DB:titleDB,TURNSTILE_DEV_BYPASS:'1',...env},ctx,user);

@@ -31,7 +31,7 @@ export function toResponsesBody(body, effort, maxOutput, adapter = 'openai') {
 }
 
 /** Convert semantic Responses SSE into the existing Chat stream, preserving opaque reasoning. */
-export function responsesChatStream(response, model) {
+export function responsesChatStream(response, model, adapter=model.startsWith('doubao-')?'ark':model.startsWith('grok-')?'xai':'openai') {
   if(!response.headers.get('content-type')?.includes('text/event-stream'))throw Error('模型未返回有效的流式响应');
   const reader=response.body.getReader(),decoder=new TextDecoder(),encoder=new TextEncoder();
   let buffer='',ended=false,textSeen=false,reasoningSeen=false;
@@ -54,7 +54,7 @@ export function responsesChatStream(response, model) {
           for(const item of items)if(item.type==='function_call')tool(item);
           if(!textSeen){const text=items.filter(item=>item.type==='message').flatMap(item=>item.content||[]).map(part=>part.text||part.refusal||'').join('');if(text)delta({content:text});}
           if(!reasoningSeen){const text=items.filter(item=>item.type==='reasoning').flatMap(item=>item.summary||[]).map(part=>part.text||'').join('');if(text)delta({reasoning_content:text});}
-          const contexts=items.filter(item=>item.type==='reasoning'&&typeof item.encrypted_content==='string').map(item=>({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:item.summary||[],tora_provider:model.startsWith('doubao-')?'ark':model.startsWith('grok-')?'xai':'openai'}));
+          const contexts=items.filter(item=>item.type==='reasoning'&&typeof item.encrypted_content==='string').map(item=>({type:'reasoning',id:item.id,encrypted_content:item.encrypted_content,summary:item.summary||[],tora_provider:adapter}));
           if(contexts.length)emit({choices:[],tora_response_items:contexts});
           const usage=event.response?.usage;
           emit({choices:[{index:0,delta:{},finish_reason:calls.size?'tool_calls':'stop'}],...(usage?{usage:{prompt_tokens:usage.input_tokens,completion_tokens:usage.output_tokens,total_tokens:usage.total_tokens??usage.input_tokens+usage.output_tokens,prompt_tokens_details:usage.input_tokens_details,completion_tokens_details:usage.output_tokens_details}}:{})});

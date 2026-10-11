@@ -1,0 +1,3 @@
+CREATE TABLE IF NOT EXISTS official_model_catalog (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, document TEXT NOT NULL, write_id TEXT NOT NULL DEFAULT '', updated_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS official_catalog_audit (id TEXT PRIMARY KEY, revision INTEGER NOT NULL, action TEXT NOT NULL, target TEXT NOT NULL, detail TEXT NOT NULL, created_at INTEGER NOT NULL);
+CREATE TABLE IF NOT EXISTS official_request_prices (user_id INTEGER NOT NULL, request_id TEXT NOT NULL, catalog_revision INTEGER NOT NULL, rates TEXT NOT NULL, created_at INTEGER NOT NULL, PRIMARY KEY(user_id,request_id));

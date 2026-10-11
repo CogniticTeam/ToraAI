@@ -8,8 +8,8 @@ export const MODEL_MINIMUM_PLAN = Object.freeze({
  'claude-sonnet-5-5':'pro','claude-haiku-5-5':'pro',
  'gpt-6-astra':'max5','claude-opus-5-5':'max5',
 });
-export function hasModelSubscription(model,subscription){
- if(!Object.hasOwn(MODEL_MINIMUM_PLAN,model))return false;
- const required=MODEL_MINIMUM_PLAN[model];
+export function hasModelSubscription(model,subscription,minimumPlan=undefined){
+ if(minimumPlan===undefined&&!Object.hasOwn(MODEL_MINIMUM_PLAN,model))return false;
+ const required=minimumPlan===undefined?MODEL_MINIMUM_PLAN[model]:minimumPlan;
  return required===null||(PLAN_RANKS[subscription?.planId]||0)>=(PLAN_RANKS[required]||Infinity);
 }

@@ -48,6 +48,7 @@ import { editMessage, ensureMessageCampaigns, listSentMessages, recallMessage, s
 import { handleAdminPoll, handleUserPoll } from './polls.js';
 import { querySponsorPage, SponsorQueryFailure } from './sponsors.js';
 import { handleToChat } from './tochat.js';
+import {handleAdminModels} from './official-model-catalog.js';
 import subscriptionSchemaSql from '../migrations/0003_subscriptions.sql';
 import quotaResetSchemaSql from '../migrations/0004_quota_resets.sql';
 import removeNewUserResetCardsSql from '../migrations/0007_remove_new_user_reset_cards.sql';
@@ -453,6 +454,7 @@ async function handle(request, env, ctx) {
     if (p.startsWith('/admin/')) {
       const key = request.headers.get('authorization')?.replace(/^Bearer /, '') || '';
       if (!env.ADMIN_TOKEN || !timingSafeEqual(key, env.ADMIN_TOKEN)) return bad('管理密钥无效', 401);
+      if(p.startsWith('/admin/official-models')||p.startsWith('/admin/model-channels'))return handleAdminModels(request,env);
       if (p.startsWith('/admin/quota/')) return handleAdminQuota(request,env);
       if (p.startsWith('/admin/polls')) return handleAdminPoll(request, env, url);
       if (p === '/admin/presence' && method === 'GET') {

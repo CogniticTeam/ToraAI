@@ -218,8 +218,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const builtinAccountToken = getToken();
 	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
 	const needsHumanVerification=builtinSelected&&humanVerificationNeeded(selectedModel?.model||'',builtinQuota);
-	const modelLocked = builtinSelected && !!builtinQuota && !modelAvailable(selectedModel?.model||'',builtinQuota.models);
-	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !canUseWorkModel(selectedModel?.model||'',builtinQuota));
+	const modelLocked = builtinSelected && !!builtinQuota && !modelAvailable(selectedModel?.model||'',builtinQuota.models,'tocode');
+	const builtinBlocked = builtinSelected && (!builtinQuota?.enabled || builtinUnavailable || !canUseWorkModel(selectedModel?.model||'',builtinQuota,'tocode'));
 	const [selectedKnowledgeConfig, setSelectedKnowledgeConfig] =
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>(()=>restoreUIState('code-permission','default'));
@@ -777,7 +777,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				for (const model of item.models) {
 					const modelName = model.name;
 					if (!modelName) continue;
-					if (isBuiltinCredential(item.credential.id) && (!modelAllowedInMode(modelName, 'work') || !canUseWorkModel(modelName, builtinQuota))) continue;
+					if (isBuiltinCredential(item.credential.id) && (!modelAllowedInMode(modelName, 'tocode',builtinQuota?.models) || !canUseWorkModel(modelName, builtinQuota,'tocode'))) continue;
 					return { type, credential_id: item.credential.id, model: modelName, parameters: {} };
 				}
 			}

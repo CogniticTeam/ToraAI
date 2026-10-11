@@ -870,3 +870,16 @@ test('人机验证失败不会放行发送，成功后才刷新额度；取消�
  tree=render();find(tree,node=>node.type==='Button'&&node.props.children==='humanVerification.continue').props.onClick();await tick();assert.equal(verified,0);assert.equal(resets,1);assert.equal(find(render(),node=>node.type==='Button'&&node.props.children==='humanVerification.continue').props.disabled,true);
  accepted=true;find(render(),node=>node.type==='Turnstile').props.onToken('new-proof');tree=render();find(tree,node=>node.type==='Button'&&node.props.children==='humanVerification.continue').props.onClick();await tick();assert.equal(verified,1);assert.equal(find(render(),node=>node.type==='Dialog').props.open,false);h.dispose();
 });
+
+test('remote catalog adds new models and updates labels, efforts, permissions, modes and cards without a compiled whitelist',()=>{
+ const h=harness();const lib=h.load('lib/tochatModels.ts');
+ const models=[{id:'remote-new',name:'远程添加',provider:'custom',context:256000,maxOutput:4096,input_modalities:['text'],efforts:['low'],modes:['chat','work'],enabled:true,allowed:true,minimumPlan:'plus',rates:{input:11,cached:2,output:22}}];
+ assert.equal(lib.newerBuiltinQuota({catalogRevision:12,models},{catalogRevision:11,models:[]}).models[0].id,'remote-new');
+ assert.equal(lib.toChatModel('remote-new',models).name,'远程添加');assert.equal(lib.toChatEffort('remote-new','high',models),'low');assert.equal(lib.modelAvailable('remote-new',models,'chat'),true);assert.equal(lib.modelAvailable('remote-new',models,'tocode'),false);
+ assert.equal(lib.modelAvailable('remote-new',[{...models[0],allowed:false}],'chat'),false);assert.equal(lib.modelAvailable('remote-new',[],'chat'),false);assert.equal(lib.toChatModel('remote-new',[]).id,'remote-new');
+ const{modelGroupsWithQuota}=h.load('hooks/useAvailableModels.ts');const groups={tora_official:[{credential:{id:'tora-official',data:{type:'tora_official'}},models:[{name:'deepseek-flash'}]}]};
+ const result=modelGroupsWithQuota(groups,{catalogRevision:10,models,enabled:true},false);assert.equal(result.tora_official[0].models[0].name,'remote-new');assert.equal(result.tora_official[0].models[0].label,'远程添加');assert.equal(result.tora_official[0].models[0].context_size,256000);assert.deepEqual(Array.from(result.tora_official[0].models[0].input_types),['text']);
+ const emptied=modelGroupsWithQuota(groups,{catalogRevision:11,models:[],enabled:false},true);assert.equal(emptied.tora_official[0].models.length,0);
+ const {chatAttachmentTypes}=h.load('lib/chatAttachments.ts');assert.deepEqual(Array.from(chatAttachmentTypes('remote-new','chat',models)),[]);
+ h.dispose();
+});

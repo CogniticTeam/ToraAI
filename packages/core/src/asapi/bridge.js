@@ -15,7 +15,7 @@ import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
-import { builtinAuth, BUILTIN_MODELS, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
+import { builtinAuth, getBuiltinModels, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
 import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
 import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
 import {sessionForView,sessionModelSource} from '../session-mode.js';
@@ -203,11 +203,12 @@ export function resolveRunCfg(session, agent) {
     if(!isBuiltinModel(model))throw Error('不支持的内置模型');
     const auth=builtinAuth(toraCfg);
     cfg.baseURL=String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
-    const metadata=BUILTIN_MODELS.find(item=>item.id===model),maximum=metadata.context;
+    const metadata=getBuiltinModels().find(item=>item.id===model),maximum=metadata.context;
     // Context selection was removed; legacy smaller choices no longer cap a run.
-    cfg.maxTokensBudget=Math.max(1024,maximum-16384-8192);
+    cfg.maxTokensBudget=Math.max(1024,maximum-(metadata.maxOutput||16384)-8192);
     cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=metadata.inputTypes?.some(type=>type.startsWith('image/'))??true;cfg.thinking=true;
-    if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'tocode':cfg.tochatMode))throw Error('豆包免费模型仅支持 ToChat 聊天和工作模式');
+    if(metadata.efforts?.length&&!metadata.efforts.includes(cfg.thinkingEffort))cfg.thinkingEffort=metadata.efforts.includes('high')?'high':metadata.efforts[0];
+    if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'tocode':cfg.tochatMode))throw Error(`${metadata.name} 仅支持 ${(metadata.modes||[]).join('、')} 模式`);
     if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
   }
   if (visionOverride !== undefined && cfg.provider!=='tochat-official') cfg.vision = visionOverride;

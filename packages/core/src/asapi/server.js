@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { discoverSessionImports, previewSessionImports, commitSessionImports, readSessionImportBody } from './session-import.js';
 import { loadConfig, saveConfig, syncEffectiveModel, DEFAULT_CONFIG } from '../config.js';
-import { BUILTIN_CREDENTIAL_ID, BUILTIN_PROVIDER_TYPE, BUILTIN_MODELS, builtinAuth, setBuiltinAuth } from '../builtin-models.js';
+import { BUILTIN_CREDENTIAL_ID, BUILTIN_PROVIDER_TYPE, getBuiltinModels, setBuiltinCatalog, builtinAuth, setBuiltinAuth } from '../builtin-models.js';
 import { catgirlSettings } from '../catgirl.js';
 import { normalizeTitleLanguage } from '../title-rules.js';
 import {
@@ -455,6 +455,7 @@ async function route(req, res, uiResources) {
       if(!response.headers.get('content-type')?.includes('application/json'))return apiError(res,502,'官方模型额度响应无效');
       const data=await response.json();
       if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账户已更改，请重试');
+      if(data.catalogRevision!==undefined)setBuiltinCatalog(data.models,data.catalogRevision);
       return json(res,200,data);
     }catch{return apiError(res,502,'官方模型连接失败，请稍后重试');}
   }
@@ -1347,7 +1348,7 @@ async function route(req, res, uiResources) {
   // 合并手动凭证 + 设置窗口模型列表合成的 cocode-models（仅在有启用模型时出现）
   if (p === '/credential/' && method === 'GET') {
     const cfg = loadConfig();
-    const builtin=builtinAuth(cfg).authToken?[{id:BUILTIN_CREDENTIAL_ID,user_id:'local',editable:false,created_at:0,updated_at:0,data:{type:BUILTIN_PROVIDER_TYPE,name:'Tora',source:'builtin-models',model_providers:Object.fromEntries(BUILTIN_MODELS.map(model=>[model.id,model.provider]))}}]:[];
+    const builtin=builtinAuth(cfg).authToken?[{id:BUILTIN_CREDENTIAL_ID,user_id:'local',editable:false,created_at:0,updated_at:0,data:{type:BUILTIN_PROVIDER_TYPE,name:'Tora',source:'builtin-models',model_providers:Object.fromEntries(getBuiltinModels().filter(model=>model.enabled!==false).map(model=>[model.id,model.provider]))}}]:[];
     const credentials = [...listCredentials(), ...(enabledModels(cfg).length ? [toraCredential(cfg)] : []),...builtin];
     return json(res, 200, { credentials, total: credentials.length });
   }
@@ -1378,7 +1379,7 @@ async function route(req, res, uiResources) {
   if (p === '/model/' && method === 'GET') {
     const cfg = loadConfig();
     if(q.provider===BUILTIN_PROVIDER_TYPE) {
-      const cards=builtinAuth(cfg).authToken?BUILTIN_MODELS.map(model=>({type:'chat_model',name:model.id,label:model.name,status:'active',deprecated_at:null,input_types:model.inputTypes||inputTypesFor(model.id,true),output_types:['text'],context_size:model.context,output_size:16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}})):[];
+      const cards=builtinAuth(cfg).authToken?getBuiltinModels().filter(model=>model.enabled!==false).map(model=>({type:'chat_model',name:model.id,label:model.name,status:'active',deprecated_at:null,input_types:model.inputTypes||inputTypesFor(model.id,true),output_types:['text'],context_size:model.context,output_size:model.maxOutput||16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}})):[];
       return json(res,200,{models:cards,total:cards.length});
     }
     const enabled = enabledModels(cfg);

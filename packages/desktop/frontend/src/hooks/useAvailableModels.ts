@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { credentialApi, modelApi } from '@/api';
 import type { CredentialView, ModelCard } from '@/api';
 import { queryClient } from '@/lib/query-client';
-import { TOCHAT_MODELS, isBuiltinCredential, type BuiltinQuota } from '@/lib/tochatModels';
+import { TOCHAT_MODELS, isBuiltinCredential, type BuiltinQuota, type ToChatModelAvailability } from '@/lib/tochatModels';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
 
 export interface CredentialWithModels {
@@ -12,6 +12,10 @@ export interface CredentialWithModels {
 	models: ModelCard[];
 	quota?: BuiltinQuota;
 	unavailable?: boolean;
+}
+
+export function quotaModelCards(models:ToChatModelAvailability[]):ModelCard[]{
+ return models.filter(model=>model.enabled).map(model=>({type:'chat_model',name:model.id,label:model.name||model.id,status:'active',deprecated_at:null,input_types:(model.input_modalities||['text','image']).flatMap(type=>type==='image'?['image/jpeg','image/png','image/webp','image/gif']:type==='audio'?['audio/mpeg','audio/wav','audio/flac','audio/aac','audio/mp4']:type==='video'?['video/mp4','video/quicktime']:['text']),output_types:['text'],context_size:model.context||128000,output_size:model.maxOutput||16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}}));
 }
 
 /**
@@ -42,6 +46,7 @@ async function fetchGroups(): Promise<Record<string, CredentialWithModels[]>> {
 					const response = await fetchBuiltinQuota(AbortSignal.timeout(15000));
 					if (!response.ok) throw new Error('Built-in models unavailable');
 					quota = await response.json() as BuiltinQuota;
+					if(quota.catalogRevision!==undefined && quota.models)models=quotaModelCards(quota.models);
 				}
 				// Reverse-alphabetical, which is how the providers' naming
 				// schemes rank themselves — gpt-5 before gpt-4, qwen3 before
@@ -72,7 +77,8 @@ export const AVAILABLE_MODELS_KEY = ['available-models'];
 export function modelGroupsWithQuota(groups: Record<string, CredentialWithModels[]>, quota: BuiltinQuota | undefined, unavailable: boolean) {
 	return Object.fromEntries(Object.entries(groups).map(([type,items]) => [type,items.map(item => !isBuiltinCredential(item.credential.id) ? item : {
 		...item,quota,unavailable,
-		models:item.models.filter(model => TOCHAT_MODELS.some(active=>active.id===model.name) && (unavailable || !quota?.enabled || quota.models?.some(item=>item.id===model.name&&item.enabled))).sort((a,b)=>TOCHAT_MODELS.findIndex(model=>model.id===a.name)-TOCHAT_MODELS.findIndex(model=>model.id===b.name)),
+		credential:quota?.models?{...item.credential,data:{...item.credential.data,model_providers:Object.fromEntries(quota.models.map(model=>[model.id,model.provider]))}}:item.credential,
+		models:quota?.catalogRevision!==undefined&&quota.models?quotaModelCards(quota.models):item.models.filter(model=>unavailable||!quota?.models||quota.models.some(info=>info.id===model.name&&info.enabled)).sort((a,b)=>TOCHAT_MODELS.findIndex(model=>model.id===a.name)-TOCHAT_MODELS.findIndex(model=>model.id===b.name)),
 	})]));
 }
 

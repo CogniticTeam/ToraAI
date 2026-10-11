@@ -17,24 +17,31 @@ export const TOCHAT_MODELS = [
 // Preserve a retired selection's label until the user explicitly picks a
 // replacement; never quietly render or bill it as DeepSeek.
 const RETIRED_OPUS = {id:'claude-opus-5',name:'Claude Opus 5',efforts:['low','medium','high','xhigh','max']} as const;
-export type ToChatModelId = (typeof TOCHAT_MODELS)[number]['id'] | typeof RETIRED_OPUS.id;
-export const modelAllowedInMode = (id: string, mode: string) => id !== DOUBAO_MODEL_ID || mode === 'chat' || mode === 'work';
+export type ToChatModelId = string;
+export const modelAllowedInMode = (id: string, mode: string, models?: ToChatModelAvailability[]) => models ? !!models.find(model=>model.id===id && (model.modes?.includes(mode) ?? (id!==DOUBAO_MODEL_ID||mode!=='tocode'))) : id !== DOUBAO_MODEL_ID || mode === 'chat' || mode === 'work';
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
 export const isBuiltinCredential = (id?: string) => id === BUILTIN_CREDENTIAL_ID || id === 'tora-tochat-official';
 export type AgentQuota = { remainingPercent: number; canUseAgent: boolean; chatUnlimited?: boolean; subscription: { planId: string; name: string; expiresAt: string } | null; windows: { key: 'fiveHour' | 'week' | 'month'; remainingPercent: number; resetAt: string | null }[] };
 export type ModelTrial = {model:string;total:number;used:number;remaining:number};
-export type BuiltinQuota = AgentQuota & { enabled: boolean; models?: ToChatModelAvailability[]; trial?: ModelTrial; doubaoWork?: {total:number;used:number;remaining:number;resetAt:string;canUse:boolean}; humanVerification?: {required:boolean;verified:boolean;expiresAt:string|null} };
-export type ToChatModelAvailability = { id: string; enabled: boolean; allowed?: boolean; workAllowed?: boolean; minimumPlan?: string | null };
-export const toChatModel = (id?: string) => id === RETIRED_OPUS.id ? RETIRED_OPUS : TOCHAT_MODELS.find(model => model.id === id) ?? TOCHAT_MODELS.find(model => model.id === 'deepseek-flash')!;
-export const modelAvailable = (id: string, models?: ToChatModelAvailability[], mode = 'chat') => id !== RETIRED_OPUS.id && (models ? models.some(model => model.id === id && model.enabled && model.allowed !== false && (mode !== 'work' || model.workAllowed !== false)) : id === 'deepseek-flash');
-
+export type BuiltinQuota = AgentQuota & { catalogRevision?: number; enabled: boolean; models?: ToChatModelAvailability[]; trial?: ModelTrial; doubaoWork?: {total:number;used:number;remaining:number;resetAt:string;canUse:boolean}; humanVerification?: {required:boolean;verified:boolean;expiresAt:string|null} };
+export const newerBuiltinQuota=(previous:BuiltinQuota|null,next:BuiltinQuota):BuiltinQuota=>previous?.catalogRevision!==undefined&&next.catalogRevision!==undefined&&next.catalogRevision<previous.catalogRevision?previous:next;
+export type ToChatModelAvailability = { id: string; enabled: boolean; allowed?: boolean; workAllowed?: boolean; minimumPlan?: string | null; name?: string; provider?: string; context?: number; maxOutput?: number; efforts?: readonly string[]; input_modalities?: string[]; modes?: string[]; rates?: Record<string,number> };
+export function officialModels(models?: ToChatModelAvailability[]) {
+ return models ? models.map(model=>({...toChatModel(model.id),...model,name:model.name||toChatModel(model.id).name,efforts:model.efforts||toChatModel(model.id).efforts})).filter(model=>model.enabled) : TOCHAT_MODELS;
+}
+export function toChatModel(id?: string, models?: ToChatModelAvailability[]) {
+ const fallback=id===RETIRED_OPUS.id?RETIRED_OPUS:TOCHAT_MODELS.find(model=>model.id===id);
+ const model=models?.find(model=>model.id===id);
+ return {id:id||'deepseek-flash',name:model?.name||fallback?.name||id||'DeepSeek Flash',efforts:model?.efforts||fallback?.efforts||['low','medium','high'],context:model?.context,provider:model?.provider};
+}
+export const modelAvailable = (id: string, models?: ToChatModelAvailability[], mode = 'chat') => id!==RETIRED_OPUS.id && (models ? models.some(model => model.id === id && model.enabled && model.allowed !== false && modelAllowedInMode(id,mode,models) && (mode === 'chat' || model.workAllowed !== false)) : id === 'deepseek-flash');
 export type ToChatEffort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
-export const toChatEffort = (id: string, effort: string): ToChatEffort => {
-	const levels: readonly string[] = toChatModel(id).efforts;
-	return levels.includes(effort) ? effort as ToChatEffort : 'high';
+export const toChatEffort = (id: string, effort: string, models?: ToChatModelAvailability[]): ToChatEffort => {
+ const levels: readonly string[] = toChatModel(id,models).efforts;
+ return (levels.includes(effort) ? effort : levels.includes('high')?'high':levels[0]) as ToChatEffort;
 };
 
-export const canUseWorkModel = (id: string, quota?: BuiltinQuota | null) => !!quota && modelAvailable(id,quota.models,'work') &&
+export const canUseWorkModel = (id: string, quota?: BuiltinQuota | null, mode='work') => !!quota && modelAvailable(id,quota.models,mode) &&
  (id===DOUBAO_MODEL_ID ? (quota.subscription?quota.canUseAgent:!!quota.doubaoWork?.canUse) : quota.canUseAgent || (id==='deepseek-flash'&&!quota.subscription&&(quota.trial?.remaining||0)>0));
 export function modelRequirementLabel(id: string, models: ToChatModelAvailability[] | undefined, t: (key:string,params?:Record<string,unknown>)=>string){
  const info=models?.find(model=>model.id===id);

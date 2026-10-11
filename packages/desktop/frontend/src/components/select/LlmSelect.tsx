@@ -130,7 +130,7 @@ export function LlmSelect({
 	const allEntries: ModelEntry[] = groupEntries.flatMap(([type, usable]) =>
 		usable.flatMap(({ credential, models }) => models.map((model) => ({ type, credential, model }))),
 	);
-	const entries: ModelEntry[] = allEntries.filter(entry => !isBuiltinCredential(entry.credential.id) || modelAllowedInMode(entry.model.name,'tocode'));
+	const entries: ModelEntry[] = allEntries.filter(entry => !isBuiltinCredential(entry.credential.id) || modelAllowedInMode(entry.model.name,'tocode',builtinQuota?.models));
 	// 每个凭证首次出现的下标 —— 左列在组首渲染凭证标题
 	const firstIdxByCredential = new Map<string, number>();
 	entries.forEach((e, idx) => {
@@ -149,13 +149,13 @@ export function LlmSelect({
 	}, [refetchTrigger, refetch]);
 
 	const handleSelect = (entry: ModelEntry) => {
-		if (isBuiltinCredential(entry.credential.id) && (builtinUnavailable || !modelAvailable(entry.model.name,builtinQuota?.models))) return;
+		if (isBuiltinCredential(entry.credential.id) && (builtinUnavailable || !modelAvailable(entry.model.name,builtinQuota?.models,'tocode'))) return;
 		// 换模型保留思考强度 / 上下文窗口等参数偏好
 		onChange?.({
 			type: entry.type,
 			credential_id: entry.credential.id,
 			model: entry.model.name,
-			parameters: isBuiltinCredential(entry.credential.id) ? { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size, thinking: true, thinkingEffort: toChatEffort(entry.model.name, String(value?.parameters?.thinkingEffort ?? 'high')) } : { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size },
+			parameters: isBuiltinCredential(entry.credential.id) ? { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size, thinking: true, thinkingEffort: toChatEffort(entry.model.name, String(value?.parameters?.thinkingEffort ?? 'high'),builtinQuota?.models) } : { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size },
 		});
 	};
 
@@ -168,13 +168,13 @@ export function LlmSelect({
 	};
 
 	const displayLabel = value?.model
-		? isBuiltinCredential(value.credential_id) ? toChatModel(value.model).name : value.model
+		? isBuiltinCredential(value.credential_id) ? toChatModel(value.model,builtinQuota?.models).name : value.model
 		: loading
 			? t('llm-select.loading')
 			: (placeholder ?? t('llm-select.placeholder'));
 
 	const detail = selectedEntry;
-	const currentLevel = value && isBuiltinCredential(value.credential_id) ? toChatEffort(value.model, String(value.parameters?.thinkingEffort ?? 'high')) : thinkingLevelOf(value?.parameters);
+	const currentLevel = value && isBuiltinCredential(value.credential_id) ? toChatEffort(value.model, String(value.parameters?.thinkingEffort ?? 'high'),builtinQuota?.models) : thinkingLevelOf(value?.parameters);
 
 	// 受控开关 + 文档级兜底：radix 自带外点关闭，但个别空白区域的事件可能被
 	// 业务层吞掉，这里在 capture 阶段再兜一道 —— 点在 popover/触发器之外即关。
@@ -250,7 +250,7 @@ export function LlmSelect({
 										<button
 											type="button"
 											onClick={() => handleSelect({ type, credential, model })}
-											disabled={isBuiltinCredential(credential.id) && (builtinUnavailable || !modelAvailable(model.name,builtinQuota?.models))}
+											disabled={isBuiltinCredential(credential.id) && (builtinUnavailable || !modelAvailable(model.name,builtinQuota?.models,'tocode'))}
 											className={cn(
 												'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm motion-safe:transition-colors',
 												selected ? 'bg-accent' : 'hover:bg-accent',
@@ -262,7 +262,7 @@ export function LlmSelect({
 												size="size-5"
 												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
 											/>
-											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name).name : model.name}</span>
+											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name,builtinQuota?.models).name : model.name}</span>
 											{isBuiltinCredential(credential.id)&&model.name==='deepseek-flash'&&!builtinQuota?.subscription&&(builtinQuota?.trial?.remaining||0)>0&&<span className="text-xs text-muted-foreground">{t('llm-select.trialRemaining',{count:builtinQuota?.trial?.remaining})}</span>}
 											{selected && <Check className="size-4 shrink-0 text-primary" />}
 										</button>
@@ -314,7 +314,7 @@ export function LlmSelect({
 										size="size-7"
 										fallback={<Box className="size-5 shrink-0 text-muted-foreground" />}
 									/>
-									<span className="min-w-0 truncate text-base font-semibold">{isBuiltinCredential(detail.credential.id) ? toChatModel(detail.model.name).name : detail.model.name}</span>
+									<span className="min-w-0 truncate text-base font-semibold">{isBuiltinCredential(detail.credential.id) ? toChatModel(detail.model.name,builtinQuota?.models).name : detail.model.name}</span>
 								</div>
 
 								{/* 能力标签：多模态输入 / 上下文规模 */}
@@ -336,7 +336,7 @@ export function LlmSelect({
 									label={t('llm-select.thinking')}
 									current={currentLevel}
 									currentLabel={t(`llm-select.level.${currentLevel}`)}
-									options={(isBuiltinCredential(value?.credential_id) ? toChatModel(value?.model).efforts : /(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
+									options={(isBuiltinCredential(value?.credential_id) ? toChatModel(value?.model,builtinQuota?.models).efforts : /(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
 									onSelect={(v) => handleThinking(v as ThinkingLevel)}
 								/>
 							</div>

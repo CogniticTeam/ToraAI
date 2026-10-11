@@ -32,7 +32,7 @@ export const CREDIT_RATES = Object.freeze({
 export function modelRates(model,input=0,env={}, {audio=false}={}) {
  let overrides={};try{overrides=JSON.parse(env.AGENT_CREDIT_RATES||'{}');}catch{throw Error('Invalid configured credit rates');}
  const rate=overrides[model]||CREDIT_RATES[model];if(!rate)throw Error('Unknown credit model');
- const result=audio&&model==='doubao-seed-2-1-lite-260915'?{input:rate.audioInput??rate.input,cached:rate.audioCached??rate.cached,output:rate.output}:rate.threshold&&input>rate.threshold?{input:rate.longInput,cached:rate.longCached,output:rate.longOutput}:rate;
+ const result=audio&&rate.audioInput!==undefined?{input:rate.audioInput??rate.input,cached:rate.audioCached??rate.cached,output:rate.output}:rate.threshold&&input>rate.threshold?{input:rate.longInput,cached:rate.longCached,output:rate.longOutput}:rate;
  for(const key of ['input','cached','output'])if(!Number.isSafeInteger(result[key])||result[key]<=0)throw Error('Invalid configured credit rates');
  return {input:result.input,cached:result.cached,output:result.output};
 }
@@ -49,6 +49,6 @@ export function usageTokens(usage,{audioRequired=false,withAudio=audioRequired}=
 }
 export function usageCost(model,tokens,env={}){
  const rate=modelRates(model,tokens.input,env);
- if(model==='doubao-seed-2-1-lite-260915'&&tokens.audio){const audioRate=modelRates(model,tokens.input,env,{audio:true}),audio=tokens.audio,audioCached=tokens.audioCached||0;return (tokens.input-audio-tokens.cached+audioCached)*rate.input+(tokens.cached-audioCached)*rate.cached+(audio-audioCached)*audioRate.input+audioCached*audioRate.cached+tokens.output*rate.output;}
+ if(tokens.audio){const audioRate=modelRates(model,tokens.input,env,{audio:true}),audio=tokens.audio,audioCached=tokens.audioCached||0;return (tokens.input-audio-tokens.cached+audioCached)*rate.input+(tokens.cached-audioCached)*rate.cached+(audio-audioCached)*audioRate.input+audioCached*audioRate.cached+tokens.output*rate.output;}
  return (tokens.input-tokens.cached)*rate.input+tokens.cached*rate.cached+tokens.output*rate.output;
 }
