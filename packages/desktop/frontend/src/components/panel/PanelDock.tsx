@@ -1,16 +1,13 @@
 import {AnimatePresence,motion,useIsPresent} from 'framer-motion';
-import { X } from 'lucide-react';
-import { Fragment, Suspense, type ReactNode } from 'react';
+import { Fragment, lazy, Suspense, useState, type ReactNode } from 'react';
 
-import { Button } from '@/components/ui/button.tsx';
 import {
 	ResizableHandle,
 	ResizablePanel,
-	ResizablePanelGroup,
 } from '@/components/ui/resizable.tsx';
-import { Separator } from '@/components/ui/separator';
 import {useMotionSettings} from '@/hooks/useMotionSettings';
 import { useTranslation } from '@/i18n/useI18n';
+import { nextPanelAfterClose } from '@/lib/panelTabs';
 
 /**
  * Identifier for a dockable panel. Used both as the React key and to
@@ -40,6 +37,8 @@ export type PanelKey =
 export interface PanelDescriptor {
 	/** Header title shown in the panel's chrome. */
 	title: ReactNode;
+	/** Plain localized name for the tab and close control. */
+	tabLabel?: string;
 	/** Optional leading icon shown next to the title. */
 	icon?: ReactNode;
 	/**
@@ -58,159 +57,47 @@ export interface PanelDescriptor {
 }
 
 interface PanelDockProps {
-	/**
-	 * Controlled layout state. Outer array = columns (laid out left to
-	 * right), inner array = the panels stacked top to bottom within a
-	 * column (max 2). The dock never mutates this; it only renders it.
-	 */
 	layout: PanelKey[][];
-	/**
-	 * Lookup from {@link PanelKey} to its {@link PanelDescriptor}. Only
-	 * needs to contain keys that may appear in {@link layout}.
-	 */
 	panels: Partial<Record<PanelKey, PanelDescriptor>>;
-	/**
-	 * Invoked when a panel's close button is clicked. The owner is
-	 * responsible for removing the key from {@link layout} (and dropping
-	 * the column if it becomes empty).
-	 *
-	 * @param key - The panel being closed.
-	 */
 	onClosePanel: (key: PanelKey) => void;
+	onOpenPanel?: (key: PanelKey) => void;
+	onCloseDock?: () => void;
+	activePanel?: PanelKey | null;
+	onActivePanelChange?: (key: PanelKey | null) => void;
 }
-
-/**
- * Minimum width of a dock column. Keeps a panel's content (search box,
- * list items) from being squeezed unusably narrow.
- */
-const COLUMN_MIN_WIDTH = '20rem';
-
-/**
- * Minimum height of a single panel within a column. Guarantees the
- * title bar plus a sliver of content stays visible.
- */
-const PANEL_MIN_HEIGHT = '6rem';
 
 function DockMotion({mode,duration,children}:{mode:string;duration:number;children:ReactNode}) {
 	const present=useIsPresent();
-	return <motion.div data-dock-motion={mode} data-dock-exiting={!present} className={`h-full min-w-0 ${present?'':'pointer-events-none'}`} initial={{opacity:mode==='off'?1:0,x:mode==='off'?0:18}} animate={{opacity:1,x:0}} exit={{opacity:0,x:mode==='off'?0:18}} transition={{duration,ease:[0.2,0.7,0.2,1]}}>{children}</motion.div>;
+	return <motion.div data-dock-motion={mode} data-dock-exiting={!present} className={`flex h-full min-h-0 min-w-0 flex-col ${present?'':'pointer-events-none'}`} initial={{opacity:mode==='off'?1:0,x:mode==='off'?0:18}} animate={{opacity:1,x:0}} exit={{opacity:0,x:mode==='off'?0:18}} transition={{duration,ease:[0.2,0.7,0.2,1]}}>{children}</motion.div>;
 }
 
-interface PanelProps {
-	title: ReactNode;
-	icon?: ReactNode;
-	actions?: ReactNode;
-	onClose: () => void;
-	children: ReactNode;
-}
+const BuiltinBrowser = lazy(async () => ({default:(await import('./BrowserPanel')).BrowserPanel}));
+const TOOL_MENU: PanelKey[] = ['plan','skill','diff','checkpoint','hooks','terminal'];
 
-/**
- * Generic panel chrome: a bordered container with a title bar (icon +
- * title + optional actions + close button) and a flexible body. Content
- * components are rendered as `children` and should not draw their own
- * header/border.
- *
- * @param title - Header title.
- * @param icon - Optional leading icon.
- * @param actions - Optional nodes rendered to the left of the close
- *   button (e.g. a settings popover trigger).
- * @param onClose - Called when the close button is clicked.
- * @param children - The panel body.
- * @returns The panel chrome element.
- */
-export const Panel = ({ title, icon, actions, onClose, children }: PanelProps) => {
-	const {t}=useTranslation();
-	return (
-		<div className="flex flex-1 flex-col h-full p-2 min-h-0 text-foreground">
-			<div className="flex items-center justify-between px-2">
-				<span className="flex items-center gap-x-1.5 text-sm">
-					{icon}
-					{title}
-				</span>
-				<div className="flex items-center gap-x-0.5">
-					{actions}
-					{actions ? (
-						<Separator
-							orientation="vertical"
-							className="mx-0.5 data-vertical:h-4 data-vertical:self-center"
-						/>
-					) : null}
-					<Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={t('panelDock.close')}>
-						<X />
-					</Button>
-				</div>
-			</div>
-			<div className="flex flex-1 flex-col min-h-0 overflow-auto px-2">{children}</div>
-		</div>
-	);
-};
-
-/**
- * A pure layout engine for the right-hand dockable panel area.
- *
- * Knows nothing about MCP / tasks / skills — it just arranges whatever
- * panels {@link PanelDockProps.layout} describes into a grid of
- * horizontally-resizable columns, each containing up to two
- * vertically-resizable rows. The panel bodies arrive pre-built via
- * {@link PanelDockProps.panels}.
- *
- * Rendered as a sibling of the chat panel inside the outer horizontal
- * `ResizablePanelGroup`, so it emits one `ResizablePanel` per column
- * (with a `ResizableHandle` between columns) to share that group.
- *
- * @param layout - Controlled column/panel arrangement.
- * @param panels - Descriptor lookup for each panel key.
- * @param onClosePanel - Close-request callback.
- * @returns The column fragment, or `null` when no panels are open.
- */
-export const PanelDock = ({ layout, panels, onClosePanel }: PanelDockProps) => {
+/** The browser owns the only tab strip for both web pages and tools. */
+export const PanelDock = ({ layout, panels, onClosePanel, onOpenPanel, onCloseDock, activePanel, onActivePanelChange }: PanelDockProps) => {
 	const { t } = useTranslation();
+	const [selected, setSelected] = useState<PanelKey | null>(null);
+	const keys = [...new Set(layout.flat())].filter(key => key !== 'browser' && panels[key]);
+	const preferred = activePanel === undefined ? selected : activePanel;
+	const active = preferred && keys.includes(preferred) ? preferred : null;
+	const select = (key: PanelKey | null) => {setSelected(key);onActivePanelChange?.(key ?? 'browser');};
+	const close = (key: PanelKey) => {select(nextPanelAfterClose(keys, active, key));onClosePanel(key);};
 	const {effective,clickEnabled}=useMotionSettings();
 	const motionMode=clickEnabled?effective:'off';
 	const duration=motionMode==='off'?0:motionMode==='fast'?0.15:motionMode==='gentle'?0.3:0.22;
-	return (
-		<AnimatePresence initial={false}>
-			{layout.map((column) => (
-				<Fragment key={`col-${column.join('-')}`}>
-						<ResizableHandle withHandle className="bg-transparent w-1.5" />
-					<ResizablePanel minSize={COLUMN_MIN_WIDTH} defaultSize="22rem">
-						<DockMotion mode={motionMode} duration={duration}>
-						<ResizablePanelGroup orientation="vertical">
-							{column.map((key, rowIndex) => {
-								const descriptor = panels[key];
-								if (!descriptor) return null;
-								return (
-									<Fragment key={key}>
-										{rowIndex > 0 && (
-											<ResizableHandle
-												withHandle
-												className="bg-transparent !h-1"
-											/>
-										)}
-
-										<ResizablePanel
-											className={key==='browser'?'flex min-h-0 min-w-0 flex-col overflow-hidden':'rounded-[22px] bg-card shadow-panel'}
-											minSize={PANEL_MIN_HEIGHT}
-										>
-											{key==='browser'?<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>{descriptor.content}</Suspense>:<Panel
-												title={descriptor.title}
-												icon={descriptor.icon}
-												actions={descriptor.actions}
-												onClose={() => onClosePanel(key)}
-											>
-												<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>
-													{descriptor.content}
-												</Suspense>
-											</Panel>}
-										</ResizablePanel>
-									</Fragment>
-								);
-							})}
-						</ResizablePanelGroup>
-						</DockMotion>
-					</ResizablePanel>
-				</Fragment>
-			))}
-		</AnimatePresence>
-	);
+	return <AnimatePresence initial={false}>
+		{layout.flat().length > 0 && <Fragment key="tool-dock">
+			<ResizableHandle withHandle className="w-1.5 bg-transparent" />
+			<ResizablePanel id="tool-dock" minSize="20rem" defaultSize="26rem" className="min-w-0">
+				<DockMotion mode={motionMode} duration={duration}>
+					<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>
+						<BuiltinBrowser toolTabs={keys.map(key => ({key,...panels[key]!}))} activeTool={active} onSelectTool={select} onCloseTool={close}
+							availableTools={TOOL_MENU.filter(key => panels[key]).map(key => ({key,...panels[key]!}))} onOpenTool={key => {onOpenPanel?.(key);select(key);}}
+							onClose={onCloseDock ?? (() => onClosePanel('browser'))} />
+					</Suspense>
+				</DockMotion>
+			</ResizablePanel>
+		</Fragment>}
+	</AnimatePresence>;
 };

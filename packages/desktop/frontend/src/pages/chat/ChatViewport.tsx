@@ -2,7 +2,6 @@ import type { PermissionContext } from '@agentscope-ai/agentscope/permission';
 import type { TaskContext } from '@agentscope-ai/agentscope/state';
 import {
 	BookText,
-	ChevronDown,
 	Database,
 	GitCompare,
 	Globe,
@@ -37,12 +36,6 @@ import { PermissionModeSelect } from '@/components/select/PermissionModeSelect.t
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
-	DropdownMenu,
-	DropdownMenuCheckboxItem,
-	DropdownMenuContent,
-	DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
 	ResizablePanel,
 	ResizablePanelGroup,
 } from '@/components/ui/resizable.tsx';
@@ -60,6 +53,7 @@ import { useTranslation } from '@/i18n/useI18n';
 import {takeBrowserPanel} from '@/lib/browserStart';
 import { OPEN_PANEL_EVENT, type PanelOpenDetail } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
+import {normalizePanelLayout,openPanelInLayout,closePanelInLayout} from '@/lib/panelTabs';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
 import { humanVerificationNeeded, canUseWorkModel, modelAvailable, modelRequirementLabel, modelAllowedInMode } from '@/lib/tochatModels';
 import { isBuiltinCredential } from '@/lib/tochatModels';
@@ -110,9 +104,6 @@ interface ChatViewportProps {
 	onSessionCreated?: (sessionId: string) => void;
 }
 
-/** Maximum number of panels stacked in a single dock column. */
-const MAX_PANELS_PER_COLUMN = 2;
-
 /** localStorage key holding the dock layout across page navigations. */
 const PANEL_LAYOUT_KEY = 'chat_panel_layout';
 
@@ -142,47 +133,10 @@ function loadPanelLayout(): PanelKey[][] {
 	try {
 		const parsed: unknown = JSON.parse(localStorage.getItem(PANEL_LAYOUT_KEY) ?? '[]');
 		if (!Array.isArray(parsed)) return [];
-		return parsed
-			.map((column: unknown) =>
-				Array.isArray(column)
-					? column.filter((key): key is PanelKey => key in KNOWN_PANELS)
-					: [],
-			)
-			.filter((column) => column.length > 0);
+		return normalizePanelLayout(parsed);
 	} catch {
 		return [];
 	}
-}
-
-/**
- * Insert a panel into the dock layout. Scans columns left to right and
- * appends to the first one with spare room; if every column is full a
- * new rightmost column is created. No-op when the panel is already
- * open.
- *
- * @param layout - The current column/panel arrangement.
- * @param key - The panel to open.
- * @returns A new layout array (the input is never mutated).
- */
-function openPanelInLayout(layout: PanelKey[][], key: PanelKey): PanelKey[][] {
-	if (layout.some((column) => column.includes(key))) return layout;
-	const targetIndex = layout.findIndex((column) => column.length < MAX_PANELS_PER_COLUMN);
-	if (targetIndex === -1) return [...layout, [key]];
-	return layout.map((column, index) => (index === targetIndex ? [...column, key] : column));
-}
-
-/**
- * Remove a panel from the dock layout, dropping its column entirely if
- * it becomes empty.
- *
- * @param layout - The current column/panel arrangement.
- * @param key - The panel to close.
- * @returns A new layout array (the input is never mutated).
- */
-function closePanelInLayout(layout: PanelKey[][], key: PanelKey): PanelKey[][] {
-	return layout
-		.map((column) => column.filter((panelKey) => panelKey !== key))
-		.filter((column) => column.length > 0);
 }
 
 /**
@@ -231,10 +185,12 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const [tasksContext, setTasksContext] = useState<TaskContext | null>(null);
 	const [permissionContext, setPermissionContext] = useState<PermissionContext | null>(null);
 	const [configPending, setConfigPending] = useState(false);
-	// Dock layout: columns laid out left→right, each holding up to 2
-	// panels stacked top→bottom. Open order determines placement.
+	// One tool-tab dock. Old column layouts are migrated on load.
 	// Persisted so leaving and returning to /chat keeps the same panels.
 	const [panelLayout, setPanelLayout] = useState<PanelKey[][]>(loadPanelLayout);
+	const [dockVisible,setDockVisible] = useState(true);
+	const [activePanel,setActivePanel] = useState<PanelKey | null>(() => localStorage.getItem('chat_panel_active') as PanelKey | null);
+	useEffect(() => {if(activePanel)localStorage.setItem('chat_panel_active',activePanel);else localStorage.removeItem('chat_panel_active');},[activePanel]);
 	const [recordedDiff, setRecordedDiff] = useState<{scope: string; diff: string; root?: string} | null>(null);
 	const diffScope = `${agentId}:${sessionId}`;
 	const selectedDiff = recordedDiff?.scope === diffScope ? recordedDiff : null;
@@ -267,6 +223,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		if (next.some((v) => v.session.id === sessionId && v.team)) {
 			// `openPanelInLayout`, not `togglePanel` — the latter would
 			// close a panel the user already has open.
+			setDockVisible(true);
+			setActivePanel('team');
 			setPanelLayout((layout) => openPanelInLayout(layout, 'team'));
 		}
 		onSessionsChanged?.();
@@ -323,6 +281,8 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				setTasksContext(incoming);
 				if (incoming.tasks.length > 0 && taskPanelOpenedForRef.current !== sessionId) {
 					taskPanelOpenedForRef.current = sessionId;
+					setDockVisible(true);
+					setActivePanel('plan');
 					setPanelLayout((layout) => openPanelInLayout(layout, 'plan'));
 				}
 			}
@@ -394,7 +354,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			const key = typeof detail === 'string' ? detail : detail?.key;
 			if (!key || !(key in KNOWN_PANELS)) return;
 			if (key === 'diff') setRecordedDiff(typeof detail === 'object' && typeof detail.diff === 'string' && detail.diff.trim() ? {scope:diffScope,diff:detail.diff,root:detail.root} : null);
-			setPanelLayout((layout) => key === 'browser' && typeof detail === 'object' && detail.exclusive ? [['browser']] : openPanelInLayout(layout, key));
+			setDockVisible(true);
+			setActivePanel(key);
+			setPanelLayout((layout) => openPanelInLayout(layout, key));
 		};
 		window.addEventListener(OPEN_PANEL_EVENT, handler);
 		const pending=takeBrowserPanel((window.location?.pathname??'')+(window.location?.search??''));
@@ -402,14 +364,10 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		return () => window.removeEventListener(OPEN_PANEL_EVENT, handler);
 	}, [diffScope]);
 
-	// Toggle a panel open/closed from the top-bar buttons.
-	const togglePanel = useCallback((key: PanelKey) => {
-		if (key === 'diff') setRecordedDiff(null);
-		setPanelLayout((layout) =>
-			layout.some((column) => column.includes(key))
-				? closePanelInLayout(layout, key)
-				: openPanelInLayout(layout, key),
-		);
+	const openToolPanel = useCallback((key: PanelKey) => {
+		if(key === 'diff')setRecordedDiff(null);
+		setDockVisible(true);setActivePanel(key);
+		setPanelLayout(layout => openPanelInLayout(layout,key));
 	}, []);
 
 	// Close a panel (driven by the panel's own close button).
@@ -418,7 +376,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		setPanelLayout((layout) => closePanelInLayout(layout, key));
 	}, []);
 
-	const isPanelOpen = useCallback((key: PanelKey) => openPanels.has(key), [openPanels]);
 
 	// 本地导入技能：原生文件夹对话框选目录 → 后端按路径收进技能库 →
 	// 有会话时顺手装进当前工作区。纯浏览器环境（无壳层桥）由对话框侧隐藏入口。
@@ -573,6 +530,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				),
 			},
 			permission: {
+				tabLabel: t('panel.permission.title'),
 				title: (
 					<span className="flex items-center gap-x-2">
 						{t('panel.permission.title')}
@@ -587,6 +545,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				content: <PermissionPanel permissionContext={permissionContext} />,
 			},
 			knowledge: {
+				tabLabel: t('panel.knowledge.title'),
 				title: (
 					<span className="flex items-center gap-x-2">
 						{t('panel.knowledge.title')}
@@ -617,6 +576,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 				),
 			},
 			team: {
+				tabLabel: t('common.team'),
 				title: (
 					<span className="flex items-center gap-x-2">
 						{t('common.team')}
@@ -630,6 +590,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			},
 			// ── Tora 独有：检查点 / 变更预览 ──
 			checkpoint: {
+				tabLabel: t('panel.workspace.checkpoint'),
 				title: (
 					<span className="flex items-center gap-x-2">
 						{t('panel.workspace.checkpoint')}
@@ -665,7 +626,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			browser: {
 				title: t('panel.workspace.browser'),
 				icon: <Globe className="size-4" />,
-				content: <BrowserPanel onClose={()=>togglePanel('browser')} />,
+				content: <BrowserPanel />,
 			},
 			terminal: {
 				title: t('panel.workspace.terminal'),
@@ -715,7 +676,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 			view,
 			tora,
 			selectedDiff,
-			togglePanel,
 			workspaceStatus?.cwd,
 			activeCwd,
 		],
@@ -1000,77 +960,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								{/* Never squeezed by a long session name: the
 								    name truncates instead. */}
 								{/* Tora 定制：右栏仅保留 计划/技能 面板开关；MCP/权限/知识库/团队已隐藏 */}
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="sm"
-												className="gap-1 px-2"
-												aria-label={t('panelDock.toggle')}
-											>
-												<PanelRight />
-												<ChevronDown className="size-3 text-muted-foreground" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent align="end" className="w-auto">
-											<DropdownMenuCheckboxItem
-												checked={isPanelOpen('plan')}
-												onCheckedChange={() => togglePanel('plan')}
-												onSelect={(e) => e.preventDefault()}
-											>
-												<ListTodo />
-												{t('panel.plan.title')}
-											</DropdownMenuCheckboxItem>
-										<DropdownMenuCheckboxItem
-											checked={isPanelOpen('skill')}
-											onCheckedChange={() => togglePanel('skill')}
-											onSelect={(e) => e.preventDefault()}
-										>
-											<BookText />
-											{t('panel.skill.title')}
-										</DropdownMenuCheckboxItem>
-										<DropdownMenuCheckboxItem
-											checked={isPanelOpen('diff')}
-											onCheckedChange={() => togglePanel('diff')}
-											onSelect={(e) => e.preventDefault()}
-										>
-											<GitCompare />
-												{t('panel.workspace.diff')}
-										</DropdownMenuCheckboxItem>
-										<DropdownMenuCheckboxItem
-											checked={isPanelOpen('checkpoint')}
-											onCheckedChange={() => togglePanel('checkpoint')}
-											onSelect={(e) => e.preventDefault()}
-										>
-											<History />
-											{t('panel.workspace.checkpoint')}
-										</DropdownMenuCheckboxItem>
-										<DropdownMenuCheckboxItem
-											checked={isPanelOpen('hooks')}
-											onCheckedChange={() => togglePanel('hooks')}
-											onSelect={(e) => e.preventDefault()}
-										>
-											<Webhook />
-											{t('panel.workspace.hooks')}
-										</DropdownMenuCheckboxItem>
-									<DropdownMenuCheckboxItem
-										checked={isPanelOpen('browser')}
-										onCheckedChange={() => togglePanel('browser')}
-										onSelect={(e) => e.preventDefault()}
-									>
-										<Globe />
-									{t('panel.workspace.browser')}
-								</DropdownMenuCheckboxItem>
-								<DropdownMenuCheckboxItem
-									checked={isPanelOpen('terminal')}
-									onCheckedChange={() => togglePanel('terminal')}
-									onSelect={(e) => e.preventDefault()}
-								>
-									<SquareTerminal />
-									{t('panel.workspace.terminal')}
-								</DropdownMenuCheckboxItem>
-								</DropdownMenuContent>
-									</DropdownMenu>
+								<Button variant="ghost" size="icon-sm" aria-label={t('panelDock.toggle')} aria-pressed={dockVisible&&panelLayout.length>0} onClick={() => {
+									if(panelLayout.length===0)openToolPanel('browser');else setDockVisible(value=>!value);
+								}}><PanelRight /></Button>
 							</div>
 							<div className="canvas-glow flex flex-1 justify-center min-h-0 overflow-hidden relative [--chat-content-w:54rem]">
 								<ChatContent
@@ -1224,7 +1116,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 							</div>
 						</div>
 					</ResizablePanel>
-					<PanelDock layout={panelLayout} panels={panels} onClosePanel={closePanel} />
+					<PanelDock layout={dockVisible?panelLayout:[]} panels={panels} onClosePanel={closePanel} onOpenPanel={openToolPanel} onCloseDock={()=>setDockVisible(false)} activePanel={activePanel} onActivePanelChange={setActivePanel} />
 				</ResizablePanelGroup>
 			</main>
 		</>

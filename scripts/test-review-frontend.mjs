@@ -22,6 +22,7 @@ function harness(mocks = {}, globals = {}) {
   const react = {
     useState(initial) { const i = cursor++; if (!(i in slots)) slots[i] = typeof initial === 'function' ? initial() : initial; return [slots[i], value => { slots[i] = typeof value === 'function' ? value(slots[i]) : value; }]; },
     useId() { const i = cursor++; return slots[i] ??= `fixture-${i}`; },
+    useSyncExternalStore(_subscribe,get) {return get();},
     useRef(initial) { const i = cursor++; return slots[i] ??= { current: initial }; },
     useMemo(fn, deps) { const i = cursor++; if (changed(slots[i]?.deps, deps)) slots[i] = { deps, value: fn() }; return slots[i].value; },
     useCallback(fn, deps) { return react.useMemo(() => fn, deps); },
@@ -55,7 +56,7 @@ function harness(mocks = {}, globals = {}) {
     const source = readFileSync(new URL(path, base), 'utf8') + append;
     const output = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, esModuleInterop: true } }).outputText;
     const exports = {};
-    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/browserStart' ? load('lib/browserStart.ts') : name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name === '@/lib/subscription' ? load('lib/subscription.ts') : name === '@/lib/toolDisplayName' ? load('lib/toolDisplayName.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
+    vm.runInNewContext(output, { ...context, exports, require: name => imports[name] ?? (name === '@/lib/panelTabs' ? load('lib/panelTabs.ts') : name === '@/lib/browserStart' ? load('lib/browserStart.ts') : name === '@/lib/tochatModels' ? load('lib/tochatModels.ts') : name === '@/lib/subscription' ? load('lib/subscription.ts') : name === '@/lib/toolDisplayName' ? load('lib/toolDisplayName.ts') : name.endsWith('/chat-media.js') ? load('../../../core/src/chat-media.js') : name === '@/lib/chatAttachments' ? load('lib/chatAttachments.ts') : name.endsWith('/session-mode.js') ? load('../../../core/src/session-mode.js') : name.endsWith('/builtin-models.js') ? load('../../../core/src/builtin-models.js') : name.endsWith('/title-rules.js') ? load('../../../core/src/title-rules.js') : undefined) ?? new Proxy({}, { get: (_, key) => key === '__esModule' ? true : String(key) }) }, { filename: path });
     return exports;
   }
   const flushEffects=()=>{for(const run of effects.splice(0))run();};
@@ -698,7 +699,7 @@ test('ToChat work hosts the same right browser dock and closes it without naviga
  const h=harness({'react-router-dom':{useNavigate:()=>url=>navigations.push(url),useParams:()=>({agentId:'agent',sessionId:'work'}),useSearchParams:()=>[new URLSearchParams('task=work')]},'@/hooks/useAgents':{useAgents:()=>({agents:[{id:'agent'}]})},'@/hooks/useSessions':{useSessions:()=>({sessions:[view],loading:false,refetch(){}})},'@/hooks/useMessages':{useMessages:()=>({msgs:[],loading:false,phase:'idle',send(){},interrupt(){}})},'@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'standard',clickEnabled:true})},'@/utils/authStore':{getToken:()=> 'fixture'},'@/utils/modelSync':{syncBuiltinModelAuth:async()=>{},fetchBuiltinQuota:async()=>Response.json({enabled:true,canUseAgent:true,models:[{id:'gpt-6.1-sol',enabled:true}]})},'@/lib/applicationModes':{modeCopy:()=>key=>key,readToChatSource:()=> 'official',TOCHAT_SOURCE_EVENT:'source'},'@/lib/openPanel':{OPEN_PANEL_EVENT:'open-panel'}},{window:{addEventListener:(name,fn)=>listeners.set(name,fn),removeEventListener:name=>listeners.delete(name),setInterval:()=>1,clearInterval(){}}});
  const {ToChatConversation}=h.load('pages/tochat/index.tsx','\nexport {ToChatConversation};');const render=()=>h.render(()=>ToChatConversation());render();await tick();
  listeners.get('open-panel')({detail:{key:'browser',exclusive:true}});const dock=find(render(),node=>node.type==='PanelDock');assert.ok(dock);assert.equal(JSON.stringify(dock.props.layout),'[["browser"]]');assert.ok(dock.props.panels.browser);assert.deepEqual(navigations,[]);
- assert.equal(typeof dock.props.panels.browser.content.props.onClose,'function');dock.props.panels.browser.content.props.onClose();assert.equal(find(render(),node=>node.type==='PanelDock').props.layout.length,0);h.dispose();
+ dock.props.onClosePanel('browser');assert.equal(find(render(),node=>node.type==='PanelDock').props.layout.length,0);h.dispose();
 });
 
 
@@ -892,11 +893,59 @@ test('Browser iframe new tabs stay local while a navigation is pending',async()=
  const pending=surface.navigate('https://example.test/');assert.equal(surface.currentUrl(),'https://example.test/');listeners.get('load')();await pending;h.dispose();
 });
 
-test('Browser dock mounts the built-in browser directly while other panels retain chrome',()=>{
- const h=harness({'@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})}});
- const {PanelDock,Panel}=h.load('components/panel/PanelDock.tsx');const browser={type:'BuiltinBrowser',props:{}};
- const tree=h.render(()=>PanelDock({layout:[['browser']],panels:{browser:{title:'Browser',content:browser}},onClosePanel(){}}));
- assert.equal(find(tree,node=>node.type===Panel),null);assert.equal(find(tree,node=>node===browser),browser);
- const plan=h.render(()=>PanelDock({layout:[['plan']],panels:{plan:{title:'Plan',content:'Plan content'}},onClosePanel(){}}));
- assert.ok(find(plan,node=>node.type===Panel));h.dispose();
+test('Tool dock delegates web pages and tools to one built-in browser strip',()=>{
+ const h=harness({'framer-motion':{useIsPresent:()=>true,motion:{div:'motion.div'},AnimatePresence:'AnimatePresence'},'@/hooks/useMotionSettings':{useMotionSettings:()=>({effective:'off',clickEnabled:false})}});
+ const {PanelDock}=h.load('components/panel/PanelDock.tsx');const closed=[],opened=[];
+ let layout=[['browser','plan'],['terminal','plan']],active='plan',visible=true;
+ const render=()=>h.render(()=>PanelDock({layout:visible?layout:[],activePanel:active,onActivePanelChange:key=>active=key,panels:{browser:{title:'Browser',content:'Unused wrapper'},plan:{title:'Plan',content:'Plan content'},terminal:{title:'Terminal',content:'Terminal content'}},onOpenPanel:key=>opened.push(key),onCloseDock:()=>visible=false,onClosePanel:key=>{closed.push(key);layout=layout.map(col=>col.filter(value=>value!==key));}}));
+ let tree=render(),browser=find(tree,node=>node.type==='Lazy');const motion=find(tree,node=>typeof node.type==='function'&&node.type.name==='DockMotion');const motionTree=h.render(()=>motion.type(motion.props));assert.match(motionTree.props.className,/flex h-full min-h-0 min-w-0 flex-col/);assert.ok(browser);assert.equal(find(tree,node=>node.type==='TabsList'),null);assert.equal(browser.props.toolTabs.length,2);
+ assert.equal(browser.props.activeTool,'plan');browser.props.onSelectTool('terminal');tree=render();browser=find(tree,node=>node.type==='Lazy');assert.equal(browser.props.activeTool,'terminal');
+ browser.props.onCloseTool('terminal');tree=render();browser=find(tree,node=>node.type==='Lazy');assert.equal(browser.props.activeTool,'plan');assert.deepEqual(closed,['terminal']);
+ browser.props.onCloseTool('plan');tree=render();browser=find(tree,node=>node.type==='Lazy');assert.equal(active,'browser');assert.equal(browser.props.activeTool,null);
+ browser.props.onOpenTool('terminal');assert.deepEqual(opened,['terminal']);browser.props.onClose();assert.equal(find(render(),node=>node.type==='ResizablePanel'),null);assert.ok(layout.flat().includes('browser'));h.dispose();
+});
+
+test('Built-in browser uses its own tab bar for tools and hides web chrome on a tool page',()=>{
+ const selected=[],closed=[],opened=[];
+ const h=harness({'react-router-dom':{useNavigate:()=>()=>{},useLocation:()=>({pathname:'/chat/agent/session',search:''})}}, {navigator:{userAgent:'Fixture'},window:{location:{origin:'http://localhost',pathname:'/chat/agent/session',search:''}}});
+ const{BrowserPanel}=h.load('components/panel/BrowserPanel.tsx');const content={type:'FixturePlan',props:{}};
+ const render=activeTool=>h.render(()=>BrowserPanel({toolTabs:[{key:'plan',title:'Plan',content}],availableTools:[{key:'plan',title:'Plan',content}],activeTool,onSelectTool:key=>selected.push(key),onCloseTool:key=>closed.push(key),onOpenTool:key=>opened.push(key)}),{deferEffects:true});
+ let tree=render('plan');const tab=find(tree,node=>node.props?.role==='tab');assert.equal(tab.props['aria-selected'],true);assert.equal(find(tree,node=>node.props?.className==='browser-toolbar'),null);
+ assert.equal(find(tree,node=>node.props?.['data-browser-placeholder']).props.hidden,true);assert.equal(find(tree,node=>node===content),content);
+ tab.props.onClick();assert.deepEqual(selected,['plan']);find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab Plan').props.onClick();assert.deepEqual(closed,['plan']);
+ find(tree,node=>node.type==='DropdownMenuItem'&&node.key==='plan').props.onSelect();assert.deepEqual(opened,['plan']);
+ tree=render(null);assert.ok(find(tree,node=>node.props?.className==='browser-toolbar'));assert.equal(find(tree,node=>node.props?.id==='browser-tool-plan').props.hidden,true);assert.equal(find(tree,node=>node===content),content);h.dispose();
+});
+
+test('Tool tabs safely migrate corrupt and duplicate old layouts and reopen existing tabs once',()=>{
+ const h=harness();const tabs=h.load('lib/panelTabs.ts');
+ assert.equal(JSON.stringify(tabs.normalizePanelLayout([['browser','plan'],['browser','terminal'],null,['unknown',{}]])),'[["browser","plan","terminal"]]');
+ assert.deepEqual(Array.from(tabs.normalizePanelLayout({})),[]);
+ assert.equal(JSON.stringify(tabs.openPanelInLayout([['browser','plan']],'browser')),'[["browser","plan"]]');
+ assert.equal(JSON.stringify(tabs.closePanelInLayout([['browser','plan']],'browser')),'[["browser","plan"]]');
+ assert.equal(tabs.nextPanelAfterClose(['browser','plan','terminal'],'plan','plan'),'terminal');
+ assert.equal(tabs.nextPanelAfterClose(['browser','plan'],'plan','plan'),'browser');
+ assert.equal(tabs.nextPanelAfterClose(['browser'],'browser','browser'),null);h.dispose();
+});
+
+test('Closing the last web/tool tab collapses the dock, preserves siblings and never recreates a blank tab',()=>{
+ const element=()=>({src:'',style:{},dataset:{},contentWindow:{location:{href:'about:blank'}},contentDocument:{title:''},setAttribute(){},getAttribute(){return null;},addEventListener(){},removeEventListener(){},appendChild(){},remove(){}});
+ const fixture=()=>{
+  const window={location:{origin:'http://localhost',pathname:'/chat/agent/session',search:''},addEventListener(){},removeEventListener(){}};
+  const h=harness({'react-router-dom':{useNavigate:()=>()=>{},useLocation:()=>({pathname:window.location.pathname,search:''})}}, {navigator:{userAgent:'Fixture'},window,document:{createElement:element,body:{appendChild(){}},querySelector:()=>null}});
+  const lib=h.load('components/panel/BrowserPanel.tsx','\nexport {createTab,listTabs};');return {h,lib};
+ };
+ // Run real mount effects and the close-button callback, then re-render during exit.
+ {const {h,lib}=fixture();let collapsed=0;const render=()=>h.render(()=>lib.BrowserPanel({onClose:()=>collapsed++}));
+  render();let tree=render();assert.equal(lib.listTabs().length,1);
+  find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab').props.onClick();render();assert.equal(collapsed,1);assert.equal(lib.listTabs().length,0);h.dispose();}
+ // Other web tabs keep the dock open; its existing tab manager selects a sibling.
+ {const {h,lib}=fixture();let collapsed=0;lib.createTab('iframe');lib.createTab('iframe');
+  const tree=h.render(()=>lib.BrowserPanel({onClose:()=>collapsed++}),{deferEffects:true});
+  find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab').props.onClick();assert.equal(collapsed,0);assert.equal(lib.listTabs().length,1);assert.equal(lib.listTabs()[0].active,true);h.dispose();}
+ // Closing the last web page selects the remaining tool; closing that tool collapses.
+ {const {h,lib}=fixture();let collapsed=0,selected=null,closed=null;lib.createTab('iframe');
+  const props={toolTabs:[{key:'plan',title:'Plan',content:'Plan'}],onClose:()=>collapsed++,onSelectTool:key=>selected=key,onCloseTool:key=>closed=key};
+  let tree=h.render(()=>lib.BrowserPanel(props),{deferEffects:true});find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab').props.onClick();assert.equal(selected,'plan');assert.equal(collapsed,0);
+  tree=h.render(()=>lib.BrowserPanel({...props,activeTool:selected}),{deferEffects:true});find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab Plan').props.onClick();assert.equal(closed,'plan');assert.equal(collapsed,1);h.dispose();}
 });

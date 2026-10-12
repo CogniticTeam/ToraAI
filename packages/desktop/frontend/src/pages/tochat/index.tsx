@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ChevronDown, RotateCw, Globe } from 'lucide-react';
+import { ChevronDown, RotateCw, Globe, PanelRight } from 'lucide-react';
 import { lazy, useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -220,6 +220,7 @@ function ToChatConversation() {
 						<Button variant="ghost" size="sm" onClick={() => setConnectionAttempt((attempt) => attempt + 1)}><RotateCw />{copy('retry')}</Button>
 					</PopoverContent>
 				</Popover>
+				{work&&<Button variant="ghost" size="icon-sm" aria-label={t('panelDock.toggle')} aria-pressed={browserOpen} onClick={()=>setBrowserOpen(value=>!value)}><PanelRight/></Button>}
 			</header>
 			<ResizablePanelGroup orientation="horizontal" className="chat-dock min-h-0 flex-1" data-motion={clickEnabled?effective:'off'}>
 			<ResizablePanel className="flex min-h-0 min-w-0" minSize={work?'24rem':0}>
@@ -238,7 +239,7 @@ function ToChatConversation() {
 				/>
 			</div>
 			</ResizablePanel>
-			<PanelDock layout={work&&browserOpen?[['browser']]:[]} panels={{browser:{title:t('panel.workspace.browser'),icon:<Globe className="size-4" />,content:<BrowserPanel onClose={()=>setBrowserOpen(false)} />}}} onClosePanel={()=>setBrowserOpen(false)} />
+			<PanelDock layout={work&&browserOpen?[['browser']]:[]} panels={{browser:{title:t('panel.workspace.browser'),icon:<Globe className="size-4" />,content:<BrowserPanel />}}} onClosePanel={()=>setBrowserOpen(false)} onCloseDock={()=>setBrowserOpen(false)} />
 			</ResizablePanelGroup>
 		</main>
 	);

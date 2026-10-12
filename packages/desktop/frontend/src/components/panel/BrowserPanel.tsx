@@ -15,10 +15,11 @@
 // switch_tab / close_tab 四个管理动作。
 
 import { ArrowLeft, ArrowRight, ExternalLink, Globe, LoaderCircle, Maximize2, Minimize2, MoreHorizontal, Plus, RotateCw, Settings2, SquareDashedMousePointer, TriangleAlert, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {useLocation,useNavigate} from 'react-router-dom';
 
 import {BrowserNewTab} from './BrowserNewTab';
+import type {PanelDescriptor,PanelKey} from './PanelDock';
 import {DropdownMenu,DropdownMenuContent,DropdownMenuItem,DropdownMenuSeparator,DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import './BrowserChrome.css';
 import { useTranslation } from '@/i18n/useI18n';
@@ -668,6 +669,8 @@ browserHost?.onPopup((url) => {
 	});
 });
 
+export interface BrowserToolTab extends PanelDescriptor {key: PanelKey}
+
 interface BrowserPanelProps {
 	/** 挂载时没有任何标签页则自动导航到该地址（全屏入口的开始页；dock 面板不传则保持空态）。 */
 	initialUrl?: string;
@@ -675,6 +678,12 @@ interface BrowserPanelProps {
 	enableElementPicker?: boolean;
 	presentation?: 'page'|'panel';
 	onClose?:()=>void;
+	toolTabs?: BrowserToolTab[];
+	availableTools?: BrowserToolTab[];
+	activeTool?: PanelKey | null;
+	onSelectTool?: (key: PanelKey | null) => void;
+	onCloseTool?: (key: PanelKey) => void;
+	onOpenTool?: (key: PanelKey) => void;
 }
 
 /** Open a verified preview in a new persistent built-in browser tab. */
@@ -685,7 +694,7 @@ export async function openBuiltinBrowserTab(url: string) {
 	catch(error){closeTab(tab.id);throw error;}
 }
 
-export function BrowserPanel({ initialUrl, enableElementPicker = true, presentation='panel', onClose }: BrowserPanelProps) {
+export function BrowserPanel({ initialUrl, enableElementPicker = true, presentation='panel', onClose, toolTabs=[], availableTools=[], activeTool=null, onSelectTool, onCloseTool, onOpenTool }: BrowserPanelProps) {
 	const { t } = useTranslation();
 	const navigate=useNavigate();
 	const location=useLocation();
@@ -714,6 +723,8 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 		? { back: activeTab.surface.canGoBack(), forward: activeTab.surface.canGoForward() }
 		: { back: false, forward: false };
 
+	const selectToolRef=useRef(onSelectTool);
+	useEffect(()=>{selectToolRef.current=onSelectTool;},[onSelectTool]);
 	const [picking, setPicking] = useState(false);
 	const pickTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 	const pickTabRef = useRef<BrowserTab | null>(null);
@@ -821,16 +832,18 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 			if (host.style.height !== height) host.style.height = height;
 			const opacity = dock ? getComputedStyle(dock).opacity : '1';
 			if (host.style.opacity !== opacity) host.style.opacity = opacity;
-			const visibility=getActiveTab()?.surface.currentUrl()?'visible':'hidden';
+			const visibility=r.width>0&&r.height>0&&getActiveTab()?.surface.currentUrl()?'visible':'hidden';
 			if (host.style.visibility !== visibility) host.style.visibility = visibility;
-			const pointerEvents = dock?.dataset.dockExiting === 'true' ? 'none' : 'auto';
+			const pointerEvents = visibility==='hidden'||dock?.dataset.dockExiting === 'true' ? 'none' : 'auto';
 			if (host.style.pointerEvents !== pointerEvents) host.style.pointerEvents = pointerEvents;
 			if (performance.now() < followUntil) schedule();
 		};
 		const unsubscribe=subscribeTabs(followTransition);
 		const observer = new ResizeObserver(followTransition);
 		observer.observe(placeholder);
-		const motionObserver = new MutationObserver(followTransition);
+		const toolTab=placeholder.closest<HTMLElement>('[role=tabpanel]');
+		const motionObserver = new MutationObserver(() => {if(toolTab?.hidden)stopPicking();followTransition();});
+		if(toolTab)motionObserver.observe(toolTab,{attributes:true,attributeFilter:['hidden','class']});
 		if (dock) motionObserver.observe(dock, {attributes:true,attributeFilter:['style','data-dock-exiting']});
 		window.addEventListener('resize', followTransition);
 		window.addEventListener('scroll', followTransition, true);
@@ -848,7 +861,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 			host.style.pointerEvents = 'none';
 			host.style.left = '-9999px';
 		};
-	}, []);
+	}, [stopPicking]);
 
 	const go = useCallback(
 		async (raw: string) => {
@@ -869,13 +882,33 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 	);
 
 	const createHomeTab = useCallback(() => {
+		onSelectTool?.(null);
 		createTab(kind);
 		setError(null);
 		requestAnimationFrame(()=>addressRef.current?.focus());
-	}, [kind]);
+	}, [kind,onSelectTool]);
 
-	// Local new tabs do not create a guest until the user opens a URL.
-	useEffect(()=>{if(listTabs().length===0){createTab(kind);if(initialUrl)void go(initialUrl);}},[kind,initialUrl,go,infos.length]);
+	// Seed a new panel once. Closing its last tab must not recreate a blank tab.
+	const initialized = useRef(false);
+	useEffect(()=>{
+		if(initialized.current&&presentation==='panel')return;
+		initialized.current=true;
+		if(listTabs().length===0&&toolTabs.length===0){createTab(kind);if(initialUrl)void go(initialUrl);}
+	},[kind,initialUrl,go,infos.length,toolTabs.length,presentation]);
+
+	const closeWebTab=(id:number)=>{
+		if(!getTabById(id))return;
+		closeTab(id);
+		if(listTabs().length===0){
+			if(toolTabs.length===0)onClose?.();
+			else if(!activeTool)onSelectTool?.(toolTabs[0].key);
+		}
+	};
+	const closeToolTab=(key:PanelKey)=>{
+		if(!toolTabs.some(tool=>tool.key===key))return;
+		onCloseTool?.(key);
+		if(toolTabs.length===1&&listTabs().length===0)onClose?.();
+	};
 
 	// Agent 的入口。挂成全局桥，桌面端主进程的 Browser 工具通过它落地动作。
 	// 桥只随面板挂载存在：面板没开时主进程找不到它，会先派发事件把面板打开
@@ -885,6 +918,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 	useEffect(() => {
 		const bridge = {
 			async call(action: string, params: Record<string, unknown> = {}) {
+				if(action!=='tabs')selectToolRef.current?.(null);
 				const pickTab = (): BrowserTab => {
 					const raw = params.tab;
 					if (raw != null && raw !== '') {
@@ -1071,22 +1105,34 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 		{url:'https://ohfun.online/policies/agent-model-usage/',title:t('settings.about.usagePolicy')},
 		{url:'https://github.com/CogniticTeam/ToraAI',title:t('browserPanel.redesign.sourceCode')},
 	]);
+	const selectWebTab=(id:number)=>{onSelectTool?.(null);setActiveTab(id);};
+	const moveTab=(event:React.KeyboardEvent<HTMLButtonElement>)=>{
+		const buttons=Array.from(event.currentTarget.closest('[role=tablist]')?.querySelectorAll<HTMLButtonElement>('[role=tab]')??[]);
+		const index=buttons.indexOf(event.currentTarget),count=buttons.length;
+		const target=event.key==='ArrowRight'?(index+1)%count:event.key==='ArrowLeft'?(index+count-1)%count:event.key==='Home'?0:event.key==='End'?count-1:null;
+		if(target!==null){event.preventDefault();buttons[target]?.click();buttons[target]?.focus();}
+	};
 	return <section className="browser-chrome" aria-label={t('common.browser')} data-presentation={presentation}>
 		<div className="browser-tab-bar">
 			<div className="browser-tabs" role="tablist" aria-label={t('browserPanel.redesign.tabs')}>
-				{infos.map((tab,index)=><div key={tab.id} className="browser-tab" data-active={tab.active}>
-					<button type="button" className="browser-tab-select" role="tab" aria-selected={tab.active} tabIndex={tab.active?0:-1} aria-controls="browser-current-page" title={tab.url||t('browserPanel.newTab')} onClick={()=>setActiveTab(tab.id)} onAuxClick={event=>{if(event.button===1)closeTab(tab.id);}} onKeyDown={event=>{
-						const target=event.key==='ArrowRight'?(index+1)%infos.length:event.key==='ArrowLeft'?(index+infos.length-1)%infos.length:event.key==='Home'?0:event.key==='End'?infos.length-1:null;
-						if(target!==null){event.preventDefault();setActiveTab(infos[target].id);event.currentTarget.closest('[role=tablist]')?.querySelectorAll<HTMLButtonElement>('[role=tab]')[target]?.focus();}
-					}}>{tab.loading?<LoaderCircle className="animate-spin"/>:<Globe/>}<span>{tab.title||tab.url||t('browserPanel.newTab')}</span></button>
-					<button type="button" className="browser-tab-close" aria-label={t('browserPanel.closeTab')} onClick={()=>closeTab(tab.id)}><X/></button>
+				{infos.map(tab=><div key={tab.id} className="browser-tab" data-active={!activeTool&&tab.active}>
+					<button type="button" className="browser-tab-select" role="tab" aria-selected={!activeTool&&tab.active} tabIndex={!activeTool&&tab.active?0:-1} aria-controls="browser-current-page" title={tab.url||t('browserPanel.newTab')} onClick={()=>selectWebTab(tab.id)} onAuxClick={event=>{if(event.button===1)closeWebTab(tab.id);}} onKeyDown={moveTab}>{tab.loading?<LoaderCircle className="animate-spin"/>:<Globe/>}<span>{tab.title||tab.url||t('browserPanel.newTab')}</span></button>
+					<button type="button" className="browser-tab-close" aria-label={t('browserPanel.closeTab')} onClick={()=>closeWebTab(tab.id)}><X/></button>
+				</div>)}
+				{toolTabs.map(tool=><div key={tool.key} className="browser-tab" data-active={activeTool===tool.key}>
+					<button type="button" className="browser-tab-select" role="tab" aria-selected={activeTool===tool.key} tabIndex={activeTool===tool.key?0:-1} aria-controls={`browser-tool-${tool.key}`} onClick={()=>onSelectTool?.(tool.key)} onAuxClick={event=>{if(event.button===1)closeToolTab(tool.key);}} onKeyDown={moveTab}>{tool.icon}<span>{tool.tabLabel??tool.title}</span></button>
+					<button type="button" className="browser-tab-close" aria-label={`${t('browserPanel.closeTab')} ${tool.tabLabel??(typeof tool.title==='string'?tool.title:tool.key)}`} onClick={()=>closeToolTab(tool.key)}><X/></button>
 				</div>)}
 			</div>
-			<button type="button" className="browser-icon-button" aria-label={t('browserPanel.createTab')} title={t('browserPanel.createTab')} onClick={createHomeTab}><Plus/></button>
+			{availableTools.length>0?<DropdownMenu><DropdownMenuTrigger asChild><button type="button" className="browser-icon-button" aria-label={t('browserPanel.createTab')} title={t('browserPanel.createTab')}><Plus/></button></DropdownMenuTrigger><DropdownMenuContent align="start">
+				<DropdownMenuItem onSelect={createHomeTab}><Plus/>{t('browserPanel.newTab')}</DropdownMenuItem><DropdownMenuSeparator/>
+				{availableTools.map(tool=><DropdownMenuItem key={tool.key} onSelect={()=>onOpenTool?.(tool.key)}>{tool.icon}{tool.title}</DropdownMenuItem>)}
+			</DropdownMenuContent></DropdownMenu>:<button type="button" className="browser-icon-button" aria-label={t('browserPanel.createTab')} title={t('browserPanel.createTab')} onClick={createHomeTab}><Plus/></button>}
+
 			{presentation==='panel'?<button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.expand')} title={t('browserPanel.redesign.expand')} onClick={()=>navigate('/browser',{state:{browserReturnTo:contextPath}})}><Maximize2/></button>:contextPath?<button type="button" className="browser-icon-button" aria-label={t('browserPanel.redesign.sideChat')} title={t('browserPanel.redesign.sideChat')} onClick={returnToChat}><Minimize2/></button>:null}
 			{onClose&&<button type="button" className="browser-icon-button browser-close-panel" aria-label={t('panelDock.close')} title={t('panelDock.close')} onClick={onClose}><X/></button>}
 		</div>
-		<div className="browser-toolbar">
+		{!activeTool&&<div className="browser-toolbar">
 			<div className="browser-navigation">
 				<button type="button" className="browser-icon-button" disabled={!nav.back} onClick={()=>surfaceAction(surface=>surface.back())} aria-label={t('browserPanel.back')}><ArrowLeft/></button>
 				<button type="button" className="browser-icon-button" disabled={!nav.forward} onClick={()=>surfaceAction(surface=>surface.forward())} aria-label={t('browserPanel.forward')}><ArrowRight/></button>
@@ -1109,10 +1155,15 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 				</DropdownMenuContent></DropdownMenu>
 			</div>
 		</div>
-		{error&&<div className="browser-error" role="alert"><TriangleAlert/><span>{error}</span></div>}
-		<div ref={pageRef} id="browser-current-page" role="tabpanel" data-browser-placeholder="true" className="browser-page-area">
+		}
+		{!activeTool&&error&&<div className="browser-error" role="alert"><TriangleAlert/><span>{error}</span></div>}
+		<div ref={pageRef} id="browser-current-page" role="tabpanel" hidden={!!activeTool} data-browser-placeholder="true" className="browser-page-area">
 			{!current&&<BrowserNewTab recommendations={recommendations} onNavigate={url=>void go(url)} onNewTab={createHomeTab} onSettings={()=>openSettings('general')} onChat={canDock?returnToChat:undefined} onTool={canUseWorkTools?openTool:undefined}/>}
 		</div>
-		{kind==='iframe'&&current&&<p className="browser-fallback-hint">{t('browserPanel.redesign.webHint')}</p>}
+		{toolTabs.map(tool=><div key={tool.key} id={`browser-tool-${tool.key}`} role="tabpanel" hidden={activeTool!==tool.key} className="browser-tool-page">
+			{tool.actions&&<div className="flex shrink-0 justify-end border-b border-border px-4 py-2">{tool.actions}</div>}
+			<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>{tool.content}</Suspense>
+		</div>)}
+		{!activeTool&&kind==='iframe'&&current&&<p className="browser-fallback-hint">{t('browserPanel.redesign.webHint')}</p>}
 	</section>;
 }
