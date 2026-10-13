@@ -53,9 +53,9 @@ export function DeletableMessage({id, enabled, onDelete, children, hasNext}: {id
   onPointerMove={event => {if (press.current && Math.hypot(event.clientX-press.current.x,event.clientY-press.current.y)>8) clearPress();}}
   onPointerUp={clearPress} onPointerCancel={clearPress} onPointerLeave={clearPress} onWheel={clearPress} onTouchMove={clearPress}>
   {children}
-  {onDelete && <DropdownMenu open={menu} onOpenChange={setMenu}>
+  {onDelete && !deleting && <DropdownMenu open={menu} onOpenChange={setMenu}>
    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" disabled={!available}
-    className="absolute -top-4 end-0 opacity-0 group-hover/delete:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 [@media(hover:none)]:opacity-60"
+    className="absolute top-0 end-0 opacity-0 group-hover/delete:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 [@media(hover:none)]:opacity-60"
     aria-label={t('messageBubble.actions')}><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger>
    <DropdownMenuContent align="end"><DropdownMenuItem variant="destructive" disabled={!available} onSelect={() => {void remove();}}>
     <Trash2/>{t('common.delete')}
