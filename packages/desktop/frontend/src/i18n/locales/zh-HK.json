@@ -544,7 +544,10 @@
       "setup": "會話準備失敗 —— 請檢查該智能體的模型、工具和知識庫配置。",
       "unknown": "回覆因未知錯誤失敗。"
     },
-    "copy": "複製"
+    "copy": "複製",
+    "actions": "訊息操作",
+    "deleteFailed": "刪除訊息失敗",
+    "deleteWait": "請等待回覆完成後刪除訊息"
   },
   "questionPanel": {
     "supplementTitle": "是否有更多的補充信息需要提供？",

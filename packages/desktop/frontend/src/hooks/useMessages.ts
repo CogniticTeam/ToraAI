@@ -946,6 +946,17 @@ export function useMessages(
 		} catch { /* 静默：下次 refetch 会补 */ }
 	}, [agentId, sessionId]);
 
+	const deleteMessage = useCallback(async (messageId: string, beforeRemove: () => Promise<void>) => {
+		if (!agentId || !sessionId || phase !== 'idle') throw new Error(i18n.t('messageBubble.deleteWait'));
+		const lifecycle = lifecycleRef.current;
+		await sessionApi.deleteMessage(sessionId, agentId, messageId);
+		if (lifecycleRef.current !== lifecycle) return;
+		await beforeRemove();
+		if (lifecycleRef.current !== lifecycle) return;
+		msgsRef.current = msgsRef.current.filter(message => message.id !== messageId);
+		setMsgs([...msgsRef.current]);
+	}, [agentId, sessionId, phase]);
+
 	const currentKey = agentId !== null && sessionId !== null ? `${agentId}:${sessionId}` : null;
 	const ownsConversation = currentKey !== null && loadedKey === currentKey;
 	const loading = currentKey !== null && !ownsConversation;
@@ -969,5 +980,6 @@ export function useMessages(
 		abort,
 		interrupt,
 		reloadHistory,
+		deleteMessage,
 	};
 }

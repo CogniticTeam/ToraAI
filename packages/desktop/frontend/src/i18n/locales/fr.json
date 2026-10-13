@@ -544,7 +544,10 @@
       "setup": "La session n'a pas pu être préparée — vérifiez le modèle, les outils et les bases de connaissances de l'agent.",
       "unknown": "La réponse a échoué avec une erreur inconnue."
     },
-    "copy": "Copier"
+    "copy": "Copier",
+    "actions": "Actions du message",
+    "deleteFailed": "Impossible de supprimer le message",
+    "deleteWait": "Attendez la fin de la réponse avant de supprimer"
   },
   "questionPanel": {
     "supplementTitle": "Autre chose à ajouter ?",

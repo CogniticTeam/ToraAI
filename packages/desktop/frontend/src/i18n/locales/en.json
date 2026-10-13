@@ -403,7 +403,10 @@
 			"setup": "The session could not be prepared — check the agent's model, tools and knowledge bases.",
 			"unknown": "The reply failed with an unknown error."
 		},
-		"copy": "Copy"
+		"copy": "Copy",
+	  "actions": "Message actions",
+	  "deleteFailed": "Could not delete message",
+	  "deleteWait": "Wait for the reply to finish before deleting"
 	},
 	"questionPanel": {
 		"supplementTitle": "Anything else you'd like to add?",

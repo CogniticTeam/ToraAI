@@ -544,7 +544,10 @@
       "setup": "Die Sitzung konnte nicht vorbereitet werden – prüfen Sie Modell, Tools und Wissensdatenbanken des Agenten.",
       "unknown": "Die Antwort ist mit einem unbekannten Fehler fehlgeschlagen."
     },
-    "copy": "Kopieren"
+    "copy": "Kopieren",
+    "actions": "Nachrichtenaktionen",
+    "deleteFailed": "Nachricht konnte nicht gelöscht werden",
+    "deleteWait": "Warte vor dem Löschen auf das Ende der Antwort"
   },
   "questionPanel": {
     "supplementTitle": "Möchten Sie noch etwas hinzufügen?",

@@ -544,7 +544,10 @@
       "setup": "Impossibile preparare la sessione — controlla il modello, gli strumenti e le basi di conoscenza dell'agente.",
       "unknown": "La risposta è fallita con un errore sconosciuto."
     },
-    "copy": "Copia"
+    "copy": "Copia",
+    "actions": "Azioni del messaggio",
+    "deleteFailed": "Impossibile eliminare il messaggio",
+    "deleteWait": "Attendi la fine della risposta prima di eliminare"
   },
   "questionPanel": {
     "supplementTitle": "Qualcos'altro da aggiungere?",

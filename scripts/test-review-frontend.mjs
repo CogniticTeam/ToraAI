@@ -990,3 +990,32 @@ test('A late auth response cannot overwrite a new identity or persist a session 
  const action=()=>find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthAction'&&!node.props.secondary);
  action().props.onClick();find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthField').props.onChange('user@fixture.invalid');action().props.onClick();await tick();find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthField').props.onChange('password');action().props.onClick();find(render(),node=>node.type==='Turnstile').props.onToken('proof');action().props.onClick();token='different-user';h.dispose();login.resolve({token:'old-result',email:'user@fixture.invalid'});await tick();assert.equal(authenticated,0);
 });
+
+
+test('沙粒采样保留原像素颜色，800ms 从左到右释放，每粒 1000ms 消失',()=>{
+ const h=harness();const {sampleSand,sandPose,SAND_COUNT}=h.load('lib/messageSand.ts');
+ const pixels=new Uint8ClampedArray(40*10*4);
+ for(let y=0;y<10;y++)for(let x=20;x<40;x++){const i=(y*40+x)*4;pixels.set([x<30?255:0,0,x<30?0:255,255],i);}
+ const grains=sampleSand(pixels,40,10,400,100,()=>.5);
+ assert.equal(grains.length,SAND_COUNT);assert.equal(SAND_COUNT,1500);
+ assert.ok(grains.some(p=>p.color==='rgb(255,0,0)'));assert.ok(grains.some(p=>p.color==='rgb(0,0,255)'));
+ const left=grains.reduce((a,b)=>a.x<b.x?a:b),right=grains.reduce((a,b)=>a.x>b.x?a:b);
+ assert.equal(left.delay,0,'右对齐气泡从自身左缘开始，不先等待空白区域');assert.equal(right.delay,800);
+ assert.equal(sandPose(right,799),null);assert.ok(sandPose(right,800));
+ const start=sandPose(left,0),half=sandPose(left,500);assert.ok(half.x>start.x);assert.ok(half.y<start.y);assert.ok(half.alpha<start.alpha);assert.ok(half.size<start.size);
+ assert.equal(sandPose(left,1000),null);assert.equal(sandPose(right,1800),null);
+ assert.equal(sampleSand(new Uint8ClampedArray(16),2,2,20,20,()=>.5).length,0);
+ h.dispose();
+});
+
+test('删除保存成功后保留气泡到动画结束；失败或切换会话不误删',async()=>{
+ let session='one',fail=false;const animation=deferred(),writes=[];
+ const h=harness({'@/api':{takeFreshlyCreated:()=>false,sessionApi:{messages:async()=>({messages:[{id:session+'-message',role:'user',content:[],created_at:'2026-10-13'}],is_running:false}),async *streamEvents(){},deleteMessage:async(...args)=>{writes.push(args);if(fail)throw Error('offline');}},chatApi:{}}});
+ const {useMessages}=h.load('hooks/useMessages.ts');const render=()=>h.render(()=>useMessages('agent',session));
+ render();await tick();let state=render();
+ let started=false;const deleting=state.deleteMessage('one-message',()=>{started=true;return animation.promise;});await tick();assert.ok(started);assert.equal(render().msgs.length,1);
+ animation.resolve();await deleting;assert.equal(render().msgs.length,0);assert.equal(writes[0][0],'one');
+ session='two';render();await tick();state=render();fail=true;
+ await assert.rejects(state.deleteMessage('two-message',async()=>{throw Error('must not animate');}),/offline/);assert.equal(render().msgs[0].id,'two-message');
+ fail=false;const late=deferred();const moving=state.deleteMessage('two-message',()=>late.promise);await tick();session='three';render();await tick();late.resolve();await moving;assert.equal(render().msgs[0].id,'three-message');h.dispose();
+});

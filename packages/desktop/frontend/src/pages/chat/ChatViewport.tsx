@@ -306,6 +306,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		answerQuestion,
 		interrupt,
 		reloadHistory,
+		deleteMessage,
 	} = useMessages(agentId, sessionId, {
 		viewMode: 'tocode',
 		onTeamUpdated: handleTeamUpdated,
@@ -966,6 +967,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 							</div>
 							<div className="canvas-glow flex flex-1 justify-center min-h-0 overflow-hidden relative [--chat-content-w:54rem]">
 								<ChatContent
+									onDeleteMessage={deleteMessage}
 									className={'max-w-[var(--chat-content-w)] w-full'}
 									msgs={msgs}
 									loading={messagesLoading}

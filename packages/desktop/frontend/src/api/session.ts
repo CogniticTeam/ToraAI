@@ -57,6 +57,7 @@ export function hasFreshlyCreated(sessionId: string): boolean {
 }
 
 export const sessionApi = {
+ deleteMessage: (sessionId:string, agentId:string, messageId:string) => client.delete(`/sessions/${sessionId}/messages/${encodeURIComponent(messageId)}`, {agent_id:agentId}),
   preview: (sessionId: string, agentId: string, replyId: string) => client.post<{kind: 'html' | 'server';url: string;entry?: string}>(`/sessions/${sessionId}/preview`, {reply_id:replyId}, {agent_id:agentId}, {silent:true}),
 	list: (agentId: string) => client.get<SessionListResponse>('/sessions/', { agent_id: agentId }),
 

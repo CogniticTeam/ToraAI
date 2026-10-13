@@ -136,7 +136,7 @@ function ToChatConversation() {
 		navigate(`/tochat/${agentId}/${id}?task=${task}`, { replace: true });
 		void refetch();
 	};
-	const { msgs, loading, phase, send, onUserConfirm, interrupt, userQuestion, answerQuestion } = useMessages(agentId, sessionId ?? null, {
+	const { msgs, loading, phase, send, onUserConfirm, interrupt, userQuestion, answerQuestion, deleteMessage } = useMessages(agentId, sessionId ?? null, {
 		viewMode: 'tochat',
 		onSessionCreated: onCreated,
 		onSessionUpdated: () => { void refetch(); void refreshQuota(); },
@@ -225,7 +225,7 @@ function ToChatConversation() {
 			<ResizablePanelGroup orientation="horizontal" className="chat-dock min-h-0 flex-1" data-motion={clickEnabled?effective:'off'}>
 			<ResizablePanel className="flex min-h-0 min-w-0" minSize={work?'24rem':0}>
 			<div className="canvas-glow relative flex min-h-0 flex-1 justify-center overflow-hidden [--chat-content-w:54rem]">
-				<ChatContent className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled && !modelLocked} sendDisabled={disabled}
+				<ChatContent onDeleteMessage={deleteMessage} className="max-w-[var(--chat-content-w)] w-full" msgs={msgs} loading={loading} phase={phase} disabled={disabled && !modelLocked} sendDisabled={disabled}
 					composerNotice={!modelLocked && (missingSession || (source === 'official' && (quotaError || (quota && (!quota.enabled || !modelAvailable(selectedOfficial.id, quota.models,task))) || limitReached))) ? modelRequirementLabel(selectedOfficial.id,quota?.models,t) || copy(missingSession ? 'missingSession' : limitReached ? 'limitReached' : 'connectError') : undefined}
 					greetingOverride={copy(work ? 'workReady' : 'ready')} showWorkspace={work} cwd={work ? selectedCwd : null}
 					composerVariant={work ? 'default' : 'capsule'}

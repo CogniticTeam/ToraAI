@@ -544,7 +544,10 @@
       "setup": "會話未備 —— 請檢此智能體之模型、工具與知識庫之配置。",
       "unknown": "回覆因未知之誤而敗。"
     },
-    "copy": "複製"
+    "copy": "複製",
+    "actions": "訊息操作",
+    "deleteFailed": "刪訊未成",
+    "deleteWait": "俟答畢而後刪訊"
   },
   "questionPanel": {
     "supplementTitle": "尚有補訊可陳乎？",

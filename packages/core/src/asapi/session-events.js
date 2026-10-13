@@ -79,6 +79,7 @@ export function readSessionEvents(sessionId, afterOffset = 0) {
 
 function upsertDisplay(record, message) {
   if (!message?.id) return;
+  if (record.deleted_message_ids?.includes(message.id)) return;
   const index = record.display.findIndex((item) => item.id === message.id);
   if (index < 0) record.display.push(message);
   else record.display[index] = message;
@@ -97,6 +98,9 @@ export function projectSessionEvents(record, events) {
     } else if (type === 'reply-progress' || type === 'reply-finished') {
       if (Array.isArray(data.internal)) record.internal = data.internal;
       upsertDisplay(record, data.reply);
+    } else if (type === 'message-deleted' && typeof data.message_id === 'string') {
+      record.deleted_message_ids = [...new Set([...(record.deleted_message_ids || []), data.message_id])];
+      record.display = record.display.filter(message => message.id !== data.message_id);
     }
   }
   return record;

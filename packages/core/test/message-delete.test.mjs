@@ -1,0 +1,26 @@
+import {test,after} from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+const home=mkdtempSync(join(tmpdir(),'tora-message-delete-'));process.env.TORA_HOME=home;
+const store=await import('../src/asapi/store.js');
+const {appendSessionEvent,projectSessionEvents,readSessionEvents}=await import('../src/asapi/session-events.js');
+const {startASAPIServer}=await import('../src/asapi/server.js');
+const server=await startASAPIServer({port:0}),base='http://127.0.0.1:'+server.address().port;
+after(async()=>{server.closeAllConnections?.();await new Promise(resolve=>server.close(resolve));rmSync(home,{recursive:true,force:true});});
+test('单条删除落盘、幂等、重放不复活，并保留相邻消息和工具执行上下文',async()=>{
+ const agent=(await(await fetch(base+'/agent/')).json()).agents[0];
+ const made=await(await fetch(base+'/sessions/',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({agent_id:agent.id})})).json();
+ const record=store.loadSessionRecord(made.session_id);
+ const first={id:'first',role:'user',content:[]},second={id:'second',role:'assistant',content:[],finished_at:new Date().toISOString()};
+ record.display=[first,second];record.internal=[{role:'user',content:'internal context'}];store.saveSessionRecord(record);
+ const path=base+'/sessions/'+record.id+'/messages/first?agent_id='+agent.id;
+ assert.equal((await fetch(path.replace(agent.id,'foreign'),{method:'DELETE'})).status,404);
+ assert.equal((await fetch(path,{method:'DELETE'})).status,200);assert.equal((await fetch(path,{method:'DELETE'})).status,200);
+ const saved=store.loadSessionRecord(record.id);assert.deepEqual(saved.display,[second]);assert.deepEqual(saved.internal,record.internal);
+ appendSessionEvent(record.id,'run-started',{user:first});assert.deepEqual(store.loadSessionRecord(record.id).display,[second]);
+ const restored={display:[first,second],internal:[]};projectSessionEvents(restored,readSessionEvents(record.id).events);assert.deepEqual(restored.display,[second]);
+ assert.equal((await fetch(base+'/sessions/'+record.id+'/messages/missing',{method:'DELETE'})).status,404);
+ const response=await(await fetch(base+'/sessions/'+record.id+'/messages')).json();assert.equal(response.messages.length,1);
+});

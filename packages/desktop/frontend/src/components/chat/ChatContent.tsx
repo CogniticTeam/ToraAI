@@ -12,6 +12,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 
+import {DeletableMessage, type DeleteMessage} from './DeletableMessage';
 import {
 	type SlashItem,
 	commandsToSlashItems,
@@ -90,6 +91,7 @@ function TypewriterGreeting({ text }: { text: string }) {
 }
 
 interface ChatContentProps {
+	onDeleteMessage?: DeleteMessage;
 	/** Mode-specific content; the default work composer layout stays unchanged. */
 	greetingOverride?: string;
 	showWorkspace?: boolean;
@@ -169,6 +171,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	alwaysShowMessageTimestamps = false,
 	autoFocusInput = true,
 	msgs: allMessages,
+	onDeleteMessage,
 	loading = false,
 	phase,
 	disabled,
@@ -499,6 +502,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											key={message.id}
 											messageId={message.id}
 										>
+											<DeletableMessage id={message.id} onDelete={onDeleteMessage} enabled={phase === 'idle' && !loading && message.role !== 'system'} hasNext={index < msgs.length - 1}>
 											{at.getTime() - previousAt.getTime() >
 												TIME_MARKER_GAP_MS && (
 												<Marker
@@ -518,7 +522,8 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											showTimestamp={canShowMessageTimestamps}
 											timestampVisibility={alwaysShowMessageTimestamps ? 'always' : 'hover'}
 										/>
-									</MessageScrollerItem>
+									</DeletableMessage>
+										</MessageScrollerItem>
 									);
 								})}
 								{msgs.length > 0 &&

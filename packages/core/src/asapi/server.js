@@ -47,6 +47,7 @@ import { listCheckpoints, restore as restoreCheckpoint, clearCheckpoints } from 
 import {recordedSessionDiff} from './session-diff.js';
 import {openReplyPreview} from '../web-preview.js';
 import {sessionHistoryKind} from '../session-mode.js';
+import {deleteDisplayedMessage} from './message-delete.js';
 import { listBranches, createBranch, switchBranch, deleteBranch, listWorktrees, createWorktree, removeWorktree, stageFiles, unstageFiles, statusFiles, commit, log as gitLog } from '../tools/tora-git.js';
 import { listAutomations, createAutomation, updateAutomation, deleteAutomation, drainNotifications } from '../tools/automations.js';
 import {
@@ -1237,6 +1238,13 @@ async function route(req, res, uiResources) {
         awaiting_confirm: isAwaitingConfirm(id)
       }) : apiError(res, 404, '会话不存在');
     }
+  }
+  if ((m = p.match(/^\/sessions\/([\w-]+)\/messages\/([\w-]+)$/)) && method === 'DELETE') {
+    if (isRunning(m[1])) return apiError(res, 409, '请等待回复完成后删除消息');
+    const record = loadSessionRecord(m[1]);
+    if (!record || (q.agent_id && record.agent_id !== q.agent_id)) return apiError(res, 404, '会话不存在');
+    if (!deleteDisplayedMessage(record, m[2])) return apiError(res, 404, '消息不存在');
+    return json(res, 200, {status:'ok'});
   }
   if ((m = p.match(/^\/sessions\/([\w-]+)\/messages$/)) && method === 'GET') {
     const s = loadSessionRecord(m[1]);
