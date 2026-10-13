@@ -1019,3 +1019,23 @@ test('删除保存成功后保留气泡到动画结束；失败或切换会话�
  await assert.rejects(state.deleteMessage('two-message',async()=>{throw Error('must not animate');}),/offline/);assert.equal(render().msgs[0].id,'two-message');
  fail=false;const late=deferred();const moving=state.deleteMessage('two-message',()=>late.promise);await tick();session='three';render();await tick();late.resolve();await moving;assert.equal(render().msgs[0].id,'three-message');h.dispose();
 });
+
+test('网页删除事务进行中暂停发送，沙化期间继续发送不会复活已删气泡', {skip:!existsSync(new URL('../website/tochat/src/useWebConversation.ts',import.meta.url))},async()=>{
+ const original={id:'deleted',role:'user',content:[{type:'text',text:'old'}],finished_at:'old'};
+ let active={id:'web-delete',owner:'fixture',title:'saved title',mode:'chat',model:'fixture',messages:[original],wire:[{role:'user',content:'old'}]};
+ const write=deferred(),animation=deferred(),saved=[];let requests=0;
+ const h=harness({
+  '@agentscope-ai/agentscope/event':{ReplyFinishedReason:{COMPLETED:'completed',ERROR:'error'}},'./i18n.ts':{webText:value=>value},
+  './api':{webFetch:async()=>{requests++;return {};},webJSON:async()=>({title:null})},
+  './storage':{saveConversation:async value=>saved.push(structuredClone(value)),deleteConversationMessage:()=>write.promise,applyConversationTitle:async()=>null},
+  './stream':{readChatStream:async()=>({content:'new reply',reasoning:'',tools:[]})},
+ },{structuredClone});
+ const{useWebConversation}=h.load('../../../../website/tochat/src/useWebConversation.ts');
+ const options={mode:'chat',model:'fixture',effort:'high',search:false,confirmWrites:true,onUpdate:value=>{active=value;},onQuota(){}};
+ const render=()=>h.render(()=>useWebConversation('fixture',active,options));render();let state=render();
+ const deleting=state.deleteMessage('deleted',()=>animation.promise);await tick();state=render();assert.equal(state.deletionSaving,true);
+ await state.send([{type:'text',text:'wait'}]);assert.equal(requests,0);
+ write.resolve({...active,messages:[],updated:1});await tick();state=render();assert.equal(state.deletionSaving,false);assert.equal(state.msgs.length,1,'keep the outgoing bubble until the animation completes');
+ await state.send([{type:'text',text:'next'}]);assert.equal(requests,1);assert.ok(saved.length);assert.ok(saved.every(value=>value.messages.every(message=>message.id!=='deleted')));
+ animation.resolve();await deleting;state=render();assert.equal(state.msgs.length,2);assert.ok(state.msgs.every(message=>message.id!=='deleted'));assert.equal(active.title,'saved title');h.dispose();
+});
