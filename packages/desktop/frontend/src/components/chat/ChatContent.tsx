@@ -503,6 +503,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											messageId={message.id}
 										>
 											<DeletableMessage id={message.id} onDelete={onDeleteMessage} enabled={phase === 'idle' && !loading && message.role !== 'system'} hasNext={index < msgs.length - 1}>
+											{deleteAction => <>
 											{at.getTime() - previousAt.getTime() >
 												TIME_MARKER_GAP_MS && (
 												<Marker
@@ -516,13 +517,16 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											)}
 										<ASMessageBubble
 											message={message}
+												deleteAction={deleteAction}
+												isGenerating={phase !== 'idle' && message.role === 'assistant' && index === msgs.length - 1}
 											skillLibrary={library.skills}
 											onUserConfirm={onUserConfirm}
 											showThinking={message === waitingUserMessage}
 											showTimestamp={canShowMessageTimestamps}
 											timestampVisibility={alwaysShowMessageTimestamps ? 'always' : 'hover'}
 										/>
-									</DeletableMessage>
+									</>}
+										</DeletableMessage>
 										</MessageScrollerItem>
 									);
 								})}

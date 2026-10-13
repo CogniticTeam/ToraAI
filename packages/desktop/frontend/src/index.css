@@ -1180,12 +1180,14 @@ body {
 	animation: tora-message-send-enter 380ms cubic-bezier(.16, 1, .3, 1) both;
 }
 @media (prefers-reduced-motion: reduce) { .message-send-entrance { animation: none; } }
-.message-copy-action { opacity: 0; transition: opacity 150ms ease; }
-[data-slot='message']:has([data-slot='bubble']:hover) .message-copy-action,
-.message-copy-action:hover,
-.message-copy-action:focus-within { opacity: 1; }
-@media (hover: none) { .message-copy-action { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .message-copy-action { transition: none; } }
+.message-actions { display: inline-flex; align-items: center; gap: 2px; }
+.message-actions[data-visibility='hover'] { opacity: 0; transition: opacity 150ms ease; }
+[data-slot='message']:hover .message-actions,
+[data-slot='message']:focus-within .message-actions,
+.message-actions:hover,
+.message-actions:focus-within { opacity: 1; }
+@media (hover: none) { .message-actions[data-visibility='hover'] { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .message-actions { transition: none; } }
 @media (max-width: 600px) {
 	.first-run-demo { top: 47%; left: 50%; }
 	.first-run-paused { width: calc(100vw - 24px); }

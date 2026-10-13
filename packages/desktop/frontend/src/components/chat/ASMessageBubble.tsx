@@ -329,8 +329,8 @@ function AudioInlineControl({ block }: { block: DataBlock }) {
 
 /**
  * Copies the message's text to the clipboard, flipping to a check mark
- * for a moment so the click has visible feedback. The surrounding message
- * reveals this control on hover or keyboard focus.
+ * for a moment so the click has visible feedback. The surrounding action bar controls visibility: user messages reveal it
+ * on hover/focus; completed assistant replies keep it visible.
  */
 function CopyButton({ text }: { text: string }) {
 	const { t } = useTranslation();
@@ -529,6 +529,9 @@ function AssistantTaskProcess({ message, blocks, finished }: {
 
 interface MessageBubbleProps {
 	message: Msg;
+	deleteAction?: React.ReactNode;
+	/** 当前这条回复仍在生成；防止历史完成标记提前放行操作。 */
+	isGenerating?: boolean;
 	/** 由消息列表统一读取，避免长对话中每个气泡各自订阅技能查询。 */
 	skillLibrary: SkillView[];
 	/** 首个 assistant 内容块到达前，紧贴用户消息展示的等待状态。 */
@@ -562,6 +565,8 @@ interface MessageBubbleProps {
  */
 function ASMessageBubbleComponent({
 	message,
+	deleteAction,
+	isGenerating = false,
 	skillLibrary,
 	showThinking = false,
 	showTimestamp = false,
@@ -630,7 +635,7 @@ function ASMessageBubbleComponent({
 
 	// 历史 Msg 的 finished_reason 可能为空，但 finished_at 已写入。
 	// 流式消息两者都为空；统一判据同时用于改动汇总与复制按钮。
-	const replyFinished = Boolean(message.finished_reason || message.finished_at);
+	const replyFinished = !isGenerating && Boolean(message.finished_reason || message.finished_at);
 	// 回合结束后的文件改动汇总（仅成功的 Write/Edit）。
 	const changedFiles =
 		!isUser && replyFinished
@@ -735,9 +740,10 @@ function ASMessageBubbleComponent({
 					<MessageFooter className="-mt-2 gap-1.5 py-0">
 						{showThinking && <ThinkingStatus />}
 						{timestamp}
-						{plainText && (
-							<span className="message-copy-action">
-								<CopyButton text={plainText} />
+						{(plainText || deleteAction) && (
+							<span className="message-actions" data-visibility="hover" dir="ltr" onPointerDown={event=>event.stopPropagation()}>
+								{deleteAction}
+								{plainText && <CopyButton text={plainText} />}
 							</span>
 						)}
 					</MessageFooter>
@@ -753,9 +759,10 @@ function ASMessageBubbleComponent({
 							</div>
 						)}
 						{/* 流式中的半截回复不可复制；旧会话只存 finished_at 时仍要显示。 */}
-						{plainText && replyFinished && (
-							<span className="message-copy-action">
-								<CopyButton text={plainText} />
+						{replyFinished && (plainText || deleteAction) && (
+							<span className="message-actions" data-visibility="always" dir="ltr" onPointerDown={event=>event.stopPropagation()}>
+								{deleteAction}
+								{plainText && <CopyButton text={plainText} />}
 							</span>
 						)}
 					</MessageFooter>

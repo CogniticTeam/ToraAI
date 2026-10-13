@@ -1,15 +1,15 @@
-import {MoreHorizontal, Trash2} from 'lucide-react';
+import {Trash2} from 'lucide-react';
+import {ContextMenu} from 'radix-ui';
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {toast} from 'sonner';
 
 import {Button} from '@/components/ui/button';
-import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '@/components/ui/dropdown-menu';
 import {useTranslation} from '@/i18n/useI18n';
 import {dissolveMessage, messageMotionEnabled} from '@/lib/messageSand';
 
 export type DeleteMessage = (id: string, beforeRemove: () => Promise<void>) => Promise<void>;
 
-export function DeletableMessage({id, enabled, onDelete, children, hasNext}: {id:string; enabled:boolean; onDelete?:DeleteMessage; children:ReactNode; hasNext:boolean}) {
+export function DeletableMessage({id, enabled, onDelete, children, hasNext}: {id:string; enabled:boolean; onDelete?:DeleteMessage; children:ReactNode | ((deleteAction:ReactNode)=>ReactNode); hasNext:boolean}) {
  const {t} = useTranslation();
  const row = useRef<HTMLDivElement>(null), controller = useRef<AbortController | null>(null);
  const press = useRef<{timer:ReturnType<typeof setTimeout>; x:number; y:number} | null>(null);
@@ -44,22 +44,22 @@ export function DeletableMessage({id, enabled, onDelete, children, hasNext}: {id
    if (!abort.signal.aborted) {setDeleting(false); toast.error(t('messageBubble.deleteFailed'), {description:error instanceof Error?error.message:undefined});}
   } finally {busy.current = false;}
  }
- return <div ref={row} className="group/delete relative min-w-0" data-message-delete={id} data-deleting={deleting || undefined}
-  onContextMenu={event => {if (!available) return; event.preventDefault(); setMenu(true);}}
+ const deleteAction = onDelete && !deleting ? <Button variant="ghost" size="icon-xs" disabled={!available} className="text-muted-foreground hover:text-destructive" tooltip={t('common.delete')} aria-label={t('common.delete')} onClick={()=>void remove()}><Trash2/></Button> : null;
+ return <ContextMenu.Root open={menu} onOpenChange={setMenu}>
+ <ContextMenu.Trigger asChild disabled={!available}><div ref={row} className="relative min-w-0" data-message-delete={id} data-deleting={deleting || undefined}
   onPointerDown={event => {
-   if (!available || event.button !== 0 || (event.target as Element).closest('button,a,input,textarea,[role="button"]')) return;
-   clearPress(); press.current = {x:event.clientX,y:event.clientY,timer:setTimeout(() => {press.current=null; setMenu(true);},550)};
+   if (!available || event.pointerType !== 'mouse' || event.button !== 0 || (event.target as Element).closest('button,a,input,textarea,[role="button"]')) return;
+   const {clientX,clientY}=event;
+   clearPress(); press.current = {x:clientX,y:clientY,timer:setTimeout(() => {press.current=null;row.current?.dispatchEvent(new MouseEvent('contextmenu',{bubbles:true,cancelable:true,clientX,clientY}));},550)};
   }}
   onPointerMove={event => {if (press.current && Math.hypot(event.clientX-press.current.x,event.clientY-press.current.y)>8) clearPress();}}
   onPointerUp={clearPress} onPointerCancel={clearPress} onPointerLeave={clearPress} onWheel={clearPress} onTouchMove={clearPress}>
-  {children}
-  {onDelete && !deleting && <DropdownMenu open={menu} onOpenChange={setMenu}>
-   <DropdownMenuTrigger asChild><Button variant="ghost" size="icon-sm" disabled={!available}
-    className="absolute top-0 end-0 opacity-0 group-hover/delete:opacity-100 focus-visible:opacity-100 data-[state=open]:opacity-100 [@media(hover:none)]:opacity-60"
-    aria-label={t('messageBubble.actions')}><MoreHorizontal className="size-4"/></Button></DropdownMenuTrigger>
-   <DropdownMenuContent align="end"><DropdownMenuItem variant="destructive" disabled={!available} onSelect={() => {void remove();}}>
-    <Trash2/>{t('common.delete')}
-   </DropdownMenuItem></DropdownMenuContent>
-  </DropdownMenu>}
- </div>;
+  {typeof children==='function'?children(deleteAction):children}
+ </div></ContextMenu.Trigger>
+  {onDelete && !deleting && <ContextMenu.Portal><ContextMenu.Content aria-label={t('messageBubble.actions')} className="z-50 min-w-32 rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-border">
+   <ContextMenu.Item disabled={!available} className="flex cursor-default items-center gap-1.5 rounded-md px-2 py-1 text-sm text-destructive outline-none focus:bg-accent data-[disabled]:opacity-50" onSelect={() => {void remove();}}>
+    <Trash2 className="size-4"/>{t('common.delete')}
+   </ContextMenu.Item>
+  </ContextMenu.Content></ContextMenu.Portal>}
+ </ContextMenu.Root>;
 }
