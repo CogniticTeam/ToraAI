@@ -1,3 +1,6 @@
+import authPasskeySchema from '../migrations/0013_auth_passkeys.sql';
+import {handleAuthEmail} from './auth-email-flows.js';
+import {handlePasskeys} from './passkeys.js';
 import {verifyTurnstile,verificationSessionStatement,handleHumanVerification} from './human-verification.js';
 // Tora 登录/注册服务（Cloudflare Worker + D1 + Resend 邮件）。
 //
@@ -209,6 +212,8 @@ async function clearLoginFails(db, account) {
 }
 
 async function ensureSchema(db) {
+  const authStatements=authPasskeySchema.split('\n').filter(line=>!line.trim().startsWith('--')).join(' ').split(';').map(statement=>statement.trim()).filter(Boolean);
+  await db.batch(authStatements.map(statement=>db.prepare(statement)));
   // 三个表都幂等建；D1 的 batch 保证顺序执行
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS users (
@@ -430,6 +435,7 @@ export default {
       }
       return await handle(request, env, ctx);
     } catch (e) {
+      if(e?.message==='AUTH_BODY_TOO_LARGE')return json({code:'request_too_large',detail:'请求过大'},413);
       if (e?.code === 'ACCOUNT_BANNED') return json({ code: e.code, detail: e.message }, 403);
       // 兜底：任何未捕获异常都转成 500 JSON（而不是 Cloudflare 的 1101 错误页）
       return json({ detail: `服务内部错误：${e?.message ?? e}` }, 500);
@@ -638,6 +644,12 @@ async function handle(request, env, ctx) {
         : await env.DB.prepare('SELECT 1 FROM users WHERE username = ?').bind(account).first();
       return json({ registered: !!user });
     }
+
+    if(['/auth/email-code','/auth/email-login','/auth/signup','/auth/reset-verify','/auth/reset-password'].includes(p))return handleAuthEmail(request,env,p,{makeSalt,hashPassword,createSession,sendWelcomeEmail},ctx);
+    if(p.startsWith('/auth/passkeys')||p==='/account/passkeys'||p.startsWith('/account/passkeys/'))return handlePasskeys(request,env,url,{userFromRequest,createSession,checkPassword:async(userId,password)=>{
+      const user=await env.DB.prepare('SELECT salt,hash FROM users WHERE id=?').bind(userId).first();
+      return !!user&&password.length<=128&&timingSafeEqual(await hashPassword(password,user.salt),user.hash);
+    }});
 
     // 注册第二步：向未注册邮箱发送 6 位验证码
     if (p === '/auth/code' && method === 'POST') {

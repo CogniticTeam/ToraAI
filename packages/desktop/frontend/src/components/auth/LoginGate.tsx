@@ -149,7 +149,6 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
 
       {phase === 'login' && (
         <div className="h-full w-full">
-          <span className="pointer-events-none absolute left-28 top-3 z-30 px-2 py-1 text-lg font-semibold tracking-[-0.045em] text-foreground">Cognitic</span>
           <Suspense fallback={<div className="flex h-full items-center justify-center"><LogoLoader /></div>}>
             <AccountSection mode="auth" onAuthenticated={() => setPhase('success')} />
           </Suspense>

@@ -949,3 +949,44 @@ test('Closing the last web/tool tab collapses the dock, preserves siblings and n
   let tree=h.render(()=>lib.BrowserPanel(props),{deferEffects:true});find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab').props.onClick();assert.equal(selected,'plan');assert.equal(collapsed,0);
   tree=h.render(()=>lib.BrowserPanel({...props,activeTool:selected}),{deferEffects:true});find(tree,node=>node.props?.['aria-label']==='browserPanel.closeTab Plan').props.onClick();assert.equal(closed,'plan');assert.equal(collapsed,1);h.dispose();}
 });
+
+
+test('Auth flow uses the reference entry, then password, signup or OTP screens; no third-party buttons',async()=>{
+ let registered=true;const calls=[],profiles=[];
+ const lib=harness().load('lib/authFlow.ts');
+ const h=harness({'@/utils/authStore':{getToken:()=>null},'@/lib/authFlow':{...lib,authRequest:async(path,body)=>{calls.push({path,body});if(path==='/auth/check')return{registered};if(path==='/auth/email-code')return{ok:true};if(path==='/auth/reset-verify')return{resetToken:'proof'};if(path==='/auth/reset-password')return{ok:true};return{token:'fixture-session',email:'user@fixture.invalid'};}}});
+ const{AuthFlow}=h.load('components/auth/AuthFlow.tsx');const render=()=>h.render(()=>AuthFlow({onAuthenticated:profile=>profiles.push(profile)}));
+ const action=label=>find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthAction'&&node.props.label===`authFlow.${label}`);
+ const field=label=>find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthField'&&node.props.label===`authFlow.${label}`);
+ let tree=render();assert.ok(find(tree,node=>node.type==='h1'&&node.props.children==='authFlow.loginTitle'));assert.ok(action('otherMethods'));assert.equal(calls.length,0);assert.equal(find(tree,node=>/Google|Apple|Microsoft/.test(String(node.props?.children??''))),null);
+ action('continueLogin').props.onClick();field('email').props.onChange('user@fixture.invalid');action('continue').props.onClick();await tick();assert.ok(field('password'));
+ // Email OTP is a separate purpose. The password is never sent with the OTP login.
+ action('codeLogin').props.onClick();find(render(),node=>node.type==='Turnstile').props.onToken('fixture-human-proof');action('continue').props.onClick();await tick();
+ assert.equal(calls.at(-1).path,'/auth/email-code');assert.equal(calls.at(-1).body.purpose,'login');field('code').props.onChange('123456');action('continue').props.onClick();await tick();assert.equal(calls.at(-1).path,'/auth/email-login');assert.equal('password' in calls.at(-1).body,false);assert.equal(profiles.length,1);h.dispose();
+ // New accounts use email + password, then verify the mailbox.
+ registered=false;const signup=harness({'@/utils/authStore':{getToken:()=>null},'@/lib/authFlow':{...lib,authRequest:async(path,body)=>{calls.push({path,body});return path==='/auth/check'?{registered:false}:{ok:true};}}});
+ const{AuthFlow:Signup}=signup.load('components/auth/AuthFlow.tsx');const sr=()=>signup.render(()=>Signup({onAuthenticated(){}}));
+ find(sr(),node=>node.type==='button'&&node.props.children==='authFlow.signUp').props.onClick();find(sr(),node=>typeof node.type==='function'&&node.type.name==='AuthField').props.onChange('new@fixture.invalid');find(sr(),node=>typeof node.type==='function'&&node.type.name==='AuthAction'&&!node.props.secondary).props.onClick();await tick();assert.ok(find(sr(),node=>node.type==='h1'&&node.props.children==='authFlow.createPasswordTitle'));
+ const password=find(sr(),node=>typeof node.type==='function'&&node.type.name==='AuthField'&&node.props.password);password.props.onChange('valid-password');find(sr(),node=>typeof node.type==='function'&&node.type.name==='AuthAction'&&!node.props.secondary).props.onClick();assert.equal(find(sr(),node=>node.type==='Turnstile').props.action,'register');signup.dispose();
+});
+
+test('Auth mode never renders a cached settings profile; every installed locale includes the new login and passkey copy',()=>{
+ const h=harness({'@/utils/authStore':{getToken:()=> 'unverified',getEmail:()=> 'cached@fixture.invalid',getUsername:()=> 'cached'}});
+ const{AccountSection}=h.load('components/dialog/AccountSection.tsx');const tree=h.render(()=>AccountSection({mode:'auth'}));assert.ok(find(tree,node=>node.type==='AuthFlow'));assert.equal(find(tree,node=>typeof node.type==='function'&&node.type.name==='AccountManager'),null);h.dispose();
+ const localeHarness=harness();const{SUPPORTED_LANGUAGES}=localeHarness.load('i18n/languages.ts');
+ const values=obj=>Object.values(obj).flatMap(value=>typeof value==='object'?values(value):[value]);
+ for(const lang of [...SUPPORTED_LANGUAGES,'en','zh-Hant']){
+  const pack=JSON.parse(readFileSync(new URL(`i18n/locales/${lang}.json`,base),'utf8')).authFlow;
+  assert.ok(pack.otherMethods&&pack.passkeyLogin&&pack.passkeyManagerTitle&&pack.browser?.confirm,lang);assert.ok(values(pack).every(value=>typeof value==='string'&&value.trim()),lang);
+  for(const key of ['{{email}}','{{seconds}}','{{count}}'])assert.ok(values(pack).some(value=>value.includes(key)),`${lang} ${key}`);
+ }
+ localeHarness.dispose();
+});
+
+test('A late auth response cannot overwrite a new identity or persist a session after the form unmounts',async()=>{
+ const lib=harness().load('lib/authFlow.ts'),login=deferred();let token=null,authenticated=0;
+ const h=harness({'@/utils/authStore':{getToken:()=>token},'@/lib/authFlow':{...lib,authRequest:async path=>path==='/auth/check'?{registered:true}:login.promise}});
+ const{AuthFlow}=h.load('components/auth/AuthFlow.tsx');const render=()=>h.render(()=>AuthFlow({onAuthenticated:()=>authenticated++}));
+ const action=()=>find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthAction'&&!node.props.secondary);
+ action().props.onClick();find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthField').props.onChange('user@fixture.invalid');action().props.onClick();await tick();find(render(),node=>typeof node.type==='function'&&node.type.name==='AuthField').props.onChange('password');action().props.onClick();find(render(),node=>node.type==='Turnstile').props.onToken('proof');action().props.onClick();token='different-user';h.dispose();login.resolve({token:'old-result',email:'user@fixture.invalid'});await tick();assert.equal(authenticated,0);
+});
