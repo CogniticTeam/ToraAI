@@ -68,3 +68,46 @@
 @media(prefers-reduced-motion:reduce){.tora-auth-flow *{transition:none!important;animation:none!important}}
 
 .tora-auth-flow[dir=rtl] .tora-auth-back>svg{transform:rotate(180deg)}
+
+/* Auth motion: immediate controls, a short stagger, and one continuous column. */
+.tora-auth-flow{--auth-reveal-time:380ms;--auth-reveal-distance:10px;--auth-logo-scale:.9;transition:background-color 360ms ease}
+.tora-auth-flow[data-motion=fast]{--auth-reveal-time:260ms;--auth-reveal-distance:6px}
+.tora-auth-flow[data-motion=gentle]{--auth-reveal-time:440ms;--auth-reveal-distance:4px;--auth-logo-scale:.98}
+.tora-auth-form fieldset[data-auth-step]>*{animation:tora-auth-step-in var(--auth-reveal-time) cubic-bezier(.22,1,.36,1) backwards}
+.tora-auth-form fieldset[data-auth-step]>:nth-child(2){animation-delay:35ms}
+.tora-auth-form fieldset[data-auth-step]>:nth-child(3){animation-delay:70ms}
+.tora-auth-form fieldset[data-auth-step]>:nth-child(4){animation-delay:105ms}
+.tora-auth-form fieldset[data-auth-step]>:nth-child(5){animation-delay:140ms}
+.tora-auth-form fieldset[data-auth-step]>:nth-child(n+6){animation-delay:175ms}
+.tora-auth-form fieldset[data-auth-step=entry]>.tora-auth-mark{animation:tora-auth-logo-in 540ms cubic-bezier(.22,1,.36,1) backwards}
+.tora-auth-language,.tora-auth-back{animation:tora-auth-step-in 240ms ease-out backwards;transition:background 180ms ease,transform 180ms ease}
+.tora-auth-primary,.tora-auth-secondary{position:relative;transition:opacity 150ms ease,background 180ms ease,transform 180ms cubic-bezier(.22,1,.36,1),box-shadow 180ms ease}
+@media(hover:hover){
+ .tora-auth-primary:hover:not(:disabled),.tora-auth-secondary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 7px 20px -12px color-mix(in srgb,var(--auth-ink) 40%,transparent)}
+ .tora-auth-language:hover,.tora-auth-back:hover{transform:translateY(-1px)}
+}
+.tora-auth-primary:active:not(:disabled),.tora-auth-secondary:active:not(:disabled){transform:translateY(1px) scale(.985);box-shadow:none}
+.tora-auth-field{transition:border-color 180ms ease,box-shadow 180ms ease}
+.tora-auth-field:has(input:focus){box-shadow:0 0 0 3px color-mix(in srgb,var(--auth-ink) 8%,transparent)}
+.tora-auth-field>span{transform:translateY(4px);transition:opacity 150ms ease,transform 180ms ease}
+.tora-auth-field:has(input:focus)>span,.tora-auth-field:has(input:not(:placeholder-shown))>span{transform:translateY(0)}
+.tora-auth-eye{transition:background 150ms ease,transform 150ms ease}
+.tora-auth-eye:active{transform:scale(.9)}
+.tora-auth-password-rule{transition:border-color 180ms ease,color 180ms ease}
+.tora-auth-password-rule[data-valid=true]{border-color:color-mix(in srgb,var(--auth-ink) 65%,transparent)}
+.tora-auth-form fieldset>.tora-auth-error{animation:tora-auth-step-in 180ms ease-out backwards}
+.tora-auth-submit-spinner{width:17px;height:17px;flex-shrink:0;animation:tora-auth-spin 800ms linear infinite}
+.tora-auth-form fieldset[data-auth-step=passkey]>.tora-auth-passkey-mark{animation:tora-auth-wait 1800ms ease-in-out infinite}
+.tora-auth-form fieldset[data-auth-step=passkey]>[role=status]::after{content:'';display:inline-block;width:24px;height:5px;margin-inline-start:7px;background:radial-gradient(circle,var(--auth-muted) 2px,transparent 2.5px) 0 50%/8px 5px repeat-x;animation:tora-auth-dots 1200ms ease-in-out infinite}
+/* Taking focus cancels the reveal immediately: typing never waits for animation. */
+.tora-auth-form fieldset:focus-within>*{animation:none}
+.tora-auth-flow[data-page-motion=false] .tora-auth-form fieldset>*,.tora-auth-flow[data-page-motion=false]>.tora-auth-language,.tora-auth-flow[data-page-motion=false]>.tora-auth-back{animation:none}
+.tora-auth-flow[data-click-motion=false] button{transform:none!important;box-shadow:none!important}
+.tora-auth-flow[data-motion=off] button{transform:none!important}
+.tora-auth-flow[data-motion=off],.tora-auth-flow[data-motion=off] *,.tora-auth-flow[data-motion=off] *::after{animation:none!important;transition:none!important}
+@keyframes tora-auth-step-in{from{opacity:0;transform:translateY(var(--auth-reveal-distance))}to{opacity:1;transform:translateY(0)}}
+@keyframes tora-auth-logo-in{from{opacity:0;transform:translateY(var(--auth-reveal-distance)) scale(var(--auth-logo-scale))}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes tora-auth-spin{to{transform:rotate(360deg)}}
+@keyframes tora-auth-wait{0%,100%{opacity:.65;transform:scale(.96)}50%{opacity:1;transform:scale(1)}}
+@keyframes tora-auth-dots{0%,100%{opacity:.35;transform:translateY(0)}50%{opacity:1;transform:translateY(-2px)}}
+@media(prefers-reduced-motion:reduce){.tora-auth-flow,.tora-auth-flow *,.tora-auth-flow *::after{animation:none!important;transition:none!important}}

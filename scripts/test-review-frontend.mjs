@@ -40,6 +40,7 @@ function harness(mocks = {}, globals = {}) {
     '@/i18n/useI18n': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
     '@/i18n/useI18n.ts': { useTranslation: () => ({ t: key => key, i18n: { language: 'zh' } }) },
     '@/context/AudioContext': { useAudioManager: () => audio, AudioProvider: 'AudioProvider' },
+    '@/hooks/useMotionSettings': {useMotionSettings:()=>({effective:'standard',pageEnabled:true,clickEnabled:true})},
     '@/lib/utils': { cn: (...values) => values.filter(Boolean).join(' ') },
     '@/lib/catgirl': { useCatgirlSettings: () => ({ installed: false, enabled: false }), catgirlTrigger: () => null, catgirlCopy: () => ({}) },
     '@agentscope-ai/agentscope/event': { EventType: new Proxy({}, { get: (_, key) => key }) },
