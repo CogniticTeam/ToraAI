@@ -1041,16 +1041,19 @@ test('网页删除事务进行中暂停发送，沙化期间继续发送不会�
  animation.resolve();await deleting;state=render();assert.equal(state.msgs.length,2);assert.ok(state.msgs.every(message=>message.id!=='deleted'));assert.equal(active.title,'saved title');h.dispose();
 });
 
-test('消息操作：生成中隐藏，完成后常驻，用户消息悬停显示，删除在复制左侧',()=>{
+test('消息操作：生成中隐藏，完成后与用户消息统一悬停显示，删除在复制左侧',()=>{
  const h=harness({'@agentscope-ai/agentscope/event':{ReplyFinishedReason:{ERROR:'error'}},'./tool-renderers/_shared':{collectChangedFiles:()=>[]}});const {ASMessageBubble}=h.load('components/chat/ASMessageBubble.tsx');
  const remove={type:'delete-button',props:{}};
  const base={id:'reply',name:'Tora',metadata:{},role:'assistant',created_at:'2026-10-13T12:00:00Z',content:[{id:'text',type:'text',text:'complete answer'}]};
- const render=(message,isGenerating=false)=>h.render(()=>ASMessageBubble({message,deleteAction:remove,isGenerating,skillLibrary:[],onUserConfirm(){}}));
+ const render=(message,isGenerating=false)=>h.render(()=>ASMessageBubble({message,deleteAction:remove,isGenerating,showTimestamp:true,skillLibrary:[],onUserConfirm(){}}));
  const actions=tree=>find(tree,node=>node.props?.className==='message-actions');
  assert.equal(actions(render(base)),null,'No partial reply actions');
  const finished={...base,finished_at:'2026-10-13T12:00:01Z'};
  assert.equal(actions(render(finished,true)),null,'An active continuation must not reuse a stale completion marker');
- let toolbar=actions(render(finished));assert.equal(toolbar.props['data-visibility'],'always');assert.equal(toolbar.props.dir,'ltr');assert.equal(toolbar.props.children[0],remove);assert.equal(toolbar.props.children[1].props.text,'complete answer');
+ let toolbar=actions(render(finished));assert.equal(toolbar.props['data-visibility'],'hover');assert.equal(toolbar.props.dir,'ltr');assert.equal(toolbar.props.children[0],remove);assert.equal(toolbar.props.children[1].props.text,'complete answer');
+ assert.equal(find(render(finished,true),node=>node.props?.className==='message-timestamp pointer-events-none'),null);
+ assert.equal(find(render(finished),node=>node.props?.className==='message-timestamp pointer-events-none').props['data-visibility'],'hover');
+ assert.equal(find(render({...base,role:'user'}),node=>node.props?.className==='message-timestamp pointer-events-none').props['data-visibility'],'hover');
  toolbar=actions(render({...base,role:'user'}));assert.equal(toolbar.props['data-visibility'],'hover');assert.equal(toolbar.props.children[0],remove);
  h.dispose();
 });

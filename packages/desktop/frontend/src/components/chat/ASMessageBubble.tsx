@@ -329,8 +329,7 @@ function AudioInlineControl({ block }: { block: DataBlock }) {
 
 /**
  * Copies the message's text to the clipboard, flipping to a check mark
- * for a moment so the click has visible feedback. The surrounding action bar controls visibility: user messages reveal it
- * on hover/focus; completed assistant replies keep it visible.
+ * for a moment so the click has visible feedback. The surrounding action bar reveals it on hover or keyboard focus.
  */
 function CopyButton({ text }: { text: string }) {
 	const { t } = useTranslation();
@@ -536,10 +535,8 @@ interface MessageBubbleProps {
 	skillLibrary: SkillView[];
 	/** 首个 assistant 内容块到达前，紧贴用户消息展示的等待状态。 */
 	showThinking?: boolean;
-	/** 是否渲染发送时间；可见方式由 timestampVisibility 决定。 */
+	/** 是否渲染发送时间；与操作栏一起悬停／聚焦显示。 */
 	showTimestamp?: boolean;
-	/** 网页版可持续显示时间，桌面端沿用悬停显示。 */
-	timestampVisibility?: 'hover' | 'always';
 	onUserConfirm: (
 		toolCallBlock: ToolCallBlock,
 		confirm: boolean,
@@ -570,7 +567,6 @@ function ASMessageBubbleComponent({
 	skillLibrary,
 	showThinking = false,
 	showTimestamp = false,
-	timestampVisibility = 'hover',
 }: MessageBubbleProps) {
 	const isUser = message.role === 'user';
 	const { t } = useTranslation();
@@ -653,8 +649,8 @@ function ASMessageBubbleComponent({
 		.map((b) => b.text)
 		.join('\n\n');
 
-	const timestamp = showTimestamp ? (
-		<span className={cn('message-timestamp pointer-events-none', timestampVisibility === 'hover' && 'opacity-0 transition-opacity duration-150 group-hover/message:opacity-100')}>
+	const timestamp = showTimestamp && (isUser || replyFinished) ? (
+		<span className="message-timestamp pointer-events-none" data-visibility="hover">
 			<MessageTimestamp value={message.created_at} />
 		</span>
 	) : null;
@@ -667,7 +663,14 @@ function ASMessageBubbleComponent({
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.3, ease: [0.25, 1, 0.5, 1] }}
 		>
-			<Message align={isUser ? 'end' : 'start'} data-role={message.role}>
+			<Message align={isUser ? 'end' : 'start'} data-role={message.role} className="outline-none"
+				onPointerDown={event => {
+					// Touch has no persistent hover: tapping the message reveals its metadata.
+					if (event.pointerType === 'mouse' || (event.target as Element).closest('button,a,input,textarea,[role="button"]')) return;
+					event.currentTarget.tabIndex = -1;
+					event.currentTarget.focus({preventScroll:true});
+				}}
+				onBlur={event => {if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.removeAttribute('tabindex');}}>
 			<MessageContent>
 				{/* Selected-skill chip row — mirrors what the user attached before
 				    sending. Reads `metadata.selected_skill_ids` set by useMessages.send. */}
@@ -760,7 +763,7 @@ function ASMessageBubbleComponent({
 						)}
 						{/* 流式中的半截回复不可复制；旧会话只存 finished_at 时仍要显示。 */}
 						{replyFinished && (plainText || deleteAction) && (
-							<span className="message-actions" data-visibility="always" dir="ltr" onPointerDown={event=>event.stopPropagation()}>
+							<span className="message-actions" data-visibility="hover" dir="ltr" onPointerDown={event=>event.stopPropagation()}>
 								{deleteAction}
 								{plainText && <CopyButton text={plainText} />}
 							</span>

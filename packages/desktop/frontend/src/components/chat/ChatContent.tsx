@@ -96,8 +96,6 @@ interface ChatContentProps {
 	greetingOverride?: string;
 	showWorkspace?: boolean;
 	composerVariant?: 'default' | 'capsule';
-	/** 持续显示发送时间，包括回复生成期间的历史消息。 */
-	alwaysShowMessageTimestamps?: boolean;
 	autoFocusInput?: boolean;
 	msgs: Msg[];
 	/**
@@ -168,7 +166,6 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	greetingOverride,
 	showWorkspace = true,
 	composerVariant = 'default',
-	alwaysShowMessageTimestamps = false,
 	autoFocusInput = true,
 	msgs: allMessages,
 	onDeleteMessage,
@@ -419,7 +416,6 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	const waitingUserMessage = isWaitingForFirstResponse
 		? [...msgs].reverse().find((message) => message.role === 'user')
 		: undefined;
-	const canShowMessageTimestamps = alwaysShowMessageTimestamps || phase === 'idle';
 
 	// 首个内容块（文本或工具调用）到达后立即撤掉占位。请求失败不会产生
 	// 内容，因此只在已经确实进入 streaming 后再由 idle 清理本地状态。
@@ -522,8 +518,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											skillLibrary={library.skills}
 											onUserConfirm={onUserConfirm}
 											showThinking={message === waitingUserMessage}
-											showTimestamp={canShowMessageTimestamps}
-											timestampVisibility={alwaysShowMessageTimestamps ? 'always' : 'hover'}
+											showTimestamp
 										/>
 									</>}
 										</DeletableMessage>

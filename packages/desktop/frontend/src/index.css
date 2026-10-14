@@ -1181,13 +1181,14 @@ body {
 }
 @media (prefers-reduced-motion: reduce) { .message-send-entrance { animation: none; } }
 .message-actions { display: inline-flex; align-items: center; gap: 2px; }
-.message-actions[data-visibility='hover'] { opacity: 0; transition: opacity 150ms ease; }
+.message-actions[data-visibility='hover'], .message-timestamp[data-visibility='hover'] { opacity: 0; transition: opacity 150ms ease; }
 [data-slot='message']:hover .message-actions,
+[data-slot='message']:hover .message-timestamp,
 [data-slot='message']:focus-within .message-actions,
+[data-slot='message']:focus-within .message-timestamp,
 .message-actions:hover,
 .message-actions:focus-within { opacity: 1; }
-@media (hover: none) { .message-actions[data-visibility='hover'] { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .message-actions { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .message-actions, .message-timestamp { transition: none; } }
 @media (max-width: 600px) {
 	.first-run-demo { top: 47%; left: 50%; }
 	.first-run-paused { width: calc(100vw - 24px); }
