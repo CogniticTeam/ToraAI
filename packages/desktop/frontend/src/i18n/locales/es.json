@@ -1634,7 +1634,11 @@
         "unavailable": "Las actualizaciones automáticas no están disponibles en esta plataforma.",
         "desktopOnly": "Busca actualizaciones desde la aplicación de escritorio Tora.",
         "failed": "No se pudieron buscar actualizaciones: {{error}}"
-      }
+      },
+      "usagePolicy": "Política de uso de modelos de IA",
+      "viewPolicy": "Ver política",
+      "website": "Abrir sitio web",
+      "websiteTitle": "Sitio web oficial"
     },
     "errors": {
       "backend": "El backend devolvió {{status}}",
@@ -1752,7 +1756,7 @@
       "login": "Iniciar sesión",
       "createAccount": "Crear cuenta",
       "or": "o",
-      "terms": "Al continuar, aceptas los Términos de uso y la Política de privacidad de Tora.",
+      "terms": "Al continuar en Tora, aceptas los Términos de uso y la Política de privacidad de Tora.",
       "back": "Atrás",
       "logout": "Cerrar sesión",
       "since": "Miembro desde {{date}}",
@@ -2090,7 +2094,7 @@
     "back": "Atrás",
     "haveAccount": "¿Ya tienes una cuenta?",
     "newAccount": "¿Eres nuevo en Tora?",
-    "legal": "Al continuar, aceptas los",
+    "legal": "Al continuar en Tora, aceptas los",
     "terms": "Términos de uso",
     "and": "y",
     "privacy": "Política de privacidad",
@@ -2146,5 +2150,29 @@
       "canceled": "Verificación cancelada. Reintenta o vuelve a Tora.",
       "unsupported": "Este navegador no admite passkeys. Usa un navegador del sistema compatible."
     }
+  },
+  "enforcement": {
+    "title": "Estado de la cuenta y apelaciones",
+    "limited": "Límite de frecuencia de uso justo",
+    "until": "La restricción temporal termina el {{date}}",
+    "caseId": "Caso: {{id}}",
+    "policy": "Leer la política de uso",
+    "appeal": "Ver casos / Apelar",
+    "read": "Marcar como leído",
+    "chooseCase": "Caso que se desea apelar",
+    "manual": "Restricción manual actual",
+    "statement": "Explica por qué debe revisarse esta decisión",
+    "privacy": "No envíes contraseñas, claves API, documentos de identidad ni contenido de archivos privados.",
+    "submit": "Enviar apelación",
+    "submitted": "Apelación recibida. Puedes consultar aquí el resultado de la revisión.",
+    "error": "La solicitud ha fallado. Inténtalo de nuevo.",
+    "appealState": "Apelación: {{status}}",
+    "state": {
+      "pending": "Pendiente de revisión",
+      "accepted": "Aceptada",
+      "rejected": "Rechazada"
+    },
+    "autoRestore": "Esta restricción automática vence al finalizar el plazo. Otras restricciones independientes requieren una revisión por separado.",
+    "observing": "Esta cuenta está en su período de observación y utiliza los límites de frecuencia reducidos publicados."
   }
 }

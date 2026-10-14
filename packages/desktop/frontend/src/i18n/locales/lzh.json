@@ -164,17 +164,17 @@
           "body": "检查点记修改前之状。真回退前，请先核将受影响之文件。"
         },
         {
-          "chapter": "拓展其能",
+          "chapter": "拓展 Tora 之能",
           "title": "存善法为技能",
           "body": "点技能中心。可导入或安装可信技能，使重复之法化为可复用之流程。"
         },
         {
-          "chapter": "拓展其能",
+          "chapter": "拓展 Tora 之能",
           "title": "于浏览器验其成",
           "body": "点内置浏览器。君与 Agent 可于同页查看、调试并验证 Web 应用。"
         },
         {
-          "chapter": "拓展其能",
+          "chapter": "拓展 Tora 之能",
           "title": "使重复之务按时而行",
           "body": "点自动化入口，为定期检查与整理之务设计划，并观每次运行之果。"
         }
@@ -1634,7 +1634,11 @@
         "unavailable": "此臺暫不具自動更新。",
         "desktopOnly": "請於 Tora 桌面應用中察更新。",
         "failed": "察更新不成：{{error}}"
-      }
+      },
+      "usagePolicy": "AI 模型使用準則",
+      "viewPolicy": "閱準則",
+      "website": "啟官網",
+      "websiteTitle": "官網"
     },
     "errors": {
       "backend": "後端所還 {{status}}",
@@ -2146,5 +2150,29 @@
       "canceled": "驗證已取消。重試或返回 Tora。",
       "unsupported": "此瀏覽器不支持通行密鑰。使用兼容的系統瀏覽器。"
     }
+  },
+  "enforcement": {
+    "title": "帳戶狀態與申訴",
+    "limited": "公平使用頻率之限",
+    "until": "暫限止於 {{date}}",
+    "caseId": "案號：{{id}}",
+    "policy": "閱使用準則",
+    "appeal": "覽案／申訴",
+    "read": "標為已閱",
+    "chooseCase": "擇申訴之案",
+    "manual": "現行人工限制",
+    "statement": "請述此決何以當覆核",
+    "privacy": "勿呈密碼、API 金鑰、身分證件及私有檔案內容。",
+    "submit": "呈申訴",
+    "submitted": "申訴已收，覆核之果可於此覽。",
+    "error": "請求未成，請重試。",
+    "appealState": "申訴：{{status}}",
+    "state": {
+      "pending": "待覆核",
+      "accepted": "已受理",
+      "rejected": "已駁回"
+    },
+    "autoRestore": "此自動限制屆期即解；餘項獨立限制，須另覆核。",
+    "observing": "此帳戶方處觀察期，依已公示之較低請求頻率行之。"
   }
 }

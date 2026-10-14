@@ -1634,7 +1634,11 @@
         "unavailable": "Les mises à jour automatiques ne sont pas disponibles sur cette plateforme.",
         "desktopOnly": "Rechercher des mises à jour depuis l'application de bureau Tora.",
         "failed": "Impossible de rechercher des mises à jour : {{error}}"
-      }
+      },
+      "usagePolicy": "Règles d’utilisation des modèles d’IA",
+      "viewPolicy": "Voir les règles",
+      "website": "Ouvrir le site",
+      "websiteTitle": "Site officiel"
     },
     "errors": {
       "backend": "Le backend a renvoyé {{status}}",
@@ -1752,7 +1756,7 @@
       "login": "Se connecter",
       "createAccount": "Créer un compte",
       "or": "ou",
-      "terms": "En continuant, vous acceptez les Conditions d'utilisation et la Politique de confidentialité de Tora.",
+      "terms": "En continuant sur Tora, vous acceptez les Conditions d'utilisation et la Politique de confidentialité de Tora.",
       "back": "Retour",
       "logout": "Se déconnecter",
       "since": "Membre depuis le {{date}}",
@@ -2090,7 +2094,7 @@
     "back": "Retour",
     "haveAccount": "Vous avez déjà un compte ?",
     "newAccount": "Nouveau sur Tora ?",
-    "legal": "En continuant, vous acceptez les",
+    "legal": "En continuant sur Tora, vous acceptez les",
     "terms": "Conditions d'utilisation",
     "and": "et",
     "privacy": "Politique de confidentialité",
@@ -2146,5 +2150,29 @@
       "canceled": "Vérification annulée. Réessayez ou retournez à Tora.",
       "unsupported": "Ce navigateur ne prend pas en charge les clés d'accès. Utilisez un navigateur système compatible."
     }
+  },
+  "enforcement": {
+    "title": "État du compte et recours",
+    "limited": "Limite de fréquence pour un usage équitable",
+    "until": "La restriction temporaire prend fin le {{date}}",
+    "caseId": "Dossier : {{id}}",
+    "policy": "Lire les règles d’utilisation",
+    "appeal": "Voir les dossiers / Faire un recours",
+    "read": "Marquer comme lu",
+    "chooseCase": "Dossier concerné par le recours",
+    "manual": "Restriction manuelle actuelle",
+    "statement": "Expliquez pourquoi cette décision devrait être réexaminée",
+    "privacy": "Ne transmettez pas de mots de passe, clés API, pièces d’identité ni contenus de fichiers privés.",
+    "submit": "Envoyer le recours",
+    "submitted": "Recours reçu. Vous pouvez consulter le résultat de l’examen ici.",
+    "error": "La demande a échoué. Veuillez réessayer.",
+    "appealState": "Recours : {{status}}",
+    "state": {
+      "pending": "En attente d’examen",
+      "accepted": "Accepté",
+      "rejected": "Rejeté"
+    },
+    "autoRestore": "Cette restriction automatique expire à son échéance. Les autres restrictions indépendantes nécessitent un examen distinct.",
+    "observing": "Ce compte est en période d’observation et utilise les limites de fréquence réduites publiées."
   }
 }

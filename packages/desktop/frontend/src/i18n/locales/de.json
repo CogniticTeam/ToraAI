@@ -1634,7 +1634,11 @@
         "unavailable": "Automatische Updates sind auf dieser Plattform nicht verfügbar.",
         "desktopOnly": "Suche in der Tora-Desktop-App nach Updates.",
         "failed": "Updates konnten nicht geprüft werden: {{error}}"
-      }
+      },
+      "usagePolicy": "Nutzungsrichtlinie für KI-Modelle",
+      "viewPolicy": "Richtlinie ansehen",
+      "website": "Website öffnen",
+      "websiteTitle": "Offizielle Website"
     },
     "errors": {
       "backend": "Backend hat {{status}} zurückgegeben",
@@ -2146,5 +2150,29 @@
       "canceled": "Verifizierung abgebrochen. Versuche es erneut oder kehre zu Tora zurück.",
       "unsupported": "Dieser Browser unterstützt keine Passkeys. Verwende einen kompatiblen Systembrowser."
     }
+  },
+  "enforcement": {
+    "title": "Kontostatus und Einsprüche",
+    "limited": "Ratenlimit für faire Nutzung",
+    "until": "Temporäre Einschränkung endet am {{date}}",
+    "caseId": "Fall: {{id}}",
+    "policy": "Nutzungsrichtlinie lesen",
+    "appeal": "Fälle ansehen / Einspruch",
+    "read": "Als gelesen markieren",
+    "chooseCase": "Fall für den Einspruch",
+    "manual": "Aktuelle manuelle Einschränkung",
+    "statement": "Erkläre, warum die Entscheidung überprüft werden sollte",
+    "privacy": "Keine Passwörter, API-Schlüssel, Ausweisdokumente oder privaten Dateiinhalte einreichen.",
+    "submit": "Einspruch einreichen",
+    "submitted": "Einspruch erhalten. Das Prüfergebnis kannst du hier einsehen.",
+    "error": "Die Anfrage ist fehlgeschlagen. Bitte erneut versuchen.",
+    "appealState": "Einspruch: {{status}}",
+    "state": {
+      "pending": "Prüfung ausstehend",
+      "accepted": "Angenommen",
+      "rejected": "Abgelehnt"
+    },
+    "autoRestore": "Diese automatische Einschränkung endet mit Ablauf der Frist. Andere unabhängige Einschränkungen müssen gesondert geprüft werden.",
+    "observing": "Dieses Konto befindet sich im Beobachtungszeitraum und unterliegt den veröffentlichten niedrigeren Ratenlimits."
   }
 }

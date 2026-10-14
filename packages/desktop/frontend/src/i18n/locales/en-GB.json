@@ -1634,7 +1634,11 @@
         "unavailable": "Automatic updates are not available on this platform.",
         "desktopOnly": "Check for updates from the Tora desktop app.",
         "failed": "Could not check for updates: {{error}}"
-      }
+      },
+      "usagePolicy": "AI model usage policy",
+      "viewPolicy": "View policy",
+      "website": "Open website",
+      "websiteTitle": "Official website"
     },
     "errors": {
       "backend": "Backend returned {{status}}",
@@ -2146,5 +2150,29 @@
       "canceled": "Verification canceled. Retry or return to Tora.",
       "unsupported": "This browser does not support passkeys. Use a compatible system browser."
     }
+  },
+  "enforcement": {
+    "title": "Account status and appeals",
+    "limited": "Fair-use rate limit",
+    "until": "Temporary restriction ends at {{date}}",
+    "caseId": "Case: {{id}}",
+    "policy": "Read the usage policy",
+    "appeal": "View cases / Appeal",
+    "read": "Mark as read",
+    "chooseCase": "Case to appeal",
+    "manual": "Current manual restriction",
+    "statement": "Explain why this decision should be reviewed",
+    "privacy": "Do not submit passwords, API keys, identity documents or private file contents.",
+    "submit": "Submit appeal",
+    "submitted": "Appeal received. You can view the review result here.",
+    "error": "The request failed. Please retry.",
+    "appealState": "Appeal: {{status}}",
+    "state": {
+      "pending": "Pending review",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "autoRestore": "This automatic restriction expires at its deadline. Other independent restrictions require separate review.",
+    "observing": "This account is in its observation period and uses the published lower rate limits."
   }
 }

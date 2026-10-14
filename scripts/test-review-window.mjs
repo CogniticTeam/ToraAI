@@ -26,6 +26,7 @@ test('macOS 关闭并重开窗口不重复 IPC，不改变服务端口，不泄�
     app: { getLocale: () => 'zh-CN', getPath: () => '/fixture-only', isPackaged: false },
     process: { platform: 'darwin', argv: [] }, console,
     normalizeNativeLanguage: value => value, installApplicationMenu() {}, scheduleUpdateChecks() {}, setDesktopAccessBlocked() {},
+    initializeUIUpdates:async()=>{},uiController:null,uiUpdater:null,scheduleUIUpdates() {},
     startASAPIServer: async () => { servers++; return { address: () => ({ port: 3210 }) }; },
     localServer: null, windowCreation: null, readCachedDark: () => false, nativeTheme, BrowserWindow: Window,
     winBackgroundFor: () => '', __dirname: '/fixture', join, ipcMain, createWindowIpc,

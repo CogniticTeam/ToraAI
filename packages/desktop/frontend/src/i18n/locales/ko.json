@@ -1634,7 +1634,11 @@
         "unavailable": "이 플랫폼에서는 자동 업데이트를 사용할 수 없습니다.",
         "desktopOnly": "Tora 데스크톱 앱에서 업데이트를 확인하세요.",
         "failed": "업데이트를 확인할 수 없습니다: {{error}}"
-      }
+      },
+      "usagePolicy": "AI 모델 이용 정책",
+      "viewPolicy": "정책 보기",
+      "website": "웹사이트 열기",
+      "websiteTitle": "공식 웹사이트"
     },
     "errors": {
       "backend": "백엔드가 {{status}}을(를) 반환했습니다",
@@ -2146,5 +2150,29 @@
       "canceled": "인증이 취소되었습니다. 다시 시도하거나 Tora로 돌아가세요.",
       "unsupported": "이 브라우저는 패스키를 지원하지 않습니다. 호환되는 시스템 브라우저를 사용하세요."
     }
+  },
+  "enforcement": {
+    "title": "계정 상태 및 이의 신청",
+    "limited": "공정 이용 요청 빈도 제한",
+    "until": "임시 제한 종료: {{date}}",
+    "caseId": "사건: {{id}}",
+    "policy": "이용 정책 읽기",
+    "appeal": "사건 보기 / 이의 신청",
+    "read": "읽음으로 표시",
+    "chooseCase": "이의 신청할 사건",
+    "manual": "현재 수동 제한",
+    "statement": "이 결정을 재검토해야 하는 이유를 설명해 주세요",
+    "privacy": "비밀번호, API 키, 신분증 또는 비공개 파일 내용을 제출하지 마세요.",
+    "submit": "이의 신청 제출",
+    "submitted": "이의 신청이 접수되었습니다. 검토 결과는 여기에서 확인할 수 있습니다.",
+    "error": "요청에 실패했습니다. 다시 시도해 주세요.",
+    "appealState": "이의 신청: {{status}}",
+    "state": {
+      "pending": "검토 대기 중",
+      "accepted": "승인됨",
+      "rejected": "거절됨"
+    },
+    "autoRestore": "이 자동 제한은 기한이 지나면 해제됩니다. 다른 독립적인 제한은 별도 검토가 필요합니다.",
+    "observing": "이 계정은 관찰 기간 중이며 공지된 더 낮은 요청 빈도 제한이 적용됩니다."
   }
 }

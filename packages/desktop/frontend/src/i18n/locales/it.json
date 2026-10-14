@@ -1634,7 +1634,11 @@
         "unavailable": "Gli aggiornamenti automatici non sono disponibili su questa piattaforma.",
         "desktopOnly": "Controlla gli aggiornamenti dall'app desktop Tora.",
         "failed": "Impossibile controllare gli aggiornamenti: {{error}}"
-      }
+      },
+      "usagePolicy": "Regole d’uso dei modelli IA",
+      "viewPolicy": "Visualizza le regole",
+      "website": "Apri il sito",
+      "websiteTitle": "Sito ufficiale"
     },
     "errors": {
       "backend": "Il backend ha restituito {{status}}",
@@ -2090,7 +2094,7 @@
     "back": "Indietro",
     "haveAccount": "Hai già un account?",
     "newAccount": "Nuovo su Tora?",
-    "legal": "Continuando, accetti i",
+    "legal": "Continuando su Tora, accetti i",
     "terms": "Termini di utilizzo",
     "and": "e",
     "privacy": "Informativa sulla privacy",
@@ -2146,5 +2150,29 @@
       "canceled": "Verifica annullata. Riprova o torna a Tora.",
       "unsupported": "Questo browser non supporta le passkey. Usa un browser di sistema compatibile."
     }
+  },
+  "enforcement": {
+    "title": "Stato dell’account e ricorsi",
+    "limited": "Limite di frequenza per uso equo",
+    "until": "La restrizione temporanea termina il {{date}}",
+    "caseId": "Caso: {{id}}",
+    "policy": "Leggi le regole d’uso",
+    "appeal": "Visualizza casi / Presenta ricorso",
+    "read": "Segna come letto",
+    "chooseCase": "Caso per cui presentare ricorso",
+    "manual": "Restrizione manuale attuale",
+    "statement": "Spiega perché la decisione dovrebbe essere riesaminata",
+    "privacy": "Non inviare password, chiavi API, documenti d’identità o contenuti di file privati.",
+    "submit": "Invia ricorso",
+    "submitted": "Ricorso ricevuto. Puoi consultare qui l’esito della verifica.",
+    "error": "Richiesta non riuscita. Riprova.",
+    "appealState": "Ricorso: {{status}}",
+    "state": {
+      "pending": "In attesa di verifica",
+      "accepted": "Accolto",
+      "rejected": "Respinto"
+    },
+    "autoRestore": "Questa restrizione automatica scade al termine previsto. Altre restrizioni indipendenti richiedono una verifica separata.",
+    "observing": "Questo account è nel periodo di osservazione e utilizza i limiti di frequenza ridotti pubblicati."
   }
 }

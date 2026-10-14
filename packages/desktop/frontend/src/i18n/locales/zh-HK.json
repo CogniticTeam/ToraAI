@@ -1634,7 +1634,11 @@
         "unavailable": "此平台暫不支持自動更新。",
         "desktopOnly": "請在 Tora 桌面應用中檢查更新。",
         "failed": "檢查更新失敗：{{error}}"
-      }
+      },
+      "usagePolicy": "AI 模型使用準則",
+      "viewPolicy": "查看準則",
+      "website": "開啟官網",
+      "websiteTitle": "官網"
     },
     "errors": {
       "backend": "後端返回 {{status}}",
@@ -2146,5 +2150,29 @@
       "canceled": "已取消驗證。你可以重試，或返回 Tora。",
       "unsupported": "此瀏覽器不支持通行密鑰，請使用支持通行密鑰的系統瀏覽器。"
     }
+  },
+  "enforcement": {
+    "title": "帳戶狀態與申訴",
+    "limited": "公平使用頻率限制",
+    "until": "臨時限制將於 {{date}} 結束",
+    "caseId": "案件：{{id}}",
+    "policy": "閱讀使用準則",
+    "appeal": "查看案件／申訴",
+    "read": "標記為已讀",
+    "chooseCase": "選擇申訴案件",
+    "manual": "目前的人工限制",
+    "statement": "說明為何應重新審核此決定",
+    "privacy": "請勿提交密碼、API 金鑰、身分證件或私人檔案內容。",
+    "submit": "提交申訴",
+    "submitted": "已收到申訴，可在此查看審核結果。",
+    "error": "請求失敗，請重試。",
+    "appealState": "申訴：{{status}}",
+    "state": {
+      "pending": "待審核",
+      "accepted": "已接受",
+      "rejected": "已駁回"
+    },
+    "autoRestore": "本項自動限制將於期限屆滿時解除；其他獨立限制需另行審核。",
+    "observing": "此帳戶處於觀察期，適用已公示的較低請求頻率限制。"
   }
 }
