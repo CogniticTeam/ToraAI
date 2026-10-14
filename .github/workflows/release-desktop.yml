@@ -36,7 +36,7 @@ jobs:
         run: npm run dist:win -w @tora/desktop
       - name: Install, launch and verify packaged Windows application
         run: node scripts/test-windows-release.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: tora-windows-${{ env.TORA_RELEASE_VERSION }}
           path: |
