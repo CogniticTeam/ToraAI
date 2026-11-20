@@ -1,26 +1,26 @@
-name: Transfer verified Windows release asset
+name: Transfer verified macOS release assets
 on:
   workflow_dispatch:
 permissions:
-  actions: read
   contents: write
 jobs:
   release-transfer:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: tora-windows-1.1.2
-          run-id: 44670707858
-          github-token: ${{ github.token }}
-          path: staging
-      - name: Verify and attach the validated installer to the release draft
+      - name: Verify website copies and attach the notarized macOS release files
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s  %s\n' 'b1b293f8b8bdc4867009b2ca960e1e091352b46ff20fc85fb51a24b48a1ba66a' 'staging/Tora-1.1.2-win-x64.exe' | sha256sum -c -
           gh release view v1.1.2 --repo "$GITHUB_REPOSITORY" --json isDraft,targetCommitish | jq -e '.isDraft and .targetCommitish == "13d59796d02a872160a09dad2e7efed65c217008"'
-          gh release upload v1.1.2 staging/Tora-1.1.2-win-x64.exe --repo "$GITHUB_REPOSITORY"
+          curl --fail --silent --show-error --retry 2 --connect-timeout 20 --max-time 300 \
+            'https://toraai.cogniticteam.com/downloads/v1.1.2/Tora-1.1.2-mac.dmg' --output 'Tora-1.1.2-mac.dmg'
+          printf '%s  %s\n' '4cf62884e8afa62ca6311957f7388b0447ee65f0fe3edef6a56a77b8d358da4a' 'Tora-1.1.2-mac.dmg' | sha256sum -c -
+          test "$(stat -c %s 'Tora-1.1.2-mac.dmg')" = '238147128'
+          curl --fail --silent --show-error --retry 2 --connect-timeout 20 --max-time 300 \
+            'https://toraai.cogniticteam.com/downloads/v1.1.2/Tora-1.1.2-mac.zip' --output 'Tora-1.1.2-mac.zip'
+          printf '%s  %s\n' '1281f2f7e5e4f17ce47573bcd4e7f3ac9d03f89e2a56523a8b3264e8b5da5a07' 'Tora-1.1.2-mac.zip' | sha256sum -c -
+          test "$(stat -c %s 'Tora-1.1.2-mac.zip')" = '237494355'
+          gh release upload v1.1.2 Tora-1.1.2-mac.dmg Tora-1.1.2-mac.zip --repo "$GITHUB_REPOSITORY"
