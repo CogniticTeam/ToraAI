@@ -1,86 +1,26 @@
-name: Release desktop app
-
+name: Transfer verified Windows release asset
 on:
-  push:
-    tags: ['v*']
   workflow_dispatch:
-
 permissions:
+  actions: read
   contents: write
-
 jobs:
-  windows:
-    if: github.event_name == 'workflow_dispatch' || (github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2' && github.ref_name != 'v1.0.3' && github.ref_name != 'v1.0.4' && github.ref_name != 'v1.0.5' && github.ref_name != 'v1.0.6' && github.ref_name != 'v1.0.8' && github.ref_name != 'v1.1.0' && github.ref_name != 'v1.1.1' && github.ref_name != 'v1.1.2')
-    name: Build and verify Windows x64
-    runs-on: windows-latest
-    timeout-minutes: 25
-    env:
-      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+  release-transfer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - name: Verify release version
-        shell: pwsh
-        run: |
-          node -e "const p=require('./packages/desktop/package.json'); if (process.env.GITHUB_REF_TYPE === 'tag' && process.env.GITHUB_REF_NAME !== 'v' + p.version) throw new Error('Tag/version mismatch')"
-          $version = node -p "require('./packages/desktop/package.json').version"
-          "TORA_RELEASE_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
-      - run: npm ci
-      - run: npm ci --prefix packages/desktop/frontend
-      - name: Verify Windows shell and desktop security
-        run: node --test packages/core/test/shell-protocol.js scripts/test-brand-migration.mjs scripts/test-desktop-security.mjs scripts/test-multilingual.mjs
-      - name: Build NSIS installer and update metadata
-        run: npm run dist:win -w @tora/desktop
-      - name: Install, launch and verify packaged Windows application
-        run: node scripts/test-windows-release.mjs
-      - uses: actions/upload-artifact@v4
-        with:
-          name: tora-windows-${{ env.TORA_RELEASE_VERSION }}
-          path: |
-            packages/desktop/release/*.exe
-            packages/desktop/release/*.exe.blockmap
-            packages/desktop/release/latest.yml
-          if-no-files-found: error
-          retention-days: 30
-
-  macos:
-    # These versions are notarized locally and published only after both platforms pass.
-    if: github.event_name == 'push' && github.ref_name != 'v1.0.0' && github.ref_name != 'v1.0.1' && github.ref_name != 'v1.0.2' && github.ref_name != 'v1.0.3' && github.ref_name != 'v1.0.4' && github.ref_name != 'v1.0.5' && github.ref_name != 'v1.0.6' && github.ref_name != 'v1.0.7' && github.ref_name != 'v1.0.8' && github.ref_name != 'v1.1.0' && github.ref_name != 'v1.1.1' && github.ref_name != 'v1.1.2'
-    needs: windows
-    name: Publish signed macOS and verified Windows installers
-    runs-on: macos-latest
-    timeout-minutes: 45
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
-      CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - name: Require macOS signing and notarization credentials
-        run: |
-          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
-            if [[ -z "${!name:-}" ]]; then
-              echo "Missing required macOS release secret: $name" >&2
-              exit 1
-            fi
-          done
-      - run: npm ci
-      - run: npm ci --prefix packages/desktop/frontend
-      - run: npm run release:mac -w @tora/desktop
       - uses: actions/download-artifact@v4
         with:
-          pattern: tora-windows-*
-          path: windows-release
-          merge-multiple: true
-      - name: Publish verified Windows files to the same release
-        run: gh release upload "$GITHUB_REF_NAME" windows-release/* --repo "$GITHUB_REPOSITORY"
+          name: tora-windows-1.1.2
+          run-id: 44670707858
+          github-token: ${{ github.token }}
+          path: staging
+      - name: Verify and attach the validated installer to the release draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s  %s\n' 'b1b293f8b8bdc4867009b2ca960e1e091352b46ff20fc85fb51a24b48a1ba66a' 'staging/Tora-1.1.2-win-x64.exe' | sha256sum -c -
+          gh release view v1.1.2 --repo "$GITHUB_REPOSITORY" --json isDraft,targetCommitish | jq -e '.isDraft and .targetCommitish == "13d59796d02a872160a09dad2e7efed65c217008"'
+          gh release upload v1.1.2 staging/Tora-1.1.2-win-x64.exe --repo "$GITHUB_REPOSITORY"
