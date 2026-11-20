@@ -1,7 +1,11 @@
 import {BUILTIN_MODELS} from '../../core/src/builtin-models.js';
 import {MODEL_MINIMUM_PLAN,PLAN_RANKS} from '../../core/src/model-access.js';
 import {CREDIT_RATES} from './subscription-plans.js';
-import {DEFAULT_ROUTES} from './official-model-defaults.js';
+import {DEFAULT_ROUTES,DOUBAO_MODEL_ID} from './official-model-defaults.js';
+
+const LEGACY_DOUBAO_METADATA = {
+ id: DOUBAO_MODEL_ID, name: DEFAULT_ROUTES[DOUBAO_MODEL_ID].name, provider: 'volcengine', context: 1048576,
+};
 
 const TABLES=[
  'CREATE TABLE IF NOT EXISTS official_model_catalog (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, document TEXT NOT NULL, write_id TEXT NOT NULL DEFAULT \'\', updated_at INTEGER NOT NULL)',
@@ -15,10 +19,11 @@ const defaultEfforts=id=>DEFAULT_ROUTES[id].efforts||(id.startsWith('gpt-6')?DEF
 export function defaultCatalog(env={}){
  const channels=[],models=[];let overrides={};
  try{overrides=JSON.parse(env.AGENT_CREDIT_RATES||'{}');}catch{throw error('服务端 Credits 配置无效',503);}
- for(const metadata of BUILTIN_MODELS){
+ for(const metadata of [LEGACY_DOUBAO_METADATA,...BUILTIN_MODELS]){
   const route=DEFAULT_ROUTES[metadata.id],channelId=route.secret.toLowerCase();
   if(!channels.some(item=>item.id===channelId))channels.push({id:channelId,name:({ARK_API_KEY:'火山方舟',SHULIUYUN_GPT_API_KEY:'枢流云 GPT',SHULIUYUN_CLAUDE_API_KEY:'枢流云 Claude',SHULIUYUN_GROK_API_KEY:'枢流云 Grok',SHULIUYUN_GLM_API_KEY:'枢流云 GLM',SHULIUYUN_API_KEY:'枢流云 Gemini',DEEPSEEK_API_KEY:'DeepSeek'})[route.secret],url:route.url,protocol:route.protocol||'chat',adapter:route.adapter||'openai',secretRef:route.secret,enabled:true});
-  models.push({id:metadata.id,name:metadata.name,provider:metadata.provider,channelId,upstreamModel:metadata.id,context:metadata.context,maxOutput:16384,efforts:defaultEfforts(metadata.id),inputModalities:route.inputModalities||(route.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:route.modes||['chat','work','tocode'],minimumPlan:MODEL_MINIMUM_PLAN[metadata.id],enabled:true,rates:overrides[metadata.id]||CREDIT_RATES[metadata.id],thinking:route.thinking?.type||'default',effortParameter:route.effortParameter||'reasoning_effort'});
+  const minimumPlan=metadata.id===DOUBAO_MODEL_ID?null:MODEL_MINIMUM_PLAN[metadata.id];
+  models.push({id:metadata.id,name:metadata.name,provider:metadata.provider,channelId,upstreamModel:metadata.id,context:metadata.context,maxOutput:16384,efforts:defaultEfforts(metadata.id),inputModalities:route.inputModalities||(route.adapter==='ark'?['text','image','audio','video']:['text','image']),modes:route.modes||['chat','work','tocode'],minimumPlan,enabled:true,rates:overrides[metadata.id]||CREDIT_RATES[metadata.id],thinking:route.thinking?.type||'default',effortParameter:route.effortParameter||'reasoning_effort'});
  }
  return {models,channels};
 }

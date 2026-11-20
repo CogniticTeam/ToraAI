@@ -7,7 +7,7 @@
  * 操作后 refetch，不做 SSE 推送（设置面板低频场景足够）。
  */
 import { Loader2, Pencil, Pin, PinOff, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { memoryApi, type MemoryConfig, type MemoryRecord } from '@/api';
@@ -51,6 +51,30 @@ const byRecency = (a: MemoryRecord, b: MemoryRecord) => {
   return b.updated_at.localeCompare(a.updated_at);
 };
 
+function MemoryOrigin({ id }: { id: string }) {
+  const { t } = useTranslation();
+  const [origin, setOrigin] = useState<{ text: string } | null>();
+  const [error, setError] = useState(false);
+  const sequence = useRef(0);
+  return (
+    <details className="mt-2 text-xs text-muted-foreground" onToggle={(event) => {
+      const request = ++sequence.current;
+      if (!event.currentTarget.open) return;
+      setOrigin(undefined);
+      setError(false);
+      void memoryApi.getOrigin(id)
+        .then((result) => { if (request === sequence.current) setOrigin(result.origin); })
+        .catch(() => { if (request === sequence.current) setError(true); });
+    }}>
+      <summary className="w-fit cursor-pointer">{t('settings.memory.origin')}</summary>
+      {error ? <p role="status" className="mt-1">{t('settings.memory.originError')}</p>
+        : origin === undefined ? <Loader2 className="mt-1 size-3 animate-spin" aria-hidden="true" />
+        : origin ? <blockquote className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-words border-s ps-2">{origin.text}</blockquote>
+        : <p className="mt-1">{t('settings.memory.originMissing')}</p>}
+    </details>
+  );
+}
+
 export function MemorySection() {
   const { t, i18n } = useTranslation();
   const isZh = String(i18n?.language ?? 'zh').toLowerCase().startsWith('zh');
@@ -58,8 +82,10 @@ export function MemorySection() {
   const [items, setItems] = useState<MemoryRecord[] | null>(null);
   const [cfg, setCfg] = useState<MemoryConfig | null>(null);
   const [qInput, setQInput] = useState('');
+  const [appliedQuery, setAppliedQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
+  const requestSequence = useRef(0);
 
   // 新增表单
   const [adding, setAdding] = useState(false);
@@ -76,18 +102,21 @@ export function MemorySection() {
   const [confirmDel, setConfirmDel] = useState<string | null>(null);
 
   const refresh = useCallback(async (q?: string) => {
+    const sequence = ++requestSequence.current;
     setLoading(true);
     try {
       const params: Record<string, string> = {};
       const query = (q ?? '').trim();
       if (query) params.q = query;
       const [list, config] = await Promise.all([memoryApi.list(params), memoryApi.getConfig()]);
+      if (sequence !== requestSequence.current) return;
       setItems(list.memories);
       setCfg(config);
+      setAppliedQuery(query);
     } catch {
       // client 对非 2xx 已统一 toast；这里保持面板可重试
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) setLoading(false);
     }
   }, []);
 
@@ -109,7 +138,7 @@ export function MemorySection() {
 
   const submitAdd = async () => {
     const content = newContent.trim();
-    if (!content || busy) return;
+    if (!content || busy || (newScope === 'project' && !newKey.trim())) return;
     setBusy(true);
     try {
       const r = await memoryApi.add({
@@ -246,6 +275,7 @@ export function MemorySection() {
               {m.pinned && <Pin className="size-3 text-primary" />}
               <span className="ml-auto text-[10px] text-muted-foreground">{fmtDate(m.updated_at, isZh)}</span>
             </div>
+            {m.origin && <MemoryOrigin key={m.origin.message_id} id={m.id} />}
           </>
         )}
       </div>
@@ -324,7 +354,7 @@ export function MemorySection() {
               <Button size="sm" variant="outline" onClick={() => setAdding(false)} disabled={busy}>
                 {t('settings.memory.cancel')}
               </Button>
-              <Button size="sm" onClick={() => void submitAdd()} disabled={busy || !newContent.trim()}>
+              <Button size="sm" onClick={() => void submitAdd()} disabled={busy || !newContent.trim() || (newScope === 'project' && !newKey.trim())}>
                 {t('settings.memory.save')}
               </Button>
             </div>
@@ -344,6 +374,12 @@ export function MemorySection() {
         <div className="flex items-center justify-center py-10 text-muted-foreground">
           {loading ? <Loader2 className="size-4 animate-spin" /> : <span className="text-sm">—</span>}
         </div>
+      ) : empty ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
+          {appliedQuery ? t('settings.memory.emptySearch') : t('settings.memory.empty')}
+        </div>
+      ) : appliedQuery ? (
+        <div className="space-y-2">{items.map(renderCard)}</div>
       ) : (
         <div className="flex flex-col gap-4">
           {grouped.project.length > 0 && (
@@ -354,18 +390,14 @@ export function MemorySection() {
               <div className="space-y-2">{grouped.project.map(renderCard)}</div>
             </section>
           )}
-          <section>
-            <h4 className="mb-2 text-xs font-medium text-muted-foreground">
-              {t('settings.memory.globalGroup')}（{grouped.global.length}）
-            </h4>
-            {grouped.global.length > 0 ? (
+          {grouped.global.length > 0 && (
+            <section>
+              <h4 className="mb-2 text-xs font-medium text-muted-foreground">
+                {t('settings.memory.globalGroup')}（{grouped.global.length}）
+              </h4>
               <div className="space-y-2">{grouped.global.map(renderCard)}</div>
-            ) : empty ? (
-              <div className="rounded-lg border border-dashed p-6 text-center text-xs text-muted-foreground">
-                {qInput.trim() ? t('settings.memory.emptySearch') : t('settings.memory.empty')}
-              </div>
-            ) : null}
-          </section>
+            </section>
+          )}
         </div>
       )}
     </div>

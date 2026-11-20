@@ -57,6 +57,7 @@ contextBridge.exposeInMainWorld('toraWindow', {
 		return () => ipcRenderer.removeListener('updates:required', handler);
 	},
 	updateAction: (action) => ipcRenderer.invoke('updates:action', action),
+	getAccountService: () => ipcRenderer.sendSync('account:service'),
 	refreshAccount: () => ipcRenderer.invoke('account:refresh'),
 	reportLanguage: (language) => ipcRenderer.send('app:language', language),
 	// 固定文案的系统消息通知：渲染层不能指定系统通知标题或正文。
@@ -74,6 +75,25 @@ contextBridge.exposeInMainWorld('toraWindow', {
 	},
 });
 
+if (process.isMainFrame) {
+	const request = (action, ...args) => ipcRenderer.invoke('desktop-plugins:request', action, ...args);
+	contextBridge.exposeInMainWorld('toraPlugins', {
+		list: () => request('list'),
+		contributions: () => request('contributions'),
+		preview: input => request('preview', input),
+		previewDirectory: expectedId => request('previewDirectory', expectedId),
+		indexes: () => request('indexes'),
+		addIndex: url => request('addIndex', url),
+		catalog: url => request('catalog', url),
+		removeIndex: url => request('removeIndex', url),
+		connectGithub: token => request('connectGithub', token),
+		disconnectGithub: () => request('disconnectGithub'),
+		install: reviewId => request('install', reviewId),
+		setEnabled: (id, revision, enabled) => request('enable', id, revision, enabled),
+		remove: (id, revision) => request('remove', id, revision),
+	});
+}
+
 // 凭证安全存储桥：token/email/username 用 safeStorage 加密存主进程，
 // 替代明文 localStorage。get 同步（与 localStorage.getItem 同步语义，减少前端改动），
 // set/del 异步。浏览器环境（无 toraAuth）时前端 fallback 到 localStorage。
@@ -81,6 +101,10 @@ contextBridge.exposeInMainWorld('toraAuth', {
 	getToken: () => ipcRenderer.sendSync('auth:get-token'),
 	getEmail: () => ipcRenderer.sendSync('auth:get-email'),
 	getUsername: () => ipcRenderer.sendSync('auth:get-username'),
+	// Begin/cancel are synchronous fences; profile persistence remains a single async IPC.
+	beginProfileCommit: (id, initialToken) => ipcRenderer.sendSync('auth:begin-profile', id, initialToken),
+	cancelProfileCommit: (id, fence) => ipcRenderer.sendSync('auth:cancel-profile', id, fence),
+	commitProfile: (id, fence, profile) => ipcRenderer.invoke('auth:commit-profile', id, fence, profile),
 	setToken: (v) => ipcRenderer.invoke('auth:set-token', v),
 	setEmail: (v) => ipcRenderer.invoke('auth:set-email', v),
 	setUsername: (v) => ipcRenderer.invoke('auth:set-username', v),

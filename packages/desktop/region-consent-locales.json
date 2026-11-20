@@ -1,0 +1,33 @@
+{
+  "zh": {
+    "Tora is using Cloudflare": "Tora 正在使用Cloudflare服务",
+    "Under the laws and regulations of your current region, we cannot offer Tora there. To improve your connection, Tora will switch to a Cloudflare edge node that connects to our database. This does not mean Tora officially supports your region.": "根据你当前地区的相关法律法规，我们不得在您的地区提供服务。为保障您在当前地区的访问体验，我们将为您切换到 Cloudflare 节点，节点数据与我们的数据库互通，以获得更快的访问体验。请注意，切换到 Cloudflare 节点并不意味着 Tora 在你的地区是受支持的。",
+    "Next and remind me every time": "下一页并每次提醒",
+    "Next and don’t remind me again": "下一页并不再提醒",
+    "Tora Mainland China Cross-Border Data Transfer Agreement": "Tora 中国大陆数据跨境传输协议",
+    "We detected that you are in mainland China. To continue, you must agree to transfer your account data to Cognitic’s overseas database. We will keep your information confidential and will not use it for other purposes.": "我们的系统检测到您当前地区位于中国大陆地区，当您位于中国大陆地区时，我们需要您同意我们将您的账号数据上传至 Cognitic 的海外数据库，请放心，您的信息将保密，不会用于其它途径。",
+    "Tora Global Cross-Border Data Transfer Agreement": "Tora 全球用户数据跨境传输协议",
+    "We detected that you are accessing Tora from outside Singapore. Cognitic stores your data on its servers in Singapore. You must agree to continue using Tora, or quit the app.": "我们检测到您位于新加坡以外的地区进行访问 Tora，为了用户的数据安全，我们特此通知您，您的数据将会被 Cognitic 保存在位于新加坡的 Cognitic 服务器上，您需要同意才可以继续使用 Tora，否则您需要退出软件。",
+    "Agree and continue": "同意并继续",
+    "Disagree and quit": "不同意并退出",
+    "Unable to verify the network region": "暂时无法确认网络地区",
+    "Check your network connection and try again.": "请检查网络连接后重试。",
+    "Retry": "重试",
+    "Quit Tora": "退出 Tora"
+  },
+  "zh-TW": {
+    "Tora is using Cloudflare": "Tora 正在使用 Cloudflare 服務",
+    "Under the laws and regulations of your current region, we cannot offer Tora there. To improve your connection, Tora will switch to a Cloudflare edge node that connects to our database. This does not mean Tora officially supports your region.": "根據您目前所在地區的相關法律法規，我們無法在您的地區提供服務。為改善您的連線體驗，我們將切換至 Cloudflare 節點，該節點會連接至我們的資料庫。請注意，切換到 Cloudflare 節點並不代表 Tora 正式支援您的地區。",
+    "Next and remind me every time": "下一頁並每次提醒",
+    "Next and don’t remind me again": "下一頁並不再提醒",
+    "Tora Mainland China Cross-Border Data Transfer Agreement": "Tora 中國大陸資料跨境傳輸協議",
+    "We detected that you are in mainland China. To continue, you must agree to transfer your account data to Cognitic’s overseas database. We will keep your information confidential and will not use it for other purposes.": "系統偵測到您位於中國大陸。若要繼續，請同意將您的帳號資料傳輸至 Cognitic 的海外資料庫。我們會為您的資訊保密，並且不會用於其他用途。",
+    "Tora Global Cross-Border Data Transfer Agreement": "Tora 全球使用者資料跨境傳輸協議",
+    "We detected that you are accessing Tora from outside Singapore. Cognitic stores your data on its servers in Singapore. You must agree to continue using Tora, or quit the app.": "我們偵測到您從新加坡以外的地區存取 Tora。Cognitic 會將您的資料儲存在位於新加坡的伺服器上。您需同意才能繼續使用 Tora，否則請退出軟體。",
+    "Agree and continue": "同意並繼續",
+    "Disagree and quit": "不同意並退出",
+    "Unable to verify the network region": "暫時無法確認網路地區",
+    "Check your network connection and try again.": "請檢查網路連線後再試。",
+    "Retry": "重試"
+  }
+}

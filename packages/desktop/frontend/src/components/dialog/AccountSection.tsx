@@ -1,7 +1,8 @@
 /** Account settings and the shared, step-by-step authentication entry.
  * AuthFlow owns sign-in/sign-up; cached profile data is never authentication.
- * AccountManager retains avatar, password, email, subscription and appeal controls.
+ * AccountManager retains avatar, password, email, sponsors and appeal controls.
  */
+import { authBaseURL as authApi } from '@/lib/toraService';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AtSign, Camera, ChevronRight, Eye, EyeOff, KeyRound, Loader2, LogOut } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
@@ -11,21 +12,17 @@ import '../auth/login-surface.css';
 import {AccountBenefits} from './AccountBenefits';
 import {AuthFlow} from '@/components/auth/AuthFlow';
 import {EnforcementPanel} from '@/components/auth/EnforcementPanel';
-import {PasskeyManager} from '@/components/auth/PasskeyManager';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from '@/i18n/useI18n';
 import { signOutAccount } from '@/utils/authLogout';
 import {
 	getToken, getEmail, getUsername,
-	setToken as storeToken, setEmail as storeEmail, setUsername as storeUsername,
+	commitAuthProfile, setEmail as storeEmail, type AuthCommitReceipt,
 	delToken, delEmail,
 } from '@/utils/authStore';
 
-const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
-const API_KEY = 'tora_auth_api';
 
-const authApi = () => (localStorage.getItem(API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
 /** 带 token 的 auth-worker 请求（401 时清掉本地凭证，视为已登出） */
 async function authFetch(path: string, init?: RequestInit) {
@@ -93,23 +90,24 @@ function localizeAuthError(detail: string, t: (key: string) => string): string {
 	return detail;
 }
 
-export function AccountSection({onAuthenticated,mode='settings'}:{mode?:'auth'|'settings';onAuthenticated?:(user:{email:string;createdAt?:string})=>void}) {
+export function AccountSection({onAuthenticated,mode='settings'}:{mode?:'auth'|'settings';onAuthenticated?:(user:{email:string;createdAt?:string},commit:AuthCommitReceipt)=>void}) {
 	const [user,setUser]=useState<{email:string;username?:string|null;createdAt?:string;avatar?:string|null}|null>(()=>{
 		if(mode==='auth')return null;
 		const email=getEmail();return email&&getToken()?{email,username:getUsername()}:null;
 	});
 	useEffect(()=>{
-		if(mode==='auth'||!getToken())return;let alive=true;
-		void authFetch('/auth/me').then(async response=>response.ok?response.json():null).then(async profile=>{
-			if(!alive||!profile||!getToken())return;
-			await storeEmail(profile.email);if(profile.username)await storeUsername(profile.username);
-			if(alive)setUser({email:profile.email,username:profile.username,createdAt:profile.createdAt,avatar:profile.avatar??null});
-		}).catch(()=>{});return()=>{alive=false;};
+		const initialToken=getToken();if(mode==='auth'||!initialToken)return;let alive=true;const controller=new AbortController();
+		void fetch(`${authApi()}/auth/me`,{headers:{authorization:`Bearer ${initialToken}`},signal:controller.signal}).then(async response=>response.ok?response.json():null).then(async profile=>{
+			if(!alive||!profile||getToken()!==initialToken)return;
+			const commit=await commitAuthProfile({...profile,token:initialToken},{id:crypto.randomUUID(),signal:controller.signal,initialToken});
+			if(alive&&commit.isCurrent())setUser({email:profile.email,username:profile.username,createdAt:profile.createdAt,avatar:profile.avatar??null});
+		}).catch(()=>{});return()=>{alive=false;controller.abort();};
 	},[mode]);
 	if(mode==='settings'&&user)return <AccountManager user={user} onEmailChanged={async email=>{await storeEmail(email);setUser(value=>value?{...value,email}:value);}} onAvatarChanged={avatar=>setUser(value=>value?{...value,avatar}:value)} onLogout={async()=>{await signOutAccount();setUser(null);}}/>;
-	return <AuthFlow onAuthenticated={async profile=>{
-		await storeEmail(profile.email);await storeUsername(profile.username??'');await storeToken(profile.token);
-		setUser({email:profile.email,username:profile.username,createdAt:profile.createdAt,avatar:profile.avatar??null});onAuthenticated?.({email:profile.email,createdAt:profile.createdAt});
+	return <AuthFlow onAuthenticated={async(profile,operation)=>{
+		const commit=await commitAuthProfile(profile,operation);
+		if(!commit.isCurrent())return;
+		setUser({email:profile.email,username:profile.username,createdAt:profile.createdAt,avatar:profile.avatar??null});onAuthenticated?.({email:profile.email,createdAt:profile.createdAt},commit);
 	}}/>;
 }
 
@@ -375,7 +373,6 @@ function AccountManager({
 			</section>
 
 			<div className="mb-8"><AccountBenefits /></div>
-			<PasskeyManager email={user.email}/>
 			<section aria-labelledby="account-security-heading" className="mb-8">
 				<h4 id="account-security-heading" className="mb-3 text-[13px] font-semibold">{t('settings.account.manager.securityTitle')}</h4>
 				<div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">

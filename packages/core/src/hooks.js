@@ -24,6 +24,8 @@
 //     也接受 Claude 风格 {"hookSpecificOutput":{"permissionDecision":"deny",...}}
 //   - 非 JSON 文本 → 当作 additionalContext
 //   - 退出码 2 → 视为阻断（block），stderr 作为原因
+//   - Stop 命令设 required:true 时，只在正常结束候选上校验，任何非零退出、
+//     超时或启动错误都会阻止完成。
 //
 // ⚠️ 安全：项目级 hooks 来自仓库内容，clone 一个仓库就执行其中的命令等于
 // 任意代码执行。所以只有在 cfg.trustProjectHooks === true（用户显式信任）时
@@ -32,7 +34,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
-import { buildChildEnv } from './security.js';
+import { buildChildEnv, redact } from './security.js';
 import { TORA_DIR } from './config.js';
 import { resolveProjectDataPath } from './legacy-migration.js';
 import { runAutomations } from './tools/automations.js';
@@ -64,10 +66,14 @@ function normalize(conf, source) {
       if (!entry || typeof entry !== 'object') continue;
       const matcher = entry.matcher ? String(entry.matcher) : '*';
       const timeout = Number(entry.timeout) > 0 ? Number(entry.timeout) : DEFAULT_TIMEOUT;
-      const cmds = Array.isArray(entry.hooks)
-        ? entry.hooks.map((h) => (typeof h === 'string' ? h : h?.command)).filter(Boolean)
-        : (entry.command ? [String(entry.command)] : []);
-      for (const command of cmds) list.push({ matcher, command, timeout, source });
+      const commands = Array.isArray(entry.hooks) ? entry.hooks : [entry];
+      for (const hook of commands) {
+        const command = typeof hook === 'string' ? hook : hook?.command;
+        if (typeof command !== 'string' || !command) continue;
+        const required = key === 'Stop' && (hook?.required ?? entry.required) === true;
+        const repair = required && (hook?.repair ?? entry.repair) === true;
+        list.push({ matcher, command, timeout, source, required, repair });
+      }
     }
     if (list.length) events[key] = (events[key] || []).concat(list);
   }
@@ -122,8 +128,9 @@ export function matcherMatches(matcher, toolName) {
   try { return new RegExp(pattern).test(name); } catch { return false; }
 }
 
-function runCommand(command, payload, { cwd, timeout }) {
+function runCommand(command, payload, { cwd, timeout, signal }) {
   return new Promise((resolve) => {
+    if (signal?.aborted) return resolve({ ok: false, error: '已中止' });
     const shell = process.env.SHELL || '/bin/sh';
     let proc;
     try {
@@ -138,19 +145,32 @@ function runCommand(command, payload, { cwd, timeout }) {
     let out = '';
     let err = '';
     let done = false;
-    const finish = (r) => { if (!done) { done = true; resolve(r); } };
+    const finish = (result) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      signal?.removeEventListener('abort', onAbort);
+      resolve(result);
+    };
+    const onAbort = () => {
+      try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+      finish({ ok: false, error: '已中止' });
+    };
     const timer = setTimeout(() => {
       try { proc.kill('SIGKILL'); } catch { /* ignore */ }
       finish({ ok: false, error: `钩子超时（${timeout}s）` });
     }, timeout * 1000);
+    signal?.addEventListener('abort', onAbort, { once: true });
 
-    proc.stdout.on('data', (d) => { if (out.length < 200_000) out += d.toString(); });
-    proc.stderr.on('data', (d) => { if (err.length < 20_000) err += d.toString(); });
-    proc.on('error', (e) => { clearTimeout(timer); finish({ ok: false, error: e.message }); });
+    proc.stdout.setEncoding('utf8');
+    proc.stderr.setEncoding('utf8');
+    proc.stdout.on('data', chunk => { out = (out + chunk).slice(-200_000); });
+    proc.stderr.on('data', chunk => { err = (err + chunk).slice(-20_000); });
+    proc.on('error', (e) => finish({ ok: false, error: e.message }));
     proc.on('close', (code, sig) => {
-      clearTimeout(timer);
       finish({ ok: true, code: code == null ? -1 : code, signal: sig, stdout: out, stderr: err });
     });
+    proc.stdin.on('error', () => { /* process exited before consuming the input */ });
     try { proc.stdin.end(JSON.stringify(payload)); } catch { /* ignore */ }
   });
 }
@@ -203,9 +223,9 @@ function parseHookOutput(res) {
  */
 export async function runHooks(event, payload, ctx = {}) {
   const out = { decision: null, reason: '', additionalContext: '', updatedInput: null, ran: 0, errors: [], notices: [] };
-  const { cwd, cfg = {} } = ctx;
+  const { cwd, cfg = {}, signal } = ctx;
 
-  if (cfg.hooksEnabled === false) return out;
+  if (cfg.hooksEnabled === false || signal?.aborted) return out;
 
   const { events, errors, projectHooksPresent, projectHooksTrusted } = loadHooks(cwd, cfg);
   out.errors.push(...errors);
@@ -219,11 +239,23 @@ export async function runHooks(event, payload, ctx = {}) {
   const contexts = [];
 
   for (const h of list) {
+    if (h.required && payload.reason !== 'completed') continue;
     if ((event === 'PreToolUse' || event === 'PostToolUse') && !matcherMatches(h.matcher, currentPayload.tool_name)) continue;
     out.ran++;
-    const res = await runCommand(h.command, currentPayload, { cwd, timeout: h.timeout });
+    const res = await runCommand(h.command, currentPayload, { cwd, timeout: h.timeout, signal });
+    if (signal?.aborted) return out;
+    const v = res.ok ? parseHookOutput(res) : null;
+    if (h.required && (!res.ok || res.code !== 0 || v.decision === 'ask')) {
+      out.decision = 'deny';
+      out.reason = v?.reason || `完成校验未通过（${h.command}）：${res.error || v?.warned || '需要人工确认'}`;
+      out.additionalContext = contexts.join('\n\n');
+      if (h.repair && res.ok && res.code === 1 && (!v.decision || v.decision === 'allow')) {
+        const diagnostic = redact([res.stdout.trim(), res.stderr.trim()].filter(Boolean).join('\n')).slice(-4000);
+        out.repairFeedback = diagnostic ? `退出码 1\n${diagnostic}` : '退出码 1，检查命令没有输出诊断。';
+      }
+      return out;
+    }
     if (!res.ok) { out.errors.push(`${h.command} → ${res.error}`); continue; }
-    const v = parseHookOutput(res);
     if (v.warned) out.notices.push(`${h.command}: ${v.warned}`);
     if (v.additionalContext) contexts.push(v.additionalContext);
     if (v.systemMessage) out.notices.push(v.systemMessage);
@@ -253,7 +285,11 @@ export function describeHooks(cwd, cfg = {}) {
   const { events, errors, projectHooksPresent, projectHooksTrusted, paths } = loadHooks(cwd, cfg);
   const rows = [];
   for (const e of HOOK_EVENTS) {
-    for (const h of events[e] || []) rows.push({ event: e, matcher: h.matcher, command: h.command, timeout: h.timeout, source: h.source });
+    for (const h of events[e] || []) rows.push({
+      event: e, matcher: h.matcher, command: h.command, timeout: h.timeout, source: h.source,
+      ...(h.required ? { required: true } : {}),
+      ...(h.repair ? { repair: true } : {}),
+    });
   }
   return { rows, errors, projectHooksPresent, projectHooksTrusted, paths };
 }

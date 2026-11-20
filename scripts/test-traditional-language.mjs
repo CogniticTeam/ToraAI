@@ -18,8 +18,8 @@ test('香港與台灣繁體中文均有完整詞條及地區名稱', () => {
     const native=JSON.parse(readFileSync(new URL('../packages/desktop/native-locales.json',import.meta.url),'utf8'));
     assert.deepEqual(Object.keys(native[code]).sort(),Object.keys(native.en).sort());
   }
-  assert.equal(locale('zh-HK').applicationModes.official, '官方 DeepSeek Flash（默認）');
-  assert.equal(locale('zh-TW').applicationModes.official, '官方 DeepSeek Flash（預設）');
+  assert.equal(locale('zh-HK').applicationModes.custom, '自定義模型');
+  assert.equal(locale('zh-TW').applicationModes.custom, '自訂模型');
 });
 
 test('地區系統標籤與舊繁體偏好正確遷移', () => {

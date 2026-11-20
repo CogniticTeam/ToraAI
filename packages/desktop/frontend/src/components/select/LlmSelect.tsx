@@ -1,17 +1,17 @@
 /** Original model list and detail panel; context uses the model maximum. */
-import { Ban, Box, Check, ChevronDown, ChevronRight, PlusCircle } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Ban, Box, Check, ChevronDown, PlusCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { ChatModelConfig, CredentialView, ModelCard } from '@/api';
-import {AgentQuotaMeter} from '@/components/chat/AgentQuotaMeter';
 import { FIRST_RUN_CLOSE_MODEL_EVENT } from '@/components/onboarding/constants';
+import { ReasoningEffortLabel, ReasoningEffortSlider } from '@/components/select/ReasoningEffortSlider';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ProviderIcon } from '@/components/ui/provider-icon';
 import { useAvailableModels } from '@/hooks/useAvailableModels';
 import { useTranslation } from '@/i18n/useI18n.ts';
 import { OPEN_SETTINGS_EVENT } from '@/lib/openSettings';
-import { isBuiltinCredential, modelAllowedInMode, modelAvailable, toChatEffort, toChatModel } from '@/lib/tochatModels';
+import { isBuiltinCredential, modelAllowedInMode, modelAvailable, toChatModel } from '@/lib/tochatModels';
 import { cn } from '@/lib/utils';
 import { credentialLabel } from '@/utils/common';
 
@@ -22,47 +22,38 @@ interface ModelEntry {
 	model: ModelCard;
 }
 
-type ThinkingLevel = 'off' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
-
-// 思考档位 label 走 i18n（llm-select.level.*），这里只存档位键
-const THINKING_LEVELS: ThinkingLevel[] = ['off', 'low', 'high', 'max'];
-
-interface SubmenuOption {
-	value: string;
-	label: string;
-	/** 置灰不可选（如模型不支持 1M）。 */
-	disabled?: boolean;
-	/** 置灰原因的悬停提示。 */
-	hint?: string;
+function thinkingSettings(model: ModelCard | undefined) {
+	const properties = model?.parameter_schema?.properties as Record<string, { type?: string; enum?: unknown[]; default?: unknown }> | undefined;
+	const declared = properties?.thinkingEffort;
+	const supported = new Set(['none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max']);
+	const levels = Array.isArray(declared?.enum)
+		? [...new Set(declared.enum.filter((level): level is string => typeof level === 'string' && supported.has(level)))] : [];
+	if (properties?.thinking?.type === 'boolean') {
+		if (levels.length) {
+			if (!levels.includes('none')) levels.unshift('off');
+		} else levels.push('off', 'on');
+	}
+	const defaultLevel = typeof declared?.default === 'string' && levels.includes(declared.default)
+		? declared.default : levels.includes('high') ? 'high' : levels.at(-1) ?? '';
+	return { levels, defaultLevel };
 }
 
-/** Portal positioning avoids both horizontal and vertical window boundaries. */
-function SubmenuRow({ label, current, currentLabel, options, onSelect }: {
- label: string; current: string; currentLabel: string; options: SubmenuOption[];
- onSelect: (value: string) => void;
-}) {
- const [open,setOpen] = useState(false);
- return <Popover open={open} onOpenChange={setOpen}>
-  <PopoverTrigger asChild><button type="button" className="flex w-full items-center justify-between rounded-xl bg-surface-muted px-3 py-2.5 text-sm hover:bg-surface-muted">
-   <span>{label}</span><span className="flex items-center gap-0.5 text-muted-foreground">{currentLabel}<ChevronRight className="size-3.5" /></span>
-  </button></PopoverTrigger>
-  <PopoverContent data-testid="thinking-menu" side="right" align="start" sideOffset={8} collisionPadding={8} avoidCollisions sticky="always" className="z-50 w-36 gap-0 max-h-[var(--radix-popover-content-available-height)] overflow-y-auto rounded-xl p-1.5">
-   {options.map(option => <button key={option.value} type="button" disabled={option.disabled} title={option.hint} aria-pressed={option.value === current} onClick={() => {onSelect(option.value);setOpen(false);}} className={cn('flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm motion-safe:transition-colors',option.value === current ? 'bg-accent' : 'hover:bg-accent',option.disabled && 'cursor-not-allowed opacity-40')}>
-    <span>{option.label}</span>{option.value === current && <Check className="size-4 text-primary" />}
-   </button>)}
-  </PopoverContent>
- </Popover>;
+function thinkingLevelOf(parameters: Record<string, unknown> | undefined, model: ModelCard | undefined): string {
+	const { levels, defaultLevel } = thinkingSettings(model);
+	if (!levels.length) return '';
+	if (parameters?.thinking === false) return levels.find(level => level === 'off' || level === 'none') ?? levels[0];
+	const requested = parameters?.thinkingEffort;
+	if (typeof requested === 'string' && levels.includes(requested)) return requested;
+	if (requested === 'low' && levels.includes('minimal')) return 'minimal';
+	if (requested === 'max' || requested === 'xhigh') return levels.at(-1) ?? defaultLevel;
+	return defaultLevel;
 }
 
-/** 从 parameters 读出当前思考档（保留用户保存的 medium 档位）。 */
-function thinkingLevelOf(parameters: Record<string, unknown> | undefined): ThinkingLevel {
-	if (!parameters || parameters.thinking === false) return 'off';
-	const effort = parameters.thinkingEffort;
-	if (effort === 'low') return 'low';
-	if (effort === 'medium') return 'medium';
-	if (effort === 'xhigh') return 'xhigh';
-	if (effort === 'max') return 'max';
-	return 'high'; // high / 未设置（默认开、高强度）
+function parametersWithThinking(parameters: Record<string, unknown> | undefined, level: string) {
+	const next: Record<string, unknown> = { ...parameters, contextWindow: 'max', thinking: level !== 'off' && level !== 'none' };
+	if (level === 'off' || level === 'on') delete next.thinkingEffort;
+	else next.thinkingEffort = level;
+	return next;
 }
 
 
@@ -92,7 +83,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onC
 	 * Called when the user selects a model, or — when `allowClear` is true —
 	 * clears the selection (in which case `null` is emitted).
 	 */
-	onChange?: (value: ChatModelConfig | null) => void;
+	onChange?: (value: ChatModelConfig | null) => void | Promise<void>;
 	onAddCredential?: () => void;
 	refetchTrigger?: number;
 	/** Override the trigger label shown when no model is selected. */
@@ -105,6 +96,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onC
 	/** Override the label of the "clear selection" item. */
 	clearLabel?: string;
 	includeBuiltin?: boolean;
+	modelFilter?: (name: string) => boolean;
 }
 
 export function LlmSelect({
@@ -116,15 +108,23 @@ export function LlmSelect({
 	placeholder,
 	allowClear = false,
 	clearLabel,
-	includeBuiltin = true,
+	includeBuiltin: _includeBuiltin = false,
+	modelFilter,
+	disabled = false,
 	className,
 	...props
 }: Props) {
-	const { groups, loading, refetch, builtinQuota, builtinUnavailable, error } = useAvailableModels();
+	void _includeBuiltin;
+	const [saving, setSaving] = useState(false);
+	const saveLock = useRef(false);
+	const locked = disabled || saving;
+	const { groups, loading, refetch, builtinQuota, builtinUnavailable, error } = useAvailableModels(false, false);
 	const { t } = useTranslation();
-	// 凭证的模型列表加载失败会带回空 models 数组；丢弃避免渲染死行
+	// 内置模型不再出现在选择器里。添加模型页仍然负责接入自定义服务商。
 	const groupEntries = Object.entries(groups)
-		.map(([type, items]) => [type, items.filter((i) => i.models.length > 0 && (includeBuiltin || !isBuiltinCredential(i.credential.id)))] as const)
+		.map(([type, items]) => [type, items.filter(i => !isBuiltinCredential(i.credential.id)).map(item => ({
+			...item, models: modelFilter ? item.models.filter(model => modelFilter(model.name)) : item.models,
+		})).filter(item => item.models.length > 0)] as const)
 		.filter(([, usable]) => usable.length > 0);
 
 	const allEntries: ModelEntry[] = groupEntries.flatMap(([type, usable]) =>
@@ -148,23 +148,37 @@ export function LlmSelect({
 		if (refetchTrigger !== undefined && refetchTrigger > 0) refetch();
 	}, [refetchTrigger, refetch]);
 
-	const handleSelect = (entry: ModelEntry) => {
-		if (isBuiltinCredential(entry.credential.id) && (builtinUnavailable || !modelAvailable(entry.model.name,builtinQuota?.models,'tocode'))) return;
-		// 换模型保留思考强度 / 上下文窗口等参数偏好
-		onChange?.({
+	const save = useCallback(async (next: ChatModelConfig | null) => {
+		if (disabled || saveLock.current || !onChange) return;
+		saveLock.current = true;
+		setSaving(true);
+		try {
+			await onChange(next);
+		} catch {
+			// The API client reports failures; the parent retains its confirmed value.
+		} finally {
+			saveLock.current = false;
+			setSaving(false);
+		}
+	}, [disabled, onChange]);
+
+	const handleSelect = (event: React.MouseEvent<HTMLButtonElement>) => {
+		const entry = entries[Number(event.currentTarget.dataset.modelIndex)];
+		if (locked || (isBuiltinCredential(entry.credential.id) && (builtinUnavailable || !modelAvailable(entry.model.name,builtinQuota?.models,'tocode')))) return;
+		const parameters = { ...value?.parameters, contextWindow: 'max', contextSize: entry.model.context_size };
+		const level = thinkingLevelOf(parameters, entry.model);
+		void save({
 			type: entry.type,
 			credential_id: entry.credential.id,
 			model: entry.model.name,
-			parameters: isBuiltinCredential(entry.credential.id) ? { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size, thinking: true, thinkingEffort: toChatEffort(entry.model.name, String(value?.parameters?.thinkingEffort ?? 'high'),builtinQuota?.models) } : { ...(value?.parameters ?? {}), contextWindow: 'max', contextSize: entry.model.context_size },
+			parameters: level ? parametersWithThinking(parameters, level) : parameters,
 		});
 	};
 
-	const handleThinking = (level: ThinkingLevel) => {
-		const parameters: Record<string, unknown> = { ...(value?.parameters ?? {}), contextWindow: 'max' };
-		parameters.thinking = level !== 'off';
-		if (level === 'off' || level === 'high') delete parameters.thinkingEffort; // high 是默认档
-		else parameters.thinkingEffort = level;
-		onChange?.({ ...value, parameters } as ChatModelConfig);
+	const handleThinking = async (level: string) => {
+		if (!value || !thinkingSettings(selectedEntry?.model).levels.includes(level)) return;
+		if (level === confirmedLevel) return;
+		await save({ ...value, parameters: parametersWithThinking(value.parameters, level) });
 	};
 
 	const displayLabel = value?.model
@@ -174,7 +188,12 @@ export function LlmSelect({
 			: (placeholder ?? t('llm-select.placeholder'));
 
 	const detail = selectedEntry;
-	const currentLevel = value && isBuiltinCredential(value.credential_id) ? toChatEffort(value.model, String(value.parameters?.thinkingEffort ?? 'high'),builtinQuota?.models) : thinkingLevelOf(value?.parameters);
+	const shownLevel = thinkingLevelOf(value?.parameters, detail?.model);
+	const confirmedLevel = value?.parameters?.thinking === false && shownLevel !== 'off' && shownLevel !== 'none' ? '' : shownLevel;
+	const thinkingOptions = thinkingSettings(detail?.model).levels.map(level => ({
+		value: level,
+		label: t(`llm-select.level.${level === 'none' ? 'off' : level}`),
+	}));
 
 	// 受控开关 + 文档级兜底：radix 自带外点关闭，但个别空白区域的事件可能被
 	// 业务层吞掉，这里在 capture 阶段再兜一道 —— 点在 popover/触发器之外即关。
@@ -211,6 +230,7 @@ export function LlmSelect({
 						className,
 					)}
 					{...props}
+					disabled={locked}
 				>
 					{!composer && <ProviderIcon
 						keyName={selectedEntry ? providerKeyOf(selectedEntry.credential, selectedEntry.model.name) : 'custom'}
@@ -218,14 +238,15 @@ export function LlmSelect({
 						fallback={<Box className="size-3.5 shrink-0 text-muted-foreground" />}
 					/>}
 					<span className={cn('truncate', composer ? 'max-w-36' : 'max-w-56')}>{displayLabel}</span>
-					{composer && value?.model && <span className="shrink-0 text-muted-foreground">{t(`llm-select.level.${currentLevel}`)}</span>}
+					{composer && value?.model && shownLevel && <ReasoningEffortLabel value={shownLevel} options={thinkingOptions} className="shrink-0" />}
 					<ChevronDown className="size-3.5 text-muted-foreground" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
 				align={composer ? 'end' : 'start'}
 				sideOffset={6}
-				className="w-auto gap-0 overflow-visible rounded-2xl p-0"
+				className="w-auto max-w-[calc(100vw-16px)] max-h-[var(--radix-popover-content-available-height)] gap-0 overflow-y-auto rounded-2xl p-0"
+				data-testid="model-picker"
 			>
 				<div className="flex items-stretch max-sm:flex-col">
 					{/* ─────────── 左列：模型清单 ─────────── */}
@@ -236,7 +257,7 @@ export function LlmSelect({
 								<p className="text-xs mt-1">{t('llm-select.empty.description')}</p>
 							</div>
 						) : (
-							entries.map(({ type, credential, model }, idx) => {
+							entries.map(({ credential, model }, idx) => {
 								const selected =
 									value?.credential_id === credential.id && value?.model === model.name;
 								const showHeader = firstIdxByCredential.get(credential.id) === idx;
@@ -249,8 +270,9 @@ export function LlmSelect({
 										)}
 										<button
 											type="button"
-											onClick={() => handleSelect({ type, credential, model })}
-											disabled={isBuiltinCredential(credential.id) && (builtinUnavailable || !modelAvailable(model.name,builtinQuota?.models,'tocode'))}
+											data-model-index={idx}
+											onClick={handleSelect}
+											disabled={locked || (isBuiltinCredential(credential.id) && (builtinUnavailable || !modelAvailable(model.name,builtinQuota?.models,'tocode')))}
 											className={cn(
 												'flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm motion-safe:transition-colors',
 												selected ? 'bg-accent' : 'hover:bg-accent',
@@ -263,7 +285,6 @@ export function LlmSelect({
 												fallback={<Box className="size-4 shrink-0 text-muted-foreground" />}
 											/>
 											<span className="min-w-0 flex-1 truncate">{isBuiltinCredential(credential.id) ? toChatModel(model.name,builtinQuota?.models).name : model.name}</span>
-											{isBuiltinCredential(credential.id)&&model.name==='deepseek-flash'&&!builtinQuota?.subscription&&(builtinQuota?.trial?.remaining||0)>0&&<span className="text-xs text-muted-foreground">{t('llm-select.trialRemaining',{count:builtinQuota?.trial?.remaining})}</span>}
 											{selected && <Check className="size-4 shrink-0 text-primary" />}
 										</button>
 									</div>
@@ -277,8 +298,8 @@ export function LlmSelect({
 							{allowClear && (
 								<button
 									type="button"
-									onClick={() => onChange?.(null)}
-									disabled={!value}
+									onClick={() => { void save(null); }}
+									disabled={locked || !value}
 									className="flex w-full items-center gap-2.5 rounded-xl px-2 py-2 text-left text-sm text-muted-foreground hover:bg-accent disabled:opacity-40"
 								>
 									<Ban className="size-4" />
@@ -329,16 +350,17 @@ export function LlmSelect({
 									</span>
 								</div>
 
-								{isBuiltinCredential(detail.credential.id) && <div className="space-y-1 text-xs text-muted-foreground"><p>{t('llm-select.builtinQuotaHint')}</p>{builtinQuota && <AgentQuotaMeter quota={builtinQuota} />}</div>}
 								<div className="flex-1" />
 
-								<SubmenuRow
+								{thinkingOptions.length > 0 ? <ReasoningEffortSlider
+									key={`${value?.credential_id}:${value?.model}:${JSON.stringify(detail.model.parameter_schema)}:${disabled && !saving}`}
+									scope={JSON.stringify(value?.parameters)}
 									label={t('llm-select.thinking')}
-									current={currentLevel}
-									currentLabel={t(`llm-select.level.${currentLevel}`)}
-									options={(isBuiltinCredential(value?.credential_id) ? toChatModel(value?.model,builtinQuota?.models).efforts : /(?:^|\/)gemini-3\.8-flash(?:-|$)/i.test(value?.model ?? '') ? ['off', 'low', 'medium', 'high'] : THINKING_LEVELS).map((level) => ({ value: level, label: t(`llm-select.level.${level}`) }))}
-									onSelect={(v) => handleThinking(v as ThinkingLevel)}
-								/>
+									value={confirmedLevel}
+									options={thinkingOptions}
+									disabled={locked}
+									onCommit={handleThinking}
+								/> : <p className="rounded-xl bg-surface-muted px-3 py-2.5 text-xs text-muted-foreground" data-testid="thinking-unavailable">{t('llm-select.thinkingUnavailable')}</p>}
 							</div>
 						)}
 					</div>

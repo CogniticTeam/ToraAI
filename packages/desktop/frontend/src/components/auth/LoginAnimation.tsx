@@ -8,10 +8,17 @@
  * keyframes 统一在 index.css。
  */
 
+import { toraEdition } from '@/lib/toraService';
+
+export function EditionBadge() {
+	return toraEdition ? <span className="inline-flex items-center self-center rounded-md bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-tight text-muted-foreground whitespace-nowrap">{toraEdition}</span> : null;
+}
+
 export function BrandLogo({ size = 48 }: { size?: number }) {
 	// 品牌标：logo.PNG 生成的圆角图标（白底黑色 ‹_ 终端字形，四角透明）。
 	// 圆角已烘焙进图片本身，无需再设 borderRadius。
 	return (
+		<span className="inline-flex flex-col items-center gap-2">
 		<img
 			src="/icon.png"
 			alt="Tora"
@@ -20,6 +27,8 @@ export function BrandLogo({ size = 48 }: { size?: number }) {
 			className="brand-breathe shadow-lg"
 			draggable={false}
 		/>
+			<EditionBadge />
+		</span>
 	);
 }
 

@@ -17,7 +17,7 @@ try {
     await page.addInitScript(({base})=>{
       for(const [k,v] of Object.entries({server_url:base,username:'tora',tora_auth_token:'mock-token',tora_auth_username:'SummaryTest',tora_cn_notice_agreed_v1:'1',tora_language_preference:'zh',theme:'dark'}))localStorage.setItem(k,v);
     },{base});
-    await page.route('https://tora.ohfun.online/**',route=>{
+    await page.route('https://api.cogniticteam.com/**',route=>{
       const path=new URL(route.request().url()).pathname;
       const json=(data,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(data)});
       if(path==='/auth/me')return json({username:'SummaryTest',email:'test@example.invalid',banned:false});

@@ -1,5 +1,6 @@
 // Tora 配置管理：~/.tora/config.json + 环境变量覆盖
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, renameSync, rmSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { join } from 'node:path';
 import { resolveDataDirectory } from './legacy-migration.js';
 
@@ -117,7 +118,13 @@ export function saveConfig(patch) {
   }
   const next = { ...cur, ...clean };
   mkdirSync(TORA_DIR, { recursive: true });
-  writeFileSync(CONFIG_PATH, JSON.stringify(next, null, 2));
+  const temporary = `${CONFIG_PATH}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temporary, JSON.stringify(next, null, 2), { mode: 0o600, flag: 'wx' });
+    renameSync(temporary, CONFIG_PATH);
+  } finally {
+    try { rmSync(temporary, { force: true }); } catch { /* The active configuration is already safe. */ }
+  }
   return next;
 }
 

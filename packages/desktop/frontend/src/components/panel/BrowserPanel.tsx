@@ -694,6 +694,13 @@ export async function openBuiltinBrowserTab(url: string) {
 	catch(error){closeTab(tab.id);throw error;}
 }
 
+/** Restored tab labels stay cheap; visited tools retain their state when switching tabs. */
+function RetainedToolBody({active,children}:{active:boolean;children:React.ReactNode}) {
+	const [visited,setVisited] = useState(active);
+	useEffect(() => {if(active)setVisited(true);},[active]);
+	return active || visited ? children : null;
+}
+
 export function BrowserPanel({ initialUrl, enableElementPicker = true, presentation='panel', onClose, toolTabs=[], availableTools=[], activeTool=null, onSelectTool, onCloseTool, onOpenTool }: BrowserPanelProps) {
 	const { t } = useTranslation();
 	const navigate=useNavigate();
@@ -1100,9 +1107,9 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 		else requestPanel(key);
 	};
 	const recommendations=browserRecommendations(infos.filter(tab=>tab.id!==active?.id),[
-		{url:'https://ohfun.online/',title:'Cognitic'},
-		{url:'https://ohfun.online/products/tora/',title:'Tora'},
-		{url:'https://ohfun.online/policies/agent-model-usage/',title:t('settings.about.usagePolicy')},
+		{url:'https://cogniticteam.com/',title:'Cognitic'},
+		{url:'https://cogniticteam.com/products/tora/',title:'Tora'},
+		{url:'https://cogniticteam.com/policies/agent-model-usage/',title:t('settings.about.usagePolicy')},
 		{url:'https://github.com/CogniticTeam/ToraAI',title:t('browserPanel.redesign.sourceCode')},
 	]);
 	const selectWebTab=(id:number)=>{onSelectTool?.(null);setActiveTab(id);};
@@ -1162,7 +1169,7 @@ export function BrowserPanel({ initialUrl, enableElementPicker = true, presentat
 		</div>
 		{toolTabs.map(tool=><div key={tool.key} id={`browser-tool-${tool.key}`} role="tabpanel" hidden={activeTool!==tool.key} className="browser-tool-page">
 			{tool.actions&&<div className="flex shrink-0 justify-end border-b border-border px-4 py-2">{tool.actions}</div>}
-			<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>{tool.content}</Suspense>
+			<RetainedToolBody active={activeTool===tool.key}><Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>{tool.content}</Suspense></RetainedToolBody>
 		</div>)}
 		{!activeTool&&kind==='iframe'&&current&&<p className="browser-fallback-hint">{t('browserPanel.redesign.webHint')}</p>}
 	</section>;

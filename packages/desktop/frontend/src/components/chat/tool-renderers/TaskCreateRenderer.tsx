@@ -2,13 +2,9 @@ import { getResultText, parseInput, toolArgClass, toolLabelClass } from './_shar
 import type { ToolCallWithResult, ToolRenderer } from './types';
 import { getToolDisplayName } from '@/lib/toolDisplayName';
 
-/**
- * Extract the numeric task id the backend echoes in its result text
- * (`"Task (id=3) created successfully: ..."`), or `null` if absent.
- */
 function getTaskId(pair: ToolCallWithResult): string | null {
-	const match = getResultText(pair.result).match(/^Task \(id=(\d+)\)/);
-	return match ? match[1] : null;
+	const match = getResultText(pair.result).match(/^(?:已创建 #(T\d+)|Task \(id=(\d+)\))/);
+	return match ? match[1] ?? match[2] : null;
 }
 
 export const TaskCreateRenderer: ToolRenderer = {

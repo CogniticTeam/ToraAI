@@ -1,9 +1,8 @@
-import {DOUBAO_MODEL_ID,DOUBAO_INPUT_TYPES,IMAGE_MIME_TYPES,AUDIO_MIME_TYPES,VIDEO_MIME_TYPES} from './chat-media.js';
+import {IMAGE_MIME_TYPES,AUDIO_MIME_TYPES,VIDEO_MIME_TYPES} from './chat-media.js';
 // Public metadata; upstream API keys remain in the Tora service.
 export const BUILTIN_CREDENTIAL_ID = 'tora-official';
 export const BUILTIN_PROVIDER_TYPE = 'tora_official';
 export const BUILTIN_MODELS = [
-  {id:DOUBAO_MODEL_ID,name:'Doubao Seed 2.1 Lite',provider:'volcengine',context:1048576,modes:['chat','work'],inputTypes:DOUBAO_INPUT_TYPES},
   {id:'gpt-6.1-sol',name:'GPT-6.1 Sol',provider:'openai',context:1050000},
   {id:'gpt-6-astra',name:'GPT-6 Astra',provider:'openai',context:1050000},
   {id:'gpt-6-sol',name:'GPT-6 Sol',provider:'openai',context:1050000},
@@ -17,6 +16,15 @@ export const BUILTIN_MODELS = [
   {id:'gemini-3.8-flash',name:'Gemini 3.8 Flash',provider:'google',context:1048576},
 ];
 export const isBuiltinCredential = id => id===BUILTIN_CREDENTIAL_ID||id==='tora-tochat-official';
+export function isOfficialModelGateway(value) {
+  const text = String(value ?? '').toLowerCase();
+  if (text.includes('/official/v1')) return true;
+  try {
+    const url = new URL(text);
+    return /^api(?:-global|-cn)?\.cogniticteam\.com$/.test(url.hostname) &&
+      /^\/tochat\/v1(?:\/|$)/.test(url.pathname);
+  } catch { return false; }
+}
 let runtimeCatalog=null,runtimeCatalogRevision=0;
 export const getBuiltinModels=()=>runtimeCatalog??BUILTIN_MODELS;
 export function setBuiltinCatalog(models,revision=undefined){

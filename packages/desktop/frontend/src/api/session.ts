@@ -101,6 +101,12 @@ export const sessionApi = {
 			agent_id: agentId,
 		}),
 
+	resume: (sessionId: string, agentId: string, replyId: string, viewMode?: 'tocode' | 'tochat') =>
+		client.post<{ session_id: string }>(`/sessions/${sessionId}/resume`, {
+			reply_id: replyId,
+			view_mode: viewMode,
+		}, { agent_id: agentId }),
+
 	messages: (sessionId: string, agentId: string, params?: { before?: string; limit?: number }) =>
 		client.get<MessagesResponse>(`/sessions/${sessionId}/messages`, {
 			agent_id: agentId,

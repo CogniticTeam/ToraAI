@@ -10,12 +10,13 @@ import {
 	Trash2,
 	Users,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import {sessionHistoryKind} from '../../../../../core/src/session-mode.js';
 import type { SessionRecord, SessionSourceKind, SessionView } from '@/api';
 import { DeleteDialog } from '@/components/dialog/DeleteDialog';
+import { NavHighlight } from '@/components/layout/NavHighlight';
 import { RenameSessionDialog } from '@/components/dialog/RenameSessionDialog';
 import {
 	DropdownMenu,
@@ -43,6 +44,7 @@ import {
 import { useAgents } from '@/hooks/useAgents';
 import { useSessions } from '@/hooks/useSessions';
 import { useTranslation } from '@/i18n/useI18n.ts';
+import { dissolveMessage, messageMotionEnabled } from '@/lib/messageSand';
 
 // Icon per session origin, shown only when a sidebar mixes sources.
 const SOURCE_ICON: Record<SessionSourceKind, LucideIcon> = {
@@ -87,21 +89,75 @@ export function SessionListSection() {
 	const [renameSession, setRenameSession] = useState<SessionRecord | null>(null);
 	const [deleteOpen, setDeleteOpen] = useState(false);
 	const [sessionToDelete, setSessionToDelete] = useState<SessionRecord | null>(null);
+	const [deletingSession, setDeletingSession] = useState<{ agentId: string; view: SessionView } | null>(null);
+	const sessionRows = useRef(new Map<string, HTMLLIElement>());
+	const deletionController = useRef<AbortController | null>(null);
+	const deletionBusy = useRef(false);
+	const mounted = useRef(true);
+	const latestLocation = useRef(location);
+	useEffect(() => {
+		latestLocation.current = location;
+		deletionController.current?.abort();
+	}, [location]);
+	useEffect(() => {
+		mounted.current = true;
+		return () => { mounted.current = false; deletionController.current?.abort(); };
+	}, []);
+	// 删除请求会立即刷新共享列表；暂存同一个 key 的条目，直到沙化和收起结束。
+	const visibleSessions = useMemo(() => deletingSession?.agentId === agentId
+		&& !sessions.some(view => view.session.id === deletingSession.view.session.id)
+		? [...sessions, deletingSession.view] : sessions, [sessions, deletingSession, agentId]);
 	// 单一列表按 updated_at desc 排；服务端 listSessionRecords 已按此序排过，
 	// 这里再 sort 一次保险（refetch 后可能保持原序）。
-	const selected = sessions.find(view=>view.session.id===urlSessionId);
+	const selected = visibleSessions.find(view=>view.session.id===urlSessionId);
 	const historyKind = tochat ? selected ? sessionHistoryKind(selected.session.config) : new URLSearchParams(location.search).get('task')==='work'?'work':'chat' : 'work';
 	const routeQuery = tochat ? `?task=${historyKind}` : '';
 	const sortedSessions = useMemo<SessionView[]>(
-		() => sessions.filter(view=>sessionHistoryKind(view.session.config)===historyKind)
+		() => visibleSessions.filter(view=>sessionHistoryKind(view.session.config)===historyKind)
 			.sort((a,b)=>String(b.session.updated_at??b.session.created_at??'').localeCompare(String(a.session.updated_at??a.session.created_at??''))),
-		[sessions,historyKind],
+		[visibleSessions,historyKind],
 	);
 
 	const handleDeleteSession = async (sessionId: string) => {
-		await removeSession(sessionId);
-		if (sessionId === urlSessionId && agentId) {
-			navigate(`${routeBase}/${agentId}${routeQuery}`, { replace: true });
+		const view = sessions.find(item => item.session.id === sessionId);
+		if (!agentId || !view || deletionBusy.current) return;
+		deletionBusy.current = true;
+		const controller = new AbortController();
+		deletionController.current = controller;
+		setDeletingSession({ agentId, view });
+		try {
+			await removeSession(sessionId, async () => {
+				if (!mounted.current) return;
+				setDeleteOpen(false);
+				const row = sessionRows.current.get(sessionId);
+				if (controller.signal.aborted || !row?.isConnected) return;
+				try {
+					try { await dissolveMessage(row, controller.signal); }
+					catch { /* 截图失败仍可收起条目。 */ }
+					if (controller.signal.aborted || !row.isConnected) return;
+					const gap = row.nextElementSibling ? Number.parseFloat(getComputedStyle(row.parentElement!).rowGap) || 0 : 0;
+					const animation = row.animate?.([
+						{ height: `${row.getBoundingClientRect().height}px`, opacity: 0, overflow: 'hidden', marginBottom: '0px' },
+						{ height: '0px', opacity: 0, overflow: 'hidden', marginBottom: `${-gap}px` },
+					], { duration: messageMotionEnabled() ? 300 : 0, easing: 'cubic-bezier(.22,1,.36,1)', fill: 'forwards' });
+					if (animation) {
+						const cancel = () => animation.cancel();
+						controller.signal.addEventListener('abort', cancel, { once: true });
+						try { await animation.finished; } catch { /* 切换页面会取消动画。 */ }
+						finally { controller.signal.removeEventListener('abort', cancel); }
+					}
+				} catch { /* 视觉失败不能阻止已成功的删除与跳转。 */ }
+			});
+			// 动画期间用户可能已打开另一条对话，不能将新页面带回空白页。
+			if (mounted.current && latestLocation.current.key === location.key && sessionId === urlSessionId) {
+				navigate(`${routeBase}/${agentId}${routeQuery}`, { replace: true });
+			}
+		} catch {
+			// 请求层已显示错误；保留原条目，不触发粒子或吞掉其它对话。
+		} finally {
+			if (mounted.current) setDeletingSession(null);
+			if (deletionController.current === controller) deletionController.current = null;
+			deletionBusy.current = false;
 		}
 	};
 
@@ -110,19 +166,24 @@ export function SessionListSection() {
 		[sortedSessions],
 	);
 
-	const renderSession = (view: SessionView, index: number) => {
+	const renderSession = (view: SessionView) => {
 		const session = view.session;
 		const SourceIcon = SOURCE_ICON[session.origin.type] ?? BotMessageSquare;
 		const active = urlSessionId === session.id;
+		const deleting = deletingSession?.agentId === agentId && deletingSession.view.session.id === session.id;
 		return (
 			<SidebarMenuItem
 				key={session.id}
-				className="animate-in fade-in slide-in-from-left-1 duration-300"
-				style={{ animationDelay: `${Math.min(index * 40, 400)}ms`, animationFillMode: 'backwards' }}
+				ref={node => { if (node) sessionRows.current.set(session.id, node); else sessionRows.current.delete(session.id); }}
+				data-session-delete={session.id}
+				aria-busy={deleting || undefined}
+				className="nav-highlight-host"
 			>
+				<NavHighlight active={active} />
 				<SidebarMenuButton
-					className="text-muted-foreground transition-all duration-150 hover:translate-x-0.5 hover:text-foreground active:scale-[0.98] group-has-data-[sidebar=menu-action]/menu-item:pr-16"
+					className="text-muted-foreground transition-colors duration-150 hover:text-foreground disabled:opacity-100 group-has-data-[sidebar=menu-action]/menu-item:pr-16"
 					isActive={active}
+					disabled={deleting}
 					onClick={() => navigate(`${routeBase}/${agentId}/${session.id}${routeQuery}`)}
 				>
 					{showSourceIcons && <SourceIcon />}
@@ -134,7 +195,7 @@ export function SessionListSection() {
 					{format(new Date(session.created_at), 'HH:mm')}
 				</SidebarMenuBadge>
 				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
+					<DropdownMenuTrigger asChild disabled={deleting}>
 						<SidebarMenuAction className="md:opacity-0 group-hover/menu-item:opacity-100 group-has-focus-visible/menu-item:opacity-100 aria-expanded:opacity-100 peer-data-active/menu-button:text-sidebar-accent-foreground">
 							<Ellipsis />
 						</SidebarMenuAction>
@@ -151,6 +212,7 @@ export function SessionListSection() {
 						</DropdownMenuItem>
 						<DropdownMenuItem
 							variant="destructive"
+							disabled={!!deletingSession}
 							onClick={() => {
 								setSessionToDelete(session);
 								setDeleteOpen(true);

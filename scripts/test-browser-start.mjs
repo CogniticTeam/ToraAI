@@ -7,7 +7,7 @@ test('Browser return routes stay within conversation context',()=>{
   for(const value of ['https://example.com','//example.com/chat/agent','/browser','javascript:alert(1)',null])assert.equal(browserConversationPath(value),null);
 });
 test('Recommendations use open sites, remove duplicates and exclude unsupported URLs',()=>{
-  const sites=browserRecommendations([{url:'https://example.com/#one',title:'Open page'},{url:'javascript:alert(1)',title:'Unsafe'}],[{url:'https://example.com/#two',title:'Duplicate'},{url:'https://ohfun.online',title:'Cognitic'}]);
+  const sites=browserRecommendations([{url:'https://example.com/#one',title:'Open page'},{url:'javascript:alert(1)',title:'Unsafe'}],[{url:'https://example.com/#two',title:'Duplicate'},{url:'https://cogniticteam.com',title:'Cognitic'}]);
   assert.deepEqual(sites.map(x=>x.title),['Open page','Cognitic']);
   assert.equal(browserRecommendations([],Array.from({length:8},(_,i)=>({url:`https://example.com/${i}`,title:String(i)}))).length,4);
 });

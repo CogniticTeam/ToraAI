@@ -93,8 +93,14 @@ export function projectSessionEvents(record, events) {
     if (type === 'run-started') {
       if (Array.isArray(data.internal)) record.internal = data.internal;
       upsertDisplay(record, data.user);
+      upsertDisplay(record, data.reply);
     } else if (type === 'internal-snapshot') {
       if (Array.isArray(data.internal)) record.internal = data.internal;
+    } else if (type === 'internal-append') {
+      if (data.offset !== record.internal.length || !Array.isArray(data.messages)) {
+        throw new Error('会话上下文增量与快照不匹配');
+      }
+      record.internal.push(...data.messages);
     } else if (type === 'reply-progress' || type === 'reply-finished') {
       if (Array.isArray(data.internal)) record.internal = data.internal;
       upsertDisplay(record, data.reply);
@@ -104,4 +110,46 @@ export function projectSessionEvents(record, events) {
     }
   }
   return record;
+}
+
+export function markInterruptedReply(record) {
+  const reply = record.display?.at(-1);
+  if (reply?.role !== 'assistant' || reply.finished_at !== null) return null;
+  reply.finished_at = new Date().toISOString();
+  reply.finished_reason = 'interrupted';
+  for (const block of reply.content || []) {
+    if (block.type === 'tool_call' && block.state === 'asking') block.state = 'finished';
+  }
+  return reply;
+}
+
+const UNKNOWN_RESULT = '上次运行在工具结果落盘前中断，执行结果未知。请先检查现有状态，避免重复有副作用的操作。';
+
+/** Recover complete provider call/result groups from journaled intents and results. */
+export function recoverInterruptedToolCalls(messages) {
+  const recovered = [];
+  for (let index = 0; index < messages.length;) {
+    const message = messages[index++];
+    recovered.push(message);
+    if (message.role !== 'assistant') continue;
+    if (message.tool_calls?.length) {
+      const results = new Map();
+      while (messages[index]?.role === 'tool') {
+        const result = messages[index++];
+        results.set(result.tool_call_id, result);
+      }
+      for (const call of message.tool_calls) {
+        recovered.push(results.get(call.id) ?? {
+          role: 'tool', tool_call_id: call.id, tool_name: call.function?.name,
+          tool_state: 'error', content: UNKNOWN_RESULT,
+        });
+      }
+    } else if (message.react_tool_call && !messages[index]?.tool_result) {
+      recovered.push({
+        role: 'user', tool_result: true, tool_name: message.react_tool_call,
+        tool_state: 'error', content: `工具 ${message.react_tool_call}：${UNKNOWN_RESULT}`,
+      });
+    }
+  }
+  return recovered;
 }

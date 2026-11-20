@@ -44,6 +44,7 @@ export function createUIUpdater({directory,publicKey,shellVersion,bundledDirecto
   if(!/^ui-\d+$/.test(version))throw Error('Invalid cached UI version');
   const dir=join(directory,'versions',version),envelope=JSON.parse(await readFile(join(dir,'release.json'),'utf8'));
   const manifest=readManifest(envelope,publicKey,shellVersion,feed);if(manifest.version!==version)throw Error('Wrong cached release');
+  if(manifest.build<=bundledBuild)throw Error('Cached UI predates the bundled build');
   for(const file of manifest.files){const path=join(dir,file.path),info=await lstat(path);if(!info.isFile()||info.isSymbolicLink()||info.size!==file.bytes||digest(await readFile(path))!==file.sha256)throw Error('Cached UI integrity check failed');}
   releases.set(version,{manifest,directory:dir});return manifest;
  };
@@ -60,8 +61,6 @@ export function createUIUpdater({directory,publicKey,shellVersion,bundledDirecto
    try{const stored=JSON.parse(await readFile(stateFile,'utf8'));state={...state,active:stored.active??null,previous:stored.previous??null,staged:stored.staged??null,trial:stored.trial===true,highest:Math.max(bundledBuild,Number.isSafeInteger(stored.highest)?stored.highest:0),bad:Array.isArray(stored.bad)?stored.bad.filter(v=>typeof v==='string').slice(-20):[]};}catch{/* First launch or damaged pointer uses the bundled UI. */}
    for(const version of [state.active,state.previous,state.staged].filter(Boolean))try{await load(version);}catch{if(version===state.active)state.active=null;if(version===state.previous)state.previous=null;if(version===state.staged)state.staged=null;}
    if(state.trial)await rollback();
-   // A newer packaged UI must not be replaced by an older downloaded UI.
-   if(state.active&&releases.get(state.active)?.manifest.build<=bundledBuild){state.active=null;state.previous=null;state.trial=false;}
    const retained=new Set([state.active,state.previous,state.staged].filter(Boolean));
    for(const name of await readdir(join(directory,'versions')))if(/^ui-\d+$/.test(name)&&!retained.has(name)){releases.delete(name);await rm(join(directory,'versions',name),{recursive:true,force:true});}
    await persist();status=state.staged?'ready':'idle';

@@ -31,16 +31,16 @@ try {
       onOpenMessagesFromNotification: cb => { window.__openMessagesFromNotification = cb; return () => { window.__openMessagesFromNotification = null; }; },
     };
   });
-  await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 1, username: 'notice-test', banned: false }) }));
-  await page.route('https://tora.ohfun.online/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
-await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
-await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-  await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-  await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-  await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'notice-ticket' }) }));
+  await page.route('https://api.cogniticteam.com/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 1, username: 'notice-test', banned: false }) }));
+  await page.route('https://api.cogniticteam.com/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
+await page.route('https://api.cogniticteam.com/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+await page.route('https://api.cogniticteam.com/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+  await page.route('https://api.cogniticteam.com/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+  await page.route('https://api.cogniticteam.com/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+  await page.route('https://api.cogniticteam.com/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'notice-ticket' }) }));
   let resolveSocket;
   const socketReady = new Promise(resolve => { resolveSocket = resolve; });
-  await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { resolveSocket(socket); socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+  await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => { resolveSocket(socket); socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
   await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
   await page.evaluate(serverUrl => {
     localStorage.setItem('server_url', serverUrl);

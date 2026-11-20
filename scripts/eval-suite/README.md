@@ -15,3 +15,24 @@ DeepSeek Harness 的同题入口可使用安装后的 `dsh --profile headless`�
 桌面会话使用的 `/official/v1` 网关不是 CLI 的自接入模型接口；如果当前配置指向该地址，`--model-from-config` 会提前报错。请先接入 CLI 可调用的模型，再进行真实 Tora 测评。
 
 分数是三题通过率，不是模型能力排名。三题分别检查严格输入处理、跨文件交付，以及修复失败测试。验收代码不放进 Agent 的工作区；Agent 自称“已完成”不能代替通过验收。当前题量很小，适合作为回归基线，不能代表大规模工程性能。
+
+## 公开数据评测
+
+首轮使用 QuixBugs 的 `find_in_sorted`、`mergesort` 和 `wrap`。工作区用上游缺陷实现和测试初始化，独立验收只取候选改动的目标文件，并在另一临时目录运行原始 pytest 测试。报告记录上游提交、参与文件的 SHA-256，以及修复前后的官方测试数。[QuixBugs 数据](https://github.com/jkoppel/QuixBugs/tree/4257f44b0ff1181dedaedee6a447e133219fcebf)
+
+准备上述提交的检出目录和装有 pytest 的 Python 解释器。先运行离线基线检查，再用相同的数据参数启用各客户端。
+
+```sh
+node scripts/eval-work-execution.mjs --check-fixtures --dataset quixbugs \
+  --dataset-dir /absolute/path/QuixBugs \
+  --dataset-revision 4257f44b0ff1181dedaedee6a447e133219fcebf \
+  --python /absolute/path/venv/bin/python
+```
+
+- `--runner-kind tora-desktop` 用 `scripts/eval-suite/tora-desktop.mjs` 接收任务，在桌面 ASAPI 执行链运行。配合 `--model-from-config` 使用已有自定义模型。开始任务时使用隔离的会话，文件工具限制在临时工作区，Bash 禁网并只接受当前目录查询与指定测试命令。
+- `--runner-kind codex` 读取 `codex exec --json` 的结构化日志。DeepSeek 同模型组通过官方 Responses 适配器使用 `--model-from-config`，模型目录与提供商由单次运行的 CLI 配置指定。[DeepSeek 接入 Codex](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)
+- `--runner-kind claude-code` 读取 `claude -p --output-format stream-json --verbose` 的结构化日志。DeepSeek 同模型组也可用 `--model-from-config`，凭证只传给指向 DeepSeek 官方接口的子进程环境。[DeepSeek 接入 Claude Code](https://api-docs.deepseek.com/quick_start/agent_integrations/claude_code/)
+
+单题用时统计到客户端退出为止。官方测试通过数、客户端终止状态和模型用量独立记录。跨客户端仍存在工具定义、API 协议与缓存差异，小样本适合观察执行行为。
+
+Tora Desktop 的评测还记录 `modelWaitMs` 和 `toolBatchMs`，可将模型请求等待与本地工具批次开销对应到每道题。比较优化前后时使用相同数据版本、模型、权限与测试命令。

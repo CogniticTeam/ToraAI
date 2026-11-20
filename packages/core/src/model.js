@@ -1,6 +1,8 @@
-import { anthropicCompletion } from './anthropic.js';
+import {isRetiredDoubao} from './retired-doubao.js';
+import { anthropicCompletion, anthropicThinkingParameters } from './anthropic.js';
+import { CODEX_PROVIDER, CODEX_BASE_URL } from './codex-protocol.js';
 import { randomUUID } from 'node:crypto';
-import { modelFetch, modelConnectionError } from './model-transport.js';
+import { contextLengthError, modelFetch, modelConnectionError, readModelResponse } from './model-transport.js';
 
 // Tora 模型接入层：OpenAI 兼容 Chat Completions + Claude 原生 Messages API
 // 零依赖实现：fetch + 手写 SSE 解析，支持流式与工具调用聚合
@@ -32,10 +34,10 @@ export function resetToolSupportCache() {
   toolSupport.clear();
 }
 
-export const SYSTEM_PROMPT = `Your name is Tora (product name: Tora). You are a highly capable AI coding and task-execution agent embedded in a terminal/desktop tool. You complete as much work as possible while keeping token consumption minimal. You excel at coding, code review, refactoring, writing, and answering questions. You routinely make appropriate use of Skills and invoke them as frequently as needed.
-You prioritize breaking down complex user requests into actionable subtasks and carry them out in order, avoiding redundant verbiage and useless deliberation. Prefer acting over asking: inspect the repository (Glob/Grep/RepoMap) before proposing changes. Use the minimal edit that achieves the goal (Edit over Write) and always verify your work by running the relevant test or build command with Bash. Your outputs go straight to the point: deliver usable results first, not vague ideas. When information is insufficient, ask one concise question about the key parameter instead of guessing.
-You keep changes reviewable: show diffs before overwriting, avoid touching files unrelated to the task, and never hide failures. You respect the repository's own conventions (see project instructions when present) over your personal defaults. You are honest about what you did and did not verify.
-After a task involving tools, always finish with a concise user-facing conclusion in the user's language: state the outcome first, then any important verification or unresolved limitation. Do not leave a tool call or progress update as the last response.`;
+export const SYSTEM_PROMPT = `You are Tora's coding and task-execution agent. Follow the user's task and project instructions. Use relevant skills when they help. For complex tasks, work in verifiable steps. Ask one concise question when missing information prevents a safe decision.
+Read named files directly. Use Glob or Grep when the location is unknown. Reuse current results until the relevant files change. Prefer a focused Edit, review changes before overwriting, and preserve unrelated files.
+Run the requested test or build command as written. Verify the affected behavior after changing it, and report any failed or unavailable checks.
+For a routine verified edit, finish with the change and check result in two short lines unless the user requests more detail. Report any remaining limits in the user's language.`;
 
 
 /**
@@ -47,7 +49,7 @@ After a task involving tools, always finish with a concise user-facing conclusio
  *  - 名字含 vision / multimodal 的直接兜底，其余按家族精确匹配，
  *    避免误放纯文本变体（如 doubao-pro、grok-3、kimi-k2、qwq、glm-4.6）。
  */
-const VISION_MODEL_RE = /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-[56]|o1(?!-mini)|o3(?!-mini)|o4|claude-(?:[3-9]|opus|sonnet|haiku)|gemini|gemma-3|qwen[\d.]*[-_]?vl|qvq|deepseek-vl|doubao-seed|seed-1\.[56]|kimi-(?:latest|vl|vision)|vision|multimodal|llava|minicpm-v|internvl|pixtral|grok-4|grok.*vision|step-1[vo]|step-3\.7-flash|glm-4v|glm-\d\.\dv|ernie.*vl|molmo|cogvlm)/i;
+const VISION_MODEL_RE = /(gpt-4o|gpt-4\.1|gpt-4-turbo|gpt-[56]|o1(?!-mini)|o3(?!-mini)|o4|claude-(?:[3-9]|opus|sonnet|haiku)|gemini|gemma-3|qwen[\d.]*[-_]?vl|qvq|deepseek-vl|kimi-(?:latest|vl|vision)|vision|multimodal|llava|minicpm-v|internvl|pixtral|grok-4|grok.*vision|step-1[vo]|step-3\.7-flash|glm-4v|glm-\d\.\dv|ernie.*vl|molmo|cogvlm)/i;
 
 export function detectVision(cfg) {
   if (cfg?.vision === true) return true;
@@ -57,13 +59,42 @@ export function detectVision(cfg) {
   return VISION_MODEL_RE.test(String(cfg?.model || ''));
 }
 
+function thinkingRoute(cfg) {
+  const officialOpenAI = /^https:\/\/api\.openai\.com\/v1\/?$/i.test(cfg.baseURL);
+  const nativeDeepSeek = (cfg.provider === 'tochat-official' && cfg.model === 'deepseek-flash') || /^https:\/\/api\.deepseek\.com(?:\/v1)?\/?$/i.test(cfg.baseURL);
+  const openAICompatible = officialOpenAI || (cfg.provider === 'tochat-official' && cfg.model === 'gpt-6.1-sol') || ((isAPIYI(cfg) || isShuliuyun(cfg)) && /^(?:gpt-|o[1-9](?:[.-]|$))/i.test(cfg.model));
+  const officialGoogle = (cfg.provider === 'tochat-official' && cfg.model === 'gemini-3.8-flash') || (isShuliuyun(cfg) && /^gemini(?:-|$)/i.test(cfg.model)) || /^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/openai\/?$/i.test(cfg.baseURL);
+  return { nativeDeepSeek, openAICompatible, officialGoogle, openAIReasoningModel: openAICompatible && /^(?:o[1-9](?:[.-]|$)|gpt-[5-9](?:[.-]|$))/i.test(cfg.model) };
+}
+
+export function thinkingParameterProperties(cfg) {
+  if (cfg.provider === CODEX_PROVIDER) return {};
+  if (cfg.provider === 'anthropic' || /^https:\/\/api\.anthropic\.com\/v1\/?$/i.test(cfg.baseURL)) return anthropicThinkingParameters(cfg.model);
+  const route = thinkingRoute(cfg);
+  if (route.nativeDeepSeek && /^deepseek-flash$/i.test(cfg.model)) return {
+    thinking: { type: 'boolean', default: true },
+    thinkingEffort: { type: 'string', enum: ['low', 'high', 'max'], default: 'high' },
+  };
+  // Tool-using sessions on these Chat Completions models require reasoning disabled.
+  if (route.openAICompatible && cfg.provider !== 'tochat-official' && /^gpt-6-(?:sol|luna)(?:-|$)/i.test(cfg.model)) return {
+    thinkingEffort: { type: 'string', enum: ['none'], default: 'none' },
+  };
+  if ((route.openAIReasoningModel && !/^o1-(?:mini|preview)(?:-|$)/i.test(cfg.model) && !/(?:^|-)pro(?:-|$)/i.test(cfg.model)) || (route.officialGoogle && /^gemini-(?:[3-9](?:[.-]|$)|2\.5-)/i.test(cfg.model))) return {
+    thinkingEffort: { type: 'string', enum: ['low', 'medium', 'high'], default: 'high' },
+  };
+  return {};
+}
+
 export function createClient(cfg) {
-  if (!cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
+  if (isRetiredDoubao(cfg.model, cfg.provider, cfg.baseURL)) throw Error('该模型已下线，请选择其他模型');
+  const codex = cfg.provider === CODEX_PROVIDER;
+  if (!codex && !cfg.apiKey && !/localhost|127\.0\.0\.1/.test(cfg.baseURL)) {
     throw new Error('未配置 apiKey：请运行 `tora config` 或设置 TORA_API_KEY（本地模型如 Ollama 可免鉴权）');
   }
   return {
-    baseURL: cfg.baseURL.replace(/\/+$/, ''),
-    apiKey: cfg.apiKey,
+    baseURL: codex ? CODEX_BASE_URL : cfg.baseURL.replace(/\/+$/, ''),
+    apiKey: codex ? '' : cfg.apiKey,
+    ...(codex ? { codexConnectionId: cfg.codexConnectionId, codexEfforts: cfg.codexEfforts } : {}),
     model: cfg.model,
     provider: cfg.provider,
     tochatMode: cfg.tochatMode,
@@ -157,6 +188,10 @@ export function normalizeUsage(u) {
 const thinkingParamCache = new Map();
 
 export async function chatCompletion(client, { messages, tools, signal, onDelta, onThinking }) {
+	if (client.provider === CODEX_PROVIDER) {
+		const { codexCompletion } = await import('./codex.js');
+		return codexCompletion(client, { messages, tools, signal, onDelta, onThinking });
+	}
 	// Claude 走原生 Messages API；其他服务商继续使用 Chat Completions。
 	if (client.provider === 'anthropic' || /^https:\/\/api\.anthropic\.com\/v1\/?$/i.test(client.baseURL)) {
 		return anthropicCompletion(client, { messages, tools, signal, onDelta, onThinking });
@@ -190,7 +225,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
 				},
 			}));
 		}
-		if(client.provider==='tochat-official'&&/^(?:gpt-6(?:[.-]|$)|doubao-seed-2-1-lite-260915$)/i.test(client.model)&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
+		if(client.provider==='tochat-official'&&/^(?:gpt-6(?:[.-]|$))/i.test(client.model)&&Array.isArray(m.tora_response_items))out.tora_response_items=m.tora_response_items;
 		if (m.name) out.name = sanitizeLoneSurrogates(m.name);
 		if(typeof m.reasoning_content==='string') out.reasoning_content=sanitizeLoneSurrogates(m.reasoning_content);
 		return out;
@@ -204,12 +239,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
   // 策略：按已缓存的可用档位尝试，被 400/422 拒就换下一档（结果缓存，
   // 同一端点后续请求直接用对的那一档）。
   const thinkingKey = `${client.baseURL}|${client.model}`;
-  const officialOpenAI = /^https:\/\/api\.openai\.com\/v1\/?$/i.test(client.baseURL);
-  const nativeDeepSeek = (client.provider==='tochat-official'&&client.model==='deepseek-flash')||/^https:\/\/api\.deepseek\.com(?:\/v1)?\/?$/i.test(client.baseURL);
-  // 已知兼容网关的 GPT/o 系模型遵从 OpenAI 参数规则；其他家族仍按端点自适应。
-  const openAICompatible = officialOpenAI || (client.provider==='tochat-official'&&client.model==='gpt-6.1-sol') || ((isAPIYI(client) || isShuliuyun(client)) && /^(?:gpt-|o[1-9](?:[.-]|$))/i.test(client.model));
-  const officialGoogle = (client.provider==='tochat-official'&&client.model==='gemini-3.8-flash')||(isShuliuyun(client)&&/^gemini(?:-|$)/i.test(client.model))||/^https:\/\/generativelanguage\.googleapis\.com\/v1beta\/openai\/?$/i.test(client.baseURL);
-  const openAIReasoningModel = openAICompatible && /^(?:o[1-9](?:[.-]|$)|gpt-[5-9](?:[.-]|$))/i.test(client.model);
+  const { nativeDeepSeek, openAICompatible, officialGoogle, openAIReasoningModel } = thinkingRoute(client);
   const thinkingVariants = [
     { key: 'enable_thinking', extra: { enable_thinking: true } },
     { key: 'reasoning_effort', extra: { reasoning_effort: client.thinkingEffort === 'max' && client.model!=='gpt-6.1-sol' ? 'high' : (client.thinkingEffort ?? 'high') } },
@@ -237,8 +267,7 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
   if (client.temperature != null && !openAIReasoningModel) baseBody.temperature = client.temperature;
   if (client.promptCacheKey) baseBody.prompt_cache_key = client.promptCacheKey;
 
-  // 强制流式输出：所有模型一律 stream:true，不做自动降级（用户明确要求）。
-  // 端点若不支持流式会直接报错暴露，而不是悄悄退回非流式。
+  // Ignoring stream:true must not cause a replay of a potentially billable request.
   outer: for (;;) {
     const body = { ...baseBody, stream: true, stream_options: { include_usage: true } };
 
@@ -272,7 +301,10 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
         if (client.thinking && !openAIChatToolsNeedNone) thinkingParamCache.set(thinkingKey, variant.key);
         break;
       }
-      try { detail = (await res.text()).slice(0, 400); } catch { /* ignore */ }
+      try { detail = (await res.text()).slice(0, 1000); } catch { /* ignore */ }
+      const lengthError = contextLengthError(res.status, detail);
+      if (lengthError) throw lengthError;
+      detail = detail.slice(0, 400);
       // 端点压根不支持 function calling → 记下能力，交给 agent 降级为文本 ReAct
       if (toolsEnabled && (res.status === 400 || res.status === 422 || res.status === 500)
         && /tool|function[_ ]?call/i.test(detail)) {
@@ -309,94 +341,51 @@ export async function chatCompletion(client, { messages, tools, signal, onDelta,
       throw err;
     }
 
-    // 有些端点对 stream:true 不报错、直接回一整份 JSON —— 按 content-type
-    // 识别，走一次性 JSON 解析，不然 SSE 解析器一行 data: 都找不到。
-    const contentType = res.headers?.get?.('content-type') ?? '';
-    if (/text\/event-stream|stream/i.test(contentType)) {
-      // ---- SSE 流解析 ----
-      const message = { role: 'assistant', content: '' };
-      const toolCalls = new Map(); // index -> {id, type:'function', function:{name, arguments}}
-      let usage = null;
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        let idx;
-        while ((idx = buf.indexOf('\n')) >= 0) {
-          const line = buf.slice(0, idx).trim();
-          buf = buf.slice(idx + 1);
-          if (!line.startsWith('data:')) continue;
-          const payload = line.slice(5).trim();
-          if (payload === '[DONE]') continue;
-          let ev;
-          try { ev = JSON.parse(payload); } catch { continue; }
-          if(Array.isArray(ev.tora_response_items))message.tora_response_items=ev.tora_response_items;
-          if (ev.usage) usage = normalizeUsage(ev.usage);
-          const choice = ev.choices?.[0];
-          if (!choice) continue;
-          const delta = choice.delta ?? {};
-          // 深度思考增量：DeepSeek/Qwen 用 reasoning_content，OpenRouter 等用 reasoning。
-          // 只上屏、不进 history —— 绝大多数端点不接受 reasoning_content 回传。
-          const reasoning = delta.reasoning_content ?? delta.reasoning;
-          if (typeof reasoning === 'string' && reasoning) {message.reasoning_content=(message.reasoning_content||'')+reasoning;onThinking?.(reasoning);}
-          if (delta.content) {
-            message.content += delta.content;
-            onDelta?.(delta.content);
-          }
-          if (delta.tool_calls) {
-            for (const tc of delta.tool_calls) {
-              const i = tc.index ?? 0;
-              if (!toolCalls.has(i)) toolCalls.set(i, { id: tc.id ?? '', type: 'function', function: { name: '', arguments: '' } });
-              const cur = toolCalls.get(i);
-              if (tc.id) cur.id = tc.id;
-              if (tc.function?.name) cur.function.name += tc.function.name;
-              if (tc.function?.arguments) cur.function.arguments += tc.function.arguments;
-            }
-          }
+    const message = { role: 'assistant', content: '' };
+    const toolCalls = new Map();
+    let usage = null;
+    for await (const { format, data: ev } of readModelResponse(res, signal)) {
+      if (ev.error) throw new Error('模型服务返回了错误响应');
+      const choice = ev.choices?.[0];
+      if (['content_filter', 'length', 'error'].includes(choice?.finish_reason) || choice?.message?.refusal || choice?.delta?.refusal) {
+        throw new Error('模型响应被过滤或未完整生成');
+      }
+      if (ev.usage) usage = normalizeUsage(ev.usage);
+      if (format === 'json') {
+        const msg = ev.choices?.[0]?.message ?? {};
+        message.content = typeof msg.content === 'string' ? sanitizeLoneSurrogates(msg.content) : '';
+        const reasoning = msg.reasoning_content ?? msg.reasoning;
+        if (typeof reasoning === 'string') message.reasoning_content = reasoning;
+        if (typeof reasoning === 'string' && reasoning) onThinking?.(reasoning);
+        if (message.content) onDelta?.(message.content);
+        if (Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
+          message.tool_calls = msg.tool_calls.map((tc, i) => ({
+            id: tc.id ?? `call_${i}`, type: 'function',
+            function: { name: tc.function?.name ?? '', arguments: sanitizeLoneSurrogates(tc.function?.arguments ?? '') }
+          }));
         }
+        break;
       }
-
-      if (toolCalls.size) {
-        message.tool_calls = [...toolCalls.entries()].sort((a, b) => a[0] - b[0]).map(([, v]) => v);
+      if (Array.isArray(ev.tora_response_items)) message.tora_response_items = ev.tora_response_items;
+      const delta = ev.choices?.[0]?.delta;
+      if (!delta) continue;
+      const reasoning = delta.reasoning_content ?? delta.reasoning;
+      if (typeof reasoning === 'string' && reasoning) {
+        message.reasoning_content = (message.reasoning_content || '') + reasoning;
+        onThinking?.(reasoning);
       }
-      if (!message.content && !message.tool_calls?.length) {
-        throw new Error('模型返回空响应（可能被内容过滤或模型异常）');
+      if (delta.content) { message.content += delta.content; onDelta?.(delta.content); }
+      for (const tc of delta.tool_calls || []) {
+        const i = tc.index ?? 0;
+        if (!toolCalls.has(i)) toolCalls.set(i, { id: tc.id ?? '', type: 'function', function: { name: '', arguments: '' } });
+        const current = toolCalls.get(i);
+        if (tc.id) current.id = tc.id;
+        if (tc.function?.name) current.function.name += tc.function.name;
+        if (tc.function?.arguments) current.function.arguments += tc.function.arguments;
       }
-      return { message, usage };
     }
-
-    // ---- 一次性 JSON（端点无视 stream 参数静默回完整响应时的兜底解析）----
-    let json;
-    try {
-      json = await res.json();
-    } catch (e) {
-      if (signal?.aborted) throw Object.assign(new Error('已中止'), { code: 'ABORTED' });
-      throw new Error(`模型服务返回了无法解析的响应（${e.message}）`);
-    }
-    const msg = json.choices?.[0]?.message ?? {};
-    const message = { role: 'assistant', content: typeof msg.content === 'string' ? sanitizeLoneSurrogates(msg.content) : '' };
-    // 非流式的思考内容一次性到达，同样只上屏不进 history
-    const reasoning = msg.reasoning_content ?? msg.reasoning;
-    if(typeof reasoning==='string') message.reasoning_content=reasoning;
-    if (typeof reasoning === 'string' && reasoning) onThinking?.(reasoning);
-    if (Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
-      message.tool_calls = msg.tool_calls.map((tc, i) => ({
-        id: tc.id ?? `call_${i}`,
-        type: 'function',
-        function: {
-          name: tc.function?.name ?? '',
-          arguments: sanitizeLoneSurrogates(tc.function?.arguments ?? '')
-        }
-      }));
-    }
-    const usage = normalizeUsage(json.usage);
-    if (!message.content && !message.tool_calls?.length) {
-      throw new Error('模型返回空响应（可能被内容过滤或模型异常）');
-    }
+    if (toolCalls.size) message.tool_calls = [...toolCalls.entries()].sort((a, b) => a[0] - b[0]).map(([, value]) => value);
+    if (!message.content && !message.tool_calls?.length) throw new Error('模型返回空响应（可能被内容过滤或模型异常）');
     return { message, usage };
   }
 }

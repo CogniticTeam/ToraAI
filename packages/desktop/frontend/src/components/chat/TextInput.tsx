@@ -123,6 +123,7 @@ interface TextInputProps {
 	 * even if the user types "/" so the input behaves as before.
 	 */
 	commandItems?: SlashItem[];
+	skillCatalogReady?: boolean;
 }
 
 export interface TextInputRef {
@@ -171,6 +172,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			footerLeft,
 			footerRight,
 			commandItems,
+			skillCatalogReady = false,
 		},
 		ref,
 	) => {
@@ -237,6 +239,14 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		// `slashOpen` is derived rather than stored, so closing the menu is just a
 		// matter of emptying the trigger character.
 		const [selectedCommands, setSelectedCommands] = useState<SlashItem[]>(()=>restoreUIState('draft-commands',[]));
+		useEffect(() => {
+			if (!skillCatalogReady) return;
+			const available = new Set(commandItems?.map(item => item.id));
+			setSelectedCommands(current => {
+				const remaining = current.filter(item => available.has(item.id));
+				return remaining.length === current.length ? current : remaining;
+			});
+		}, [commandItems, skillCatalogReady]);
 		// Slash items are addressed by id; we keep a Set for O(1) membership tests
 		// when rendering the row's checkbox state.
 		const selectedIds = useMemo(
@@ -250,9 +260,8 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 		// Substring after the "/" — feeds the menu filter. Empty for "/" alone.
 		const slashQuery = slashOpen ? value.slice(1) : '';
 		const slashMenuRef = useRef<SlashCommandMenuHandle>(null);
-		// Whether the textarea is *intentionally* in slash mode. Cleared on Esc
-		// so the menu vanishes even though "/" is still in the input — without
-		// this, pressing Esc would do nothing.
+		// A template may itself begin with a slash. Keep that insertion from
+		// reopening the picker until the user edits the input again.
 		const [slashDismissed, setSlashDismissed] = useState(false);
 		// Effective open = trigger fires AND the user hasn't dismissed it.
 		const slashMenuOpen = slashOpen && !slashDismissed;
@@ -322,7 +331,7 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			window.addEventListener('tora:font-changed', resize);
 			window.addEventListener('storage', fontStorage);
 			return () => { observer.disconnect(); window.removeEventListener('tora:font-changed', resize); window.removeEventListener('storage', fontStorage); };
-		}, [value, variant, capsuleExpanded]);
+		}, [value, notice, variant, capsuleExpanded]);
 
 		// Calculate autocomplete suggestion using useMemo
 		const suggestion = useMemo(() => {
@@ -617,6 +626,16 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 			});
 		};
 
+		const inlineNotice = variant === 'capsule' && !value;
+		const noticeContent = notice && (
+			<p id={noticeId} role="status" className={cn(
+				'text-sm leading-6 text-muted-foreground',
+				inlineNotice ? 'px-2 py-2 [overflow-wrap:anywhere]' : 'px-6 pb-2 pt-3',
+			)}>
+				{notice}
+			</p>
+		);
+
 		return (
 			<div className={cn('flex flex-col', className)}>
 				{headerSlot}
@@ -689,13 +708,14 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 				<div
 					id="tour-chat-input"
 					className={cn(
-						'composer-shell relative z-10 flex w-full flex-col rounded-[24px] border border-border bg-background px-2 pb-2 pt-2',
+						'composer-shell relative z-10 flex w-full flex-col rounded-[24px] border border-border bg-card px-3 pb-2.5 pt-2.5',
 						selectedCommands.length > 0 || elementRefs.length > 0 ? 'mt-2' : headerSlot ? '-mt-5' : '',
 					)}
 					data-tour="chat-input"
 					data-composer-variant={variant}
 					data-multiline={capsuleExpanded ? 'true' : 'false'}
 					data-has-attachments={files.length > 0 ? 'true' : undefined}
+					data-notice-layout={notice ? (inlineNotice ? 'inline' : 'stacked') : undefined}
 				>
 					{/* 声波只占上方文字区；底部操作按钮始终清晰可点。 */}
 					{voiceRecording && (
@@ -770,16 +790,21 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 						</AttachmentGroup>
 					)}
 
-					{notice && <p id={noticeId} role="status" className="px-6 pb-2 pt-3 text-sm leading-6 text-muted-foreground">{notice}</p>}
+					{!inlineNotice && noticeContent}
 					<div className="composer-body relative z-10 flex min-w-0 flex-col">
 						<div className="composer-editor relative min-w-0">
+							{inlineNotice && noticeContent}
 							{/* ``block`` — inline-block would sit on the text baseline and
 							    leave a descender gap that makes the wrapper taller. */}
 							<textarea
 								id="tour-chat-textarea"
 								ref={textareaRef}
 								value={value}
-								onChange={(e) => { setValue(e.target.value); if (!composing.current) detectCatgirl(e.target.value); }}
+								onChange={(e) => {
+									setValue(e.target.value);
+									setSlashDismissed(false);
+									if (!composing.current) detectCatgirl(e.target.value);
+								}}
 								onCompositionStart={() => { composing.current = true; compositionEndedAt.current = -Infinity; }}
 								onCompositionEnd={e => { composing.current = false; compositionEndedAt.current = performance.now(); detectCatgirl(e.currentTarget.value); }}
 								onKeyDown={handleKeyDown}
@@ -791,13 +816,13 @@ export const TextInput = forwardRef<TextInputRef, TextInputProps>(
 								aria-describedby={notice ? noticeId : undefined}
 								disabled={disabled || voiceBusy}
 								rows={1}
-								className={cn(notice && !value ? 'hidden' : 'block', 'w-full resize-none border-0 bg-transparent text-base outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-70')}
+								className={cn(notice && !value ? 'hidden' : 'block', 'w-full resize-none border-0 bg-transparent text-[15px] leading-7 outline-none placeholder:text-muted-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-70')}
 								style={{
 									minHeight: `${variant === 'capsule' ? 40 : TEXTAREA_MIN_HEIGHT_PX}px`,
 									maxHeight: `${MAX_HEIGHT_PX}px`,
 									lineHeight: `${LINE_HEIGHT_PX}px`,
-									paddingLeft: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
-									paddingRight: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
+									paddingInlineStart: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
+									paddingInlineEnd: `${variant === 'capsule' ? 8 : TEXTAREA_PADDING_X_PX}px`,
 									paddingTop: `${TEXTAREA_PADDING_Y_PX}px`,
 									paddingBottom: `${TEXTAREA_PADDING_Y_PX}px`,
 									overflowY: 'auto',

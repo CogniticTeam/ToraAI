@@ -2,9 +2,9 @@ import type { ContentBlock } from '@agentscope-ai/agentscope/message';
 import mime from 'mime';
 
 import type {ToChatModelAvailability} from './tochatModels';
-import {DOUBAO_MODEL_ID,DOUBAO_INPUT_TYPES,IMAGE_MIME_TYPES,AUDIO_MIME_TYPES,VIDEO_MIME_TYPES,normalizeMediaType,mediaInputPart} from '../../../../core/src/chat-media.js';
+import {IMAGE_MIME_TYPES,normalizeMediaType,mediaInputPart} from '../../../../core/src/chat-media.js';
 
-export const chatAttachmentTypes = (model: string, mode = 'chat', models?:ToChatModelAvailability[]) => models?.find(item=>item.id===model)?.input_modalities?.flatMap(type=>type==='image'?IMAGE_MIME_TYPES:type==='audio'?AUDIO_MIME_TYPES:type==='video'?VIDEO_MIME_TYPES:[]) ?? (model === 'glm-5.3' ? [] : model === DOUBAO_MODEL_ID && ['chat','work'].includes(mode) ? DOUBAO_INPUT_TYPES.filter(type => type !== 'text') : IMAGE_MIME_TYPES);
+export const chatAttachmentTypes = (model: string, _mode = 'chat', models?:ToChatModelAvailability[]) => models?.find(item=>item.id===model)?.input_modalities?.flatMap(type=>type==='image'?IMAGE_MIME_TYPES:[]) ?? (model === 'glm-5.3' ? [] : IMAGE_MIME_TYPES);
 
 export async function processChatAttachment(file: File, model: string, mode: string, imageLimit = 32 * 1024 * 1024, models?:ToChatModelAvailability[]): Promise<ContentBlock> {
   const type = normalizeMediaType(file.type || mime.getType(file.name) || '');

@@ -18,14 +18,14 @@ with sync_playwright() as p:
       localStorage.setItem('server_url', testServerUrl);
       localStorage.setItem('username', 'APIYI test');
       localStorage.setItem('tora_auth_token', 'apiyi-ui-test-token');
-      localStorage.setItem('tora_auth_api', 'https://tora.ohfun.online');
+      localStorage.setItem('tora_auth_api', 'https://api.cogniticteam.com');
       localStorage.setItem('tora_language_preference', 'zh');
       localStorage.setItem('tora:first-run:intro:v1', '1');
       localStorage.setItem('tora:first-run:tour:v1', '1');
       localStorage.setItem('tora:first-use-consent:v1', JSON.stringify({terms:true,privacy:true,crossBorder:true}));
     }""")
     def cloud(route):
-        path = route.request.url.split('ohfun.online',1)[1].split('?',1)[0]
+        path = route.request.url.split('cogniticteam.com',1)[1].split('?',1)[0]
         if path == '/auth/me': body = {'id':'test','username':'APIYI test'}
         elif path == '/models':
             if route.request.method == 'POST':
@@ -38,8 +38,8 @@ with sync_playwright() as p:
         elif path == '/account/messages': body = {'messages':[],'unread':0,'nextOffset':None}
         else: body = {}
         route.fulfill(status=200, content_type='application/json', body=json.dumps(body))
-    page.route('https://tora.ohfun.online/**', cloud)
-    page.route_web_socket('wss://tora.ohfun.online/account/events*', lambda socket: socket.send(json.dumps({'type':'ready'})))
+    page.route('https://api.cogniticteam.com/**', cloud)
+    page.route_web_socket('wss://api.cogniticteam.com/account/events*', lambda socket: socket.send(json.dumps({'type':'ready'})))
     def list_models(route):
         discoveries.append(route.request.post_data_json)
         route.fulfill(status=200, content_type='application/json', body=json.dumps({'models':['gpt-5.4-mini','claude-sonnet-4-6']}))

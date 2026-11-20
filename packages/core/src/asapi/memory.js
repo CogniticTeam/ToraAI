@@ -2,8 +2,8 @@
 // 存储模式与 store.js 相同（原子写 tmp+rename、损坏隔离 .corrupt-*），但自行实现：
 // store.js 的 readJson/writeJson 为模块私有，且直接 import 会形成
 // builtin.js → tools/memory.js → 本文件 → store.js → builtin.js 的循环引用。
-import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { isAbsolute, join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { TORA_DIR } from '../config.js';
 
@@ -30,9 +30,14 @@ export class MemoryValidationError extends Error {}
 
 // ---------- 存储（复刻 store.js 模式） ----------
 function readJson(path, fallback) {
-  if (!existsSync(path)) return fallback;
+  let text;
+  try { text = readFileSync(path, 'utf8'); }
+  catch (error) {
+    if (error.code === 'ENOENT') return fallback;
+    throw error;
+  }
   try {
-    return JSON.parse(readFileSync(path, 'utf8'));
+    return JSON.parse(text);
   } catch {
     try { renameSync(path, `${path}.corrupt-${Date.now()}`); } catch { }
     console.warn(`[memory] ${path.split('/').pop()} 解析失败，已隔离为 *.corrupt-* 以便人工恢复`);
@@ -41,10 +46,15 @@ function readJson(path, fallback) {
 }
 
 function writeJson(path, data) {
-  mkdirSync(ASAPI_DIR, { recursive: true });
-  const tmp = `${path}.tmp`;
-  writeFileSync(tmp, JSON.stringify(data, null, 2));
-  renameSync(tmp, path);
+  mkdirSync(ASAPI_DIR, { recursive: true, mode: 0o700 });
+  const tmp = `${path}.${uid()}.tmp`;
+  try {
+    writeFileSync(tmp, JSON.stringify(data, null, 2), { mode: 0o600, flag: 'wx' });
+    renameSync(tmp, path);
+  } catch (error) {
+    try { rmSync(tmp, { force: true }); } catch { /* 保留原始写入错误 */ }
+    throw error;
+  }
 }
 
 function readAll() {
@@ -140,12 +150,19 @@ export function listMemories() {
   return readAll().sort((a, b) => (b.pinned - a.pinned) || byNew(a, b));
 }
 
+export function isMemoryVisible(memory, projectKey) {
+  return memory.scope === 'global' ||
+    (memory.scope === 'project' && !!projectKey && memory.project_key === projectKey);
+}
+
+const sourcePriority = { distill: 0, tool: 1, manual: 2 };
+const desktopIdentity = (text) => text.trim().replace(/(?<=\p{Script=Han})。$/u, '');
+
 /**
  * 保存一条记忆（写入路径统一入口，工具 / 提炼 / API 手动创建共用）。
- * 同 scope 内 bigram Jaccard ≥ 0.85 视为同一条 → 更新 content/kind/updated_at，
- * pinned/source 保留原值。返回 { memory, deduped }。
+ * 桌面端只合并内容等价的条目，优先保留用户编辑；其他调用方沿用相似度合并。
  */
-export function saveMemory({ content, kind = 'fact', scope, project_key = '', source = 'tool', pinned = false } = {}) {
+export function saveMemory({ content, kind = 'fact', scope, project_key = '', source = 'tool', pinned = false } = {}, { desktop = false, origin } = {}) {
   const text = assertContent(content);
   if (!MEMORY_KINDS.includes(kind)) throw new MemoryValidationError(`kind 只能是 ${MEMORY_KINDS.join(' / ')} 之一`);
   if (!MEMORY_SOURCES.includes(source)) throw new MemoryValidationError(`source 只能是 ${MEMORY_SOURCES.join(' / ')} 之一`);
@@ -155,13 +172,19 @@ export function saveMemory({ content, kind = 'fact', scope, project_key = '', so
     throw new MemoryValidationError(`scope 只能是 ${MEMORY_SCOPES.join(' / ')} 之一`);
   }
   const key = scope === 'project' ? projectKeyOf(project_key) : '';
+  if (desktop && scope === 'project' && !isAbsolute(key)) throw new MemoryValidationError('项目记忆需要指定绝对路径');
   const targetKey = scopeKeyOf({ scope, project_key: key });
 
   const list = readAll();
+  const desktopText = desktop ? desktopIdentity(text) : null;
   let best = null;
   let bestScore = 0;
   for (const m of list) {
     if (scopeKeyOf(m) !== targetKey) continue;
+    if (desktop) {
+      if (desktopIdentity(m.content) === desktopText) { best = m; bestScore = 1; break; }
+      continue;
+    }
     const s = similarity(m.content, text);
     if (s > bestScore) { bestScore = s; best = m; }
   }
@@ -171,6 +194,13 @@ export function saveMemory({ content, kind = 'fact', scope, project_key = '', so
   if (best && bestScore >= DEDUP_THRESHOLD) {
     deduped = true;
     memory = { ...best, content: text, kind, updated_at: now() };
+    if (desktop) {
+      if (sourcePriority[source] < (sourcePriority[best.source] ?? 0)) return { memory: best, deduped };
+      memory.source = source;
+      memory.pinned = !!(pinned || best.pinned);
+      if (origin) memory.origin = origin;
+      else if (source === 'manual') delete memory.origin;
+    } else if (text !== best.content || kind !== best.kind) delete memory.origin;
     list[list.indexOf(best)] = memory;
   } else {
     memory = {
@@ -183,6 +213,7 @@ export function saveMemory({ content, kind = 'fact', scope, project_key = '', so
       source,
       pinned: !!pinned,
       content: text,
+      ...(desktop && origin ? { origin } : {}),
     };
     list.push(memory);
   }
@@ -191,7 +222,7 @@ export function saveMemory({ content, kind = 'fact', scope, project_key = '', so
 }
 
 /** 局部更新；id 不存在返回 null。可改 content/kind/scope/project_key/pinned。 */
-export function updateMemory(id, patch = {}) {
+export function updateMemory(id, patch = {}, { desktop = false } = {}) {
   const list = readAll();
   const idx = list.findIndex((m) => m.id === id);
   if (idx === -1) return null;
@@ -207,7 +238,13 @@ export function updateMemory(id, patch = {}) {
   }
   if (patch.project_key !== undefined) next.project_key = projectKeyOf(patch.project_key);
   if (next.scope === 'global') next.project_key = '';
+  if (desktop && next.scope === 'project' && (patch.scope !== undefined || patch.project_key !== undefined)
+      && !isAbsolute(next.project_key || '')) throw new MemoryValidationError('项目记忆需要指定绝对路径');
   if (patch.pinned !== undefined) next.pinned = !!patch.pinned;
+  if (['content', 'kind', 'scope', 'project_key'].some(key => next[key] !== list[idx][key])) {
+    if (desktop) next.source = 'manual';
+    delete next.origin;
+  }
   next.updated_at = now();
   list[idx] = next;
   writeAll(enforceLimit(list, next.scope, next.project_key));
@@ -215,9 +252,9 @@ export function updateMemory(id, patch = {}) {
 }
 
 /** 删除单条；id 不存在返回 false。 */
-export function deleteMemory(id) {
+export function deleteMemory(id, { projectKey } = {}) {
   const list = readAll();
-  const next = list.filter((m) => m.id !== id);
+  const next = list.filter((m) => m.id !== id || (projectKey !== undefined && !isMemoryVisible(m, projectKey)));
   if (next.length === list.length) return false;
   writeAll(next);
   return true;

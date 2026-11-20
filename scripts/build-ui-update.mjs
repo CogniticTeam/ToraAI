@@ -31,11 +31,12 @@ async function walk(directory,prefix=''){
 }
 await walk(work);
 const data=gzipSync(JSON.stringify({files:files.map(({path,data})=>({path,data}))}),{level:9}),file=`${version}.json.gz`;
-const manifest={protocol:UI_PROTOCOL,version,build,minimumShell,url:`https://ohfun.online/tora-updates/ui/${file}`,bytes:data.length,sha256:digest(data),files:files.map(({data,...entry})=>entry)};
+// A signed same-origin path works on both the new feed and the legacy compatibility feed.
+const manifest={protocol:UI_PROTOCOL,version,build,minimumShell,url:`/tora-updates/ui/${file}`,bytes:data.length,sha256:digest(data),files:files.map(({data,...entry})=>entry)};
 const payload=Buffer.from(JSON.stringify(manifest)),key=createPrivateKey(await readFile(process.env.TORA_UI_SIGNING_KEY_FILE));
 const pinned=await readFile(join(root,'packages/desktop/assets/hot-ui-public-key.pem'));
 if(createPublicKey(key).export({type:'spki',format:'pem'}).toString()!==pinned.toString())throw Error('Publisher key does not match the packaged public key');
 const envelope={payload:payload.toString('base64'),signature:sign(null,payload,key).toString('base64')};
-readManifest(envelope,pinned,minimumShell,'https://ohfun.online/tora-updates/ui/stable.json');
+readManifest(envelope,pinned,minimumShell,'https://cogniticteam.com/tora-updates/ui/stable.json');
 await writeFile(join(out,file),data);await writeFile(join(out,'stable.json'),JSON.stringify(envelope));
 console.log(JSON.stringify({version,build,files:files.length,bytes:data.length,out,minimumShell}));

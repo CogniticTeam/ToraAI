@@ -81,29 +81,29 @@ async function main() {
     await page.goto(base + '/', { waitUntil: 'commit', timeout: 10000 });
     // 登录墙属于云端身份服务，不能让本地 UI smoke 依赖真实账号、Turnstile 或网络。
     // 只在这一个浏览器页面把 /auth/me 替换为固定成功响应；生产代码没有任何绕过。
-    await page.route('https://tora.ohfun.online/auth/me', (route) => route.fulfill({
+    await page.route('https://api.cogniticteam.com/auth/me', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ id: 'ui-smoke', username: 'ui-smoke' })
     }));
-    await page.route('https://tora.ohfun.online/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
-await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
-await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
+    await page.route('https://api.cogniticteam.com/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
+await page.route('https://api.cogniticteam.com/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+await page.route('https://api.cogniticteam.com/models', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       // 官方模型下架后，测试环境必须显式提供一条自定义模型；仅对自建临时服务注入。
       body: JSON.stringify({ models: srv ? [{ id: 'ui-smoke-model', provider: 'custom', label: 'UI Smoke', model: 'ui-smoke-model', baseURL: mockModelBase, apiKey: 'ui-smoke-key', enabled: true }] : [] })
     }));
-    await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({
+    await page.route('https://api.cogniticteam.com/polls/config', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }),
     }));
-    await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({
+    await page.route('https://api.cogniticteam.com/account/messages', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0, nextOffset: null }),
     }));
-    await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({
+    await page.route('https://api.cogniticteam.com/account/events-ticket', route => route.fulfill({
       status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'ui-smoke-ticket' }),
     }));
-    await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => {
+    await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => {
       socket.send(JSON.stringify({ type: 'ready' }));
       socket.onMessage(message => { if (message === 'ping') socket.send('pong'); });
     });

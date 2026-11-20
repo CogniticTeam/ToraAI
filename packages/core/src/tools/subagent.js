@@ -70,16 +70,23 @@ export const subagentTool = {
     if (!cfg) return 'Subagent 不可用：缺少运行配置。';
 
     // 权限只降不升：explore 是硬性只读契约；bypass 的主人已经明确授权，才跟着 bypass。
-    const childMode = ctx?.permissionMode === 'bypass' ? 'bypass' : 'explore';
+    const parentMode = ctx.readPermissionMode?.() ?? ctx.permissionMode;
+    const childMode = parentMode === 'bypass' ? 'bypass' : 'explore';
+    const readRules = () => (ctx.readPermissionRules?.() ?? ctx.permissionRules ?? [])
+      .filter(rule => ['deny', 'ask'].includes(rule?.behavior));
     const events = [];
     try {
       for await (const e of runAgent({
         cfg,
         cwd: ctx?.cwd ?? null,
         messages: [{ role: 'user', content: prompt }],
+        desktopMemory: ctx.desktopMemory ? { query: prompt } : null,
         signal: ctx?.signal ?? null,
         computerConsent: ctx?.computerConsent ?? null,
         permissionMode: childMode,
+        readPermissionMode: () => childMode === 'bypass' && (ctx.readPermissionMode?.() ?? ctx.permissionMode) === 'bypass' ? 'bypass' : 'explore',
+        permissionRules: readRules(),
+        readPermissionRules: readRules,
         maxTurns: Math.min(cfg.maxTurns ?? DEFAULT_CHILD_TURNS, DEFAULT_CHILD_TURNS),
         spawnDepth: 1,
         sessionId: ctx?.sessionId ?? null

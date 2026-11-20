@@ -50,6 +50,9 @@ export interface ReviewConfig {
 export interface AgentData {
 	id: string;
 	name: string;
+	avatar?: string | null;
+	personality?: string;
+	chat_model_config?: ChatModelConfig | null;
 	system_prompt: string;
 	context_config: ContextConfig;
 	react_config: ReActConfig;
@@ -59,16 +62,22 @@ export interface AgentData {
 
 export interface AgentView extends RecordBase {
 	user_id: string;
+	builtin?: 'covey';
 	data: AgentData;
 	/**
 	 * Whether the current viewer may PATCH/DELETE this agent. `false`
-	 * for agents shared to the viewer with read-only permission.
+	 * for built-in roles and agents shared with read-only permission.
 	 */
 	editable: boolean;
 }
 
 export interface CreateAgentRequest {
+	/** Self-declaration for this save only; never stored in AgentData. */
+	age_confirmation?: 'adult' | 'minor';
 	name: string;
+	avatar?: string | null;
+	personality?: string;
+	chat_model_config?: ChatModelConfig | null;
 	system_prompt?: string;
 	context_config?: ContextConfig;
 	react_config?: ReActConfig;
@@ -81,7 +90,12 @@ export interface CreateAgentResponse {
 }
 
 export interface UpdateAgentRequest {
+	/** Self-declaration for this save only; never stored in AgentData. */
+	age_confirmation?: 'adult' | 'minor';
 	name?: string;
+	avatar?: string | null;
+	personality?: string;
+	chat_model_config?: ChatModelConfig | null;
 	system_prompt?: string;
 	context_config?: ContextConfig;
 	react_config?: ReActConfig;
@@ -913,6 +927,7 @@ export interface ModelCard {
 
 export interface ListModelRequest {
 	provider: string;
+	credential_id?: string;
 }
 
 export interface ListModelResponse {

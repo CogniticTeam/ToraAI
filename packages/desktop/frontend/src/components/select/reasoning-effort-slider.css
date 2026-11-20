@@ -1,0 +1,274 @@
+.reasoning-effort,
+.reasoning-effort-value {
+	--effort-ink-blue: #245eac;
+	--effort-ink-purple: #7230c4;
+}
+
+.dark .reasoning-effort,
+.dark .reasoning-effort-value {
+	--effort-ink-blue: #93c5fd;
+	--effort-ink-purple: #c4b5fd;
+}
+
+.reasoning-effort-value {
+	color: color-mix(in srgb, var(--effort-ink-blue), var(--effort-ink-purple) var(--effort-percent));
+	font-variant-numeric: tabular-nums;
+}
+
+.reasoning-effort-value[data-off='true'] {
+	color: var(--muted-foreground);
+}
+
+.reasoning-effort {
+	--effort-duration: 160ms;
+	--effort-star-time: calc(3s - 1.5s * var(--effort-energy));
+	min-width: 0;
+	border-radius: 12px;
+	background: var(--surface-muted);
+	padding: 12px 10px 8px;
+}
+
+.reasoning-effort[data-motion='gentle'] {
+	--effort-duration: 240ms;
+	--effort-star-time: 4s;
+}
+
+.reasoning-effort[data-motion='fast'] {
+	--effort-duration: 80ms;
+}
+
+.reasoning-effort-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding-inline: 2px;
+	font-size: 13px;
+}
+
+.reasoning-effort-heading .reasoning-effort-value {
+	font-weight: 500;
+}
+
+.reasoning-effort-control {
+	position: relative;
+	height: 44px;
+	margin-top: 2px;
+	touch-action: none;
+}
+
+.reasoning-effort-track {
+	position: absolute;
+	inset: 8px 0;
+	height: 28px;
+	border-radius: 8px;
+	background: var(--input);
+	box-shadow: 0 0 calc(14px * var(--effort-energy)) color-mix(in srgb, #9333ea calc(var(--effort-energy) * 18%), transparent);
+	pointer-events: none;
+}
+
+.reasoning-effort-fill {
+	position: absolute;
+	inset: 0 auto 0 0;
+	width: calc(14px + (100% - 28px) * var(--effort-position));
+	overflow: hidden;
+	border-radius: inherit;
+	background: linear-gradient(90deg, #4d93f8, var(--effort-color));
+	transition: width var(--effort-duration) cubic-bezier(.2, .75, .25, 1), opacity var(--effort-duration);
+}
+
+.reasoning-effort[data-off='true'] .reasoning-effort-fill {
+	opacity: 0;
+}
+
+.reasoning-effort-nebula {
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(ellipse at 68% 120%, #c4b5fd 0, transparent 65%), radial-gradient(ellipse at 25% -40%, #9333ea 0, transparent 70%);
+	opacity: calc(var(--effort-energy) * .55);
+}
+
+.reasoning-effort-stars {
+	position: absolute;
+	inset: 0;
+	overflow: hidden;
+}
+
+.reasoning-effort-stars > span {
+	position: absolute;
+	inset-inline: 0;
+	top: var(--star-y);
+	height: var(--star-size);
+	animation: reasoning-star calc(var(--effort-star-time) * var(--star-speed)) var(--star-delay) linear infinite;
+	will-change: transform;
+}
+
+.reasoning-effort-stars > span::after {
+	position: absolute;
+	right: 0;
+	width: var(--star-size);
+	height: var(--star-size);
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 0 3px #ddd6fe;
+	content: '';
+}
+
+.reasoning-effort-sweep {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(110deg, transparent 30%, #ffffff38 50%, transparent 70%);
+	opacity: var(--effort-energy);
+	animation: reasoning-sweep 2.4s ease-in-out infinite;
+}
+
+.reasoning-effort-detents {
+	position: absolute;
+	inset: 0 14px;
+}
+
+.reasoning-effort-detents > span {
+	position: absolute;
+	top: 50%;
+	width: 3px;
+	height: 3px;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+	transform: translate(-50%, -50%);
+}
+
+.reasoning-effort-detents > span[data-reached='true'] {
+	background: #ffffffb3;
+}
+
+.reasoning-effort-thumb {
+	position: absolute;
+	top: 0;
+	left: calc(14px + (100% - 28px) * var(--effort-position));
+	width: 28px;
+	height: 28px;
+	border-radius: 8px;
+	background: #fff;
+	box-shadow: 0 1px 5px #0004, 0 0 0 .5px #00000012;
+	transform: translateX(-50%);
+	transition: left var(--effort-duration) cubic-bezier(.2, .75, .25, 1);
+}
+
+.reasoning-effort-input {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 44px;
+	margin: 0;
+	padding: 0;
+	appearance: none;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+	cursor: pointer;
+	touch-action: none;
+}
+
+.reasoning-effort-input::-webkit-slider-runnable-track {
+	height: 28px;
+	border: 0;
+	background: transparent;
+}
+
+.reasoning-effort-input::-webkit-slider-thumb {
+	width: 28px;
+	height: 28px;
+	appearance: none;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+}
+
+.reasoning-effort-input::-moz-range-track {
+	height: 28px;
+	border: 0;
+	background: transparent;
+}
+
+.reasoning-effort-input::-moz-range-thumb {
+	width: 28px;
+	height: 28px;
+	border: 0;
+	border-radius: 8px;
+	background: transparent;
+}
+
+.reasoning-effort-input:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.reasoning-effort-input:disabled {
+	cursor: default;
+}
+
+.reasoning-effort-labels {
+	display: grid;
+	align-items: start;
+	gap: 1px;
+	margin-inline: -5px;
+}
+
+.reasoning-effort-labels > button {
+	min-width: 0;
+	min-height: 28px;
+	border-radius: 6px;
+	padding: 3px 1px;
+	color: var(--muted-foreground);
+	font-size: 10px;
+	line-height: 1.3;
+	overflow-wrap: anywhere;
+	cursor: pointer;
+}
+
+.reasoning-effort-labels > button[aria-pressed='true'] {
+	background: var(--accent);
+	color: var(--foreground);
+	font-weight: 600;
+}
+
+.reasoning-effort-labels > button:hover:not(:disabled) {
+	background: var(--accent);
+}
+
+.reasoning-effort-labels > button:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 1px;
+}
+
+.reasoning-effort[data-pending='true'] .reasoning-effort-control {
+	opacity: .65;
+}
+
+.reasoning-effort[data-motion='off'] {
+	--effort-duration: 0ms;
+}
+
+.reasoning-effort[data-motion='off'] :is(.reasoning-effort-sweep, .reasoning-effort-stars > span) {
+	animation: none;
+	opacity: 0;
+}
+
+.reasoning-effort[data-energy='false'] .reasoning-effort-sweep {
+	animation: none;
+}
+
+@keyframes reasoning-star {
+	from { transform: translateX(4%); }
+	to { transform: translateX(-104%); }
+}
+
+@keyframes reasoning-sweep {
+	0%, 15% { transform: translateX(-100%); }
+	70%, 100% { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.reasoning-effort { --effort-duration: 0ms; }
+	.reasoning-effort :is(.reasoning-effort-sweep, .reasoning-effort-stars > span) { animation: none; opacity: 0; }
+}

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { applicationMenuTemplate } from '../packages/desktop/application-menu.js';
@@ -9,6 +9,7 @@ import { normalizeNativeLanguage } from '../packages/desktop/native-i18n.js';
 const locale = (name) => JSON.parse(readFileSync(new URL(`../packages/desktop/frontend/src/i18n/locales/${name}.json`, import.meta.url), 'utf8'));
 const added = ['ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh'];
 const all = ['en-US', 'en-GB', 'zh', 'zh-HK', 'zh-TW', ...added];
+const catalogs = ['en', ...all, 'zh-Hant', 'zh-Neko', 'ja-Neko'];
 const english = locale('en');
 const requireFrontend = createRequire(new URL('../packages/desktop/frontend/package.json', import.meta.url));
 const i18next = requireFrontend('i18next');
@@ -25,7 +26,7 @@ const markers = (value, pattern) => [...value.matchAll(pattern)].map(([match]) =
 
 test('全部界面语言有同一词条和数组结构，插值与代码片段不丢失', () => {
   const expectedKeys = Object.keys(flatten(english)).sort();
-  for (const name of all) {
+  for (const name of catalogs) {
     const source = name === 'lzh' ? flatten(locale('zh')) : flatten(english);
     const translated = flatten(locale(name));
     const extras = name === 'ar' ? pluralBases.flatMap((base) => ['zero', 'two', 'few', 'many'].map((form) => `${base}_${form}`))
@@ -53,7 +54,55 @@ test('全部界面语言有同一词条和数组结构，插值与代码片段�
       assert.ok(locale(name).settings.general.language[key], `${name} 缺少 ${option} 的语言名称`);
     }
     assert.ok(locale(name).languageDialog.search, `${name} 缺少语言搜索文案`);
+    assert.ok(locale(name).agentSection.desc.includes('Tora'), `${name} 的智能体说明仍使用旧名称`);
+    assert.ok(locale(name).agentSection.systemPromptPlaceholder.includes('Tora'), `${name} 的提示词说明仍使用旧名称`);
   }
+});
+
+test('前端使用的静态翻译键在全部语言中存在，不会直接显示键名', () => {
+  const ts = requireFrontend('typescript');
+  const sourceRoot = new URL('../packages/desktop/frontend/src/', import.meta.url);
+  const referenced = new Map();
+  const add = (key, file, node) => {
+    const line = file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1;
+    referenced.set(key, `${file.fileName}:${line}`);
+  };
+  const argumentKeys = (node, file) => {
+    if (ts.isStringLiteralLike(node)) add(node.text, file, node);
+    else if (ts.isConditionalExpression(node)) { argumentKeys(node.whenTrue, file); argumentKeys(node.whenFalse, file); }
+  };
+  const scan = directory => {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      const path = new URL(entry.name + (entry.isDirectory() ? '/' : ''), directory);
+      if (entry.isDirectory()) { if (entry.name !== 'i18n') scan(path); continue; }
+      if (!/\.(?:ts|tsx)$/.test(entry.name)) continue;
+      const file = ts.createSourceFile(path.pathname, readFileSync(path, 'utf8'), ts.ScriptTarget.Latest, true);
+      const visit = node => {
+        if (ts.isCallExpression(node) && node.arguments.length && ((ts.isIdentifier(node.expression) && node.expression.text === 't') || (ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === 't'))) argumentKeys(node.arguments[0], file);
+        if (ts.isPropertyAssignment(node) && node.name.getText(file) === 'label' && ts.isStringLiteralLike(node.initializer) && /^(?:settings|modelSection)\./.test(node.initializer.text)) add(node.initializer.text, file, node.initializer);
+        ts.forEachChild(node, visit);
+      };
+      visit(file);
+    }
+  };
+  scan(sourceRoot);
+  assert.ok(referenced.size > 500);
+  const missing = [];
+  for (const name of catalogs) {
+    const translations = flatten(locale(name));
+    for (const [key, site] of referenced) if (!Object.hasOwn(translations, key) && !Object.hasOwn(translations, `${key}_other`) && !Object.hasOwn(translations, `${key}_one`)) missing.push(`${name}: ${key} (${site})`);
+    for (const [key, value] of Object.entries(translations)) assert.ok(!value.includes('�'), `${name}.${key} 含损坏字符`);
+  }
+  assert.deepEqual(missing, []);
+});
+
+test('设置页复用完整语言选择器，不绕过异步加载或把地区语言折叠为中英文', () => {
+  const source = readFileSync(new URL('../packages/desktop/frontend/src/components/dialog/SettingsDialog.tsx', import.meta.url), 'utf8');
+  assert.match(source, /<LanguageDialog\b/);
+  assert.ok(!source.includes('i18n.changeLanguage('));
+  assert.ok(!source.includes("lang.startsWith('zh')"));
+  assert.ok(!source.includes('cocodeWindow'));
+  assert.match(source, /getAppVersion/);
 });
 
 test('阿拉伯语和俄语的所有数量形式都能实际渲染', async () => {

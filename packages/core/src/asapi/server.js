@@ -12,15 +12,18 @@ import { fileURLToPath } from 'node:url';
 import { homedir } from 'node:os';
 import { discoverSessionImports, previewSessionImports, commitSessionImports, readSessionImportBody } from './session-import.js';
 import { loadConfig, saveConfig, syncEffectiveModel, DEFAULT_CONFIG } from '../config.js';
-import { BUILTIN_CREDENTIAL_ID, BUILTIN_PROVIDER_TYPE, getBuiltinModels, setBuiltinCatalog, builtinAuth, setBuiltinAuth } from '../builtin-models.js';
+import { CODEX_CREDENTIAL_ID, CODEX_PROVIDER, codexStatus, codexModelCards, refreshCodexCatalog, disconnectCodex } from '../codex-auth.js';
+import { routeCodex } from './codex.js';
+import { moderateAgentRole } from './agent-role-moderation.js';
+import { BUILTIN_PROVIDER_TYPE, isBuiltinCredential, isOfficialModelGateway } from '../builtin-models.js';
 import { catgirlSettings } from '../catgirl.js';
 import { normalizeTitleLanguage } from '../title-rules.js';
 import {
   listAgents, getAgent, createAgent, updateAgent, deleteAgent,
-  listCredentials, createCredential, updateCredential, deleteCredential,
+  listCredentials, getCredential, createCredential, updateCredential, deleteCredential,
   createSessionRecord, listSessionRecords, loadSessionRecord, saveSessionRecord, deleteSession,
   addWorkspaceRecent, listWorkspaceRecents,
-  listSkills, getSkill, findSkillByCardId, installSkill, deleteSkill, loadSkillMarkdown, importSkillFromLocal,
+  listSkills, getSkill, setSkillEnabled, findSkillByCardId, installSkill, deleteSkill, loadSkillMarkdown, importSkillFromLocal,
   searchSessions, forkSession, exportSession,
   listPermissionRules, addPermissionRule, deletePermissionRule, clearPermissionRules,
   resetAll
@@ -29,19 +32,21 @@ import { HubError } from './hub-error.js';
 import { accessBlockReason, setAccessBlock } from './access.js';
 import { HUBS, providerFor } from './hubs.js';
 import { toSessionView, inputToText } from './protocol.js';
+import { markInterruptedReply } from './session-events.js';
 import { startChatRun, isRunning, hasActiveRuns, subscribe, interrupt, resolveConfirm, resolveQuestion, isAwaitingConfirm, loadExtraTools, updateRunningPermissionMode } from './bridge.js';
 import { readGitInfo, runGit } from '../tools/git.js';
 import { realpathAllowMissing } from '../security.js';
 import { listMemories, saveMemory, updateMemory, deleteMemory, searchMemories, loadMemoryConfig, saveMemoryConfig, MemoryValidationError } from './memory.js';
+import { rankDesktopMemories } from './desktop-memory-recall.js';
 import { discoverLocalModels } from '../discover.js';
 import { loadCommands } from '../commands.js';
-import { detectVision } from '../model.js';
+import { detectVision, thinkingParameterProperties } from '../model.js';
 import { describeHooks, HOOK_EVENTS } from '../hooks.js';
 import { ensureUsageHistoryImported, usageStats } from './usage.js';
 import { acknowledgeUsageMilestone, usageMilestoneStatus } from './usage-store.js';
 import { buildSymbolIndex } from '../tools/lsp.js';
-import { normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
-import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates } from '../tools/mcp-workshop.js';
+import { invalidateChangedMcpClients, normalizeMcpServers, mcpStatus } from '../tools/mcp.js';
+import { listServers as mcpListServers, addServer as mcpAddServer, updateServer as mcpUpdateServer, removeServer as mcpRemoveServer, probeServer as mcpProbeServer, callTool as mcpCallTool, listTemplates as mcpListTemplates, importServers as mcpImportServers } from '../tools/mcp-workshop.js';
 import { createTerminal, writeTerminal, interruptTerminal, killTerminal, getTerminal, subscribeTerminal, replayTerminal } from './terminal.js';
 import { listCheckpoints, restore as restoreCheckpoint, clearCheckpoints } from '../tools/checkpoint.js';
 import {recordedSessionDiff} from './session-diff.js';
@@ -149,10 +154,20 @@ const AGENT_SCHEMA = {
   schema: {
     title: 'AgentData', type: 'object',
     properties: {
-      name: { type: 'string', title: 'Name', description: '显示在会话侧栏与选择器中' },
+      name: { type: 'string', title: 'Name', minLength: 1, maxLength: 100, description: '显示在会话侧栏与选择器中' },
+      avatar: { type: ['string', 'null'], title: 'Avatar', description: '本地图片转换的 PNG 数据，最大 128 KiB' },
+      personality: { type: 'string', format: 'textarea', title: 'Personality', maxLength: 8000, default: '' },
+      chat_model_config: {
+        type: ['object', 'null'], title: 'Default Model',
+        properties: {
+          type: { type: 'string' }, credential_id: { type: 'string' }, model: { type: 'string' },
+          parameters: { type: 'object' },
+        },
+        required: ['type', 'credential_id', 'model', 'parameters'],
+      },
       system_prompt: {
-        type: 'string', format: 'textarea', title: 'System Prompt',
-        description: '留空则使用 Tora 内置紧凑提示词（低 token）'
+        type: 'string', format: 'textarea', title: 'Role Instructions', maxLength: 20000,
+        description: '角色在 Tora 中的背景、职责与行为偏好；留空保留基础助手能力'
       },
       context_config: {
         type: 'object', title: 'Context Config',
@@ -189,6 +204,65 @@ const AGENT_SCHEMA = {
     required: ['name']
   }
 };
+
+function validRoleAvatar(value) {
+  if (typeof value !== 'string' || value.length > 175000) return false;
+  const match = /^data:image\/png;base64,([A-Za-z0-9+/]+={0,2})$/.exec(value);
+  if (!match) return false;
+  const data = Buffer.from(match[1], 'base64');
+  if (data.length < 33 || data.length > 128 * 1024 || data.toString('base64') !== match[1]) return false;
+  if (data.subarray(0, 8).toString('hex') !== '89504e470d0a1a0a' || data.subarray(12, 16).toString() !== 'IHDR') return false;
+  const width = data.readUInt32BE(16), height = data.readUInt32BE(20);
+  if (!width || !height || width > 256 || height > 256 || data.readUInt32BE(8) !== 13) return false;
+  let offset = 8, hasData = false;
+  while (offset + 12 <= data.length) {
+    const length = data.readUInt32BE(offset), type = data.subarray(offset + 4, offset + 8).toString();
+    if (offset + length + 12 > data.length) return false;
+    if (type === 'IDAT' && length > 0) hasData = true;
+    if (type === 'IEND') return length === 0 && hasData && offset + 12 === data.length;
+    offset += length + 12;
+  }
+  return false;
+}
+
+function roleParametersContainCredentials(parameters) {
+  const pending = [parameters];
+  while (pending.length) {
+    for (const [key, value] of Object.entries(pending.pop())) {
+      if (/(?:api(?:key|token)|(?:access|refresh|auth|bearer)token|authorization|headers|baseurl|endpoint|password|secret)$/i.test(key.replace(/[_-]/g, ''))) return true;
+      if (value && typeof value === 'object') pending.push(value);
+    }
+  }
+  return false;
+}
+
+function validateRoleBody(body, partial = false) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return '角色配置必须是对象';
+  if (body.age_confirmation !== undefined && !['adult', 'minor'].includes(body.age_confirmation)) return '年龄确认无效';
+  if (!partial || body.name !== undefined) {
+    if (typeof body.name !== 'string' || !body.name.trim() || body.name.trim().length > 100) return '角色名称应为 1–100 个字符';
+    body.name = body.name.trim();
+  }
+  for (const [key, limit] of [['personality', 8000], ['system_prompt', 20000]]) {
+    if (body[key] !== undefined && (typeof body[key] !== 'string' || body[key].length > limit)) return `${key} 应为不超过 ${limit} 个字符的文本`;
+  }
+  if (body.avatar !== undefined && body.avatar !== null && !validRoleAvatar(body.avatar)) return '头像应为不超过 128 KiB、256×256 像素的本地 PNG 图片';
+  const model = body.chat_model_config;
+  if (model !== undefined && model !== null) {
+    if (typeof model !== 'object' || Array.isArray(model)) return '默认模型配置无效';
+    if (Object.keys(model).some(key => !['type', 'credential_id', 'model', 'parameters'].includes(key))) return '默认模型仅保存模型与凭证引用，不接受密钥或端点';
+    if (typeof model.type !== 'string' || !model.type || model.type.length > 100 || typeof model.model !== 'string' || !model.model.trim() || model.model.length > 512 || typeof model.credential_id !== 'string' || model.credential_id.length > 200) return '默认模型配置无效';
+    if (!['openai_compatible', CODEX_PROVIDER, BUILTIN_PROVIDER_TYPE].includes(model.type)) return '默认模型类型无效';
+    if (!model.parameters || typeof model.parameters !== 'object' || Array.isArray(model.parameters)) return '默认模型参数无效';
+    try { if (JSON.stringify(model.parameters).length > 16000) return '默认模型参数无效'; }
+    catch { return '默认模型参数无效'; }
+    if (roleParametersContainCredentials(model.parameters)) return '模型参数不能包含密钥或端点';
+    if (model.credential_id === TORA_CRED_ID) {
+      if (!enabledModels(loadConfig()).some(item => item.model === model.model)) return '默认模型不可用，请重新选择';
+    } else if (model.credential_id && model.credential_id !== CODEX_CREDENTIAL_ID && !isBuiltinCredential(model.credential_id) && !getCredential(model.credential_id)) return '默认模型凭证不可用，请重新选择';
+  }
+  return null;
+}
 
 const CREDENTIAL_SCHEMAS = {
   schemas: [
@@ -235,11 +309,7 @@ async function readBody(req) {
 const TORA_CRED_ID = 'cocode-models';
 
 function isCustomModel(m) {
-  return !m?.isOfficial && !String(m?.baseURL || '').includes('/official/v1');
-}
-
-function isRetiredOfficialModelURL(value) {
-  return String(value ?? '').toLowerCase().includes('/official/v1');
+  return !m?.isOfficial && !isOfficialModelGateway(m?.baseURL);
 }
 
 function enabledModels(cfg) {
@@ -279,10 +349,14 @@ function isLoopbackHost(req) {
   return host === '127.0.0.1' || host === 'localhost' || host === '';
 }
 
-export function startASAPIServer({ port = 0, host = '127.0.0.1', uiResources } = {}) {
+export { accessBlockReason };
+
+export function startASAPIServer({
+  port = 0, host = '127.0.0.1', uiResources, desktopMemory = false, desktopPlugins = null, desktopHarness = false,
+} = {}) {
   setSchedulePauseProvider(()=>uiUpdatePaused);
   const server = createServer(async (req, res) => {
-    try { await route(req, res, uiResources); }
+    try { await route(req, res, uiResources, { desktopMemory, desktopPlugins, desktopHarness }); }
     catch (e) { apiError(res, 500, e?.message || String(e)); }
   });
   // 定时任务到点：建一个归属该 agent 的会话，用任务描述当首条消息跑一轮。
@@ -300,7 +374,8 @@ export function startASAPIServer({ port = 0, host = '127.0.0.1', uiResources } =
     });
     record.state.permission_mode = sched.data?.permission_mode || 'dont_ask';
     saveSessionRecord(record);
-    startChatRun(record.id, agent, { userText: sched.data?.description || sched.data?.name || '' });
+    startChatRun(record.id, agent, { userText: sched.data?.description || sched.data?.name || '' },
+      { desktopMemory, desktopHarness, scheduled: true });
     return record.id;
   });
   return new Promise((resolve, reject) => {
@@ -328,7 +403,7 @@ export function acquireUIUpdateLock(){
   return ()=>{uiUpdatePaused=false;setAccessBlock('ui-update','');void evaluateSchedules().catch(()=>{});};
 }
 
-async function route(req, res, uiResources) {
+async function route(req, res, uiResources, { desktopMemory, desktopPlugins, desktopHarness }) {
   const url = new URL(req.url, 'http://localhost');
   const p = url.pathname;
   const method = req.method;
@@ -384,7 +459,10 @@ async function route(req, res, uiResources) {
 
   // ---------- 管理端点（Tora 扩展，非 agentscope 协议） ----------
   // 设置窗口的"清空所有数据"
+  if (p.startsWith('/admin/codex/')) return routeCodex(req, res, p, json);
   if (p === '/admin/reset' && method === 'POST') {
+    if (hasActiveRuns()) return apiError(res, 409, '会话正在运行，先中止再清空数据');
+    disconnectCodex();
     const counts = resetAll();
     return json(res, 200, { status: 'ok', ...counts });
   }
@@ -433,46 +511,13 @@ async function route(req, res, uiResources) {
     return json(res, 200, { baseURL: cfg.baseURL, model: cfg.model, apiKeySet: !!cfg.apiKey });
   }
   // 写入：apiKey 空字符串/缺省 = 保留原值
-  // Desktop quota reads use Node's transport, independent of Chromium TLS.
-  if(p==='/admin/tochat-human-verification' && method==='POST') {
-    const cfg=loadConfig(),auth=builtinAuth(cfg);
-    if(!auth.authToken)return apiError(res,401,'请先登录');
-    const body=await readBody(req);
-    if(typeof body?.['cf-turnstile-response']!=='string'||body['cf-turnstile-response'].length>2048)return apiError(res,400,'验证请求无效');
-    try{
-      const response=await fetch(String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/auth/human-verification',{method:'POST',headers:{authorization:`Bearer ${auth.authToken}`,'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':body['cf-turnstile-response']}),signal:AbortSignal.timeout(15000),redirect:'error'});
-      if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账号已切换，请重试');
-      if(!response.headers.get('content-type')?.includes('application/json'))return apiError(res,502,'验证服务响应无效');
-      return json(res,response.status,await response.json());
-    }catch{return apiError(res,502,'验证服务暂不可用，请重试');}
-  }
-  if(p==='/admin/tochat-quota' && method==='GET') {
-    const cfg=loadConfig(),auth=builtinAuth(cfg);
-    if(!auth.authToken)return apiError(res,503,'官方模型身份尚未同步');
-    try{
-      const response=await fetch(String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/quota',{headers:{authorization:`Bearer ${auth.authToken}`},signal:AbortSignal.timeout(10000),redirect:'error'});
-      if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账户已更改，请重试');
-      if(!response.ok)return apiError(res,response.status,'官方模型额度暂不可用');
-      if(!response.headers.get('content-type')?.includes('application/json'))return apiError(res,502,'官方模型额度响应无效');
-      const data=await response.json();
-      if(builtinAuth(cfg).authToken!==auth.authToken)return apiError(res,409,'账户已更改，请重试');
-      if(data.catalogRevision!==undefined)setBuiltinCatalog(data.models,data.catalogRevision);
-      return json(res,200,data);
-    }catch{return apiError(res,502,'官方模型连接失败，请稍后重试');}
-  }
-  if(p==='/admin/tochat-config' && method==='POST') {
-    const body=await readBody(req);
-    const baseURL=String(body.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'');
-    if(!/^https:\/\//.test(baseURL)&&!/^http:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/.test(baseURL)) return apiError(res,422,'官方服务地址必须使用 HTTPS');
-    setBuiltinAuth({baseURL,authToken:String(body.authToken||'')});
-    // Quota polls refresh the runtime auth; unchanged addresses need no disk write.
-    if(loadConfig().tochat?.baseURL!==baseURL)saveConfig({tochat:{baseURL}}); // Account token lives in memory; Electron keeps its persistent copy encrypted.
-    return json(res,200,{status:'ok'});
+  if (['/admin/tochat-config', '/admin/tochat-quota', '/admin/tochat-human-verification'].includes(p)) {
+    return apiError(res, 410, 'Tora Desktop 官方模型已下线');
   }
   if (p === '/admin/config' && method === 'POST') {
     try {
       const body = await readBody(req);
-      if (typeof body.baseURL === 'string' && isRetiredOfficialModelURL(body.baseURL)) {
+      if (typeof body.baseURL === 'string' && isOfficialModelGateway(body.baseURL)) {
         return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
       }
       const patch = {};
@@ -505,7 +550,7 @@ async function route(req, res, uiResources) {
       changesAware: cfg.changesAware !== false,
       changesLimit: cfg.changesLimit ?? 12,
       lspServers: cfg.lspServers || {},
-      mcpServers: normalizeMcpServers(cfg.mcpServers)
+      mcpServers: Object.fromEntries(Object.entries(normalizeMcpServers(cfg.mcpServers)).map(([name, { headers, ...server }]) => [name, server]))
     });
   }
   if (p === '/admin/runtime' && method === 'POST') {
@@ -542,7 +587,14 @@ async function route(req, res, uiResources) {
       if (body.mcpServers !== undefined) {
         // 与 lspServers 同级信任（用户自己的配置），但结构收紧：
         // 键做工具名安全字符，command 必须是非空字符串
-        patch.mcpServers = normalizeMcpServers(body.mcpServers);
+        const current = normalizeMcpServers(loadConfig().mcpServers);
+        const requested = normalizeMcpServers(body.mcpServers);
+        for (const [name, server] of Object.entries(requested)) {
+          if (server.url && server.url === current[name]?.url && body.mcpServers[name]?.headers === undefined) {
+            server.headers = current[name].headers;
+          }
+        }
+        patch.mcpServers = requested;
       }
       if (body.lspServers && typeof body.lspServers === 'object' && !Array.isArray(body.lspServers)) {
         const clean = {};
@@ -576,7 +628,9 @@ async function route(req, res, uiResources) {
       if (!Object.keys(patch).length) {
         return apiError(res, 400, '没有可识别的 runtime 字段');
       }
+      const previousMcp = patch.mcpServers ? loadConfig().mcpServers : null;
       const next = saveConfig(patch);
+      if (patch.mcpServers) invalidateChangedMcpClients(previousMcp, next.mcpServers);
       return json(res, 200, {
         status: 'ok',
         maxTokensBudget: next.maxTokensBudget,
@@ -761,11 +815,12 @@ async function route(req, res, uiResources) {
 
   // ---------- 记忆（Memory：跨会话长期记忆 CRUD + 配置） ----------
   if (p === '/memories' && method === 'GET') {
-    // ?q= 走评分检索；否则全量列表 + scope/project_key 过滤（key 归一后匹配存储值）
-    if (q.q) return json(res, 200, { memories: searchMemories(q.q, { limit: Number(q.limit) || 10 }) });
+    const limit = Number(q.limit) || 10;
+    if (q.q && !desktopMemory) return json(res, 200, { memories: searchMemories(q.q, { limit }) });
     const normKey = q.project_key ? String(realpathAllowMissing(q.project_key)) : '';
     const items = listMemories().filter((rec) =>
       (!q.scope || rec.scope === q.scope) && (!normKey || rec.project_key === normKey));
+    if (q.q) return json(res, 200, { memories: rankDesktopMemories(q.q, items, { limit }) });
     return json(res, 200, { memories: items, total: items.length });
   }
   if (p === '/memories' && method === 'POST') {
@@ -779,7 +834,7 @@ async function route(req, res, uiResources) {
         project_key: body?.project_key ?? '',
         source: 'manual',
         pinned: !!body?.pinned
-      });
+      }, { desktop: desktopMemory });
       return json(res, 200, { status: 'ok', memory, deduped });
     } catch (e) {
       if (e instanceof MemoryValidationError) return apiError(res, 400, e.message);
@@ -787,6 +842,13 @@ async function route(req, res, uiResources) {
     }
   }
   let mrec;
+  if (desktopMemory && (mrec = p.match(/^\/memories\/([\w-]+)\/origin$/)) && method === 'GET') {
+    const origin = listMemories().find(record => record.id === mrec[1])?.origin;
+    const session = /^[\w-]+$/.test(origin?.session_id ?? '') ? loadSessionRecord(origin.session_id) : null;
+    const message = session?.display?.find(record => record.id === origin.message_id && record.role === 'user');
+    const text = inputToText(message).slice(0, 2000);
+    return json(res, 200, { origin: text ? { text } : null });
+  }
   if ((mrec = p.match(/^\/memories\/([\w-]+)$/)) && method === 'PATCH') {
     try {
       const body = await readBody(req);
@@ -794,7 +856,7 @@ async function route(req, res, uiResources) {
       for (const k of ['content', 'kind', 'scope', 'project_key', 'pinned']) {
         if (body?.[k] !== undefined) patch[k] = body[k];
       }
-      const next = updateMemory(mrec[1], patch);
+      const next = updateMemory(mrec[1], patch, { desktop: desktopMemory });
       if (!next) return apiError(res, 404, '记忆不存在');
       return json(res, 200, { status: 'ok', memory: next });
     } catch (e) {
@@ -962,7 +1024,7 @@ async function route(req, res, uiResources) {
       const body = await readBody(req);
       const baseRaw = String(body.baseURL ?? '').trim().replace(/\/+$/, '');
       if (!/^https?:\/\//.test(baseRaw)) return apiError(res, 422, 'baseURL 必须是 http(s) 地址');
-      if (isRetiredOfficialModelURL(baseRaw)) return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
+      if (isOfficialModelGateway(baseRaw)) return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
       const cfg = loadConfig();
       const list = Array.isArray(cfg.modelList) ? [...cfg.modelList] : [];
       const provider = String(body.provider ?? 'custom');
@@ -1019,7 +1081,7 @@ async function route(req, res, uiResources) {
       if (idx < 0) return apiError(res, 404, '模型不存在');
       if (method === 'PATCH') {
         const body = await readBody(req);
-        if (typeof body.baseURL === 'string' && isRetiredOfficialModelURL(body.baseURL)) {
+        if (typeof body.baseURL === 'string' && isOfficialModelGateway(body.baseURL)) {
           return apiError(res, 422, '官方模型服务已下线，请配置自定义模型地址');
         }
         if (typeof body.model === 'string' && body.model.trim()) list[idx].model = body.model.trim();
@@ -1047,8 +1109,15 @@ async function route(req, res, uiResources) {
   }
   if (p === '/agent/' && method === 'POST') {
     const body = await readBody(req);
-    if (!body.name?.trim()) return apiError(res, 422, 'name 不能为空');
-    const agent = createAgent(body);
+    const error = validateRoleBody(body);
+    if (error) return apiError(res, 422, error);
+    const { age_confirmation, ...data } = body;
+    const reviewError = await moderateAgentRole(data, age_confirmation);
+    if (reviewError) return json(res, reviewError.status, { code: reviewError.code, detail: reviewError.detail });
+    if (accessBlockReason()) return apiError(res, 403, accessBlockReason());
+    const validationError = validateRoleBody(data);
+    if (validationError) return apiError(res, 422, validationError);
+    const agent = createAgent(data);
     return json(res, 200, { agent_id: agent.id });
   }
   if (p === '/agent/schema/v2' && method === 'GET') {
@@ -1057,11 +1126,37 @@ async function route(req, res, uiResources) {
   let m;
   if ((m = p.match(/^\/agent\/([\w-]+)$/))) {
     if (method === 'PATCH') {
+      const existing = getAgent(m[1]);
+      if (!existing) return apiError(res, 404, 'agent 不存在');
+      if (!existing.editable) return apiError(res, 403, '角色为只读');
       const body = await readBody(req);
-      const agent = updateAgent(m[1], body);
+      const current = getAgent(m[1]);
+      if (!current) return apiError(res, 404, 'agent 不存在');
+      if (!current.editable) return apiError(res, 403, '角色为只读');
+      if (accessBlockReason()) return apiError(res, 403, accessBlockReason());
+      const error = validateRoleBody(body, true);
+      if (error) return apiError(res, 422, error);
+      const { age_confirmation, ...patch } = body;
+      const changedText = ['name', 'personality', 'system_prompt'].some(key => patch[key] !== undefined && patch[key] !== (current.data[key] ?? ''));
+      if (changedText) {
+        const reviewError = await moderateAgentRole({ ...current.data, ...patch }, age_confirmation);
+        if (reviewError) return json(res, reviewError.status, { code: reviewError.code, detail: reviewError.detail });
+        if (accessBlockReason()) return apiError(res, 403, accessBlockReason());
+        const latest = getAgent(m[1]);
+        if (!latest) return apiError(res, 404, 'agent 不存在');
+        if (!latest.editable) return apiError(res, 403, '角色为只读');
+        if (JSON.stringify(latest.data) !== JSON.stringify(current.data)) {
+          return json(res, 409, { code: 'ROLE_REVIEW_STALE', detail: '角色已在审核期间发生变化，请检查后重新保存。' });
+        }
+        const validationError = validateRoleBody(patch, true);
+        if (validationError) return apiError(res, 422, validationError);
+      }
+      const agent = updateAgent(m[1], patch);
       return agent ? json(res, 200, agent) : apiError(res, 404, 'agent 不存在');
     }
     if (method === 'DELETE') {
+      const current = getAgent(m[1]);
+      if (current && !current.editable) return apiError(res, 403, '角色为只读');
       deleteAgent(m[1]);
       return json(res, 200, { status: 'ok' });
     }
@@ -1095,7 +1190,8 @@ async function route(req, res, uiResources) {
     if (!body.agent_id) return apiError(res, 422, 'agent_id 不能为空');
     // 死 agent_id 一律 404：否则会产出指向不存在 agent 的会话，
     // 前端之后每条消息都撞 404 "agent 不存在"，还无处自救。
-    if (!getAgent(body.agent_id)) return apiError(res, 404, 'agent 不存在');
+    const agent = getAgent(body.agent_id);
+    if (!agent) return apiError(res, 404, 'agent 不存在');
     const record = createSessionRecord({
       agent_id: body.agent_id,
       chat_model_config: body.chat_model_config || null,
@@ -1105,7 +1201,10 @@ async function route(req, res, uiResources) {
     });
     record.config.application_mode=body.application_mode==='tochat'?'tochat':'tocode';
     record.config.task_mode=body.task_mode==='chat'?'chat':'work';
-    record.config.model_source=body.model_source==='custom'?'custom':'official';
+    const inheritedRoleModel = !body.chat_model_config && agent.data.chat_model_config;
+    record.config.model_source = inheritedRoleModel
+      ? (isBuiltinCredential(inheritedRoleModel.credential_id) ? 'official' : 'custom')
+      : (body.model_source === 'custom' ? 'custom' : 'official');
     record.config.web_search=body.web_search===true;
     const titleLanguage=normalizeTitleLanguage(body.title_language);
     if(titleLanguage)record.config.title_language=titleLanguage;
@@ -1249,15 +1348,7 @@ async function route(req, res, uiResources) {
   if ((m = p.match(/^\/sessions\/([\w-]+)\/messages$/)) && method === 'GET') {
     const s = loadSessionRecord(m[1]);
     if (!s) return apiError(res, 404, '会话不存在');
-    const last = s.display?.[s.display.length - 1];
-    if (!isRunning(m[1]) && last?.role === 'assistant' && last.finished_at === null) {
-      last.finished_at = new Date().toISOString();
-      last.finished_reason = 'interrupted';
-      for (const block of last.content || []) {
-        if (block.type === 'tool_call' && block.state === 'asking') block.state = 'finished';
-      }
-      saveSessionRecord(s);
-    }
+    if (!isRunning(m[1]) && markInterruptedReply(s)) saveSessionRecord(s);
     return json(res, 200, { messages: s.display || [], is_running: isRunning(m[1]), has_more: false });
   }
   if ((m = p.match(/^\/sessions\/([\w-]+)\/stream$/)) && method === 'GET') {
@@ -1285,6 +1376,20 @@ async function route(req, res, uiResources) {
   if ((m = p.match(/^\/sessions\/([\w-]+)\/interrupt$/)) && method === 'POST') {
     const interrupted = interrupt(m[1]);
     return json(res, 202, { session_id: m[1], interrupted });
+  }
+  if ((m = p.match(/^\/sessions\/([\w-]+)\/resume$/)) && method === 'POST') {
+    const { reply_id, view_mode } = (await readBody(req)) ?? {};
+    if (typeof reply_id !== 'string' || !/^[\w-]{1,128}$/.test(reply_id)) return apiError(res, 422, '需要有效的回复 ID');
+    if (view_mode !== undefined && !['tocode', 'tochat'].includes(view_mode)) return apiError(res, 422, '无效的应用视图');
+    const session = loadSessionRecord(m[1]);
+    if (!session || (q.agent_id && session.agent_id !== q.agent_id)) return apiError(res, 404, '会话不存在');
+    const agent = getAgent(session.agent_id);
+    if (!agent) return apiError(res, 404, 'agent 不存在');
+    const result = startChatRun(session.id, agent, { viewMode: view_mode }, {
+      desktopMemory, desktopPlugins, desktopHarness, resumeFrom: reply_id,
+    });
+    if (result.error) return apiError(res, 409, result.error);
+    return json(res, 202, { session_id: session.id });
   }
 
   // ---------- Chat ----------
@@ -1334,20 +1439,27 @@ async function route(req, res, uiResources) {
         return { data_url: null };
       })
       .filter((b) => b.data_url);
-    if (input && !text && !images.length) return apiError(res, 422, '仅支持文本与图片输入');
+    const skillIds = Array.isArray(selected_skill_ids) ? selected_skill_ids : [];
+    if (skillIds.length && listSkills().some(skill => skill.enabled === false && skillIds.includes(skill.id))) {
+      return apiError(res, 409, '已选技能已停用，请重新选择。');
+    }
+    let pluginContext;
+    try { pluginContext = desktopPlugins?.skillContext(skillIds); }
+    catch { return apiError(res, 409, '插件技能已停用、更新或超过选择上限，请重新选择。'); }
+    if (input && !text && !images.length && !pluginContext) return apiError(res, 422, '仅支持文本与图片输入');
     // auto_context 是"客户端隐身打包、模型可见"的隐式块：cwd/git/
     // 历史/工具列表拼成一段文本，在 internal（LLM prompt）里会拼到
     // 用户消息之前，但不入 display（用户视角历史）。
-    const contextText = inputToText({ content: Array.isArray(auto_context) ? auto_context : [] });
+    const contextText = [inputToText({ content: Array.isArray(auto_context) ? auto_context : [] }), pluginContext]
+      .filter(Boolean).join('\n\n');
     if (!text && !contextText && !images.length) return json(res, 200, { status: 'ok', session_id }); // 续跑/空输入：no-op
     const run = startChatRun(session_id, agent, {
       userText: text,
       viewMode: body.view_mode,
       contextText,
       images,
-      // 只用于 display 气泡上的技能 chip；技能正文在 auto_context 里。
-      selected_skill_ids: Array.isArray(selected_skill_ids) ? selected_skill_ids : [],
-    });
+      selected_skill_ids: skillIds,
+    }, { desktopMemory, desktopPlugins, desktopHarness });
     if (run.error) return apiError(res, 409, run.error);
     return json(res, 200, { status: 'ok', session_id });
   }
@@ -1356,8 +1468,8 @@ async function route(req, res, uiResources) {
   // 合并手动凭证 + 设置窗口模型列表合成的 cocode-models（仅在有启用模型时出现）
   if (p === '/credential/' && method === 'GET') {
     const cfg = loadConfig();
-    const builtin=builtinAuth(cfg).authToken?[{id:BUILTIN_CREDENTIAL_ID,user_id:'local',editable:false,created_at:0,updated_at:0,data:{type:BUILTIN_PROVIDER_TYPE,name:'Tora',source:'builtin-models',model_providers:Object.fromEntries(getBuiltinModels().filter(model=>model.enabled!==false).map(model=>[model.id,model.provider]))}}]:[];
-    const credentials = [...listCredentials(), ...(enabledModels(cfg).length ? [toraCredential(cfg)] : []),...builtin];
+    const codex = codexStatus().connected && codexModelCards().length ? [{ id: CODEX_CREDENTIAL_ID, user_id: 'local', editable: false, created_at: 0, updated_at: 0, data: { type: CODEX_PROVIDER, name: 'Codex', provider: 'openai', source: 'codex-subscription' } }] : [];
+    const credentials = [...listCredentials().filter(item => !isBuiltinCredential(item.id) && item.data?.type !== BUILTIN_PROVIDER_TYPE), ...(enabledModels(cfg).length ? [toraCredential(cfg)] : []), ...codex];
     return json(res, 200, { credentials, total: credentials.length });
   }
   if (p === '/credential/schemas' && method === 'GET') {
@@ -1386,11 +1498,16 @@ async function route(req, res, uiResources) {
   // 优先用设置窗口模型列表的启用项；为空时退回内置默认
   if (p === '/model/' && method === 'GET') {
     const cfg = loadConfig();
+    if (q.provider === CODEX_PROVIDER) {
+      await refreshCodexCatalog();
+      const cards = codexModelCards();
+      return json(res, 200, { models: cards, total: cards.length });
+    }
     if(q.provider===BUILTIN_PROVIDER_TYPE) {
-      const cards=builtinAuth(cfg).authToken?getBuiltinModels().filter(model=>model.enabled!==false).map(model=>({type:'chat_model',name:model.id,label:model.name,status:'active',deprecated_at:null,input_types:model.inputTypes||inputTypesFor(model.id,true),output_types:['text'],context_size:model.context,output_size:model.maxOutput||16384,parameter_schema:{type:'object',properties:{}},parameters_overrides:{}})):[];
-      return json(res,200,{models:cards,total:cards.length});
+      return json(res,200,{models:[],total:0});
     }
     const enabled = enabledModels(cfg);
+    const credential = q.credential_id ? getCredential(q.credential_id) : null;
     const cards = enabled.length
       ? enabled.map((x) => ({
           type: 'chat_model', name: x.model, label: `${x.label || x.provider} / ${x.model}`,
@@ -1399,11 +1516,16 @@ async function route(req, res, uiResources) {
           context_size: 128000, output_size: 16384,
           parameter_schema: {
             type: 'object',
-            properties: { temperature: { type: 'number', title: 'Temperature', minimum: 0, maximum: 2 } }
+            properties: {
+              temperature: { type: 'number', title: 'Temperature', minimum: 0, maximum: 2 },
+              ...thinkingParameterProperties(credential?.data?.base_url
+                ? { ...cfg, baseURL: credential.data.base_url, model: x.model }
+                : { ...cfg, ...x }),
+            }
           },
           parameters_overrides: {}
         }))
-      : modelCards(cfg);
+      : modelCards(cfg, credential);
     return json(res, 200, { models: cards, total: cards.length });
   }
   if (p === '/tts-model/' || p === '/embedding-model/') {
@@ -1895,6 +2017,13 @@ async function route(req, res, uiResources) {
       if (!skill) return apiError(res, 404, 'skill not found');
       return json(res, 200, skill);
     }
+    if (m && method === 'PATCH') {
+      const body = await readBody(req);
+      if (typeof body?.enabled !== 'boolean') return apiError(res, 400, 'enabled 必须是布尔值');
+      const skill = setSkillEnabled(m[1], body.enabled);
+      if (!skill) return apiError(res, 404, 'skill not found');
+      return json(res, 200, skill);
+    }
   }
 
   // 本地导入技能：路径来自用户在原生文件夹对话框里亲手选的目录（Electron 壳层桥）
@@ -1952,10 +2081,16 @@ async function route(req, res, uiResources) {
   if (p === '/mcp-workshop/templates' && method === 'GET') {
     return json(res, 200, { templates: mcpListTemplates() });
   }
+  if (p === '/mcp-workshop/import' && method === 'POST') {
+    try {
+      const body = await readBody(req);
+      return json(res, 200, { servers: mcpImportServers(body.content) });
+    } catch (e) { return apiError(res, e.status ?? 400, e.message); }
+  }
   if (p === '/mcp-workshop/servers' && method === 'POST') {
     const body = await readBody(req);
     try {
-      const r = mcpAddServer(body.name, { command: body.command, args: body.args, env: body.env });
+      const r = mcpAddServer(body.name, body);
       return json(res, 200, r);
     } catch (e) { return apiError(res, 400, e.message); }
   }
@@ -1964,7 +2099,7 @@ async function route(req, res, uiResources) {
     try {
       const r = mcpUpdateServer(m[1], body);
       return json(res, 200, r);
-    } catch (e) { return apiError(res, 404, e.message); }
+    } catch (e) { return apiError(res, e.status ?? 400, e.message); }
   }
   if ((m = p.match(/^\/mcp-workshop\/servers\/([\w-]+)$/)) && method === 'DELETE') {
     try { mcpRemoveServer(m[1]); return json(res, 200, { status: 'ok' }); }
@@ -2034,7 +2169,7 @@ function inputTypesFor(modelName, visionFlag) {
   return vision ? ['text', ...VISION_INPUT_TYPES] : ['text'];
 }
 
-function modelCards(cfg) {
+function modelCards(cfg, credential) {
   const names = new Set([cfg.model, ...(cfg.models || [])]);
   names.delete('');
   return [...names].map((name) => ({
@@ -2043,7 +2178,10 @@ function modelCards(cfg) {
     context_size: 128000, output_size: 16384,
     parameter_schema: {
       type: 'object',
-      properties: { temperature: { type: 'number', title: 'Temperature', minimum: 0, maximum: 2 } }
+      properties: {
+        temperature: { type: 'number', title: 'Temperature', minimum: 0, maximum: 2 },
+        ...thinkingParameterProperties({ ...cfg, ...(credential?.data?.base_url ? { baseURL: credential.data.base_url } : {}), model: name }),
+      }
     },
     parameters_overrides: {}
   }));

@@ -415,19 +415,19 @@ function SlashMenuFooter({
  */
 export function commandsToSlashItems(commands: UserCommand[]): SlashItem[] {
 	return commands.map((c) => ({
-		id: `cmd:${c.name}`,
+		id: `${c.source === 'plugin' ? 'plugin-command' : 'cmd'}:${c.name}`,
 		name: c.name,
 		display_name: `/${c.name}`,
 		description: c.description,
 		argument_hint: c.argument_hint || '',
 		body: c.body,
 		kind: 'command',
-		tags: [c.source === 'project' ? (i18n.language.startsWith('zh') ? '项目' : 'Project') : (i18n.language.startsWith('zh') ? '用户' : 'User')],
+		tags: [c.source === 'plugin' ? i18n.t('desktopPlugins.title') : c.source === 'project' ? (i18n.language.startsWith('zh') ? '项目' : 'Project') : (i18n.language.startsWith('zh') ? '用户' : 'User')],
 	}));
 }
 
 export function fromLibrary(skills: SkillView[]): SlashItem[] {
-	return skills.map((s) => ({
+	return skills.filter(skill => skill.enabled !== false).map((s) => ({
 		id: s.id,
 		name: s.name,
 		display_name: s.display_name,

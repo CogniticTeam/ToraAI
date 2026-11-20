@@ -218,7 +218,7 @@ await test('chatCompletion 上送 body 不含 lone surrogate（端到端）', as
   globalThis.fetch = async (_u, init) => {
     capturedBody = init?.body;
     return new Response(
-      'data: {"choices":[{"delta":{"content":"OK"}}],"usage":{"prompt_tokens":1,"completion_tokens":1}}\ndata: {"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1}}\ndata: [DONE]\n\n',
+      'data: {"choices":[{"delta":{"content":"OK"}}],"usage":{"prompt_tokens":1,"completion_tokens":1}}\n\ndata: {"choices":[],"usage":{"prompt_tokens":1,"completion_tokens":1}}\n\ndata: [DONE]\n\n',
       { status: 200, headers: { 'content-type': 'text/event-stream' } },
     );
   };
@@ -279,7 +279,7 @@ console.log('--- Agent 循环（mock SSE）---');
 function sse(chunks) {
   const events = chunks.map((c) => ({ choices: [{ delta: c }], usage: { prompt_tokens: 10, completion_tokens: 5 } }));
   events.push({ choices: [], usage: { prompt_tokens: 10, completion_tokens: 5 } });
-  const payload = 'data: ' + events.map((e) => JSON.stringify(e)).join('\ndata: ') + '\ndata: [DONE]\n\n';
+  const payload = events.map(e => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n';
   return new Response(payload, { status: 200, headers: { 'content-type': 'text/event-stream' } });
 }
 await test('Agent 两轮：工具调用 → 总结', async () => {
@@ -988,7 +988,7 @@ await test('项目指令：仓库根目录与子目录逐级叠加，子目录�
   assert.match(prompt, /本模块规则/);
   rmSync(root, { recursive: true, force: true });
 });
-await test('项目指令：TORA.md 注入 system prompt，自称与产品名统一为 Tora', async () => {
+await test('项目指令：TORA.md 注入 system prompt，默认角色 Covey 与 Tora 品牌区分', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'tora-prompt-'));
   writeFileSync(join(dir, 'TORA.md'), '本项目规则：禁止使用 any 类型。');
   const origFetch = globalThis.fetch;
@@ -1002,7 +1002,8 @@ await test('项目指令：TORA.md 注入 system prompt，自称与产品名统�
   assert.equal(captured.messages[0].role, 'system');
   const sys = captured.messages[0].content;
   assert.match(sys, /禁止使用 any 类型/, 'TORA.md 的内容应被注入 system prompt');
-  assert.match(sys, /Tora/, '提示词应统一为 Tora');
+  assert.match(sys, /Your name is "Covey"/, '默认角色应自称 Covey');
+  assert.match(sys, /Tora is the application/, 'Tora 应作为应用品牌而非角色名称');
   assert.ok(!/Corey/.test(sys), '不应再自称 Corey');
   rmSync(dir, { recursive: true, force: true });
 });
@@ -1486,6 +1487,7 @@ await test('Agent 循环：UserPromptSubmit 钩子 deny → 整轮被拦下且�
     const done = events.find((e) => e.type === 'done');
     assert.equal(done.reason, 'blocked');
     assert.match(done.message, /今天不干活/);
+    assert.equal(done.error, done.message);
     assert.equal(calls, 0, '被拦下的轮次不该请求模型');
   } finally {
     globalThis.fetch = origFetch;
@@ -1972,26 +1974,29 @@ await test('Task 工具族：坏 id、非法状态、依赖环都给可操作的
   await tasksMod.taskCreate.execute({ subject: 'B' }, ctx);
 
   const missing = await tasksMod.taskUpdate.execute({ taskId: 'T9', state: 'done' }, ctx);
-  assert.match(missing, /没有任务 T9/);
-  assert.match(missing, /现有：T1、T2/, '要列出可用的 id');
+  assert.equal(missing.ok, false);
+  assert.match(missing.text, /没有任务 T9/);
+  assert.match(missing.text, /现有：T1、T2/, '要列出可用的 id');
 
   const badState = await tasksMod.taskUpdate.execute({ taskId: 'T1', state: 'done' }, ctx);
-  assert.match(badState, /非法状态/);
+  assert.match(badState.text, /非法状态/);
 
   await tasksMod.taskUpdate.execute({ taskId: 'T1', addBlockedBy: ['T2'] }, ctx);
   const cycle = await tasksMod.taskUpdate.execute({ taskId: 'T2', addBlockedBy: ['T1'] }, ctx);
-  assert.match(cycle, /循环依赖/, 'A←B 且 B←A 会永远无法开工');
+  assert.match(cycle.text, /循环依赖/, 'A←B 且 B←A 会永远无法开工');
 
   const self = await tasksMod.taskUpdate.execute({ taskId: 'T1', addBlockedBy: ['T1'] }, ctx);
-  assert.match(self, /自己/);
+  assert.match(self.text, /自己/);
 });
 
 await test('Task 工具族：没有会话状态通道时如实说不可用（不假装成功）', async () => {
   const out = await tasksMod.taskCreate.execute({ subject: 'X' }, {});
-  assert.match(out, /不可用/);
-  assert.match(out, /会话状态通道/);
+  assert.equal(out.ok, false);
+  assert.match(out.text, /不可用/);
+  assert.match(out.text, /会话状态通道/);
   const listed = await tasksMod.taskList.execute({}, {});
-  assert.match(listed, /不可用/);
+  assert.equal(listed.ok, false);
+  assert.match(listed.text, /不可用/);
 });
 
 await test('Task 工具：权限分类与注册（Create/Update 是写，Get/List 是读）', () => {
@@ -2069,7 +2074,8 @@ await test('MCP：服务器不存在时给占位工具 + 如实报错，不假�
     assert.equal(tools.length, 1);
     assert.equal(tools[0].name, 'mcp__broken__unavailable');
     const out = await tools[0].execute({}, {});
-    assert.match(String(out), /不可用/);
+    assert.equal(out.ok, false);
+    assert.match(out.text, /不可用/);
     const status = await mcpMod.mcpStatus(cfg);
     assert.equal(status[0].status, 'error');
     assert.ok(status[0].error, '要带失败原因');
@@ -2167,9 +2173,9 @@ await test('Team：可写 worker 默认 worktree，只有显式 shared 才允许
 await test('chatCompletion：reasoning_content/reasoning 走 onThinking，不混进正文', async () => {
   const origFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response(
-    'data: {"choices":[{"delta":{"reasoning_content":"先想一步。"}}]}\n'
-    + 'data: {"choices":[{"delta":{"reasoning":"再想一步。"}}]}\n'
-    + 'data: {"choices":[{"delta":{"content":"结论 A"}}]}\n'
+    'data: {"choices":[{"delta":{"reasoning_content":"先想一步。"}}]}\n\n'
+    + 'data: {"choices":[{"delta":{"reasoning":"再想一步。"}}]}\n\n'
+    + 'data: {"choices":[{"delta":{"content":"结论 A"}}]}\n\n'
     + 'data: [DONE]\n\n',
     { status: 200, headers: { 'content-type': 'text/event-stream' } },
   );
@@ -2450,21 +2456,44 @@ await test('终端未选工作区时从主目录启动，Ctrl+C 中断命令后�
   const waitFor = async (needle, ms = 4000) => {
     const deadline = Date.now() + ms;
     while (Date.now() < deadline) {
-      if (events.some((event) => event.type === 'data' && event.data.includes(needle))) return true;
+      if (events.some((event) => event.type === 'data' && event.stream === 'out' && event.data.includes(needle))) return true;
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     return false;
   };
   try {
     assert.equal(info.cwd, homedir());
-    assert.ok(T.writeTerminal(info.id, 'echo INTERRUPT_READY; sleep 10\n'));
+    assert.ok(T.writeTerminal(info.id, "sh -c 'echo INTERRUPT_READY; exec sleep 10'\n"));
     assert.ok(await waitFor('INTERRUPT_READY'), '前台命令应已开始');
-    assert.ok(T.interruptTerminal(info.id), 'Ctrl+C 应发送到整个终端进程组');
+    assert.ok(T.interruptTerminal(info.id), 'Ctrl+C 应中断正在运行的命令');
     assert.ok(T.writeTerminal(info.id, 'echo AFTER_INTERRUPT\n'));
     assert.ok(await waitFor('AFTER_INTERRUPT'), '中断后同一个 shell 应继续接受命令');
   } finally {
     unsub();
     T.killTerminal(info.id);
+  }
+});
+
+await test('已关闭终端的回放不会占用活动终端名额', async () => {
+  const { existsSync } = await import('node:fs');
+  if (process.platform === 'win32' || !existsSync('/bin/sh')) return;
+  const T = await import(CORE + 'asapi/terminal.js');
+  for (let index = 0; index < 9; index++) {
+    const { id } = T.createTerminal({ shell: '/bin/sh' });
+    let timer, unsubscribe;
+    try {
+      const closed = new Promise((resolve, reject) => {
+        unsubscribe = T.subscribeTerminal(id, event => { if (event.type === 'exit') resolve(event); });
+        timer = setTimeout(() => reject(new Error('终端没有正常退出')), 3000);
+      });
+      assert.ok(T.writeTerminal(id, 'exit 0\n'));
+      assert.equal((await closed).code, 0, '已保留的历史终端不应导致新终端被回收');
+      assert.ok(T.replayTerminal(id)?.exited);
+    } finally {
+      clearTimeout(timer);
+      unsubscribe?.();
+      T.killTerminal(id);
+    }
   }
 });
 

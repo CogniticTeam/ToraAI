@@ -14,6 +14,7 @@ import {
 	UsersRound,
 } from 'lucide-react';
 import { lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import type {
@@ -31,6 +32,7 @@ import { SubagentHitlCard } from '@/components/chat/SubagentHitlCard';
 import { WindowDragRegion } from '@/components/layout/WindowDragRegion';
 import { PanelDock, type PanelDescriptor, type PanelKey } from '@/components/panel/PanelDock.tsx';
 import { KnowledgeBaseParametersPopover } from '@/components/popover/KnowledgeBaseParametersPopover';
+import { AgentSelect } from '@/components/select/AgentSelect';
 import { LlmSelect } from '@/components/select/LlmSelect';
 import { PermissionModeSelect } from '@/components/select/PermissionModeSelect.tsx';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +42,9 @@ import {
 	ResizablePanelGroup,
 } from '@/components/ui/resizable.tsx';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useAvailableModels } from '@/hooks/useAvailableModels';
+import { useAgents } from '@/hooks/useAgents';
+import { isChatModelAvailable, useAvailableModels } from '@/hooks/useAvailableModels';
+import { useRoleModel } from '@/hooks/useRoleModel';
 import { useKnowledgeBaseMiddlewareSchema } from '@/hooks/useKnowledgeBaseMiddlewareSchema';
 import { useKnowledgeBases } from '@/hooks/useKnowledgeBases';
 import { useMessages } from '@/hooks/useMessages';
@@ -53,9 +57,9 @@ import { useTranslation } from '@/i18n/useI18n';
 import {takeBrowserPanel} from '@/lib/browserStart';
 import { OPEN_PANEL_EVENT, type PanelOpenDetail } from '@/lib/openPanel';
 import { openSettings } from '@/lib/openSettings';
-import {normalizePanelLayout,openPanelInLayout,closePanelInLayout} from '@/lib/panelTabs';
+import {normalizePanelLayout,openPanelInLayout,closePanelInLayout,readPanelVisibility,rememberPanelVisibility} from '@/lib/panelTabs';
 import { getProjectDisplayName, PROJECT_NAMES_CHANGED_EVENT } from '@/lib/projectNaming';
-import { humanVerificationNeeded, canUseWorkModel, modelAvailable, modelRequirementLabel, modelAllowedInMode } from '@/lib/tochatModels';
+import { humanVerificationNeeded, canUseWorkModel, modelAvailable, modelRequirementLabel } from '@/lib/tochatModels';
 import { isBuiltinCredential } from '@/lib/tochatModels';
 import {restoreUIState,useUICheckpoint} from '@/lib/uiCheckpoint';
 import { getToken } from '@/utils/authStore';
@@ -161,15 +165,21 @@ function loadPanelLayout(): PanelKey[][] {
  */
 export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionCreated }: ChatViewportProps) {
 	const { t } = useTranslation();
-	const { sessions, refetch: refetchSessions } = useSessions(agentId);
+	const navigate = useNavigate();
+	const { sessionId: requestedSessionId } = useParams();
+	const { agents } = useAgents();
+	const agent = agents.find(item => item.id === agentId);
+	const { sessions, loading: sessionsLoading, fetching: sessionsFetching, error: sessionsError, refetch: refetchSessions, update: updateSession } = useSessions(agentId);
+	const view = sessions.find(item => item.session.id === sessionId) ?? null;
+	const sessionPending = !!requestedSessionId && !sessionId && (sessionsLoading || sessionsFetching || !!sessionsError);
 	const {effective,clickEnabled}=useMotionSettings();
 	const [quotaLive,setQuotaLive] = useState(false);
-	const { groups, builtinQuota, builtinUnavailable, refetch: refreshAvailableModels } = useAvailableModels(quotaLive);
-
-	// 还没有会话时，模型/工作目录/权限模式先记在这里；第一条消息发送、
-	// 会话被自动创建时经 newSessionExtras 一起带过去 —— 否则三个控件在
-	// 空状态下要么禁用、要么选了被静默丢掉。
-	const [selectedModel, setSelectedModel] = useState<ChatModelConfig | null>(()=>restoreUIState('code-model',null));
+	const { groups, loading: modelsLoading, builtinQuota, builtinUnavailable, refetch: refreshAvailableModels } = useAvailableModels(quotaLive, false);
+	const { model: selectedModel, selectModel, sessionCreated: rememberCreatedSession } = useRoleModel({
+		agentId, sessionId, sessionModel: view?.session.config.chat_model_config, groups, modelsLoading,
+		defaultModel: agent?.data.chat_model_config, checkpointKey: 'code-model', pending: sessionPending,
+	});
+	const modelUnavailable = !!selectedModel && !modelsLoading && !isChatModelAvailable(groups, selectedModel);
 	const builtinAccountToken = getToken();
 	const builtinSelected = isBuiltinCredential(selectedModel?.credential_id);
 	const needsHumanVerification=builtinSelected&&humanVerificationNeeded(selectedModel?.model||'',builtinQuota);
@@ -179,22 +189,31 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		useState<SessionKnowledgeConfig | null>(null);
 	const [selectedPermissionMode, setSelectedPermissionMode] = useState<string>(()=>restoreUIState('code-permission','default'));
 	const [selectedCwd, setSelectedCwd] = useState<string | null>(()=>restoreUIState('code-cwd',null));
-	useUICheckpoint('code-model',selectedModel);useUICheckpoint('code-cwd',selectedCwd);useUICheckpoint('code-permission',selectedPermissionMode);
+	useUICheckpoint('code-cwd',selectedCwd);useUICheckpoint('code-permission',selectedPermissionMode);
 	const [projectNamesVersion, setProjectNamesVersion] = useState(0);
 	const [credentialRefetchTrigger] = useState(0);
 	const [tasksContext, setTasksContext] = useState<TaskContext | null>(null);
 	const [permissionContext, setPermissionContext] = useState<PermissionContext | null>(null);
 	const [configPending, setConfigPending] = useState(false);
+	const configLock = useRef(false);
+	const configScope = useRef(0);
+	useEffect(() => {
+		configScope.current += 1;
+		configLock.current = false;
+		setConfigPending(false);
+	}, [agentId, sessionId]);
 	// One tool-tab dock. Old column layouts are migrated on load.
 	// Persisted so leaving and returning to /chat keeps the same panels.
 	const [panelLayout, setPanelLayout] = useState<PanelKey[][]>(loadPanelLayout);
-	const [dockVisible,setDockVisible] = useState(true);
+	const [dockVisible,setDockVisible] = useState(() => restoreUIState('code-dock-visible',readPanelVisibility()));
+	useEffect(() => rememberPanelVisibility(dockVisible), [dockVisible]);
+	useUICheckpoint('code-dock-visible',dockVisible);
 	const [activePanel,setActivePanel] = useState<PanelKey | null>(() => localStorage.getItem('chat_panel_active') as PanelKey | null);
 	useEffect(() => {if(activePanel)localStorage.setItem('chat_panel_active',activePanel);else localStorage.removeItem('chat_panel_active');},[activePanel]);
 	const [recordedDiff, setRecordedDiff] = useState<{scope: string; diff: string; root?: string} | null>(null);
 	const diffScope = `${agentId}:${sessionId}`;
 	const selectedDiff = recordedDiff?.scope === diffScope ? recordedDiff : null;
-	const openPanels = useMemo(() => new Set(panelLayout.flat()), [panelLayout]);
+	const openPanels = useMemo(() => new Set(dockVisible ? panelLayout.flat() : []), [panelLayout,dockVisible]);
 
 	useEffect(() => {
 		localStorage.setItem(PANEL_LAYOUT_KEY, JSON.stringify(panelLayout));
@@ -299,6 +318,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		loading: messagesLoading,
 		phase,
 		send,
+		resume,
 		onUserConfirm,
 		onSubagentConfirm,
 		subagentHitl,
@@ -313,7 +333,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		onStateUpdated: handleStateUpdated,
 		onSessionUpdated: handleSessionUpdated,
 		onContextCompacted: handleContextCompacted,
-		onSessionCreated,
+		onSessionCreated: id => { rememberCreatedSession(id); onSessionCreated?.(id); },
 		// A model picked before the session exists lives only in
 		// `selectedModel` — hand it to the session auto-created on the
 		// first send, so the pick survives into the conversation.
@@ -425,23 +445,26 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	 * @param apply - Mirrors the change into local state on success.
 	 */
 	const patchConfig = useCallback(
-		async (body: UpdateSessionRequest, apply: () => void) => {
-			if (!sessionId || !agentId) return;
+		async (body: UpdateSessionRequest, apply?: () => void) => {
+			if (!sessionId || !agentId || configLock.current) return false;
+			const scope = configScope.current;
+			configLock.current = true;
 			setConfigPending(true);
 			try {
-				await sessionApi.update(sessionId, agentId, body);
-				apply();
-				// refetch 不 await：PATCH 已确认成功，`apply()` 让控件即时反馈；
-				// 再串行等一次列表往返，选择器要空白多一个来回才解除置灰——
-				// 慢网络下就是"点了模型没反应、下拉一直灰着"。后台补数据即可。
-				void refetchSessions();
+				await updateSession(sessionId, body);
+				if (scope !== configScope.current) return false;
+				apply?.();
+				return true;
 			} catch {
-				// Toast already shown; local state deliberately untouched.
+				return false;
 			} finally {
-				setConfigPending(false);
+				if (scope === configScope.current) {
+					configLock.current = false;
+					setConfigPending(false);
+				}
 			}
 		},
-		[sessionId, agentId, refetchSessions],
+		[sessionId, agentId, updateSession],
 	);
 
 	const handleKnowledgeConfigChange = useCallback(
@@ -453,10 +476,6 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		[patchConfig],
 	);
 
-	// Declared above `panels` — the memo factory reads `view.team`
-	// eagerly on first render, so a later `const` would still be in
-	// the temporal dead zone.
-	const view = sessions.find((v) => v.session.id === sessionId) ?? null;
 	const activeCwd = view?.session.config.cwd ?? selectedCwd ?? null;
 	const activeProjectName = useMemo(
 		() => getProjectDisplayName(activeCwd),
@@ -712,43 +731,21 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		prevSessionIdRef.current = sessionId;
 		if (prev === undefined && !sessionId && (restoreUIState('code-model',null)||restoreUIState('code-cwd',null))) return;
 		if (prev === null && sessionId !== null) return;
-		setSelectedModel(null);
 		setSelectedKnowledgeConfig(null);
 		setSelectedCwd(null);
-	}, [sessionId]);
+	}, [agentId, sessionId]);
 
 	const selectedModelCard = useMemo(() => {
 		if (!selectedModel) return null;
 		const items = groups[selectedModel.type];
 		if (!items) return null;
-		for (const { models } of items) {
+		for (const { credential, models } of items) {
+			if (selectedModel.credential_id && credential.id !== selectedModel.credential_id) continue;
 			const card = models.find((m) => m.name === selectedModel.model);
 			if (card) return card;
 		}
 		return null;
-	}, [groups, selectedModel?.type, selectedModel?.model]);
-
-	/**
-	 * Pick the first model the available-models endpoint surfaces, used
-	 * as a sensible default when the current session has no model
-	 * configured yet.
-	 *
-	 * @returns The first available `ChatModelConfig`, or `null` when
-	 *   no credentials / models are configured.
-	 */
-	const getFirstAvailableModel = (): ChatModelConfig | null => {
-		for (const [type, items] of Object.entries(groups)) {
-			for (const item of items) {
-				for (const model of item.models) {
-					const modelName = model.name;
-					if (!modelName) continue;
-					if (isBuiltinCredential(item.credential.id) && (!modelAllowedInMode(modelName, 'tocode',builtinQuota?.models) || !canUseWorkModel(modelName, builtinQuota,'tocode'))) continue;
-					return { type, credential_id: item.credential.id, model: modelName, parameters: {} };
-				}
-			}
-		}
-		return null;
-	};
+	}, [groups, selectedModel?.type, selectedModel?.credential_id, selectedModel?.model]);
 
 	// Seed tasks + permission from the session snapshot ONCE per
 	// session, then leave them to the CustomEvent(name="state_updated")
@@ -785,47 +782,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 		setPermissionContext(seededPermission);
 	}, [view]);
 
-	// Sync selectedModel + selectedFallbackModel from the session
-	// record. If the session has no model configured yet, auto-pick
-	// the first available one and persist it back so subsequent
-	// reasoning has a model to call.
-	//
-	// Important: skip while `view` is still loading. Otherwise the
-	// in-flight window between "agentId changed" and "useSessions
-	// returned the new list" looks like "session has no model" and
-	// we would racily auto-select + persist the first available
-	// model, clobbering whatever the user had configured.
 	useEffect(() => {
-		if (!view) return;
-		const sessionModel = view.session.config.chat_model_config;
-
-		if (sessionModel) {
-			setSelectedModel(sessionModel);
-		} else {
-			const firstModel = getFirstAvailableModel();
-			if (firstModel) {
-				setSelectedModel(firstModel);
-				if (sessionId && agentId) {
-					// `silent` because the user did not ask for this write —
-					// surfacing a toast for a revoked credential or a network
-					// blip they never triggered is pure noise.
-					sessionApi
-						.update(
-							sessionId,
-							agentId,
-							{ chat_model_config: firstModel },
-							{ silent: true },
-						)
-						.then(() => refetchSessions())
-						.catch(() => {});
-				}
-			} else {
-				setSelectedModel(null);
-			}
-		}
-
-		setSelectedKnowledgeConfig(view.session.config.knowledge_config ?? null);
-	}, [view, groups, sessionId, agentId]);
+		if (view) setSelectedKnowledgeConfig(view.session.config.knowledge_config ?? null);
+	}, [view]);
 
 	// Sync selectedPermissionMode when the session changes. Same
 	// loading-window guard as above — don't reset the displayed mode
@@ -864,19 +823,16 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 	const handleLlmChange = async (config: ChatModelConfig | null) => {
 		if (!config) return;
 		if (!sessionId || !agentId) {
-			setSelectedModel(config);
+			selectModel(config);
 			return;
 		}
-		await patchConfig({ chat_model_config: config }, () => setSelectedModel(config));
+		const saved = await patchConfig({ chat_model_config: config });
+		if (!saved) return;
+		selectModel(config);
 		// 模型切换提示条由后端写入 display，不经事件流——立即拉一次，
 		// 让提示条即时出现在本地时间线（不等下轮消息或刷新页面）。
 		await reloadHistory();
 	};
-	// 深度思考：默认开启（parameters.thinking 未设置也算开，显式 false 才关）。
-	// thinkingEffort 为强度档 low/high/max（原 medium 并入 high），仅对
-	// reasoning_effort 类端点生效（max 由 model.js 归一化为 high 发送）。
-	// 强度调整入口在模型选择器详情卡（LlmSelect），经 handleLlmChange 持久化；
-	// 无会话时仍先记本地，建会话随 chat_model_config 带上。
 
 	/**
 	 * Persist a permission-mode change.
@@ -933,6 +889,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 						<div data-window-drag-region className="app-drag flex h-12 shrink-0 flex-row items-center justify-between border-b border-border px-5">
 							<div className="flex min-w-0 flex-1 flex-row items-center gap-x-1">
 									<SidebarTrigger className="md:hidden" />
+									<AgentSelect agents={agents} value={agentId} variant="ghost" className="max-w-48 shrink" data-testid="agent-role-picker" disabled={configPending || phase !== 'idle' || !agentId} onChange={id => { if (id !== agentId) navigate(`/chat/${id}`); }} onManage={() => openSettings('agent')} />
 									{/* The open session, named opposite its own
 									    settings. The sidebar is the only other
 									    place the name appears, and it collapses
@@ -948,7 +905,7 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									    one. */}
 {msgs.length > 0 && (
 									<span
-										className="truncate px-2 text-sm text-muted-foreground"
+										className="max-w-[40%] truncate px-2 text-sm text-muted-foreground"
 										title={view?.session.config.name || t('chat.newConversation')}
 									>
 										{view?.session.config.name || t('chat.newConversation')}
@@ -956,7 +913,9 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								)}
 								{/* 整条顶栏可拖动，index.css 将交互控件明确排除为 no-drag。
 								    空白把手保持原布局，并提供稳定的非交互命中区域。 */}
-								<WindowDragRegion className="min-w-4 flex-1 self-stretch" />
+								<div className="relative flex min-w-4 flex-1 self-stretch items-center justify-center">
+									<WindowDragRegion className="absolute inset-0" />
+								</div>
 								</div>
 								{/* Never squeezed by a long session name: the
 								    name truncates instead. */}
@@ -981,13 +940,14 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 									userCommands={tora.commands}
 									modelControl={
 										<LlmSelect
+											key={`${agentId}:${sessionId ?? 'draft'}`}
 											id="tour-llm-select"
 											composer
 											value={selectedModel}
 											onChange={handleLlmChange}
 											onAddCredential={() => openSettings('model')}
 											refetchTrigger={credentialRefetchTrigger}
-											disabled={configPending}
+											disabled={configPending || sessionPending || !agentId || phase !== 'idle'}
 										/>
 									}
 									permissionControl={
@@ -1008,9 +968,10 @@ export function ChatViewport({ agentId, sessionId, onSessionsChanged, onSessionC
 								// 模型是否可用由 TextInput 内部的 send 按钮
 								// 单独判定（无模型时禁发，不锁 textarea）。
 								disabled={!agentId || (phase === 'idle' && ((!modelLocked && builtinBlocked)||needsHumanVerification))}
-								sendDisabled={phase === 'idle' && builtinBlocked}
-									composerNotice={phase === 'idle' && builtinBlocked && !modelLocked ? modelRequirementLabel(selectedModel?.model||'',builtinQuota?.models,t) || t(builtinQuota && !builtinQuota.canUseAgent ? 'applicationModes.limitReached' : 'applicationModes.connectError') : undefined}
+								sendDisabled={configPending || sessionPending || (phase === 'idle' && (builtinBlocked || !selectedModel || modelUnavailable || (!!selectedModel.credential_id && modelsLoading)))}
+									composerNotice={phase === 'idle' && !selectedModel ? t('llm-select.empty.description') : phase === 'idle' && modelUnavailable ? t('agentSection.modelUnavailable') : phase === 'idle' && builtinBlocked && !modelLocked ? modelRequirementLabel(selectedModel?.model||'',builtinQuota?.models,t) || t(builtinQuota && !builtinQuota.canUseAgent ? 'applicationModes.limitReached' : 'applicationModes.connectError') : undefined}
 									onSend={send}
+									onResume={resume}
 									onUserConfirm={onUserConfirm}
 									onInterrupt={interrupt}
 									// cwd={

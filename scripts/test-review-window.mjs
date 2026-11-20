@@ -16,8 +16,9 @@ test('macOS 关闭并重开窗口不重复 IPC，不改变服务端口，不泄�
     handlers.set(name, handler);
   };
   ipcMain.removeHandler = name => handlers.delete(name);
+  const appSession = { setPermissionRequestHandler() {}, setPermissionCheckHandler() {}, webRequest: { onHeadersReceived() {} } };
   class Window extends EventEmitter {
-    constructor() { super(); this.webContents = new EventEmitter(); Object.assign(this.webContents, { mainFrame: {}, send() {}, setWindowOpenHandler() {} }); }
+    constructor(options) { super(); assert.equal(options.webPreferences.backgroundThrottling, true); this.webContents = new EventEmitter(); Object.assign(this.webContents, { mainFrame: {}, session: appSession, send() {}, setWindowOpenHandler() {} }); }
     loadURL(url) { pages.push(url); if (closeDuringLoad) { this.emit('closed'); return Promise.reject(Error('Closed while loading')); } return Promise.resolve(); }
   }
   let servers = 0;
@@ -27,12 +28,13 @@ test('macOS 关闭并重开窗口不重复 IPC，不改变服务端口，不泄�
     process: { platform: 'darwin', argv: [] }, console,
     normalizeNativeLanguage: value => value, installApplicationMenu() {}, scheduleUpdateChecks() {}, setDesktopAccessBlocked() {},
     initializeUIUpdates:async()=>{},uiController:null,uiUpdater:null,scheduleUIUpdates() {},
+    desktopPlugins: null,
     startASAPIServer: async () => { servers++; return { address: () => ({ port: 3210 }) }; },
     localServer: null, windowCreation: null, readCachedDark: () => false, nativeTheme, BrowserWindow: Window,
+    storageEdition: null, toraService: { edition: null, origin: 'https://api.cogniticteam.com' },
     winBackgroundFor: () => '', __dirname: '/fixture', join, ipcMain, createWindowIpc,
     dialog: {}, voiceStatus() {}, transcribeSamples() {}, optimizePrompt() {}, existsSync: () => false,
     readFileSync: () => '', writeFileSync() {}, safeStorage: {},
-    session: { defaultSession: { setPermissionRequestHandler() {}, setPermissionCheckHandler() {}, webRequest: { onHeadersReceived() {} } } },
     clearBrowserDriver() {}, attachBrowserDriver() {}, win: null, serverUrl: '', notificationLanguage: '', reportedDark: false,
   });
   vm.runInContext(windowCode, context);

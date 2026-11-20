@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { EditionBadge } from '@/components/auth/LoginAnimation';
 import {
 	BookText,
 	BotMessageSquare,
@@ -6,21 +6,18 @@ import {
 	Cat,
 	Globe,
 	ChevronUp,
-	
 	Languages,
 	LogOut,
 	Mail,
 	Settings,
-	
-	Vote,
 } from 'lucide-react';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useAccountPresence } from '@/components/auth/AccountPresence';
-import {AccountUsageMenu} from '@/components/chat/AccountUsageMenu';
 import { ApplicationModeSwitcher } from '@/components/layout/ApplicationModeSwitcher';
+import { NavHighlight } from '@/components/layout/NavHighlight';
 import { SessionListSection } from '@/components/layout/SessionListSection';
 import { FIRST_RUN_CLOSE_SETTINGS_EVENT, FIRST_RUN_SETTINGS_CLOSED_EVENT } from '@/components/onboarding/constants';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -47,17 +44,12 @@ import { disableCatgirlLanguagePack } from '@/i18n';
 import { useTranslation } from '@/i18n/useI18n';
 import { catgirlCopy, useCatgirlSettings } from '@/lib/catgirl';
 import { normalizeSettingsSection, OPEN_SETTINGS_EVENT, type SettingsSection } from '@/lib/openSettings';
-import {OPEN_SUBSCRIPTION_EVENT} from '@/lib/subscription';
 import { signOutAccount } from '@/utils/authLogout';
 import { getEmail, getToken, getUsername } from '@/utils/authStore';
 import { cloudFetch } from '@/utils/modelSync';
 const MessagesDialog = lazy(async () => ({ default: (await import('@/components/dialog/MessagesDialog')).MessagesDialog }));
-const SubscriptionDialog = lazy(async () => ({ default: (await import('@/components/dialog/SubscriptionDialog')).SubscriptionDialog }));
 const LanguageDialog = lazy(async () => ({ default: (await import('@/components/dialog/LanguageDialog')).LanguageDialog }));
 const SessionImportDialog = lazy(async () => ({ default: (await import('@/components/dialog/SessionImportDialog')).SessionImportDialog }));
-
-// 共享 layoutId 让两个互斥激活项的指示条在切换时连续滑动（spring 物理感）
-const NAV_INDICATOR_LAYOUT_ID = 'tora-sidebar-nav-indicator';
 
 interface ToraWindowBridge {
 	platform?: string;
@@ -77,26 +69,7 @@ const SettingsDialog = lazy(async () => ({
 	default: (await import('@/components/dialog/SettingsDialog')).SettingsDialog,
 }));
 
-type NavigationMotion = 'off' | 'gentle' | 'standard' | 'fast';
-const NAV_TRANSITIONS = {
-	off: { duration: 0 },
-	gentle: { type: 'spring' as const, stiffness: 250, damping: 30, mass: 0.7 },
-	standard: { type: 'spring' as const, stiffness: 380, damping: 30, mass: 0.6 },
-	fast: { type: 'spring' as const, stiffness: 620, damping: 42, mass: 0.5 },
-};
-
-function NavIndicator({ visible, motionMode }: { visible: boolean; motionMode: NavigationMotion }) {
-	if (!visible) return null;
-	return (
-		<motion.span
-			layoutId={motionMode === 'off' ? undefined : NAV_INDICATOR_LAYOUT_ID}
-			className="pointer-events-none absolute inset-y-1.5 left-0 w-[3px] rounded-[1px] bg-primary"
-			transition={NAV_TRANSITIONS[motionMode]}
-		/>
-	);
-}
-
-export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationMotion }) {
+export function AppSidebar() {
 	const navigate = useNavigate();
 	const location = useLocation();
 	const newTaskActive = /^\/(?:chat|tochat)(?:\/[\w-]+)?\/?$/.test(location.pathname);
@@ -117,7 +90,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	const [languageOpen, setLanguageOpen] = useState(false);
 	const [importOpen, setImportOpen] = useState(false);
 	useEffect(() => getWindowBridge()?.onOpenMessagesFromNotification?.(() => setMessagesOpen(true)), []);
-	const [subscriptionOpen,setSubscriptionOpen]=useState(false);
 	const { unread } = useAccountPresence();
 	const [settingsTab, setSettingsTab] = useState<SettingsSection>('general');
 	const handleSettingsOpenChange = useCallback((open: boolean) => {
@@ -131,39 +103,9 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 	}, [handleSettingsOpenChange]);
 	const [accountName, setAccountName] = useState(() => getUsername() || getEmail()?.split('@')[0] || 'Tora');
 	const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-	const [pollsEnabled, setPollsEnabled] = useState(() => localStorage.getItem('tora_polls_enabled') !== '0');
-	const [pollEntryVisible, setPollEntryVisible] = useState(() => localStorage.getItem('tora_poll_entry_visible') !== '0');
-	useEffect(() => {
-		let alive = true;
-		const refresh = async () => {
-			try {
-				const response = await cloudFetch('/polls/config');
-				if (!response.ok) return;
-				const body = await response.json() as { enabled?: boolean; entryVisible?: boolean };
-				if (!alive) return;
-				if (typeof body.enabled === 'boolean') {
-					setPollsEnabled(body.enabled);
-					localStorage.setItem('tora_polls_enabled', body.enabled ? '1' : '0');
-				}
-				if (typeof body.entryVisible === 'boolean') {
-					setPollEntryVisible(body.entryVisible);
-					localStorage.setItem('tora_poll_entry_visible', body.entryVisible ? '1' : '0');
-				}
-			} catch { /* 离线沿用最近一次设置 */ }
-		};
-		void refresh();
-		const timer = window.setInterval(() => void refresh(), 30000);
-		window.addEventListener('tora-auth-changed', refresh);
-		window.addEventListener('focus', refresh);
-		return () => { alive = false; window.clearInterval(timer); window.removeEventListener('tora-auth-changed', refresh); window.removeEventListener('focus', refresh); };
-	}, []);
-
-	useEffect(()=>{const open=()=>setSubscriptionOpen(true);window.addEventListener(OPEN_SUBSCRIPTION_EVENT,open);return()=>window.removeEventListener(OPEN_SUBSCRIPTION_EVENT,open);},[]);
-
 	// 全局事件桥：任意页面 openSettings('model') → 此处打开设置窗口并定位板块
 	useEffect(() => {
 		const handler = (e: Event) => {
-			setSubscriptionOpen(false);
 			setSettingsTab(normalizeSettingsSection((e as CustomEvent<unknown>).detail));
 			setSettingsOpen(true);
 		};
@@ -250,11 +192,12 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 		// 内部再靠 app-no-drag 逐块"挖洞"在 Electron 里并不可靠（尤其
 		// SidebarContent 还带 overflow-auto，Chromium 不支持滚动区当拖拽区），
 		// 会表现为侧栏按钮点不动。窗口拖动有标题条 + 主内容区顶栏两处足够。
-		<Sidebar collapsible="none" className="w-72! border-r border-sidebar-border bg-sidebar">
+		<Sidebar collapsible="none" className="w-72! border-r-0 bg-sidebar">
 			{!nativeTitlebar && <SidebarHeader className="h-12 shrink-0 p-0">
 				<div data-testid="sidebar-brand" className={`app-drag flex h-12 items-center gap-2 pe-4 ${getWindowBridge()?.platform === 'darwin' && !fullscreen ? 'ps-24' : 'ps-4'}`}>
 					<img src="/icon.png" alt="" width={20} height={20} draggable={false} className="size-5 shrink-0 rounded-[5px] grayscale" />
 					<span className="text-base font-semibold tracking-tight text-foreground">Tora</span>
+					<EditionBadge />
 				</div>
 			</SidebarHeader>}
 			<SidebarContent>
@@ -262,11 +205,8 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 				<SidebarGroup>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							<SidebarMenuItem key={'chat'}>
-								<NavIndicator
-									motionMode={navigationMotion}
-									visible={newTaskActive}
-								/>
+							<SidebarMenuItem key={'chat'} className="nav-highlight-host">
+								<NavHighlight active={newTaskActive} />
 								<SidebarMenuButton
 									isActive={newTaskActive}
 									data-testid="new-conversation"
@@ -277,8 +217,8 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							{/* 自动化：复用已有的 /schedule 路由（定时任务），置于 新任务 与 技能中心 之间 */}
-							<SidebarMenuItem key={'automation'}>
-								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/schedule')} />
+							<SidebarMenuItem key={'automation'} className="nav-highlight-host">
+								<NavHighlight active={location.pathname.startsWith('/schedule')} />
 								<SidebarMenuButton
 									id="tour-automation-nav"
 									isActive={location.pathname.startsWith('/schedule')}
@@ -288,8 +228,8 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 									<span>{t('common.automation')}</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
-							<SidebarMenuItem>
-								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/skill')} />
+							<SidebarMenuItem className="nav-highlight-host">
+								<NavHighlight active={location.pathname.startsWith('/skill')} />
 								<SidebarMenuButton
 									id="tour-skills-nav"
 									isActive={location.pathname.startsWith('/skill')}
@@ -300,8 +240,8 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 								</SidebarMenuButton>
 							</SidebarMenuItem>
 							{/* 浏览器：全屏内置浏览器，置于 技能中心 之下 */}
-							<SidebarMenuItem key={'browser'}>
-								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/browser')} />
+							<SidebarMenuItem key={'browser'} className="nav-highlight-host">
+								<NavHighlight active={location.pathname.startsWith('/browser')} />
 								<SidebarMenuButton
 									id="tour-browser-nav"
 									isActive={location.pathname.startsWith('/browser')}
@@ -311,13 +251,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 									<span>{t('common.browser')}</span>
 								</SidebarMenuButton>
 							</SidebarMenuItem>
-							{pollsEnabled && pollEntryVisible && <SidebarMenuItem key={'polls'}>
-								<NavIndicator motionMode={navigationMotion} visible={location.pathname.startsWith('/polls')} />
-								<SidebarMenuButton isActive={location.pathname.startsWith('/polls')} onClick={() => navigate('/polls')}>
-									<Vote />
-									<span>{t('common.polls')}</span>
-								</SidebarMenuButton>
-							</SidebarMenuItem>}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
@@ -338,7 +271,7 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							<ChevronUp className="size-4 text-muted-foreground" />
 						</SidebarMenuButton>
 					</DropdownMenuTrigger>
-					<DropdownMenuContent side="top" align="start" className="w-64 p-1">
+					<DropdownMenuContent side="top" align="start" className="tora-account-menu w-64 p-1">
 						<DropdownMenuItem className="py-1 text-[13px]" onClick={() => setMessagesOpen(true)}>
 							<Mail /><span className="flex-1">{t('inbox.title')}</span>
 							{unread > 0 && <span className="text-xs text-muted-foreground">{unread}</span>}
@@ -363,14 +296,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 							<Cat /><span className="whitespace-normal">{catgirlBusy ? catgirlLabels.disabling : catgirlLabels.disable}</span>
 						</DropdownMenuItem>}
 						<DropdownMenuSeparator />
-						<DropdownMenuItem asChild className="py-1 text-[13px]">
-							<a href="https://ohfun.online" target="_blank" rel="noopener noreferrer"><Globe /><span>{t('settings.about.website')}</span></a>
-						</DropdownMenuItem>
-						<DropdownMenuItem asChild className="py-1 text-[13px]">
-							<a href="https://ohfun.online/policies/agent-model-usage/" target="_blank" rel="noopener noreferrer"><BookText /><span>{t('settings.about.usagePolicy')}</span></a>
-						</DropdownMenuItem>
-						<AccountUsageMenu />
-						<DropdownMenuSeparator />
 						<DropdownMenuItem className="py-1 text-[13px]" data-testid="account-sign-out" onSelect={() => void signOutAccount().catch(() => toast.error(t('common.error')))}>
 							<LogOut />
 							<span>{t('settings.account.logout')}</span>
@@ -382,7 +307,6 @@ export function AppSidebar({ navigationMotion }: { navigationMotion: NavigationM
 			{messagesOpen && <Suspense fallback={null}><MessagesDialog onClose={() => setMessagesOpen(false)} /></Suspense>}
 			{languageOpen && <Suspense fallback={null}><LanguageDialog onClose={() => setLanguageOpen(false)} /></Suspense>}
 			{importOpen && <Suspense fallback={null}><SessionImportDialog onClose={() => setImportOpen(false)} /></Suspense>}
-			{subscriptionOpen && <Suspense fallback={null}><SubscriptionDialog open={subscriptionOpen} onClose={() => setSubscriptionOpen(false)} /></Suspense>}
 			{settingsOpen && (
 				<Suspense fallback={null}>
 					<SettingsDialog

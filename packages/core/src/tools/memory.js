@@ -11,8 +11,9 @@
 
 import {
   saveMemory, searchMemories, listMemories, deleteMemory,
-  projectKeyOf, MemoryValidationError, MEMORY_KINDS
+  projectKeyOf, isMemoryVisible, MemoryValidationError, MEMORY_KINDS
 } from '../asapi/memory.js';
+import { rankDesktopMemories } from '../asapi/desktop-memory-recall.js';
 
 const LIMIT_DEFAULT = 30;
 const SEARCH_DEFAULT = 10;
@@ -31,7 +32,7 @@ export const memorySaveTool = {
   description:
     '把值得跨会话记住的信息存入长期记忆：用户偏好（preference）、项目事实（fact）、' +
     '踩坑教训（pitfall）、团队约定（convention）。写自包含短句（脱离上下文也能看懂），' +
-    '相似内容会自动合并而不是新增。一次性的任务细节不要存。',
+    '重复条目可能自动合并。优先保存可复用的细节。',
   parameters: {
     type: 'object',
     properties: {
@@ -43,7 +44,8 @@ export const memorySaveTool = {
   },
 
   async execute(args, ctx = {}) {
-    const projectKey = projectKeyOf(ctx?.cwd);
+    const desktop = ctx.desktopMemory;
+    const projectKey = desktop?.projectKey ?? projectKeyOf(ctx.cwd);
     try {
       const { memory, deduped } = saveMemory({
         content: args?.content,
@@ -51,7 +53,7 @@ export const memorySaveTool = {
         scope: args?.scope,
         project_key: projectKey,
         source: 'tool'
-      });
+      }, { desktop: !!desktop, origin: desktop?.origin });
       const line = memLine(memory);
       return deduped
         ? `内容与已有记忆相似，已合并更新（未新增条目）：\n${line}`
@@ -77,9 +79,14 @@ export const memorySearchTool = {
     required: ['query']
   },
 
-  async execute(args) {
-    const results = searchMemories(String(args?.query ?? ''), { limit: args?.limit ?? SEARCH_DEFAULT });
-    if (!results.length) return `没有与「${String(args?.query ?? '').trim()}」相关的记忆。`;
+  async execute(args, ctx = {}) {
+    const query = String(args?.query ?? '');
+    const limit = args?.limit ?? SEARCH_DEFAULT;
+    const desktop = ctx.desktopMemory;
+    const results = desktop
+      ? rankDesktopMemories(query, listMemories().filter(memory => isMemoryVisible(memory, desktop.projectKey)), { limit })
+      : searchMemories(query, { limit });
+    if (!results.length) return `没有与「${query.trim()}」相关的记忆。`;
     return [`找到 ${results.length} 条相关记忆：`, ...results.map(memLine)].join('\n');
   }
 };
@@ -98,7 +105,7 @@ export const memoryListTool = {
   },
 
   async execute(args, ctx = {}) {
-    const key = projectKeyOf(ctx?.cwd);
+    const key = ctx.desktopMemory?.projectKey ?? projectKeyOf(ctx.cwd);
     const all = listMemories();
     let items;
     if (args?.scope === 'global') {
@@ -127,10 +134,10 @@ export const memoryForgetTool = {
     required: ['id']
   },
 
-  async execute(args) {
+  async execute(args, ctx = {}) {
     const id = String(args?.id ?? '').trim();
     if (!id) return 'MemoryForget 需要 id（来自 MemoryList / MemorySearch 输出）。';
-    const ok = deleteMemory(id);
+    const ok = deleteMemory(id, { projectKey: ctx.desktopMemory?.projectKey });
     return ok
       ? `已删除记忆 ${id}。`
       : `没有 id 为「${id}」的记忆。请用 MemoryList 或 MemorySearch 核对后再试。`;

@@ -59,6 +59,10 @@ export const BROWSER_ACTIONS = [
 /** 导航类动作（只读语义）：它们不改变远端状态，只是换一页看。 */
 const NAV_ACTIONS = new Set(['open', 'back', 'forward', 'reload', 'new_tab']);
 
+export function browserNavigates(action, url) {
+  return NAV_ACTIONS.has(action) && (action !== 'new_tab' || Boolean(url));
+}
+
 /** 标签管理类动作：作用于本地标签集合，不改变任何远端状态。 */
 const TAB_ACTIONS = new Set(['tabs', 'new_tab', 'switch_tab', 'close_tab']);
 

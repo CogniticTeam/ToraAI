@@ -23,14 +23,17 @@ export default function App() {
 		<QueryClientProvider client={queryClient}>
 			<HotUIBridge />
 			<WindowDragRegion data-testid="global-window-drag-region" className="fixed inset-x-0 top-0 z-[200] h-4" />
-			<HotUIErrorBoundary><RequiredUpdate><FirstLaunchIntro><FirstUseConsent><AccountPresence>
+			<HotUIErrorBoundary><RequiredUpdate><FirstLaunchIntro><FirstUseConsent>
 				<LoginGate>
-					<Suspense fallback={<div className="grid h-screen place-items-center bg-background"><LogoLoader /></div>}>
-						<Workspace />
-						<WhatsNew />
-					</Suspense>
+					{/* Wait for the startup session check before polling or opening account events. */}
+					<AccountPresence>
+						<Suspense fallback={<div className="grid h-screen place-items-center bg-background"><LogoLoader /></div>}>
+							<Workspace />
+							<WhatsNew />
+						</Suspense>
+					</AccountPresence>
 				</LoginGate>
-			</AccountPresence></FirstUseConsent></FirstLaunchIntro></RequiredUpdate></HotUIErrorBoundary>
+			</FirstUseConsent></FirstLaunchIntro></RequiredUpdate></HotUIErrorBoundary>
 			<Toaster richColors position="top-right" />
 		</QueryClientProvider>
 	);

@@ -1,7 +1,7 @@
 import { useCallback, useLayoutEffect, useRef, type KeyboardEvent, type WheelEvent } from 'react';
 
 /** 允许几像素的排版/缩放误差，避免贴底状态在流式回复中反复切换。 */
-const BOTTOM_THRESHOLD = 48;
+const BOTTOM_THRESHOLD = 16;
 
 /**
  * 跟随新消息和流式回复；用户上滑阅读历史时暂停，回到底部后自动恢复。
@@ -42,15 +42,16 @@ export function useChatAutoScroll(active: boolean) {
 	const onScroll = useCallback(() => {
 		const viewport = viewportRef.current;
 		if (!viewport) return;
-		if (atBottom()) followingRef.current = true;
-		else if (viewport.scrollTop < previousTopRef.current - 1) followingRef.current = false;
+		const change = viewport.scrollTop - previousTopRef.current;
+		if (change < -1) followingRef.current = false;
+		else if (change > 0 && atBottom()) followingRef.current = true;
 		previousTopRef.current = viewport.scrollTop;
 	}, [atBottom]);
 
 	const onWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
 		if (event.deltaY < 0) followingRef.current = false;
-		else if (atBottom()) followingRef.current = true;
-	}, [atBottom]);
+		else if (event.deltaY > 0 && atBottom()) resume();
+	}, [atBottom, resume]);
 
 	const onKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>) => {
 		if (['ArrowUp', 'PageUp', 'Home'].includes(event.key)) followingRef.current = false;

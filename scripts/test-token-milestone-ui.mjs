@@ -42,14 +42,14 @@ try {
 		localStorage.setItem('tora:first-run:tour:v1', '1');
 		localStorage.setItem('tora:first-use-consent:v1', JSON.stringify({ terms: true, privacy: true, crossBorder: true }));
 	}, base);
-	await page.route('https://tora.ohfun.online/auth/me', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'milestone-test', username: 'milestone-test' }) }));
-	await page.route('https://tora.ohfun.online/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
-await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
-await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://tora.ohfun.online/polls/config', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, entryVisible: false }) }));
-	await page.route('https://tora.ohfun.online/account/messages', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://tora.ohfun.online/account/events-ticket', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'milestone-test' }) }));
-	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', (socket) => { socket.onMessage((message) => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://api.cogniticteam.com/auth/me', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'milestone-test', username: 'milestone-test' }) }));
+	await page.route('https://api.cogniticteam.com/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
+await page.route('https://api.cogniticteam.com/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+await page.route('https://api.cogniticteam.com/models', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://api.cogniticteam.com/polls/config', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, entryVisible: false }) }));
+	await page.route('https://api.cogniticteam.com/account/messages', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://api.cogniticteam.com/account/events-ticket', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'milestone-test' }) }));
+	await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', (socket) => { socket.onMessage((message) => { if (message === 'ping') socket.send('pong'); }); });
 
 	await page.goto(`${base}/chat/${agentId}/${sessionId}`, { waitUntil: 'domcontentloaded' });
 	const dialog = page.getByRole('dialog', { name: 'Token 里程碑达成' });

@@ -25,19 +25,19 @@ let browser;
 try {
   browser = await chromium.launch({ headless: true, executablePath: chrome, args: ['--no-sandbox', '--disable-gpu'] });
   const page = await browser.newPage({ locale: 'zh-CN' });
-  await page.route('https://tora.ohfun.online/auth/me', (route) => route.fulfill({
+  await page.route('https://api.cogniticteam.com/auth/me', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'test', username: 'test' }),
   }));
-  await page.route('https://tora.ohfun.online/models', (route) => route.fulfill({
+  await page.route('https://api.cogniticteam.com/models', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }),
   }));
-  await page.route('https://tora.ohfun.online/account/messages', (route) => route.fulfill({
+  await page.route('https://api.cogniticteam.com/account/messages', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0, nextOffset: null }),
   }));
-  await page.route('https://tora.ohfun.online/account/events-ticket', (route) => route.fulfill({
+  await page.route('https://api.cogniticteam.com/account/events-ticket', (route) => route.fulfill({
     status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'test-ticket' }),
   }));
-  await page.routeWebSocket('wss://tora.ohfun.online/account/events*', (socket) => {
+  await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', (socket) => {
     socket.send(JSON.stringify({ type: 'ready' }));
     socket.onMessage((message) => { if (message === 'ping') socket.send('pong'); });
   });
@@ -46,7 +46,7 @@ try {
     localStorage.setItem('server_url', serverUrl);
     localStorage.setItem('username', 'test');
     localStorage.setItem('tora_auth_token', 'test-token');
-    localStorage.setItem('tora_auth_api', 'https://tora.ohfun.online');
+    localStorage.setItem('tora_auth_api', 'https://api.cogniticteam.com');
   }, base);
   await page.reload({ waitUntil: 'networkidle', timeout: 15000 });
 

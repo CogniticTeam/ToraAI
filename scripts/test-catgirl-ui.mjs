@@ -35,7 +35,7 @@ async function open(language) {
       onMenuCommand: () => () => {}, getAppVersion: () => '1.0.1',
     };
   }, { base, language });
-  await page.route('https://tora.ohfun.online/**', route => {
+  await page.route('https://api.cogniticteam.com/**', route => {
     const path = new URL(route.request().url()).pathname;
     const body = {
       '/auth/me': { id: 'catgirl-test', username: 'catgirl-test' },
@@ -44,7 +44,7 @@ async function open(language) {
     }[path] || {};
     return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
-  await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }));
+  await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }));
   await page.goto(base, { waitUntil: 'domcontentloaded' });
   await page.locator('#tour-chat-textarea').first().waitFor({ state: 'visible' });
   return { context, page, input: page.locator('#tour-chat-textarea').first() };

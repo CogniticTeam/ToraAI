@@ -1,7 +1,5 @@
 import {
-	BellOff,
 	ChevronDown,
-	Compass,
 	Hand,
 	ShieldCheck,
 	ShieldAlert,
@@ -24,12 +22,7 @@ import { useTranslation } from '@/i18n/useI18n.ts';
 import { requestPanel } from '@/lib/openPanel.ts';
 import { cn } from '@/lib/utils.ts';
 
-const PERMISSION_MODES: {
-	value: PermissionMode;
-	labelKey: string;
-	descKey: string;
-	icon: typeof Hand;
-}[] = [
+const PERMISSION_MODES = [
 	{
 		value: 'default',
 		labelKey: 'permission-mode.default',
@@ -43,24 +36,14 @@ const PERMISSION_MODES: {
 		icon: ShieldCheck,
 	},
 	{
-		value: 'explore',
-		labelKey: 'permission-mode.explore',
-		descKey: 'permission-mode.explore-desc',
-		icon: Compass,
-	},
-	{
 		value: 'bypass',
 		labelKey: 'permission-mode.bypass',
 		descKey: 'permission-mode.bypass-desc',
 		icon: TriangleAlert,
 	},
-	{
-		value: 'dont_ask',
-		labelKey: 'permission-mode.dont_ask',
-		descKey: 'permission-mode.dont_ask-desc',
-		icon: BellOff,
-	},
-];
+] as const;
+
+type SelectableMode = typeof PERMISSION_MODES[number]['value'];
 
 interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onChange' | 'value'> {
 	className?: string;
@@ -69,7 +52,7 @@ interface Props extends Omit<React.ComponentPropsWithoutRef<typeof Button>, 'onC
 	disabled?: boolean;
 	/** 菜单头部显示「了解更多」，点击打开权限规则面板（聊天页用；表单里不传） */
 	learnMore?: boolean;
-	onChange?: (value: PermissionMode) => void;
+	onChange?: (value: SelectableMode) => void;
 }
 
 export function PermissionModeSelect({
@@ -89,11 +72,13 @@ export function PermissionModeSelect({
 		return () => window.removeEventListener(FIRST_RUN_CLOSE_PERMISSION_EVENT, close);
 	}, []);
 
-	const displayLabel = value
-		? t(PERMISSION_MODES.find((m) => m.value === value)?.labelKey ?? value)
-		: t('permission-mode.placeholder');
+	const selectedMode = PERMISSION_MODES.find((mode) => mode.value === value);
+	const displayLabel = selectedMode
+		? t(selectedMode.labelKey)
+		: t(value === 'explore' ? 'permission-mode.explore'
+			: value === 'dont_ask' ? 'permission-mode.dont_ask' : 'permission-mode.placeholder');
 	const ModeIcon = composer
-		? value === 'bypass' ? ShieldAlert : (PERMISSION_MODES.find((mode) => mode.value === value)?.icon ?? UserRoundKey)
+		? value === 'bypass' ? ShieldAlert : (selectedMode?.icon ?? UserRoundKey)
 		: UserRoundKey;
 
 	return (
@@ -139,8 +124,11 @@ export function PermissionModeSelect({
 					)}
 				</div>
 				<DropdownMenuRadioGroup
-					value={value ?? ''}
-					onValueChange={(mode) => onChange?.(mode as PermissionMode)}
+					value={selectedMode?.value ?? ''}
+					onValueChange={(value) => {
+						const mode = PERMISSION_MODES.find((item) => item.value === value);
+						if (mode) onChange?.(mode.value);
+					}}
 				>
 					{PERMISSION_MODES.map((mode) => {
 						const Icon = mode.icon;

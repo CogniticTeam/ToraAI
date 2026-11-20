@@ -10,6 +10,7 @@ import {
 	TriangleAlert,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 
 import {DeletableMessage, type DeleteMessage} from './DeletableMessage';
@@ -23,7 +24,8 @@ import { Button } from '../ui/button';
 import { skillApi, type SkillView, type SkillRecord } from '@/api';
 import type { GitStatus } from '@/api';
 import type { KnowledgeBaseView, Skill, UserCommand } from '@/api';
-import { ASMessageBubble } from '@/components/chat/ASMessageBubble.tsx';
+import { getDesktopPluginBridge, isDesktopPluginSkillId, useDesktopPluginContributions } from '@/api/desktopPlugins';
+import { ASMessageBubble, AssistantThinkingMessage } from '@/components/chat/ASMessageBubble.tsx';
 import { ConfirmCard } from '@/components/chat/ConfirmCard.tsx';
 import { FlipCard } from '@/components/chat/FlipCard.tsx';
 import { TextInput } from '@/components/chat/TextInput.tsx';
@@ -112,7 +114,7 @@ interface ChatContentProps {
 	phase: ReplyPhase;
 	disabled: boolean;
 	sendDisabled?: boolean;
-	onSend: (content: ContentBlock[], autoContext?: ContentBlock[], selectedSkills?: SlashItem[]) => void;
+	onSend: (content: ContentBlock[], autoContext?: ContentBlock[], selectedSkills?: SlashItem[]) => void | Promise<void>;
 	onUserConfirm: (
 		toolCall: ToolCallBlock,
 		confirm: boolean,
@@ -123,6 +125,7 @@ interface ChatContentProps {
 	className?: string;
 	/** Called when the user clicks the stop button. */
 	onInterrupt?: () => void;
+	onResume?: (replyId: string) => Promise<void>;
 	/**
 	 * Optional content pinned at the bottom of the chat — between the
 	 * message scroll area and the text input (e.g. pending subagent HITL
@@ -178,6 +181,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	autoComplete,
 	className,
 	onInterrupt,
+	onResume,
 	footerSlot,
 	composerNotice,
 	allowedInputTypes,
@@ -196,6 +200,9 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	const { t, i18n } = useTranslation();
 	// Hide retired model-switch notices without modifying saved conversation history.
 	const msgs = useMemo(() => allMessages.filter(message => !(message.role === 'system' && message.metadata?.kind === 'model_switch')), [allMessages]);
+	const latestReply = msgs.at(-1);
+	const interrupted = latestReply?.finished_reason === ReplyFinishedReason.INTERRUPTED;
+	const limitReached = latestReply?.finished_reason === ReplyFinishedReason.EXCEED_MAX_ITERS;
 	// 空态没有消息视口；进入会话后跟随新消息，手动上滑时暂停。
 	const isEmpty = !loading && msgs.length === 0;
 	const { viewportRef, contentRef, onScroll, onWheel, onKeyDown, pause, resume: resumeAutoScroll } = useChatAutoScroll(!loading && !isEmpty);
@@ -290,15 +297,17 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	// pull the library up here so TextInput stays focused on input, and so
 	// the markdown bodies resolve at send time without prop drilling.
 	const library = useSkills();
+	const plugins = useDesktopPluginContributions();
+	const allSkills = useMemo(() => [...library.skills, ...(plugins?.skills ?? [])], [library.skills, plugins?.skills]);
 	// Commands first, then skills. They read as two kinds of thing — a
 	// command fills the composer, a skill gets attached — so the order is
 	// what tells the user which is which before they hover anything.
 	const slashItems = useMemo<SlashItem[]>(
 		() => [
-			...commandsToSlashItems(userCommands ?? []),
-			...libraryToSlashItems(library.skills),
+			...commandsToSlashItems([...(userCommands ?? []), ...(plugins?.commands ?? [])]),
+			...libraryToSlashItems(allSkills),
 		],
-		[userCommands, library.skills],
+		[userCommands, plugins?.commands, allSkills],
 	);
 	const skillSpecsRef = React.useRef<Map<string, Promise<SkillView>>>(new Map());
 	const getSkillRecord = useCallback((id: string): Promise<SkillRecord | SkillView> => {
@@ -339,8 +348,10 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	 * the model still benefits from the listing copy.
 	 */
 	const buildSkillContext = useCallback(
-		async (picked: SlashItem[] | undefined): Promise<ContentBlock[]> => {
-			if (!picked || picked.length === 0) return [];
+		async (selection: SlashItem[] | undefined): Promise<ContentBlock[]> => {
+			// Desktop plugin instructions are resolved against the active revision on the host.
+			const picked = (selection ?? []).filter(item => !isDesktopPluginSkillId(item.id));
+			if (picked.length === 0) return [];
 			const records = await Promise.all(picked.map((p) => getSkillRecord(p.id)));
 			const lines: string[] = [];
 			for (let i = 0; i < picked.length; i += 1) {
@@ -372,7 +383,6 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	// 请求触发与 SSE 首个可见块之间存在短暂空窗。用 state 而非 ref 记录流已
 	// 开始，既让 React 生命周期可追踪，也避免异步 render 中修改 ref 的竞态。
 	const [waitingForFirstResponse, setWaitingForFirstResponse] = useState(false);
-	const [observedStreaming, setObservedStreaming] = useState(false);
 
 	// Wrap onSend so the silent context block (cwd/git/turns/tools) plus the
 	// picked-skill specs travel together as ``auto_context`` — appended to the
@@ -384,17 +394,18 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 			// 本地状态先于 SSE 生命周期：技能上下文构建、创建首个会话以及
 			// 服务端接受 trigger 都可能造成短暂空窗，不能让“思考中”漏掉。
 			setWaitingForFirstResponse(true);
-			setObservedStreaming(false);
 			try {
 				const skillCtx = await buildSkillContext(pickedSkills);
 				const fullContext = [...contextBlocks, ...skillCtx];
-				onSend(blocks, fullContext.length > 0 ? fullContext : undefined, pickedSkills);
+				await onSend(blocks, fullContext.length > 0 ? fullContext : undefined, pickedSkills);
 			} catch (error) {
+				toast.error(error instanceof Error ? error.message : t('common.error'));
+			} finally {
+				// Trigger failures can return to idle before React ever observes streaming.
 				setWaitingForFirstResponse(false);
-				throw error;
 			}
 		},
-		[onSend, contextBlocks, buildSkillContext, resumeAutoScroll],
+		[onSend, contextBlocks, buildSkillContext, resumeAutoScroll, t],
 	);
 	// Only a session that finished loading with nothing in it is empty.
 	// Treating "no messages yet" as empty would flash the greeting over
@@ -406,28 +417,14 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 	const hasFirstAssistantContent =
 		tailMessage?.role === 'assistant' && tailMessage.content.length > 0;
 	const isWaitingForFirstResponse =
-		waitingForFirstResponse ||
+		!hasFirstAssistantContent && (waitingForFirstResponse ||
 		phase === 'streaming' &&
 		(!tailMessage ||
 			tailMessage.role !== 'assistant' ||
-			tailMessage.content.length === 0);
-	// REPLY_START 会先插入一个 content 为空的 assistant 消息。占位仍应
-	// 挂在本轮用户气泡下方，而不是挂到这个尚无可见内容的 assistant 上。
-	const waitingUserMessage = isWaitingForFirstResponse
-		? [...msgs].reverse().find((message) => message.role === 'user')
-		: undefined;
-
-	// 首个内容块（文本或工具调用）到达后立即撤掉占位。请求失败不会产生
-	// 内容，因此只在已经确实进入 streaming 后再由 idle 清理本地状态。
-	useEffect(() => {
-		if (!waitingForFirstResponse) return;
-		if (hasFirstAssistantContent || (observedStreaming && phase === 'idle')) {
-			setWaitingForFirstResponse(false);
-			setObservedStreaming(false);
-			return;
-		}
-		if (phase === 'streaming') setObservedStreaming(true);
-	}, [hasFirstAssistantContent, observedStreaming, phase, waitingForFirstResponse]);
+			tailMessage.content.length === 0));
+	// REPLY_START 之前使用独立 AI 占位；之后交由本轮 assistant 气泡承接。
+	const waitingAssistantMessage = isWaitingForFirstResponse && tailMessage?.role === 'assistant'
+		? tailMessage : undefined;
 
 	// A spinner that appears and vanishes inside a couple of frames reads
 	// as a flicker, not as feedback — so hold it back until the load has
@@ -515,9 +512,9 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 											message={message}
 												deleteAction={deleteAction}
 												isGenerating={phase !== 'idle' && message.role === 'assistant' && index === msgs.length - 1}
-											skillLibrary={library.skills}
+											skillLibrary={allSkills}
 											onUserConfirm={onUserConfirm}
-											showThinking={message === waitingUserMessage}
+											showThinking={message === waitingAssistantMessage}
 											showTimestamp
 										/>
 									</>}
@@ -525,25 +522,33 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 										</MessageScrollerItem>
 									);
 								})}
-								{msgs.length > 0 &&
-									msgs[msgs.length - 1].finished_reason ===
-										ReplyFinishedReason.EXCEED_MAX_ITERS &&
-									phase === 'idle' && (
+								{isWaitingForFirstResponse && !waitingAssistantMessage && (
+									<MessageScrollerItem messageId="pending-assistant">
+										<AssistantThinkingMessage />
+									</MessageScrollerItem>
+								)}
+								{latestReply && (limitReached || (interrupted && onResume)) && phase === 'idle' && (
 										<Alert
 											variant={'default'}
 											className="border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-50"
 										>
 											<TriangleAlert />
 											<AlertTitle>
-												{t('chat.maxItersExceeded.title')}
+												{t(interrupted ? 'chat.runInterrupted.title' : 'chat.maxItersExceeded.title')}
 											</AlertTitle>
 											<AlertDescription>
-												{t('chat.maxItersExceeded.description')}
+												{t(interrupted ? 'chat.runInterrupted.description' : 'chat.maxItersExceeded.description')}
 											</AlertDescription>
 											<AlertAction>
 												<Button
 													size={'xs'}
+													data-testid="resume-task"
+													disabled={disabled || sendDisabled}
 													onClick={() => {
+														if (onResume) {
+															void onResume(latestReply.id);
+															return;
+														}
 														onSend([
 															{
 																id: crypto.randomUUID(),
@@ -606,6 +611,7 @@ const ChatContentComponent: React.FC<ChatContentProps> = ({
 						className="w-full"
 						onSend={handleSend}
 						commandItems={slashItems}
+						skillCatalogReady={!library.loading && !library.error && (!getDesktopPluginBridge() || plugins !== undefined)}
 						disabled={disabled}
 						sendDisabled={sendDisabled}
 						autoComplete={autoComplete}

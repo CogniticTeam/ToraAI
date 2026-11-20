@@ -35,6 +35,7 @@ export function useSessions(agentId: string | null) {
 	const {
 		data,
 		isPending,
+		isFetching,
 		error,
 		refetch: runRefetch,
 	} = useQuery({
@@ -82,18 +83,23 @@ export function useSessions(agentId: string | null) {
 		async (sessionId: string, body: UpdateSessionRequest) => {
 			if (!agentId) throw new Error('No agent selected');
 			const res = await sessionApi.update(sessionId, agentId, body);
-			await invalidate();
+			await queryClient.cancelQueries({ queryKey: [...SESSIONS_KEY, agentId] });
+			queryClient.setQueryData<SessionView[]>([...SESSIONS_KEY, agentId], current => current?.map(view =>
+				view.session.id === res.id ? { ...view, session: res } : view,
+			));
+			void invalidate();
 			return res;
 		},
-		[agentId, invalidate],
+		[agentId, invalidate, queryClient],
 	);
 
-	/** Deletes a session and refreshes the list. */
+	/** Deletes on the server first, then allows a visual exit before refreshing all lists. */
 	const remove = useCallback(
-		async (sessionId: string) => {
+		async (sessionId: string, beforeRefresh?: () => Promise<void>) => {
 			if (!agentId) throw new Error('No agent selected');
 			await sessionApi.delete(sessionId, agentId);
-			await invalidate();
+			try { await beforeRefresh?.(); }
+			finally { await invalidate(); }
 		},
 		[agentId, invalidate],
 	);
@@ -101,6 +107,7 @@ export function useSessions(agentId: string | null) {
 	return {
 		sessions: data ?? NO_SESSIONS,
 		loading: agentId !== null && isPending,
+		fetching: agentId !== null && isFetching,
 		error: error as Error | null,
 		refetch,
 		create,

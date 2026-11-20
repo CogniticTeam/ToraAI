@@ -2,6 +2,11 @@ import type {PanelKey} from '@/components/panel/PanelDock';
 
 const knownPanels = new Set<PanelKey>(['plan','mcp','skill','permission','knowledge','team','checkpoint','diff','hooks','browser','terminal']);
 
+// 同一次运行内保留开关状态；新进程默认收起，不能把长期保存的标签误作打开指令。
+let dockVisible = false;
+export const readPanelVisibility = () => dockVisible;
+export const rememberPanelVisibility = (visible: boolean) => { dockVisible = visible; };
+
 /** Migrate old columns to one ordered, unique tool-tab list. */
 export function normalizePanelLayout(value: unknown): PanelKey[][] {
 	if (!Array.isArray(value)) return [];

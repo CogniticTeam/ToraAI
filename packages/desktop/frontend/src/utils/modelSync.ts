@@ -1,3 +1,4 @@
+import { authBaseURL } from '@/lib/toraService';
 // 模型列表的云端同步工具。
 //
 // 模型列表（设置→模型板块）以云端 auth-worker 为权威存储，一账号一列表、
@@ -8,15 +9,12 @@
 
 import { getToken } from './authStore';
 
-const AUTH_API_KEY = 'tora_auth_api';
-const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 const SERVER_URL_KEY = 'server_url';
 const DEFAULT_SERVER_URL = 'http://127.0.0.1:3210';
 let mirrorWrites: Promise<unknown> = Promise.resolve();
 let builtinWrites: Promise<unknown> = Promise.resolve();
 
-export const cloudApi = () =>
-	(localStorage.getItem(AUTH_API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
+export const cloudApi = authBaseURL;
 
 const localApi = () =>
 	(localStorage.getItem(SERVER_URL_KEY) || DEFAULT_SERVER_URL).replace(/\/+$/, '');
@@ -44,6 +42,12 @@ export async function fetchBuiltinQuota(signal?: AbortSignal): Promise<Response>
 	const response=await fetch(`${localApi()}/admin/tochat-quota`,{signal:signal??AbortSignal.timeout(15000)});
 	if(token!==getToken())throw new Error('Account changed during quota read');
 	return response;
+}
+
+/** Official catalog rows arrive without an apiKey; the local runtime uses the account token. */
+export function withOfficialToken<T extends { isOfficial?: boolean; apiKey?: string }>(models: T[]): T[] {
+	const token = getToken() || '';
+	return models.map((model) => (model.isOfficial ? { ...model, apiKey: token } : model));
 }
 
 /** 带 Bearer token 的云端请求 */
@@ -79,7 +83,6 @@ export async function syncModelsFromCloud(): Promise<void> {
 	const token = getToken();
 	if (!token) return;
 	try {
-		await syncBuiltinModelAuth();
 		const res = await fetch(`${cloudApi()}/models`, {
 			headers: { authorization: `Bearer ${token}` },
 		});

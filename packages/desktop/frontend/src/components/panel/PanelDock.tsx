@@ -68,7 +68,7 @@ interface PanelDockProps {
 
 function DockMotion({mode,duration,children}:{mode:string;duration:number;children:ReactNode}) {
 	const present=useIsPresent();
-	return <motion.div data-dock-motion={mode} data-dock-exiting={!present} className={`flex h-full min-h-0 min-w-0 flex-col ${present?'':'pointer-events-none'}`} initial={{opacity:mode==='off'?1:0,x:mode==='off'?0:18}} animate={{opacity:1,x:0}} exit={{opacity:0,x:mode==='off'?0:18}} transition={{duration,ease:[0.2,0.7,0.2,1]}}>{children}</motion.div>;
+	return <motion.div data-dock-motion={mode} data-dock-exiting={!present} className={`flex h-full min-h-0 min-w-0 flex-col ${present?'':'pointer-events-none'}`} initial={{opacity:mode==='off'?1:0,x:mode==='off'?0:18}} animate={{opacity:1,x:0}} exit={{opacity:0,x:mode==='off'?0:18}} transition={mode==='off'?{duration:0}:{x:{type:'spring',stiffness:mode==='gentle'?275:420,damping:32,mass:0.7},opacity:{duration:duration*0.68}}}>{children}</motion.div>;
 }
 
 const BuiltinBrowser = lazy(async () => ({default:(await import('./BrowserPanel')).BrowserPanel}));
@@ -89,7 +89,7 @@ export const PanelDock = ({ layout, panels, onClosePanel, onOpenPanel, onCloseDo
 	return <AnimatePresence initial={false}>
 		{layout.flat().length > 0 && <Fragment key="tool-dock">
 			<ResizableHandle withHandle className="w-1.5 bg-transparent" />
-			<ResizablePanel id="tool-dock" minSize="20rem" defaultSize="26rem" className="min-w-0">
+			<ResizablePanel id="tool-dock" minSize="17rem" maxSize="54%" defaultSize="26rem" className="min-w-0">
 				<DockMotion mode={motionMode} duration={duration}>
 					<Suspense fallback={<div role="status" className="p-4 text-sm text-muted-foreground">{t('common.loading')}</div>}>
 						<BuiltinBrowser toolTabs={keys.map(key => ({key,...panels[key]!}))} activeTool={active} onSelectTool={select} onCloseTool={close}

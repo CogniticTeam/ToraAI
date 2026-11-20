@@ -113,7 +113,7 @@ export async function loadProjectContext(cwd, cfg = {}) {
   if (cfg.repoMapInject !== false) {
     try {
       const map = buildRepoMap(cwd, { maxChars: cfg.repoMapMaxChars ?? 2500 });
-      if (shouldInjectRepoMap({ fileCount: map.files }, cfg.repoMapThreshold ?? 25)) {
+      if (shouldInjectRepoMap({ fileCount: map.files, threshold: cfg.repoMapThreshold })) {
         out.repoMap = map.text;
       }
     } catch { /* ignore */ }
@@ -189,6 +189,16 @@ export function recentChanges(cwd, git, { limit = 12 } = {}) {
   return out.length ? out : null;
 }
 
+export function renderAgentRole(role = {}, { includeIdentity = true } = {}) {
+  const name = role.name?.trim() || 'Covey';
+  const parts = ['# Agent Role'];
+  if (role.system_prompt?.trim()) parts.push(`Role instructions:\n${role.system_prompt.trim()}`);
+  if (role.personality?.trim()) parts.push(`Personality:\n${role.personality.trim()}`);
+  if (includeIdentity) parts.push(`Your name is ${JSON.stringify(name)}. Use this name when identifying yourself. Tora is the application, not your name; ToChat and ToCode are application modes, not your name. This is your current identity even if older messages used another name.`);
+  parts.push('Role preferences do not change the available tools, permissions, or safety constraints.');
+  return parts.join('\n\n');
+}
+
 /**
  * 装配本次运行的系统提示词：基础提示词 + 项目上下文（+ ReAct 模式说明）。
  * @param {object} opts
@@ -197,9 +207,20 @@ export function recentChanges(cwd, git, { limit = 12 } = {}) {
  * @param {boolean} [opts.reactMode]  模型不支持 tool_calls 时追加文本 ReAct 协议
  * @param {string[]} [opts.toolNames] ReAct 模式下把可用工具名列出来
  */
-export function buildSystemPrompt({ basePrompt, projectContext, reactMode = false, toolNames = [], hookContext = '' }) {
+export function buildSystemPrompt({
+  basePrompt, projectContext, reactMode = false, toolNames = [], hookContext = '', discoverTools = false, workspaceSelected = false,
+}) {
   const parts = [String(basePrompt || '').trim()];
-  if(toolNames.includes('WebPreview'))parts.push('网页交付：创建或修改 HTML、官网、网页应用后，主动准备本地预览。独立 HTML 用 WebPreview 的 path 启动本地静态服务器；Vite、Next 等框架先按项目文档用 Bash 启动开发服务器（仅监听本机），确认页面就绪后用 WebPreview 的 url 登记。不要把需要构建的源码当成可用网页。完成回复时保留预览服务器，Tora 会提供内置浏览器打开卡片。');
+  if (discoverTools) parts.push(
+    'Use ToolSearch to find specialized tools or enabled integrations when needed. For multi-step work, use the Task tools to record progress, and check unfinished tasks and the actual workspace when resuming. After making changes, verify the affected entry points. For web interfaces, use browser checks when available. Mark tasks complete only after verification, and report any checks that could not run.'
+  );
+  if (discoverTools && workspaceSelected) {
+    parts.push('The workspace is already selected. Read, Edit, Glob and Grep resolve relative paths from its root, and Bash starts at that root. Use file tools to inspect known paths directly. Run an explicitly supplied command by itself from that directory. When using native tool calls, send independent file reads together.');
+  }
+  if (discoverTools || toolNames.includes('WebPreview')) parts.push(
+    (discoverTools ? '网页交付时先用 ToolSearch 查找 WebPreview。' : '') +
+    '创建或修改 HTML、官网、网页应用后，主动准备本地预览。独立 HTML 用 WebPreview 的 path 启动本地静态服务器；Vite、Next 等框架先按项目文档用 Bash 启动开发服务器（仅监听本机），确认页面就绪后用 WebPreview 的 url 登记。完成回复时保留预览服务器，Tora 会提供内置浏览器打开卡片。'
+  );
   const ctxText = projectContext ? renderProjectContext(projectContext) : '';
   if (ctxText) parts.push(ctxText);
   if (hookContext) {
@@ -207,7 +228,9 @@ export function buildSystemPrompt({ basePrompt, projectContext, reactMode = fals
   }
   if (reactMode) {
     parts.push(toolNames.length
-      ? `${REACT_PROTOCOL}\n   ${toolNames.join(', ')}\n6. args 里的参数名也必须严格照抄工具定义（先用一次 \`{"tool":"RepoMap","args":{}}\` 或直接按常识写；写错会得到参数错误提示）。`
+      ? `${REACT_PROTOCOL}\n   ${toolNames.join(', ')}\n6. ${discoverTools
+        ? '也可使用 ToolSearch 返回的工具名与参数定义。ToolSearch 的参数是 query（名称或关键词）和可选的 scope（查找 MCP 或自定义工具时为 integrations）。'
+        : 'args 里的参数名也必须严格照抄工具定义，写错会得到参数错误提示。'}`
       : REACT_PROTOCOL);
   }
   return parts.filter(Boolean).join('\n\n---\n\n');

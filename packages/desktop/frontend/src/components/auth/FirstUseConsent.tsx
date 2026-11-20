@@ -5,9 +5,9 @@ import { useTranslation } from '@/i18n/useI18n';
 
 export const FIRST_USE_CONSENT_KEY = 'tora:first-use-consent:v1';
 const POLICY_URLS = {
-  terms: 'https://ohfun.online/#terms',
-  privacy: 'https://ohfun.online/#privacy',
-  crossBorder: 'https://ohfun.online/#cross-border',
+  terms: 'https://cogniticteam.com/#terms',
+  privacy: 'https://cogniticteam.com/#privacy',
+  crossBorder: 'https://cogniticteam.com/#cross-border',
 } as const;
 
 function hasConsent() {

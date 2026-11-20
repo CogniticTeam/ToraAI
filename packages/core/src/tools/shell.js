@@ -106,7 +106,7 @@ class PersistentShell {
     this.proc.stderr.on('data', (d) => this._onData(d));
     this.proc.stdin.on('error', () => this._die());
     this.proc.on('error', () => this._die());
-    this.proc.on('exit', () => this._die());
+    this.proc.on('exit', code => this._die(code));
     // 静音 rc 输出（含主题的 precmd 钩子）+ 固定提示符；同时把 cwd 拉到期望值
     this._write(QUIET_PREAMBLE);
     this._write(`cd ${JSON.stringify(cwd)} 2>/dev/null || true\n`);
@@ -116,16 +116,23 @@ class PersistentShell {
     try { this.proc.stdin.write(s); } catch { this._die(); }
   }
 
-  _die() {
+  _die(code) {
     this.dead = true;
     this.cleanupSandbox?.();
     if (this.pending) {
       clearTimeout(this.pending.timer);
       this.pending.cleanup?.();
+      const dispatched = !this.cold;
+      const knownExit = Number.isInteger(code);
+      const notice = !dispatched ? '[shell 未就绪，将改用一次性执行]'
+        : knownExit ? '[持久 shell 已退出，下次调用会启动新会话]'
+        : '[shell 在运行期间断开，命令可能已执行。请先检查实际状态。]';
       this.pending.resolve({
-        exitCode: -1,
-        output: cleanShellOutput(this.buf) + '\n[shell 会话已断开，已回退到一次性执行模式]',
-        broken: true
+        exitCode: knownExit ? code : -1,
+        output: cleanShellOutput(this.buf) + '\n' + notice,
+        broken: true,
+        dispatched,
+        executionUnknown: dispatched && !knownExit,
       });
       this.pending = null;
     }

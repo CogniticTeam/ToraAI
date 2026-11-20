@@ -46,7 +46,7 @@ async function waitFor(condition, timeout = 5000, interval = 25) {
 function sse(chunks) {
   const events = chunks.map((c) => ({ choices: [{ delta: c }], usage: { prompt_tokens: 10, completion_tokens: 5 } }));
   events.push({ choices: [], usage: { prompt_tokens: 10, completion_tokens: 5 } });
-  const payload = 'data: ' + events.map((e) => JSON.stringify(e)).join('\ndata: ') + '\ndata: [DONE]\n\n';
+  const payload = events.map(e => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n';
   return new Response(payload, { status: 200, headers: { 'content-type': 'text/event-stream' } });
 }
 
@@ -76,24 +76,12 @@ async function main() {
   let r = await realFetch(base + '/health');
   assert.equal((await r.json()).status, 'ok');
 
-  await test('人机校验使用本地代理固定端点，透传状态并拒绝账号切换后的迟到结果', async () => {
-    const { builtinAuth, setBuiltinAuth } = await import('../src/builtin-models.js');
-    const { loadConfig } = await import('../src/config.js');
-    const prior=builtinAuth(loadConfig());
-    setBuiltinAuth({baseURL:'https://verification.fixture.invalid',authToken:'fixture-account-A'});
+  await test('已下线的官方模型代理不调用上游', async () => {
+    globalThis.fetch = async () => { throw new Error('retired endpoint must not call upstream'); };
     try {
-      globalThis.fetch=async(url,options)=>{
-        assert.equal(url,'https://verification.fixture.invalid/auth/human-verification');
-        assert.equal(options.method,'POST');assert.equal(options.headers.authorization,'Bearer fixture-account-A');
-        assert.deepEqual(JSON.parse(options.body),{'cf-turnstile-response':'fixture-proof'});
-        return Response.json({ok:true,verified:true});
-      };
-      const invoke=()=>realFetch(base+'/admin/tochat-human-verification',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':'fixture-proof'})});
-      let response=await invoke();assert.equal(response.status,200);assert.equal((await response.json()).verified,true);
-      globalThis.fetch=async()=>{setBuiltinAuth({baseURL:'https://verification.fixture.invalid',authToken:'fixture-account-B'});return Response.json({verified:true});};
-      response=await invoke();assert.equal(response.status,409);
-      const invalid=await realFetch(base+'/admin/tochat-human-verification',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({'cf-turnstile-response':'x'.repeat(2049)})});assert.equal(invalid.status,400);
-    } finally {globalThis.fetch=realFetch;setBuiltinAuth(prior);}
+      const response = await realFetch(base + '/admin/tochat-human-verification', { method: 'POST' });
+      assert.equal(response.status, 410);
+    } finally { globalThis.fetch = realFetch; }
   });
 
   await test('累计 Token 里程碑端点：到档待展示，确认后不再弹出', async () => {
@@ -111,11 +99,11 @@ async function main() {
   });
 
   let agentId;
-  await test('agent 列表（自动创建默认 Corey）', async () => {
+  await test('agent 列表（自动创建默认 Covey）', async () => {
     const r = await realFetch(base + '/agent/');
     const data = await r.json();
     assert.equal(data.total, 1);
-    assert.equal(data.agents[0].data.name, 'Corey');
+    assert.equal(data.agents[0].data.name, 'Covey');
     assert.ok(data.agents[0].data.context_config.tool_result_limit > 0);
     agentId = data.agents[0].id;
   });
@@ -130,20 +118,28 @@ async function main() {
   });
 
   await test('agent 创建/更新/删除', async () => {
-    let r = await realFetch(base + '/agent/', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: '测试Agent', system_prompt: '你是测试' })
+    const { setModelFetcher } = await import('../src/model-transport.js');
+    setModelFetcher(async (_url, init) => {
+      assert.match(JSON.parse(init.body).messages[0].content, /Agent Role content safety reviewer/);
+      return Response.json({ choices: [{ message: { content: '{"blocked_categories":[],"companion":false}' } }] });
     });
-    const { agent_id } = await r.json();
-    r = await realFetch(base + `/agent/${agent_id}`, {
-      method: 'PATCH', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ name: '改名' })
-    });
-    assert.equal((await r.json()).data.name, '改名');
-    r = await realFetch(base + `/agent/${agent_id}`, { method: 'DELETE' });
-    assert.equal(r.status, 200);
-    r = await realFetch(base + '/agent/');
-    assert.equal((await r.json()).total, 1); // 默认 Corey 还在
+    try {
+      let r = await realFetch(base + '/agent/', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: '测试Agent', system_prompt: '你是测试' })
+      });
+      assert.equal(r.status, 200);
+      const { agent_id } = await r.json();
+      r = await realFetch(base + `/agent/${agent_id}`, {
+        method: 'PATCH', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ name: '改名' })
+      });
+      assert.equal((await r.json()).data.name, '改名');
+      r = await realFetch(base + `/agent/${agent_id}`, { method: 'DELETE' });
+      assert.equal(r.status, 200);
+      r = await realFetch(base + '/agent/');
+      assert.equal((await r.json()).total, 1); // 默认 Covey 还在
+    } finally { setModelFetcher(null); }
   });
 
   console.log('--- 凭证与模型（自接入）---');
@@ -2682,6 +2678,132 @@ async function main() {
     assert.equal(cm.status, 'ok');
     const lg = await (await realFetch(base + `/git/log?session_id=${sid}&limit=5`)).json();
     assert.ok(lg.commits.some((c) => c.subject === 'add g'), '日志应有 add g');
+  });
+
+  await test('Task 工具经真实聊天链路落盘并广播状态，独立进程可恢复', async () => {
+    const { listAgents, loadSessionRecord, saveSessionRecord, deleteSession } = await import('../src/asapi/store.js');
+    const { subscribe: subscribeRunEvents } = await import('../src/asapi/bridge.js');
+    const { CONFIG_PATH, saveConfig } = await import('../src/config.js');
+    const { spawnSync } = await import('node:child_process');
+    const configBefore = existsSync(CONFIG_PATH) ? readFileSync(CONFIG_PATH) : null;
+    const previousFetch = globalThis.fetch;
+    const owner = listAgents().find(agent => agent.builtin === 'covey').id;
+    const agentsBefore = readFileSync(join(ASAPI_DIR, 'agents.json'), 'utf8');
+    let sid, unsubscribe = () => {}, calls = 0;
+    const states = [];
+    try {
+      saveConfig({ provider: 'openai_compatible', baseURL: 'https://harness-api.invalid/v1', apiKey: 'fixture', thinking: false, hooksEnabled: false, injectProjectContext: false, forceReact: false, maxTokensBudget: 24000 });
+      const created = await (await realFetch(base + '/sessions/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: owner, application_mode: 'tocode', permission_mode: 'accept_edits', chat_model_config: { type: 'openai_compatible', credential_id: '', model: 'harness-task-integration', parameters: { thinking: false } } }) })).json();
+      sid = created.session_id;
+      const record = loadSessionRecord(sid);record.config.naming = { auto: false };saveSessionRecord(record);
+      unsubscribe = subscribeRunEvents(sid, frame => {
+        const event = frame.event ?? frame;
+        if (event.name === 'state_updated' && event.value?.tasks_context) states.push(structuredClone(event.value.tasks_context));
+      });
+      const actions = [ ['TaskCreate', { subject: '验证任务持久化' }], ['TaskUpdate', { taskId: 'T1', state: 'in_progress' }], ['TaskList', {}], ['TaskUpdate', { taskId: 'T1', state: 'completed' }] ];
+      globalThis.fetch = async (_url, init) => {
+        if (isTitleCall(init)) return sse([{ content: '' }]);
+        const body = JSON.parse(init.body);calls++;
+        assert.ok(body.tools.some(tool => tool.function.name === 'TaskCreate'));
+        if (calls <= actions.length) {
+          const [name, args] = actions[calls - 1];
+          return sse([{ tool_calls: [{ index: 0, id: `task-${calls}`, function: { name, arguments: JSON.stringify(args) } }] }]);
+        }
+        return sse([{ content: '计划中的任务已完成。' }]);
+      };
+      const response = await realFetch(base + '/chat/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: owner, session_id: sid, input: { id: 'task-user', role: 'user', name: 'user', content: [{ type: 'text', id: 'task-text', text: '验证 Harness 任务状态', created_at: new Date().toISOString() }], metadata: {}, created_at: new Date().toISOString(), finished_at: new Date().toISOString() } }) });
+      assert.equal(response.status, 200);
+      assert.ok(await waitFor(() => loadSessionRecord(sid)?.display?.at(-1)?.finished_reason === 'completed'));
+      const saved = loadSessionRecord(sid);
+      assert.equal(saved.config.cwd, null);
+      assert.equal(saved.state.permission_mode, 'accept_edits');
+      assert.equal(saved.state.tasks_context.tasks[0].state, 'completed');
+      assert.deepEqual(states.map(state => state.tasks[0].state), ['pending', 'in_progress', 'completed']);
+      assert.equal(calls, 5);
+      const fresh = spawnSync(process.execPath, ['--input-type=module', '-e', `const {loadSessionRecord}=await import(${JSON.stringify(new URL('../src/asapi/store.js', import.meta.url).href)});process.stdout.write(JSON.stringify(loadSessionRecord(${JSON.stringify(sid)}).state.tasks_context));`], { encoding: 'utf8', env: { ...process.env, TORA_HOME: TEST_HOME } });
+      assert.equal(fresh.status, 0, fresh.stderr);
+      assert.deepEqual(JSON.parse(fresh.stdout), saved.state.tasks_context);
+      assert.equal(readFileSync(join(ASAPI_DIR, 'agents.json'), 'utf8'), agentsBefore);
+    } finally {
+      unsubscribe();globalThis.fetch = previousFetch;
+      if (configBefore) writeFileSync(CONFIG_PATH, configBefore);else rmSync(CONFIG_PATH, { force: true });
+      if (sid) deleteSession(sid);
+    }
+  });
+
+  await test('Task 持久化失败不发布成功事件，也不由结束快照偷偷提交', async () => {
+    const { listAgents, loadSessionRecord, saveSessionRecord, deleteSession } = await import('../src/asapi/store.js');
+    const { subscribe: subscribeRunEvents } = await import('../src/asapi/bridge.js');
+    const { CONFIG_PATH, saveConfig } = await import('../src/config.js');
+    const fs = (await import('node:fs')).default;
+    const { syncBuiltinESMExports } = await import('node:module');
+    const configBefore = existsSync(CONFIG_PATH) ? readFileSync(CONFIG_PATH) : null;
+    const previousFetch = globalThis.fetch, rename = fs.renameSync;
+    const owner = listAgents().find(agent => agent.builtin === 'covey').id;
+    let sid, unsubscribe = () => {}, injected = false, calls = 0;
+    const updates = [];
+    try {
+      saveConfig({ provider: 'openai_compatible', baseURL: 'https://harness-api.invalid/v1', apiKey: 'fixture', thinking: false, hooksEnabled: false, injectProjectContext: false, forceReact: false });
+      sid = (await (await realFetch(base + '/sessions/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: owner, permission_mode: 'accept_edits', chat_model_config: { type: 'openai_compatible', credential_id: '', model: 'harness-storage-failure', parameters: { thinking: false } } }) })).json()).session_id;
+      const record = loadSessionRecord(sid);record.config.naming = { auto: false };saveSessionRecord(record);
+      unsubscribe = subscribeRunEvents(sid, frame => { const event = frame.event ?? frame;if (event.name === 'state_updated' && event.value?.tasks_context) updates.push(event.value); });
+      fs.renameSync = (from, to) => {
+        if (!injected && String(to) === join(ASAPI_DIR, 'sessions', `${sid}.json`) && JSON.parse(readFileSync(from, 'utf8')).state?.tasks_context?.tasks?.length) {
+          injected = true;throw Object.assign(Error('fixture task persistence failure'), { code: 'ENOSPC' });
+        }
+        return rename(from, to);
+      };
+      syncBuiltinESMExports();
+      globalThis.fetch = async (_url, init) => {
+        if (isTitleCall(init)) return sse([{ content: '' }]);
+        calls++;
+        return calls === 1 ? sse([{ tool_calls: [{ index: 0, id: 'failed-create', function: { name: 'TaskCreate', arguments: '{"subject":"不应提交"}' } }] }]) : sse([{ content: '状态保存失败，任务没有创建。' }]);
+      };
+      const response = await realFetch(base + '/chat/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: owner, session_id: sid, input: { id: 'storage-user', role: 'user', name: 'user', content: [{ type: 'text', id: 'storage-text', text: '验证写入失败', created_at: new Date().toISOString() }], metadata: {}, created_at: new Date().toISOString(), finished_at: new Date().toISOString() } }) });
+      assert.equal(response.status, 200);
+      assert.ok(await waitFor(() => loadSessionRecord(sid)?.display?.at(-1)?.finished_reason === 'completed'));
+      assert.equal(injected, true);
+      assert.equal(loadSessionRecord(sid).state.tasks_context?.tasks?.length ?? 0, 0);
+      assert.equal(updates.length, 0);assert.equal(calls, 2);
+      const results = loadSessionRecord(sid).display.at(-1).content.filter(block => block.type === 'tool_result');
+      assert.equal(results[0].state, 'error');
+    } finally {
+      fs.renameSync = rename;syncBuiltinESMExports();unsubscribe();globalThis.fetch = previousFetch;
+      if (configBefore) writeFileSync(CONFIG_PATH, configBefore);else rmSync(CONFIG_PATH, { force: true });
+      if (sid) deleteSession(sid);
+    }
+  });
+
+  await test('Stop 拒绝完成在聊天事件和历史中保持 blocked，并且不重复请求模型', async () => {
+    const { listAgents, loadSessionRecord, saveSessionRecord, deleteSession } = await import('../src/asapi/store.js');
+    const { subscribe: subscribeRunEvents } = await import('../src/asapi/bridge.js');
+    const { CONFIG_PATH, saveConfig } = await import('../src/config.js');
+    const configBefore = existsSync(CONFIG_PATH) ? readFileSync(CONFIG_PATH) : null;
+    const hookPath = join(TEST_HOME, 'hooks.json'), hooksBefore = existsSync(hookPath) ? readFileSync(hookPath) : null;
+    const previousFetch = globalThis.fetch;
+    const owner = listAgents().find(agent => agent.builtin === 'covey').id;
+    let sid, unsubscribe = () => {}, calls = 0;
+    const reasons = [];
+    try {
+      const code = 'process.stdout.write(JSON.stringify({decision:"deny",reason:"API Stop verification veto"}))';
+      writeFileSync(hookPath, JSON.stringify({ Stop: [{ command: `${JSON.stringify(process.execPath)} -e ${JSON.stringify(code)}` }] }));
+      saveConfig({ provider: 'openai_compatible', baseURL: 'https://harness-api.invalid/v1', apiKey: 'fixture', thinking: false, hooksEnabled: true, injectProjectContext: false, forceReact: false });
+      sid = (await (await realFetch(base + '/sessions/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: owner, chat_model_config: { type: 'openai_compatible', credential_id: '', model: 'harness-stop-denial', parameters: { thinking: false } } }) })).json()).session_id;
+      const record = loadSessionRecord(sid);record.config.naming = { auto: false };saveSessionRecord(record);
+      unsubscribe = subscribeRunEvents(sid, frame => { const event = frame.event ?? frame;if (event.name === 'harness_run_finished') reasons.push(event.value.reason); });
+      globalThis.fetch = async (_url, init) => { if (isTitleCall(init)) return sse([{ content: '' }]);calls++;return sse([{ content: '模型尝试声明已完成。' }]); };
+      const response = await realFetch(base + '/chat/', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ agent_id: owner, session_id: sid, input: { id: 'stop-user', role: 'user', name: 'user', content: [{ type: 'text', id: 'stop-text', text: '验证结束校验', created_at: new Date().toISOString() }], metadata: {}, created_at: new Date().toISOString(), finished_at: new Date().toISOString() } }) });
+      assert.equal(response.status, 200);
+      assert.ok(await waitFor(() => loadSessionRecord(sid)?.display?.at(-1)?.finished_reason === 'error'));
+      const reply = loadSessionRecord(sid).display.at(-1);
+      assert.equal(reply.error.type, 'blocked');assert.match(reply.error.message, /API Stop verification veto/);
+      assert.deepEqual(reasons, ['blocked']);assert.equal(calls, 1);
+    } finally {
+      unsubscribe();globalThis.fetch = previousFetch;
+      if (hooksBefore) writeFileSync(hookPath, hooksBefore);else rmSync(hookPath, { force: true });
+      if (configBefore) writeFileSync(CONFIG_PATH, configBefore);else rmSync(CONFIG_PATH, { force: true });
+      if (sid) deleteSession(sid);
+    }
   });
 
   await test('UserPromptSubmit 拒绝在 SSE 和历史中保留 blocked 错误，而非 completed', async () => {

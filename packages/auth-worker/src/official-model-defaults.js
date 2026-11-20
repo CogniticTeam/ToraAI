@@ -1,4 +1,4 @@
-import {DOUBAO_MODEL_ID} from '../../core/src/chat-media.js';
+export const DOUBAO_MODEL_ID = 'doubao-seed-2-1-lite-260915';
 export const DEFAULT_ROUTES = Object.freeze({
   [DOUBAO_MODEL_ID]: {name:'Doubao Seed 2.1 Lite',secret:'ARK_API_KEY',url:'https://ark.cn-beijing.volces.com/api/v3/responses',protocol:'responses',adapter:'ark',modes:['chat','work']},
   'gpt-6-sol': {name:'GPT-6 Sol',secret:'SHULIUYUN_GPT_API_KEY',url:'https://shuliuyun.com/v1/responses',protocol:'responses'},

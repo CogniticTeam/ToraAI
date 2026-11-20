@@ -39,7 +39,7 @@ export interface UserCommand {
 	description: string;
 	argument_hint?: string;
 	body: string;
-	source: 'user' | 'project';
+	source: 'user' | 'project' | 'plugin';
 }
 
 /** One configured lifecycle hook. */

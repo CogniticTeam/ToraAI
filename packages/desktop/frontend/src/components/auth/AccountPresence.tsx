@@ -57,7 +57,7 @@ export function AccountPresence({ children,pollOnly=false }: { children: React.R
         // 主进程独立向服务器确认，暂停正在运行的任务并阻止新任务。
         void desktop?.refreshAccount?.();
         if(pollOnly)return;
-        const messages = await cloudFetch('/account/messages', { signal: controller.signal });
+        const messages = await cloudFetch('/account/messages?platform=desktop', { signal: controller.signal });
         if (messages.ok) {
           const data = await messages.json();
           if (alive) { setUnread(data.unread || 0); setRevision(value => value + 1); }
@@ -71,7 +71,7 @@ export function AccountPresence({ children,pollOnly=false }: { children: React.R
     async function connect() {
       if (!alive) return;
       try {
-        const response = await cloudFetch('/account/events-ticket', { method: 'POST', signal: controller.signal });
+        const response = await cloudFetch('/account/events-ticket?platform=desktop', { method: 'POST', signal: controller.signal });
         if (!alive || token !== getToken()) return;
         if (response.status === 401 && response.headers.get('content-type')?.includes('application/json')) { await clearAll(); return; }
         if (!response.ok) throw new Error('Realtime unavailable');

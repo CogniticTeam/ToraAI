@@ -10,12 +10,14 @@ export const getUserId = () => localStorage.getItem('username') ?? '';
 export class ApiError extends Error {
 	readonly status: number;
 	readonly detail: string;
+	readonly code?: string;
 
-	constructor(status: number, detail: string) {
+	constructor(status: number, detail: string, code?: string) {
 		super(detail);
 		this.name = 'ApiError';
 		this.status = status;
 		this.detail = detail;
+		this.code = code;
 	}
 }
 
@@ -43,17 +45,19 @@ function buildHeaders(hasBody: boolean, userId?: string): Record<string, string>
 	return headers;
 }
 
-/** Parse the response body and extract the `detail` field if the backend returned JSON. */
-async function extractErrorDetail(res: Response): Promise<string> {
+/** Preserve a structured code without changing the existing detail/text fallback. */
+async function extractError(res: Response): Promise<{ detail: string; code?: string }> {
 	const text = await res.text();
 	try {
-		const json = JSON.parse(text) as { detail?: unknown };
-		if (typeof json.detail === 'string') return json.detail;
-		if (json.detail !== undefined) return JSON.stringify(json.detail);
+		const json = JSON.parse(text) as { detail?: unknown; code?: unknown };
+		const detail = typeof json.detail === 'string'
+			? json.detail
+			: json.detail !== undefined ? JSON.stringify(json.detail) : text || res.statusText;
+		return { detail, code: typeof json.code === 'string' ? json.code : undefined };
 	} catch {
 		// not JSON – fall through
 	}
-	return text || res.statusText;
+	return { detail: text || res.statusText };
 }
 
 async function streamRequest(path: string, options: RequestOptions = {}): Promise<Response> {
@@ -106,8 +110,8 @@ async function streamRequest(path: string, options: RequestOptions = {}): Promis
 	}
 
 	if (!res.ok) {
-		const detail = await extractErrorDetail(res);
-		const error = new ApiError(res.status, detail);
+		const { detail, code } = await extractError(res);
+		const error = new ApiError(res.status, detail, code);
 		if (!silent) toast.error(detail);
 		throw error;
 	}

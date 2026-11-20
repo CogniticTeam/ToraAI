@@ -4,12 +4,12 @@ import {createUIUpdateController} from './ui-update-controller.js';
 // Tora 桌面版主进程：启动本地 ASAPI 服务（agentscope 前端协议），加载构建好的前端
 // 渲染层无任何 Node 集成（contextIsolation 默认开启）；前端通过 127.0.0.1 HTTP/SSE 通信，
 // 与浏览器打开完全同构。preload 在页面脚本执行前预置本地服务连接，首屏只加载一次。
-import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, Notification, safeStorage, session, shell, systemPreferences } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, nativeTheme, net, Notification, safeStorage, shell, systemPreferences } from 'electron';
 import electronUpdater from 'electron-updater';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { voiceStatus, setAsrApiKey, transcribeSamples } from './voice.js';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, renameSync, lstatSync } from 'node:fs';
 import { optimizePrompt } from './prompt-optimizer.js';
 import { isAppUrl, normalizeExternalHttpUrl } from './navigation-security.js';
 import { applicationMenuTemplate } from './application-menu.js';
@@ -19,33 +19,86 @@ import { desktopStorageName } from './brand-compat.js';
 import { createWindowIpc } from './window-ipc.js';
 import { createReleaseNotesService, releasePage, releaseVersion } from './release-notes.js';
 
+import { approveToraRegion, DEFAULT_TORA_SERVICE, detectToraCountry } from './regional-service.js';
+
 app.setName(desktopStorageName(app.getPath('appData')));
+const gotLock = app.requestSingleInstanceLock();
+if (!gotLock) app.exit(0);
+
+const regionalCache = join(app.getPath('userData'), 'regional-service.json');
+let storageEdition = null;
+try {
+  const { edition } = JSON.parse(readFileSync(regionalCache, 'utf8'));
+  if (['china', 'global'].includes(edition)) storageEdition = edition;
+} catch { /* Use the existing default storage location. */ }
+
+async function confirmRegionalStartup() {
+  const consentPath = join(app.getPath('userData'), 'region-consent-v1.json');
+  let state = {};
+  try { state = { ...JSON.parse(readFileSync(consentPath, 'utf8')) }; } catch { /* First launch. */ }
+  const t = english => nativeText(app.getLocale(), english);
+  const agreements = [t('Agree and continue'), t('Disagree and quit')];
+  const pages = {
+    cloudflareNotice: {
+      message: t('Tora is using Cloudflare'),
+      detail: t('Under the laws and regulations of your current region, we cannot offer Tora there. To improve your connection, Tora will switch to a Cloudflare edge node that connects to our database. This does not mean Tora officially supports your region.'),
+      buttons: [t('Next and remind me every time'), t('Next and don’t remind me again')],
+      cancelId: 0,
+    },
+    mainlandTransfer: {
+      message: t('Tora Mainland China Cross-Border Data Transfer Agreement'),
+      detail: t('We detected that you are in mainland China. To continue, you must agree to transfer your account data to Cognitic’s overseas database. We will keep your information confidential and will not use it for other purposes.'),
+      buttons: agreements,
+    },
+    globalTransfer: {
+      message: t('Tora Global Cross-Border Data Transfer Agreement'),
+      detail: t('We detected that you are accessing Tora from outside Singapore. Cognitic stores your data on its servers in Singapore. You must agree to continue using Tora, or quit the app.'),
+      buttons: agreements,
+    },
+    unverified: {
+      message: t('Unable to verify the network region'),
+      detail: t('Check your network connection and try again.'),
+      buttons: [t('Retry'), t('Quit Tora')],
+    },
+  };
+  return approveToraRegion({
+    detect: () => detectToraCountry((url, options) => net.fetch(url, options)),
+    state,
+    save: next => {
+      try {
+        mkdirSync(dirname(consentPath), { recursive: true });
+        const staging = consentPath + '.' + process.pid + '.tmp';
+        writeFileSync(staging, JSON.stringify(next), { mode: 0o600 });
+        renameSync(staging, consentPath);
+      } catch (error) { console.warn('[region] Could not save the local choice:', error.code); }
+    },
+    prompt: async page => (await dialog.showMessageBox({
+      title: 'Tora', type: 'none', noLink: true, defaultId: 0, cancelId: 1, ...pages[page],
+    })).response,
+  });
+}
+
+// A different network route still uses the previously selected local profile.
+if (storageEdition) {
+  const coreHome = process.env.TORA_HOME || join(homedir(), '.tora');
+  process.env.TORA_HOME = join(coreHome, 'editions', storageEdition);
+}
+
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// 解除 Chromium 的 60/120 FPS 软件上限与垂直同步限制，让 CSS 动画、滚动和
-// Canvas 可以按设备与 GPU 能力运行，不被 Electron 固定在显示器刷新率。开关必须
-// 在 app ready 之前设置；backgroundThrottling 则在窗口级继续保证失焦后不降频。
-for (const chromiumSwitch of [
-  'disable-frame-rate-limit',
-  'disable-gpu-vsync',
-  'disable-renderer-backgrounding',
-]) {
-  if (!app.commandLine.hasSwitch(chromiumSwitch)) {
-    app.commandLine.appendSwitch(chromiumSwitch);
-  }
-}
+// 使用 Chromium 原生的刷新率同步和后台调度，支持高刷屏，同时避免无上限渲染耗电。
 
 // 打包后的 core 被放入 resources/core；开发态仍直接加载工作区的 packages/core。
 // 这样安装包不会依赖 app.asar 外的相对路径，且本地 `electron .` 调试保持不变。
 const coreRoot = app.isPackaged ? join(process.resourcesPath, 'core') : join(__dirname, '..', 'core');
-const [{ startASAPIServer, setDesktopAccessBlocked, acquireUIUpdateLock }, { clearBrowserDriver, setBrowserDriver }, { setWebFetcher }, { setModelFetcher }] = await Promise.all([
-  import(pathToFileURL(join(coreRoot, 'src', 'asapi', 'server.js')).href),
-  import(pathToFileURL(join(coreRoot, 'src', 'tools', 'browser.js')).href),
-  import(pathToFileURL(join(coreRoot, 'src', 'tools', 'web.js')).href),
-  import(pathToFileURL(join(coreRoot, 'src', 'model-transport.js')).href),
-]);
 const { autoUpdater } = electronUpdater;
+let toraService;
+let desktopStarted = false;
+let startASAPIServer, setDesktopAccessBlocked, acquireUIUpdateLock;
+let desktopPlugins, desktopMcpWorkshop, desktopAccessBlockReason, DesktopPluginError;
+let clearBrowserDriver, setBrowserDriver, disconnectCodex;
+let voiceStatus, transcribeSamples;
 
 let win = null;
 let serverUrl = '';
@@ -54,7 +107,7 @@ let windowCreation = null;
 let notificationLanguage = 'zh';
 let uiUpdater=null,uiController=null,uiInitialization=null,uiTimersStarted=false;
 const bundledUI=join(app.isPackaged?process.resourcesPath:join(__dirname,'..'),'desktop','frontend','dist');
-const UI_UPDATE_FEED='https://ohfun.online/tora-updates/ui/stable.json';
+const UI_UPDATE_FEED='https://cogniticteam.com/tora-updates/ui/stable.json';
 async function initializeUIUpdates(){
  if(!app.isPackaged&&process.env.TORA_HOT_UI_DEV!=='1')return;
  if(!uiInitialization)uiInitialization=(async()=>{
@@ -147,7 +200,7 @@ ipcMain.on('app:quit', () => app.quit());
 // macOS 和 Windows 均由 electron-updater 下载、校验并安装 GitHub Release。
 // macOS 更新元数据不可用时，再通过公开 Release 检测新版并提供官网下载兜底。
 const RELEASES_API_URL = 'https://api.github.com/repos/CogniticTeam/ToraAI/releases/latest';
-const OFFICIAL_DOWNLOAD_URL = 'https://ohfun.online/products/tora/#download';
+const OFFICIAL_DOWNLOAD_URL = 'https://cogniticteam.com/products/tora/#download';
 const UPDATE_INTERVAL_MS = 6 * 60 * 60 * 1000;
 let updaterReady = false;
 let updateCheckPromise = null;
@@ -200,6 +253,10 @@ function observeUpdateDownload(result) {
 }
 
 function publishRequiredUpdate(patch) {
+  // 新下载、重试及终态不能沿用上一轮的速度和文件大小。
+  if (patch.status && (patch.status !== 'downloading' || patch.percent === 0)) {
+    patch = { bytesPerSecond: null, totalBytes: null, transferredBytes: null, progressAt: null, ...patch };
+  }
   requiredUpdate = { ...requiredUpdate, ...patch };
   setDesktopAccessBlocked('update', '请更新 Tora 后继续使用');
   if (win && !win.isDestroyed()) win.webContents.send('updates:required', requiredUpdate);
@@ -296,7 +353,11 @@ function setupUpdater() {
     publishRequiredUpdate({ version: info.version, status: 'downloading', percent: 0, platform: process.platform, releaseNotes: null });
     loadRequiredReleaseNotes(info);
   });
-  autoUpdater.on('download-progress', progress => publishRequiredUpdate({ status: 'downloading', percent: Math.round(progress.percent) }));
+  autoUpdater.on('download-progress', progress => publishRequiredUpdate({
+    status: 'downloading', percent: Math.round(progress.percent),
+    bytesPerSecond: progress.bytesPerSecond, totalBytes: progress.total,
+    transferredBytes: progress.transferred, progressAt: Date.now(),
+  }));
   autoUpdater.on('update-downloaded', info => {
     publishRequiredUpdate({ version: info.version, status: 'ready', percent: 100, platform: process.platform });
     if (requiredUpdate.releaseNotes?.version !== info.version) loadRequiredReleaseNotes(info);
@@ -404,7 +465,7 @@ function installApplicationMenu(language = app.getLocale()) {
 		  : (zh ? '暂时无法检查更新' : nativeText(selected, 'Unable to check for updates')),
       });
     },
-    openWebsite: () => openSafeExternal('https://ohfun.online'),
+    openWebsite: () => openSafeExternal('https://cogniticteam.com'),
     openDownloads: () => openSafeExternal(OFFICIAL_DOWNLOAD_URL),
     openLogs: () => shell.openPath(app.getPath('logs')),
     about: () => app.showAboutPanel(),
@@ -438,16 +499,15 @@ async function createWindow() {
   }
 
   // 在本地端口启动 ASAPI 服务（含静态前端托管）。
-  // 端口必须固定（默认 3210）：localStorage 按 origin 隔离，随机端口会让
-  // 每次启动的 origin 都不同——RegionGate 的「已同意」记录、主题偏好、
-  // 登录态等全部丢失，合规告知就会每次启动都重弹。
+  // 固定端口（默认 3210）保留按 origin 存储的主题和浏览器设置。
+  // 地区同意记录由主进程存储，不依赖端口。
   // 3210 被占用（比如浏览器直连着 dev 服务）时退回随机端口，保证能启动。
   if (!localServer) {
     try {
-      localServer = await startASAPIServer({ port: 3210,uiResources:()=>uiUpdater?.resources() });
+      localServer = await startASAPIServer({ port: 3210, desktopMemory: true, desktopPlugins, desktopHarness: true, uiResources:()=>uiUpdater?.resources() });
     } catch (e) {
       if (e?.code !== 'EADDRINUSE') throw e;
-      localServer = await startASAPIServer({ port: 0,uiResources:()=>uiUpdater?.resources() });
+      localServer = await startASAPIServer({ port: 0, desktopMemory: true, desktopPlugins, desktopHarness: true, uiResources:()=>uiUpdater?.resources() });
     }
   }
   const { port } = localServer.address();
@@ -460,7 +520,7 @@ async function createWindow() {
     height: 900,
     minWidth: 960,
     minHeight: 600,
-    title: 'Tora',
+    title: toraService.edition ? 'Tora ' + (toraService.edition === 'china' ? '中国版' : '海外版') : 'Tora',
     // Windows/Linux 任务栏与窗口图标（macOS 走下面的 app.dock.setIcon）。
     // Windows 正式格式是 .ico（多尺寸内嵌），Linux 用 PNG。
     icon: process.platform === 'win32'
@@ -475,13 +535,13 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      // 保持 requestAnimationFrame、CSS 动画及计时器在窗口失焦/被遮挡时继续运行。
-      // 与上面的 Chromium 帧率开关配合，支持高刷及无上限渲染管线。
-      backgroundThrottling: false,
+      // 隐藏或最小化时允许 Chromium 节流；模型生成和工具任务由主进程/core 继续运行。
+      backgroundThrottling: true,
       // 禁用 DevTools：屏蔽 F12 / Cmd+Opt+I / Ctrl+Shift+I 等快捷键，
       // 同时让 webContents.openDevTools() 调用失效（发布形态要求）。
       devTools: false,
       preload: join(__dirname, 'preload.cjs'),
+      ...(storageEdition ? { partition: 'persist:tora-' + storageEdition } : {}),
       // 内置浏览器（右侧「浏览器」面板）需要 <webview>。注意这**只**给宿主页面
       // 开了"能创建 webview 元素"的权限；webview 自身的能力在下面的
       // will-attach-webview 里被显式收窄（无 preload、无 Node）。
@@ -491,6 +551,7 @@ async function createWindow() {
 
   // 窗口状态桥：渲染层据此决定 Tora 标题是否给红绿灯让位
   const windowIpc = createWindowIpc(ipcMain);
+  windowIpc.on('account:service', (event) => { event.returnValue = toraService; });
   windowIpc.on('win:is-maximized', (e) => { e.returnValue = win.isMaximized(); });
   windowIpc.on('win:is-fullscreen', (e) => { e.returnValue = win.isFullScreen(); });
   const updateTitlebarState = () => {
@@ -539,7 +600,7 @@ async function createWindow() {
   // 双通道：用户自配 Key 时直连；无 Key 时用登录 token 走免费 Tora ASR。
   // getSecure 在下方凭证存储块定义（函数提升）。
   windowIpc.handle('voice:status', () => voiceStatus({ token: getSecure('token') }));
-  windowIpc.handle('voice:transcribe', (_e, samples) => transcribeSamples(samples, { token: getSecure('token') }));
+  windowIpc.handle('voice:transcribe', (_e, samples) => transcribeSamples(samples, { token: getSecure('token'), gatewayBase: toraService.origin + '/asr/v1' }));
 
   // ---------------------------------------------------------------- 提示词优化
   // DeepSeek deepseek-flash 改写输入框草稿（Key 从环境变量 DEEPSEEK_API_KEY
@@ -550,9 +611,12 @@ async function createWindow() {
   // 登录令牌/邮箱/用户名用 safeStorage（macOS Keychain / Windows DPAPI /
   // Linux libsecret）加密后存到 userData 下的 JSON，替代明文 localStorage。
   // XSS 也无法读到密文。safeStorage 不可用时降级明文（dev/无密钥环环境）。
-  const AUTH_FILE = join(app.getPath('userData'), 'auth-storage.json');
+  const AUTH_FILE = join(app.getPath('userData'), storageEdition ? 'auth-storage-' + storageEdition + '.json' : 'auth-storage.json');
   const readAuthStore = () => { try { return existsSync(AUTH_FILE) ? JSON.parse(readFileSync(AUTH_FILE, 'utf8')) : {}; } catch { return {}; } };
   const writeAuthStore = (obj) => writeFileSync(AUTH_FILE, JSON.stringify(obj));
+  let authCommitFence=0,activeAuthCommit=null;
+  const authOperationId=id=>typeof id==='string'&&/^[0-9a-f-]{36}$/i.test(id);
+  const authCommitSender=event=>isMainWindowSender(event)&&event.senderFrame===win.webContents.mainFrame;
   function getSecure(key) {
     const enc = readAuthStore()[key];
     if (!enc) return null;
@@ -562,6 +626,11 @@ async function createWindow() {
     return enc; // 降级明文（无密钥环）
   }
   function setSecure(key, val) {
+    activeAuthCommit=null;authCommitFence++;
+    if (key === 'token' && val == null) {
+      disconnectCodex();
+      desktopPlugins?.stopMcp();
+    }
     const obj = readAuthStore();
     if (val == null) delete obj[key];
     else if (safeStorage.isEncryptionAvailable()) obj[key] = safeStorage.encryptString(val).toString('base64');
@@ -569,11 +638,21 @@ async function createWindow() {
     writeAuthStore(obj);
     if (key === 'token') void refreshAccountAccess();
   }
-  async function refreshAccountAccess() {
+  let pendingAccountCheck = null;
+  function refreshAccountAccess() {
     const token = getSecure('token');
     if (!token) { setDesktopAccessBlocked('account', '请先登录 Tora'); return { status: 'expired' }; }
+    if (pendingAccountCheck?.token === token) return pendingAccountCheck.promise;
+    const promise = verifyAccountAccess(token).finally(() => {
+      if (pendingAccountCheck?.promise === promise) pendingAccountCheck = null;
+    });
+    pendingAccountCheck = { token, promise };
+    return promise;
+  }
+  async function verifyAccountAccess(token) {
     try {
-      const response = await net.fetch('https://tora.ohfun.online/auth/me', {
+      const response = await net.fetch(toraService.origin + '/auth/me', {
+        redirect: 'error',
         headers: { authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(10000),
       });
       if (token !== getSecure('token')) return { status: 'stale' };
@@ -583,6 +662,7 @@ async function createWindow() {
       if (!response.ok) return { status: 'unavailable' };
       const account = await response.json();
       if (token !== getSecure('token')) return { status: 'stale' };
+      if (typeof account?.email !== 'string') return { status: 'unavailable' };
       setDesktopAccessBlocked('account', account.banned ? account.banReason || '账户已被封禁' : '');
       return { status: account.banned ? 'banned' : 'ok' };
     } catch { return { status: 'unavailable' }; /* 断网不覆盖已确认的限制状态。 */ }
@@ -598,6 +678,114 @@ async function createWindow() {
     windowIpc.handle(`auth:del-${k}`, () => setSecure(k, null));
   }
 
+  // These new IPCs accept only the main window's main frame, never a webview/iframe.
+  windowIpc.on('auth:begin-profile',(event,id,expectedToken)=>{
+    // Electron sends the first assignment to returnValue immediately.
+    if(!authCommitSender(event)||!authOperationId(id)||
+       (expectedToken!==null&&(typeof expectedToken!=='string'||expectedToken.length>4096))||
+       getSecure('token')!==expectedToken){
+      event.returnValue=null;
+      return;
+    }
+    const fence=++authCommitFence;
+    activeAuthCommit={id,fence,expectedToken};
+    event.returnValue=fence;
+  });
+  windowIpc.on('auth:cancel-profile',(event,id,fence)=>{
+    if(!authCommitSender(event)||!activeAuthCommit||activeAuthCommit.id!==id||activeAuthCommit.fence!==fence){
+      event.returnValue=false;
+      return;
+    }
+    activeAuthCommit=null;
+    authCommitFence++;
+    event.returnValue=true;
+  });
+  windowIpc.handle('auth:commit-profile',(event,id,fence,profile)=>{
+    if(!authCommitSender(event)||!activeAuthCommit||activeAuthCommit.id!==id||activeAuthCommit.fence!==fence||authCommitFence!==fence)return false;
+    const expectedToken=activeAuthCommit.expectedToken;
+    if(getSecure('token')!==expectedToken||!profile||typeof profile!=='object')return false;
+    const {token,email}=profile,username=profile.username??'';
+    if(typeof token!=='string'||!token||token.length>4096||typeof email!=='string'||email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||typeof username!=='string'||username.length>128)return false;
+    const record=readAuthStore(),encrypted=safeStorage.isEncryptionAvailable();
+    for(const [key,value] of Object.entries({token,email,username}))record[key]=encrypted?safeStorage.encryptString(value).toString('base64'):value;
+    // No await between CAS and this one complete-record write: cancellation/new login
+    // is ordered before or after this persistence linearization point, never mid-profile.
+    writeAuthStore(record);
+    activeAuthCommit=null;authCommitFence++;
+    if(token!==expectedToken)void refreshAccountAccess();
+    return true;
+  });
+
+  windowIpc.handle('desktop-plugins:request', async (event, action, ...args) => {
+    const token = authCommitSender(event) ? getSecure('token') : null;
+    const allowed = () => token && authCommitSender(event) && isAppUrl(event.senderFrame.url, serverUrl)
+      && getSecure('token') === token && !desktopAccessBlockReason();
+    if (!allowed()) return { ok: false, code: 'unavailable' };
+    try {
+      let value;
+      switch (action) {
+        case 'list': value = desktopPlugins.list(); break;
+        case 'contributions': value = desktopPlugins.contributions(); break;
+        case 'preview': value = await desktopPlugins.preview(args[0]); break;
+        case 'previewDirectory': {
+          const selection = await dialog.showOpenDialog(win, { properties: ['openDirectory'] });
+          if (selection.canceled || !selection.filePaths[0]) return { ok: false, code: 'cancelled' };
+          if (!allowed()) return { ok: false, code: 'unavailable' };
+          const directory = selection.filePaths[0];
+          const manifest = join(directory, 'tora.plugin.json');
+          let content;
+          try {
+            const stat = lstatSync(manifest);
+            if (!stat.isFile() || stat.size > 256 * 1024) throw new Error();
+            content = readFileSync(manifest, 'utf8');
+          } catch { throw new DesktopPluginError('missingPackageManifest'); }
+          value = await desktopPlugins.preview({ type: 'file', content, label: basename(directory), expectedId: args[0] });
+          break;
+        }
+        case 'indexes': value = desktopPlugins.indexes.list(); break;
+        case 'addIndex': value = await desktopPlugins.indexes.add(args[0], allowed); break;
+        case 'catalog': value = await desktopPlugins.indexes.catalog(args[0]); break;
+        case 'removeIndex': desktopPlugins.indexes.remove(args[0]); break;
+        case 'connectGithub': {
+          try { value = await desktopMcpWorkshop.connectGithub(args[0], allowed); }
+          catch { throw new DesktopPluginError('githubAuthFailed'); }
+          break;
+        }
+        case 'disconnectGithub': desktopMcpWorkshop.disconnectGithub(); break;
+        case 'install': value = desktopPlugins.install(args[0]); break;
+        case 'remove': desktopPlugins.remove(args[0], args[1]); break;
+        case 'enable': {
+          const [id, revision, enabled] = args;
+          const plugin = desktopPlugins.inspect(id, revision);
+          if (enabled === true && !plugin.enabled && plugin.mcpServers.length) {
+            const zh = notificationLanguage.startsWith('zh');
+            const commands = plugin.mcpServers.map(server => {
+              const command = JSON.stringify([server.command, ...server.args]);
+              return command.length > 420 ? `${command.slice(0, 420)}…` : command;
+            }).join('\n');
+            const { response } = await dialog.showMessageBox(win, {
+              type: 'warning', title: 'Tora',
+              message: zh ? '启用包含 MCP 的插件？' : 'Enable a plugin with MCP servers?',
+              detail: `${plugin.name}\n\n${zh
+                ? '工作对话会启动插件声明的本机程序。完整命令可在插件详情查看。'
+                : 'Work conversations will launch the local programs listed in the plugin details.'}\n\n${commands}`,
+              buttons: zh ? ['取消', '启用'] : ['Cancel', 'Enable'], defaultId: 0, cancelId: 0, noLink: true,
+            });
+            if (response !== 1) return { ok: false, code: 'cancelled' };
+            if (!allowed()) return { ok: false, code: 'unavailable' };
+          }
+          value = desktopPlugins.setEnabled(id, revision, enabled);
+          break;
+        }
+        default: return { ok: false, code: 'invalidRequest' };
+      }
+      return allowed() ? { ok: true, value } : { ok: false, code: 'unavailable' };
+    } catch (error) {
+      if (error instanceof DesktopPluginError) return { ok: false, code: error.code };
+      return { ok: false, code: 'unexpected' };
+    }
+  });
+
   // 权限白名单：只放行麦克风/通知/全屏/指针锁/剪贴板写；其余（剪贴板读、
   // HID、USB、openExternal、摄像头等）一律拒绝，防止嵌入网页借宿主权限越权。
   // clipboard-sanitized-write 必须放行：设置了 PermissionCheckHandler 后，
@@ -612,7 +800,7 @@ async function createWindow() {
     'fullscreen',
     'clipboard-sanitized-write',
   ]);
-  session.defaultSession.setPermissionRequestHandler((_wc, permission, callback) => {
+  win.webContents.session.setPermissionRequestHandler((_wc, permission, callback) => {
     if (permission === 'media' && process.platform === 'darwin') {
       systemPreferences.askForMediaAccess('microphone').then(callback);
       return;
@@ -620,7 +808,7 @@ async function createWindow() {
     callback(ALLOWED_PERMISSIONS.has(permission));
   });
   // 同步校验：已授权权限的运行时查询也走白名单
-  session.defaultSession.setPermissionCheckHandler((_wc, permission) =>
+  win.webContents.session.setPermissionCheckHandler((_wc, permission) =>
     ALLOWED_PERMISSIONS.has(permission)
   );
 
@@ -629,7 +817,7 @@ async function createWindow() {
   // challenges.cloudflare.com 是 Cloudflare Turnstile 人机验证的固定域：
   // script-src 加载 api.js、frame-src 渲染其 sandbox iframe、connect-src 供
   // iframe 内部换 token。白名单只到该域，不放通配。
-  session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     // 只给自家 origin 注入 CSP。onHeadersReceived 覆盖所有响应——若不加判断，
     // Turnstile iframe（challenges.cloudflare.com）自己的文档也会被强加
     // default-src 'self'，其内部 blob worker/eval 全被拦 → widget 渲染为空白。
@@ -645,11 +833,11 @@ async function createWindow() {
           "script-src 'self' https://challenges.cloudflare.com; " +
           "style-src 'self' 'unsafe-inline'; " +
           "img-src 'self' data: blob: https:; " +
-          "connect-src 'self' https://tora.ohfun.online wss://tora.ohfun.online https://challenges.cloudflare.com; " +
+          `connect-src 'self' ${toraService.origin} ${toraService.origin.replace('https:', 'wss:')} https://challenges.cloudflare.com; ` +
           "media-src 'self' blob:; " +
           "font-src 'self' data:; " +
           "object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; " +
-          "frame-src https://challenges.cloudflare.com;",
+          'frame-src https://challenges.cloudflare.com;',
         ],
       },
     });
@@ -762,10 +950,7 @@ function attachBrowserDriver(win) {
 }
 
 // 单实例
-const gotLock = app.requestSingleInstanceLock();
-if (!gotLock) {
-  app.quit();
-} else {
+if (gotLock) {
   app.on('second-instance', () => {
     if (win) { win.isMinimized() ? win.restore() : win.focus(); }
   });
@@ -784,20 +969,55 @@ if (!gotLock) {
     });
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
+    toraService = app.isPackaged || process.env.TORA_REGIONAL_ROUTING === '1'
+      ? await confirmRegionalStartup()
+      : { edition: null, origin: DEFAULT_TORA_SERVICE };
+    if (!toraService) { app.quit(); return; }
+
+    const [asapi, browser, web, transport, codex, voice, pluginRuntime, mcpHttp, mcpWorkshop] = await Promise.all([
+      import(pathToFileURL(join(coreRoot, 'src', 'asapi', 'server.js')).href),
+      import(pathToFileURL(join(coreRoot, 'src', 'tools', 'browser.js')).href),
+      import(pathToFileURL(join(coreRoot, 'src', 'tools', 'web.js')).href),
+      import(pathToFileURL(join(coreRoot, 'src', 'model-transport.js')).href),
+      import(pathToFileURL(join(coreRoot, 'src', 'codex-auth.js')).href),
+      import('./voice.js'),
+      import(pathToFileURL(join(coreRoot, 'src', 'asapi', 'desktop-plugins.js')).href),
+      import(pathToFileURL(join(coreRoot, 'src', 'tools', 'mcp-http.js')).href),
+      import(pathToFileURL(join(coreRoot, 'src', 'tools', 'mcp-workshop.js')).href),
+    ]);
+    ({ startASAPIServer, setDesktopAccessBlocked, acquireUIUpdateLock, accessBlockReason: desktopAccessBlockReason } = asapi);
+    ({ DesktopPluginError } = pluginRuntime);
+    desktopPlugins = pluginRuntime.createDesktopPluginRegistry({ fetcher: (url, init) => net.fetch(url, init) });
+    desktopMcpWorkshop = mcpWorkshop;
+    mcpHttp.setMcpHttpFetcher((url, init) => net.fetch(url, { ...init, credentials: 'omit', bypassCustomProtocolHandlers: true }));
+    ({ clearBrowserDriver, setBrowserDriver } = browser);
+    ({ disconnectCodex } = codex);
+    ({ voiceStatus, transcribeSamples } = voice);
+    // OAuth secrets never cross the renderer bridge. Without OS encryption they stay in memory.
+    if (safeStorage.isEncryptionAvailable() && safeStorage.getSelectedStorageBackend?.() !== 'basic_text') {
+      codex.setCodexStorage({
+        encrypt: text => safeStorage.encryptString(text).toString('base64'),
+        decrypt: text => safeStorage.decryptString(Buffer.from(text, 'base64')),
+      });
+    }
     // 模型生成与命名使用和登录相同的网络栈，保留流式响应及取消信号。
     // 不附带浏览器 Cookie；鉴权仅来自请求中显式设置的 API Key。
-    setModelFetcher((url, init) => net.fetch(url, {
+    transport.setModelFetcher((url, init) => net.fetch(url, {
       ...init, credentials: 'omit', bypassCustomProtocolHandlers: true,
     }));
     // WebFetch/WebSearch 使用 Chromium 网络栈以继承系统代理；Node fetch 不会。
     // URL 与逐跳 DNS 安全校验仍由 core/src/tools/web.js 在请求前执行。
     // 不带内置浏览器的登录 Cookie，避免模型的网页读取继承用户会话。
-    setWebFetcher((url, init) => net.fetch(url, {
+    web.setWebFetcher((url, init) => net.fetch(url, {
       ...init, credentials: 'omit', bypassCustomProtocolHandlers: true,
     }));
+    desktopStarted = true;
     return ensureWindow();
+  }).catch(error => {
+    console.error('[startup]', error);
+    app.quit();
   });
   app.on('window-all-closed', () => process.platform !== 'darwin' && app.quit());
-  app.on('activate', () => { if (!win) void ensureWindow().catch(error => console.error('[window]', error)); });
+  app.on('activate', () => { if (desktopStarted && !win) void ensureWindow().catch(error => console.error('[window]', error)); });
 }

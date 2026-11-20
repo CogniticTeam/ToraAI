@@ -1,4 +1,4 @@
-import {DOUBAO_MODEL_ID,mediaInputPart} from '../chat-media.js';
+import {mediaInputPart} from '../chat-media.js';
 // ASAPI 聊天桥：POST /chat/ 触发后台运行，runAgent 事件流 → AgentEvent SSE 协议
 // 关键语义（与前端 useMessages/appendEvent 对齐）：
 //  - REPLY_START 按 reply_id 建 Msg；REPLY_END 收尾；运行结束清空缓冲，
@@ -15,16 +15,20 @@ import { pathToFileURL } from 'node:url';
 
 import { runAgent } from '../agent.js';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
-import { builtinAuth, getBuiltinModels, isBuiltinModel, builtinModelAllowed } from '../builtin-models.js';
-import { getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
-import { E, userMsg, assistantMsgShell, askingToolCall } from './protocol.js';
-import {sessionForView,sessionModelSource} from '../session-mode.js';
+import { CODEX_CREDENTIAL_ID, CODEX_PROVIDER, resolveCodexModel, refreshCodexCatalog, assertCodexConnection } from '../codex-auth.js';
+import { createSessionPermissionReader, getCredential, loadSessionRecord, saveForkSnapshot, saveSessionRecord } from './store.js';
+import { E, userMsg, assistantMsgShell, askingToolCall, inputToText } from './protocol.js';
+import { isUserRequest } from '../context.js';
+import {sessionForView,sessionHistoryKind,sessionModelSource} from '../session-mode.js';
+import {isDeepSeekModel} from '../deepseek-model.js';
+import {isOfficialModelGateway} from '../builtin-models.js';
 import {prepareReplyPreview} from '../web-preview.js';
 import { recordUsage } from './usage-store.js';
 import { accessBlockReason } from './access.js';
 import { generateTitle, placeholderTitle } from '../title.js';
 import { distillAfterRun } from './memory-distill.js';
-import { appendSessionEvent } from './session-events.js';
+import { appendSessionEvent, markInterruptedReply, recoverInterruptedToolCalls } from './session-events.js';
+import { sessionToolOutputs } from './tool-outputs.js';
 import { realpathAllowMissing } from '../security.js';
 
 /** 每个会话一个 bus：running 时含事件缓冲与订阅者 */
@@ -158,6 +162,9 @@ export function resolveRunCfg(session, agent) {
   let visionOverride;
   let modelProvider;
   const cred = mc.credential_id ? getCredential(mc.credential_id) : null;
+  if (mc.credential_id && !cred && mc.credential_id !== 'cocode-models' && mc.credential_id !== CODEX_CREDENTIAL_ID && sessionModelSource(session.config) !== 'official') {
+    throw new Error('模型凭证不可用，请重新选择模型');
+  }
   if (cred?.data?.base_url) {
     baseURL = cred.data.base_url;
     // An explicitly keyless endpoint must never inherit another provider's secret.
@@ -172,6 +179,8 @@ export function resolveRunCfg(session, agent) {
       baseURL = hit.baseURL; apiKey = hit.apiKey;
       modelProvider = hit.provider;
       if (typeof hit.vision === 'boolean') visionOverride = hit.vision;
+    } else if (mc.credential_id === 'cocode-models') {
+      throw new Error('模型不可用，请重新选择模型');
     }
   }
   const cfg = {
@@ -197,22 +206,19 @@ export function resolveRunCfg(session, agent) {
     cfg.webSearch=true;
     cfg.injectProjectContext=cfg.tochatMode==='work';cfg.defaultScopeFullDisk=false;
   }
-  const builtin=sessionModelSource(session.config)==='official';
-  if(builtin) {
-    const model=mc.model||'deepseek-flash';
-    if(!isBuiltinModel(model))throw Error('不支持的内置模型');
-    const auth=builtinAuth(toraCfg);
-    cfg.baseURL=String(auth.baseURL||'https://tora.ohfun.online').replace(/\/+$/,'')+'/tochat/v1';
-    const metadata=getBuiltinModels().find(item=>item.id===model),maximum=metadata.context;
-    // Context selection was removed; legacy smaller choices no longer cap a run.
-    cfg.maxTokensBudget=Math.max(1024,maximum-(metadata.maxOutput||16384)-8192);
-    cfg.apiKey=auth.authToken||'';cfg.model=model;cfg.provider='tochat-official';cfg.vision=metadata.inputTypes?.some(type=>type.startsWith('image/'))??true;cfg.thinking=true;
-    if(metadata.efforts?.length&&!metadata.efforts.includes(cfg.thinkingEffort))cfg.thinkingEffort=metadata.efforts.includes('high')?'high':metadata.efforts[0];
-    if(!builtinModelAllowed(model,cfg.appMode==='tocode'?'tocode':cfg.tochatMode))throw Error(`${metadata.name} 仅支持 ${(metadata.modes||[]).join('、')} 模式`);
-    if(cfg.appMode==='tocode')cfg.tochatMode='work'; // Shared work quota, with ToCode's original tools and permissions.
+  if (sessionModelSource(session.config) === 'official' || cfg.provider === 'tochat-official' ||
+      isOfficialModelGateway(cfg.baseURL)) throw Error('Tora Desktop 官方模型已下线，请选择自定义模型');
+  if (cfg.appMode === 'tochat' && !isDeepSeekModel(cfg.model)) throw Error('ToChat 仅支持 DeepSeek，请选择自定义 DeepSeek 模型');
+  const codex = mc.credential_id === CODEX_CREDENTIAL_ID || mc.type === CODEX_PROVIDER;
+  if (codex) {
+    Object.assign(cfg, resolveCodexModel(mc.model));
   }
-  if (visionOverride !== undefined && cfg.provider!=='tochat-official') cfg.vision = visionOverride;
-  if (agent?.data?.system_prompt) cfg.systemPrompt = agent.data.system_prompt;
+  if (visionOverride !== undefined && cfg.provider!=='tochat-official' && !codex) cfg.vision = visionOverride;
+  if (agent?.data) cfg.agentRole = {
+    name: agent.data.name,
+    personality: agent.data.personality || '',
+    system_prompt: agent.data.system_prompt || '',
+  };
   if (agent?.data?.context_config?.tool_result_limit) cfg.toolOutputLimit = agent.data.context_config.tool_result_limit;
   if (agent?.data?.react_config?.max_iters) cfg.maxTurns = agent.data.react_config.max_iters;
   // Agent 级自我复核：继承全局默认，按当前 Agent 局部覆盖。这里只接受已知字段，
@@ -283,14 +289,27 @@ const blkId = () => `blk-${Math.random().toString(36).slice(2, 10)}`;
  * 同步壳：忙/不存在两类错误必须同步返回（HTTP 层靠它回 409），
  * 不能因为取名前置而变成 Promise。真正的流程在 _startChatRunAsync。
  */
-export function startChatRun(sessionId, agent, payload) {
+export function startChatRun(sessionId, agent, payload, options) {
   if (accessBlockReason()) throw new Error(accessBlockReason());
   const bus = getBus(sessionId);
   if (bus.running) return { error: '会话正在运行中，请稍候或先中止' };
   const session = loadSessionRecord(sessionId);
   if (!session) return { error: '会话不存在' };
   try{sessionForView(session,typeof payload==='object'?payload?.viewMode:undefined);}catch(error){return {error:error.message};}
-  _startChatRunAsync(sessionId, agent, payload).catch((e) => {
+  let resumeUser = null;
+  if (options?.resumeFrom) {
+    const last = session.display.at(-1);
+    const objective = session.internal.findLast(isUserRequest);
+    resumeUser = session.display.findLast(message => message.role === 'user');
+    const unfinished = (last?.finished_at === null && !last.finished_reason) ||
+      ['interrupted', 'exceed_max_iters'].includes(last?.finished_reason);
+    if (sessionHistoryKind(session.config) !== 'work' || last?.role !== 'assistant' ||
+        last.id !== options.resumeFrom || !unfinished || !objective || !resumeUser ||
+        (objective.harness_user_id && objective.harness_user_id !== resumeUser.id)) {
+      return { error: '这条回复已无法续跑，请从最新的未完成任务继续。' };
+    }
+  }
+  _startChatRunAsync(session, agent, payload, { ...options, resumeUser }).catch((e) => {
     // 取名/落盘等前置步骤失败：广播 error 事件而不是静默吞掉；
     // 同时复位运行态，避免 _runImpl 启动前抛错时该会话永久卡在"运行中"，
     // 后续所有请求都会命中 409。_finishRun 若已跑过，此处赋值是幂等无副作用。
@@ -302,20 +321,27 @@ export function startChatRun(sessionId, agent, payload) {
   return {};
 }
 
-async function _startChatRunAsync(sessionId, agent, payload) {
+async function _startChatRunAsync(session, agent, payload, {
+  desktopMemory = false, desktopPlugins = null, desktopHarness = false, scheduled = false, resumeFrom = null, resumeUser = null,
+} = {}) {
+  const sessionId = session.id;
   const bus = getBus(sessionId);
-  const session = loadSessionRecord(sessionId);
-  if (!session || bus.running) return; // 壳已校验；此处兜底
 
   // 兼容两种入参：旧代码 / 旧测试可能传纯字符串；新代码传对象。
-  const userText = typeof payload === 'string' ? payload : (payload?.userText ?? '');
+  const userText = resumeUser ? inputToText(resumeUser) : typeof payload === 'string' ? payload : (payload?.userText ?? '');
   const contextText = typeof payload === 'string' ? '' : (payload?.contextText ?? '');
   const images = typeof payload === 'string' ? [] : (Array.isArray(payload?.images) ? payload.images : []);
   const selectedSkillIds =
     typeof payload === 'string' ? [] : (Array.isArray(payload?.selected_skill_ids) ? payload.selected_skill_ids : []);
 
   const cfg = resolveRunCfg(sessionForView(session,typeof payload==='object'?payload?.viewMode:undefined), agent);
-  if(images.some(im=>/^audio\/|^video\//.test(im.media_type||im.data_url?.match(/^data:([^;,]+)/)?.[1]||''))&&!(cfg.model===DOUBAO_MODEL_ID&&cfg.appMode==='tochat'&&['chat','work'].includes(cfg.tochatMode)))throw Error('音频和视频附件仅支持豆包 ToChat 模式');
+  if(images.some(im=>/^audio\/|^video\//.test(im.media_type||im.data_url?.match(/^data:([^;,]+)/)?.[1]||'')))throw Error('当前对话接口不支持音频或视频附件');
+  const useDesktopHarness = desktopHarness && !(cfg.appMode === 'tochat' && cfg.tochatMode === 'chat');
+  if (useDesktopHarness || resumeFrom) {
+    const previous = markInterruptedReply(session);
+    if (previous) journal(session, 'reply-finished', { reply: previous });
+    session.internal = recoverInterruptedToolCalls(session.internal);
+  }
 
   const replyId = `reply-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   bus.replyId = replyId;
@@ -324,23 +350,23 @@ async function _startChatRunAsync(sessionId, agent, payload) {
   bus.pending = new Map();
   bus.subagentPending = new Map();
   bus.parked = false;
+  bus.harness = null;
+  bus.resumeFrom = resumeFrom;
   bus.userText = userText; // 供诊断/展示用（首轮取名已前移到 startChatRun）
 
   // 立即入历史（刷新页面也可见）。
   // - internal：隐式上下文（若有）拼在用户文本之前；这是 LLM 真正看到的全量上下文。
   // - display：只放用户文本，保持用户视角气泡纯净——隐式上下文完全不可见。
-  const internalContent = contextText ? `${contextText}\n\n${userText}` : userText;
-  session.internal.push({
-    role: 'user',
-    content: images.length
-      ? [
-          { type: 'text', text: internalContent },
-          ...images.map((im) => mediaInputPart(im.data_url ?? im.url, im.media_type))
-        ]
-      : internalContent
-  });
-  session.display.push(
-    userMsg(
+  let admittedUser = resumeUser;
+  if (resumeFrom) {
+    session.internal.push({
+      role: 'user',
+      harness_resume: resumeFrom,
+      content: '继续执行本会话上一个未完成任务，保留原始目标和约束。先核对已落盘的任务、工具结果及工作区现状，再处理剩余事项。对执行结果未知的动作先验证实际状态，避免重复已有副作用。',
+    });
+  } else {
+    const internalContent = contextText ? `${contextText}\n\n${userText}` : userText;
+    admittedUser = userMsg(
       userText,
       selectedSkillIds.length > 0 ? { selected_skill_ids: selectedSkillIds } : undefined,
       // 图片以 data block 形态存 display：刷新页面后附件气泡仍在，
@@ -356,10 +382,21 @@ async function _startChatRunAsync(sessionId, agent, payload) {
         name: im.name ?? 'image',
         created_at: new Date().toISOString(),
       })),
-    ),
-  );
+    );
+    session.display.push(admittedUser);
+    session.internal.push({
+      role: 'user',
+      harness_user_id: admittedUser.id,
+      content: images.length
+        ? [
+            { type: 'text', text: internalContent },
+            ...images.map((im) => mediaInputPart(im.data_url ?? im.url, im.media_type)),
+          ]
+        : internalContent,
+    });
+  }
   // Only the first user message is summarized; manual names take precedence.
-  const firstRun = session.config.naming?.auto !== false;
+  const firstRun = !resumeFrom && session.config.naming?.auto !== false;
   cfg.tochatMessageId=replyId;
   if(firstRun){
     const ph=placeholderTitle(userText);
@@ -388,21 +425,29 @@ async function _startChatRunAsync(sessionId, agent, payload) {
 
   // A run boundary plus the admitted model history lets a restarted process
   // recover the user input even if it exits before the next JSON snapshot.
+  const pendingReply = useDesktopHarness || resumeFrom ? assistantMsgShell(replyId) : null;
+  if (pendingReply && resumeFrom) pendingReply.metadata.resumed_from = resumeFrom;
+  if (pendingReply) session.display.push(pendingReply);
   journal(session, 'run-started', {
     replyId,
-    user: session.display.at(-1),
-    internal: session.internal
+    ...(!resumeFrom ? { user: admittedUser } : {}),
+    internal: session.internal,
+    ...(pendingReply ? { reply: pendingReply } : {}),
   });
 
   // 本次运行的 display 块由事件流增量构建（见 _runImpl）。不能在收尾时
   // 从 session.internal 反推：上下文自动压缩会 splice 掉中段历史，按索
   // 引切片会错位，按 run 标记筛选又会丢掉已被摘要的那部分。
   const replyBlocks = [];
-  _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks)
+  const memory = desktopMemory ? {
+    query: userText,
+    origin: scheduled ? undefined : { session_id: sessionId, message_id: admittedUser.id }
+  } : null;
+  _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, memory, desktopPlugins, useDesktopHarness)
     .catch((e) => {
       push(bus, E.replyEnd(sessionId, replyId, 'error', { type: 'internal', message: e?.message || String(e) }));
     })
-    .finally(() => _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg));
+    .finally(() => _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg, memory));
 
   return { replyId };
 }
@@ -411,21 +456,25 @@ async function _startChatRunAsync(sessionId, agent, payload) {
  * 把当前 replyBlocks 快照写入 display（按 reply_id upsert）。
  * 等待用户确认时用它 —— 否则刷新页面会因为"回复还没结束"而看不到确认卡片。
  */
-function syncReplyDisplay(session, replyId, replyBlocks, { includeInternal = false } = {}) {
+function syncReplyDisplay(session, replyId, replyBlocks, { includeInternal = false, saveSnapshot = true } = {}) {
   const msg = assistantMsgShell(replyId);
+  const idx = session.display.findIndex((m) => m.id === replyId);
+  const resumedFrom = session.display[idx]?.metadata?.resumed_from;
+  if (resumedFrom) msg.metadata.resumed_from = resumedFrom;
   msg.content = replyBlocks;
   msg.finished_at = null;
   journal(session, 'reply-progress', {
     reply: msg,
     ...(includeInternal ? { internal: session.internal } : {})
   });
-  const idx = session.display.findIndex((m) => m.id === replyId);
   if (idx >= 0) session.display[idx] = msg;
   else session.display.push(msg);
-  try { saveSessionRecord(session); } catch { /* ignore */ }
+  if (saveSnapshot) {
+    try { saveSessionRecord(session); } catch { /* ignore */ }
+  }
 }
 
-async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
+async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks, desktopMemory, desktopPlugins, desktopHarness) {
   push(bus, E.replyStart(sessionId, replyId, 'assistant'));
   const ac = new AbortController();
   bus.ac = ac;
@@ -436,6 +485,17 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   let doneReason = null, doneError = null;
   let inputTokens = 0, outputTokens = 0;
   let lastPartialSave = Date.now();
+  let journaledLength = session.internal.length;
+  let journaledSystem = session.internal[0];
+  const persistHistory = change => {
+    if (change === 'replace' || session.internal[0] !== journaledSystem) {
+      journal(session, 'internal-snapshot', { internal: session.internal });
+      journaledSystem = session.internal[0];
+    } else if (session.internal.length > journaledLength) {
+      journal(session, 'internal-append', { offset: journaledLength, messages: session.internal.slice(journaledLength) });
+    }
+    journaledLength = session.internal.length;
+  };
 
   const ts = () => new Date().toISOString();
   // 关闭当前 text block：把它固化进 replyBlocks（供持久化 display 用），
@@ -465,7 +525,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   //
   // 原因：本函数是被 agent 在自己的执行流里同步调用的，而事件是由下面那个
   // for-await 消费循环按顺序推给前端的。若在此直接 push，确认事件会"插队"到
-  // 还排在 channel 队列里的 checkpoint / tool-start 之前 —— 前端 appendEvent
+  // 还排在 channel 队列里的 tool-start 之前 —— 前端 appendEvent
   // 处理 REQUIRE_USER_CONFIRM 时找不到对应 tool_call 块（SDK 是 `if (b)` 静默
   // 跳过），结果是**卡片不出现、工具调用永远停在 pending**，只有重新进入会话
   // 从 display 快照里读到 asking 块才看得到卡片。事件统一在 case 'require-confirm'
@@ -522,11 +582,21 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   };
 
   try {
+    if (cfg.provider === CODEX_PROVIDER) {
+      await refreshCodexCatalog({ signal: ac.signal });
+      assertCodexConnection(cfg.codexConnectionId);
+      Object.assign(cfg, resolveCodexModel(cfg.model));
+    }
     // 工作目录从 session.config.cwd 取；为 null 也启动 runAgent（让对话正常进行），
     // 工具执行处会自行检查 cwd==null 并返回提示——避免 process.cwd() 兜底成
     // Tora 包根目录。Electron 进程的 cwd 永远不是合法会话工作目录。
-    const sessionCwd = cfg.appMode==='tochat'&&cfg.tochatMode==='chat' ? null : session.config?.cwd || null;
-    const extraTools = cfg.appMode==='tochat'&&cfg.tochatMode==='chat' ? [] : await loadExtraTools(sessionCwd);
+    const chatOnly = cfg.appMode === 'tochat' && cfg.tochatMode === 'chat';
+    const sessionCwd = chatOnly ? null : session.config?.cwd || null;
+    const integrations = async () => (await Promise.all([
+      loadExtraTools(sessionCwd, cfg),
+      desktopPlugins?.mcpTools(ac.signal) ?? [],
+    ])).flat();
+    const extraTools = chatOnly || desktopHarness ? [] : await integrations();
     for await (const e of runAgent({
       cfg,
       cwd: sessionCwd,
@@ -534,6 +604,11 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
       signal: ac.signal,
       extraTools,
       sessionId,
+      desktopMemory,
+      ...(desktopHarness ? {
+        desktopHarness, loadExtraTools: integrations, toolOutputArchive: sessionToolOutputs(sessionId),
+        onHistoryUpdate: persistHistory,
+      } : {}),
       permissionAsk,
       askUser,
       permissionRules: rules,
@@ -541,13 +616,17 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
       // 会话状态通道：任务工具族（TaskCreate/Update/Get/List）经它读写
       // state.tasks_context。写 = 落盘 + state_updated SSE，计划面板实时刷新。
       sessionState: {
-        read: () => loadSessionRecord(sessionId)?.state ?? {},
+        read: () => {
+          const record = loadSessionRecord(sessionId);
+          if (!record) throw new Error('会话已不存在，无法读取状态');
+          return record.state ?? {};
+        },
         write: (patch) => {
           const s = loadSessionRecord(sessionId);
-          if (!s) return;
+          if (!s) throw new Error('会话已不存在，无法保存状态');
           s.state = { ...(s.state ?? {}), ...patch };
-          session.state = s.state;
           saveSessionRecord(s);
+          session.state = s.state;
           push(bus, E.custom('state_updated', patch));
         }
       },
@@ -563,10 +642,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
         // 旧会话、损坏状态或第三方写入遗漏权限字段时，不得意外扩大为完全访问。
         // 用户显式选中的 bypass 仍原样保留；缺失值一律回到可确认的 default。
         ?? 'default',
-      readPermissionMode: () => {
-        const state = loadSessionRecord(sessionId)?.state;
-        return state?.permission_mode ?? state?.permission_context?.mode ?? 'default';
-      },
+      readPermissionMode: createSessionPermissionReader(sessionId),
       // 电脑控制（Computer）会话级同意：agent.gate 对 Computer 特判 ——
       // 未确认时强制弹一次确认卡（不受权限模式影响），确认后写入
       // session.state.computer_confirmed 落盘持久；本会话后续 Computer
@@ -645,8 +721,10 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
           for (let i = 0; i < text.length; i += CHUNK) {
             push(bus, E.toolResultTextDelta(replyId, e.id, text.slice(i, i + CHUNK)));
           }
-          push(bus, E.toolResultEnd(replyId, e.id, e.ok ? 'success' : 'error', { duration_ms: e.durationMs }));
-          syncReplyDisplay(session, replyId, replyBlocks, { includeInternal: true });
+          push(bus, E.toolResultEnd(replyId, e.id, e.ok ? 'success' : 'error', {
+            duration_ms: e.durationMs, ...(e.meta?.tool_output_id ? { tool_output_id: e.meta.tool_output_id } : {}),
+          }));
+          syncReplyDisplay(session, replyId, replyBlocks, { includeInternal: !desktopHarness, saveSnapshot: !desktopHarness });
           lastPartialSave = Date.now();
           break;
         }
@@ -661,7 +739,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
           break;
         }
         case 'require-confirm': {
-          // 确认卡片在这里发 —— 走到这一步说明排在它前面的 checkpoint / tool-start
+          // 确认卡片在这里发 —— 走到这一步说明排在它前面的 tool-start
           // 都已经推给前端了，tool_call 块一定存在，appendEvent 才能把块翻成 asking。
           const id = e.id;
           const block = askingToolCall({ id, name: e.name, args: e.args, suggestedRules: e.suggestedRules });
@@ -731,9 +809,13 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
             compacted: !!e.compacted,
             tokensBefore: e.tokensBefore,
             tokensAfter: e.tokensAfter,
-            budget: e.budget
+            budget: e.budget,
+            overBudget: !!e.overBudget
           }));
-          journal(session, 'internal-snapshot', { internal: session.internal });
+          if (!desktopHarness) journal(session, 'internal-snapshot', { internal: session.internal });
+          break;
+        case 'context-budget':
+          push(bus, E.custom('context_budget_exceeded', { tokens: e.tokens, budget: e.budget }));
           break;
         case 'review-start':
           push(bus, E.custom('review_progress', {
@@ -751,38 +833,50 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
             phase: 'redo', round: e.round, issues: e.issues || []
           }));
           break;
+        case 'verification-repair':
+          push(bus, E.custom('verification_repair', { round: e.round }));
+          break;
         case 'done':
           doneReason = e.reason;
+          if (e.metrics?.usageReportedCalls > 0) {
+            inputTokens = e.totalUsage.prompt_tokens || 0;
+            outputTokens = e.totalUsage.completion_tokens || 0;
+          }
+          const harness = { reason: e.reason, metrics: e.metrics ?? null,
+            totalUsage: e.metrics?.usageReportedCalls > 0 ? e.totalUsage : null };
+          if (desktopHarness) bus.harness = harness;
+          push(bus, E.custom('harness_run_finished', harness));
+          if (e.reason === 'error' && e.error) doneError = { type: 'internal', message: e.error };
           if (e.reason === 'blocked') {
-            doneError = { type: 'blocked', message: e.message || '本轮被钩子拦下' };
-            // 钩子在 UserPromptSubmit 拦下了整轮：模型一个字都没输出，
-            // 但用户必须知道发生了什么，否则界面看起来像"卡住了"。
+            doneError = { type: 'blocked', message: e.error || e.message || '本轮被钩子拦下' };
+            // 开始或结束钩子的拒绝都必须可见，不能误标为正常完成。
             closeText();
   closeThinking();
             const bid = blkId();
-            const text = `⛔ 本轮被钩子拦下：${e.message || '（钩子未说明原因）'}`;
+            const text = `⛔ 本轮被钩子拦下：${e.error || e.message || '（钩子未说明原因）'}`;
             replyBlocks.push({ type: 'text', id: bid, text, created_at: ts(), finished_at: ts() });
             push(bus, E.textBlockStart(replyId, bid));
             push(bus, E.textBlockDelta(replyId, bid, text));
             push(bus, E.textBlockEnd(replyId, bid));
           }
-          journal(session, 'internal-snapshot', { internal: session.internal });
+          if (desktopHarness) persistHistory('append');
+          else journal(session, 'internal-snapshot', { internal: session.internal });
           break;
         case 'error':
-          doneReason = 'error';
           doneError = { type: 'internal', message: e.error };
           break;
       }
       // SSE 断线或后端进程退出时，历史接口仍能还原最近的正文；限频落盘，
       // 避免逐 token 重写整份会话 JSON。
       if (replyBlocks.length && Date.now() - lastPartialSave >= 1500) {
-        syncReplyDisplay(session, replyId, replyBlocks);
+        syncReplyDisplay(session, replyId, replyBlocks, { saveSnapshot: !desktopHarness });
         lastPartialSave = Date.now();
       }
       if (doneReason) break;
     }
   } catch (e) {
     if (!doneReason) { doneReason = 'error'; doneError = { type: 'internal', message: e?.message || String(e) }; }
+    if (desktopHarness) ac.abort();
   }
   // 收尾时把还挂着的确认请求按拒绝收掉，避免 resolver 泄漏
   for (const [, finish] of bus.pending) finish({ confirmed: false, error: 'run-ended' });
@@ -824,7 +918,7 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
 
   // Memory 可选提炼（fire-and-forget）：只认"正常完成"的收尾，开关关闭时不发请求。
   // distillAfterRun 内部全静默（见 memory-distill.js），这里再兜一层 .catch。
-  if (doneReason === 'completed' && cfg.appMode !== 'tochat') {
+  if (!desktopMemory && doneReason === 'completed' && cfg.appMode !== 'tochat') {
     const lastText = [...replyBlocks].reverse().find((b) => b.type === 'text')?.text || '';
     void distillAfterRun(cfg, {
       userText: bus.userText,
@@ -840,7 +934,8 @@ async function _runImpl(sessionId, session, cfg, bus, replyId, replyBlocks) {
   push(bus, E.replyEnd(sessionId, replyId, reason, doneError));
 }
 
-function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
+function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg, desktopMemory) {
+  const memoryProject = session.config?.cwd || '';
   const latest = loadSessionRecord(sessionId);
   if (latest) {
     session.config = { ...session.config, ...latest.config };
@@ -850,7 +945,9 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
   // 事件流还原出来的视图同源）。不从 session.internal 反推，因为上下文
   // 自动压缩会在运行中 splice 掉中段历史，事后按索引或标记筛选都会错。
   const msg = assistantMsgShell(replyId);
+  if (bus.resumeFrom) msg.metadata.resumed_from = bus.resumeFrom;
   if(bus.webPreview)msg.metadata.web_preview=bus.webPreview;
+  if (bus.harness) msg.metadata.harness = bus.harness;
   msg.content = replyBlocks;
   msg.finished_at = new Date().toISOString();
   const end = bus.lastReplyEnd?.reply_id === replyId ? bus.lastReplyEnd : null;
@@ -870,6 +967,18 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
     catch (e) { console.error('[bridge] 分支快照落盘失败:', e?.message || e); }
   }
   try { saveSessionRecord(session); } catch (e) { console.error('[bridge] _finishRun 落盘失败:', e?.message || e); }
+
+  if (desktopMemory?.origin && end?.finished_reason === 'completed' && cfg.appMode !== 'tochat') {
+    const origin = desktopMemory.origin;
+    void distillAfterRun(cfg, {
+      userText: desktopMemory.query,
+      assistantText: [...replyBlocks].reverse().find(block => block.type === 'text')?.text,
+      projectKey: memoryProject,
+      origin,
+      canSave: () => !accessBlockReason() && !!loadSessionRecord(sessionId)?.display
+        ?.some(message => message.id === origin.message_id && message.role === 'user')
+    }).catch(() => {});
+  }
 
   // 通知前端会话有更新（侧栏自动命名等）
   push(bus, E.custom('session_updated', {}));
@@ -893,12 +1002,14 @@ function _finishRun(session, bus, sessionId, replyId, replyBlocks, cfg) {
   }
   bus.events = []; // 清空缓冲：历史接口已含该回复，重放会翻倍
   bus.lastReplyEnd = null;
+  bus.harness = null;
+  bus.resumeFrom = null;
   bus.replyId = null;
   bus.webPreview = null;
   // 若已无订阅者，稍后回收 bus
   setTimeout(() => {
     if (bus.subs.size === 0 && !bus.running && buses.get(sessionId) === bus) buses.delete(sessionId);
-  }, 30000);
+  }, 30000).unref();
 }
 
 /** SSE 订阅：用 streamId:sequence 游标补发；缓冲缺口或服务重启要求客户端重读历史。 */

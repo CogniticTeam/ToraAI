@@ -204,7 +204,9 @@ export const gitTool = {
     let body = res.stdout || '';
     if (res.stderr) body += (body ? '\n' : '') + `[stderr]\n${res.stderr}`;
     if (!body) body = '(无输出)';
-    if (body.length > limit) body = body.slice(0, Math.floor(limit * 0.8)) + `\n…[输出过长，已截断 ${body.length - Math.floor(limit * 0.8)} 字符]…`;
+    if ((!ctx?.archiveToolOutput || Number.isFinite(max_chars)) && body.length > limit) {
+      body = body.slice(0, Math.floor(limit * 0.8)) + `\n…[输出过长，已截断 ${body.length - Math.floor(limit * 0.8)} 字符]…`;
+    }
     return redact(head + body);
   }
 };

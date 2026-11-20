@@ -18,7 +18,7 @@ try {
     await page.addInitScript(({ base, language }) => {
       for (const [key, value] of Object.entries({ server_url: base, username: 'tora', tora_auth_token: 'mock-session', tora_auth_username: 'TranslationTest', tora_cn_notice_agreed_v1: '1', tora_language_preference: language })) localStorage.setItem(key, value);
     }, { base, language });
-    await page.route('https://tora.ohfun.online/**', async route => {
+    await page.route('https://api.cogniticteam.com/**', async route => {
       const path = new URL(route.request().url()).pathname;
       const reply = (data, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(data) });
       if (path === '/auth/me') return reply({ id: 1, email: 'test@example.invalid', username: 'TranslationTest', banned: false });
@@ -80,7 +80,7 @@ try {
     await page.addInitScript(({ base, language }) => {
       for (const [key, value] of Object.entries({ server_url: base, username: 'tora', tora_auth_token: 'mock-session', tora_auth_username: 'TranslationTest', tora_cn_notice_agreed_v1: '1', tora_language_preference: language })) localStorage.setItem(key, value);
     }, { base, language });
-    await page.route('https://tora.ohfun.online/**', async route => {
+    await page.route('https://api.cogniticteam.com/**', async route => {
       const path = new URL(route.request().url()).pathname;
       const reply = data => route.fulfill({ contentType: 'application/json', body: JSON.stringify(data) });
       if (path === '/auth/me') return reply({ id: 1, email: 'test@example.invalid', username: 'TranslationTest', banned: false });

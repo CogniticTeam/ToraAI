@@ -32,14 +32,14 @@ try {
 		};
 	});
 	await page.goto(base + '/', { waitUntil: 'commit' });
-	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'first-run-test', username: 'first-run-test' }) }));
-	await page.route('https://tora.ohfun.online/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
-await page.route('https://tora.ohfun.online/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
-await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'first-run-test-ticket' }) }));
-	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://api.cogniticteam.com/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'first-run-test', username: 'first-run-test' }) }));
+	await page.route('https://api.cogniticteam.com/billing/subscription', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ subscription: null, windows: [], remainingPercent: 0, canUseAgent: false, plans: [], extraPurchasesEnabled: false }) }));
+await page.route('https://api.cogniticteam.com/tochat/quota', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: false, models: [], chatRemaining: 150, remainingPercent: 100, canUseAgent: true, subscription: {planId:'plus',name:'Tora Plus',expiresAt:'2099-01-01T00:00:00Z'}, windows: [{key:'fiveHour',remainingPercent:100,resetAt:null}], workDailyRemaining: 1000000, workWeeklyRemaining: 10000000 }) }));
+await page.route('https://api.cogniticteam.com/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://api.cogniticteam.com/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+	await page.route('https://api.cogniticteam.com/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://api.cogniticteam.com/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'first-run-test-ticket' }) }));
+	await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
 		localStorage.setItem('tora_auth_token', 'first-run-test-token');
@@ -73,9 +73,9 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	await page.evaluate(() => document.documentElement.classList.remove('dark'));
 	assert.equal(await consent.getByRole('button', { name: /确认并继续/ }).isDisabled(), true, '三项确认前不能进入登录或工作区');
 	for (const [name, url] of [
-		[/用户协议/, 'https://ohfun.online/#terms'],
-		[/隐私政策/, 'https://ohfun.online/#privacy'],
-		[/跨境传输个人信息/, 'https://ohfun.online/#cross-border'],
+		[/用户协议/, 'https://cogniticteam.com/#terms'],
+		[/隐私政策/, 'https://cogniticteam.com/#privacy'],
+		[/跨境传输个人信息/, 'https://cogniticteam.com/#cross-border'],
 	]) {
 		await consent.getByRole('checkbox', { name }).check();
 		assert.ok(await consent.locator(`a[href="${url}"]`).count(), `应提供 ${url} 的正式链接`);
@@ -158,7 +158,7 @@ await page.route('https://tora.ohfun.online/models', route => route.fulfill({ st
 	assert.ok(await page.locator('h1[aria-label="Tora要构建些什么？"] .chat-greeting-character').evaluateAll(elements => elements.every(element => getComputedStyle(element).opacity === '1')), '逐字动画结束后不得缺字');
 	await page.screenshot({ path: '/tmp/tora-greeting-typewriter-complete.png' });
 	assert.equal(await page.evaluate(() => localStorage.getItem('tora:first-run:tour:v1')), '1');
-	await page.route('https://tora.ohfun.online/supporters?page=*', route => {
+	await page.route('https://api.cogniticteam.com/supporters?page=*', route => {
 		const pageNumber = Number(new URL(route.request().url()).searchParams.get('page'));
 		return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(pageNumber === 1
 			? { page: 1, month: '2026-09', hasMore: true, supporters: [] }

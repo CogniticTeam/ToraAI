@@ -11,6 +11,8 @@ export const skillApi = {
 
 	/** Unlike the list endpoint, this also carries the `SKILL.md` body. */
 	get: (skillId: string) => client.get<SkillRecord>(`/skill/${encodeURIComponent(skillId)}`),
+	setEnabled: (skillId: string, enabled: boolean) =>
+		client.patch<SkillView>(`/skill/${encodeURIComponent(skillId)}`, { enabled }),
 
 	/**
 	 * Imports a skill from a local folder on disk (path picked via the

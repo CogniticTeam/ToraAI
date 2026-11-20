@@ -88,16 +88,24 @@ function AttachmentContent({ className, ...props }: React.ComponentProps<'div'>)
 	);
 }
 
-function AttachmentTitle({ className, ...props }: React.ComponentProps<'span'>) {
+function AttachmentTitle({ className, children, title, ...props }: React.ComponentProps<'span'>) {
+	const filename = typeof children === 'string' ? children : '';
+	const extension = filename.match(/\.[a-z0-9]{1,10}$/i)?.[0];
+	const keepExtension = extension && filename.length > extension.length;
+
 	return (
 		<span
 			data-slot="attachment-title"
 			className={cn(
-				'block max-w-full min-w-0 truncate font-medium group-data-[state=processing]/attachment:shimmer group-data-[state=uploading]/attachment:shimmer',
+				'flex max-w-full min-w-0 font-medium group-data-[state=processing]/attachment:shimmer group-data-[state=uploading]/attachment:shimmer',
 				className,
 			)}
+			title={title ?? (filename || undefined)}
 			{...props}
-		/>
+		>
+			<span className="min-w-0 truncate">{keepExtension ? filename.slice(0, -extension.length) : children}</span>
+			{keepExtension && <span className="shrink-0" dir="ltr">{extension}</span>}
+		</span>
 	);
 }
 

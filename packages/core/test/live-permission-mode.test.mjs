@@ -1,6 +1,6 @@
 import {test,after} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync,rmSync,existsSync,mkdirSync} from 'node:fs';
+import {mkdtempSync,rmSync,existsSync,mkdirSync,writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 const home=mkdtempSync(join(tmpdir(),'tora-live-permission-'));
@@ -25,6 +25,56 @@ async function create(mode='default'){
 async function start(id){assert.equal((await json('/chat/','POST',{agent_id:agent,session_id:id,input:{content:[{type:'text',text:'fixture task'}]}})).status,200);await wait(()=>isRunning(id));}
 after(async()=>{globalThis.fetch=realFetch;for(const id of running)interrupt(id);server.closeAllConnections?.();await new Promise(resolve=>server.close(resolve));rmSync(home,{recursive:true,force:true});});
 const running=[];
+
+function teamTaskModel(workerResponse) {
+ let parentRound=0;
+ return body=>{
+  if(body.messages.some(message=>typeof message.content==='string'&&message.content.includes('【队长 任务指派】')))return workerResponse(body);
+  if(++parentRound===1)return tools([['team','TeamCreate',{name:'fixture restrictions'}]]);
+  if(parentRound===2)return tools([['child','AgentCreate',{role:'restricted worker',goal:'fixture',agentCreatePermissions:'explore',isolation:'shared'}]]);
+  if(parentRound===3){
+   const text=body.messages.find(message=>message.role==='tool'&&String(message.content).includes('agent_id:'))?.content;
+   const workerId=String(text).match(/agent_id:\s*([A-Za-z0-9_-]+)/)?.[1];assert.ok(workerId);
+   return tools([['run-child','AgentRun',{agent_id:workerId,task:'fixture restrictions'}]]);
+  }
+  return done();
+ };
+}
+
+test('Team worker 保留队长的显式 deny，而不是空规则运行',async()=>{
+ saveConfig({permissionRules:[{tool_name:'Read',rule_content:'team-secret.txt',behavior:'deny'}]});
+ const {id,cwd}=await create('bypass');running.push(id);
+ writeFileSync(join(cwd,'team-secret.txt'),'PRIVATE_TEAM_FIXTURE');
+ let workerRound=0,output;
+ model=teamTaskModel(body=>{
+  if(++workerRound===1)return tools([['read-secret','Read',{path:'team-secret.txt'}]]);
+  output=body.messages.find(message=>message.role==='tool')?.content;return done();
+ });
+ try{
+  assert.equal((await json('/chat/','POST',{agent_id:agent,session_id:id,input:{content:[{type:'text',text:'fixture deny inheritance'}]}})).status,200);
+  await wait(()=>loadSessionRecord(id).display.at(-1)?.finished_reason);
+  assert.equal(workerRound,2);assert.match(output,/拒绝/);assert.ok(!output.includes('PRIVATE_TEAM_FIXTURE'));
+ }finally{saveConfig({permissionRules:[]});}
+});
+
+test('Team worker 继承父 ask；中断审批不读取文件也不自动重放',async()=>{
+ saveConfig({permissionRules:[{tool_name:'Read',rule_content:'team-ask.txt',behavior:'ask'}]});
+ const {id,cwd}=await create('bypass');running.push(id);
+ writeFileSync(join(cwd,'team-ask.txt'),'PRIVATE_TEAM_ASK_FIXTURE');
+ const events=[];const unsubscribe=subscribe(id,frame=>events.push(frame.event));let workerRound=0;
+ model=teamTaskModel(()=>++workerRound===1?tools([['ask-read','Read',{path:'team-ask.txt'}]]):done());
+ try{
+  assert.equal((await json('/chat/','POST',{agent_id:agent,session_id:id,input:{content:[{type:'text',text:'fixture ask inheritance'}]}})).status,200);
+  await wait(()=>events.some(event=>event.name==='subagent_require_user_confirm')||loadSessionRecord(id).display.at(-1)?.finished_reason);
+  assert.ok(events.some(event=>event.name==='subagent_require_user_confirm'));
+  interrupt(id);await wait(()=>!isRunning(id));
+  assert.equal(workerRound,1);assert.equal(loadSessionRecord(id).display.at(-1).finished_reason,'interrupted');
+  const frames=events.length;
+  const reconnect=subscribe(id,()=>{});reconnect();
+  assert.equal((await json('/chat/','POST',{agent_id:agent,session_id:id,input:{content:[]}})).status,200);
+  assert.equal(workerRound,1);assert.equal(isRunning(id),false);assert.equal(events.length,frames);
+ }finally{interrupt(id);unsubscribe();saveConfig({permissionRules:[]});}
+});
 
 test('运行中只允许有效权限 PATCH；待审批写入与后续同轮工具立即使用新模式并持久化',async()=>{
  const {id,cwd}=await create();running.push(id);let round=0;

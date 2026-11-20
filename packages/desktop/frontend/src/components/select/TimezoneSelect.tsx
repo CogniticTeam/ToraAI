@@ -56,14 +56,14 @@ export function TimezoneSelect({ className, value, onChange, disabled, ...props 
 				</Button>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent align="start" className="w-64">
-				<div className="flex items-center gap-2 px-2 py-1.5 border-b">
-					<Search className="size-3.5 opacity-50" />
+				<div className="flex h-9 items-center gap-2 border-b px-2">
+					<Search className="size-3.5 shrink-0 text-muted-foreground" />
 					<Input
 						ref={inputRef}
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 						placeholder="Search timezone..."
-						className="h-6 border-0 shadow-none focus-visible:ring-0 text-xs px-0"
+						className="h-7 flex-1 rounded-none border-0 bg-transparent px-0 py-0 text-xs shadow-none focus-visible:ring-0 md:text-xs dark:bg-transparent"
 						onKeyDown={(e) => e.stopPropagation()}
 					/>
 				</div>

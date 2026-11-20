@@ -16,6 +16,7 @@ export interface MemoryRecord {
 	pinned: boolean;
 	created_at: string;
 	updated_at: string;
+	origin?: { session_id: string; message_id: string };
 }
 
 export interface MemoryConfig {
@@ -32,6 +33,7 @@ export const memoryApi = {
 	update: (id: string, patch: Partial<Pick<MemoryRecord, 'content' | 'kind' | 'scope' | 'project_key' | 'pinned'>>) =>
 		client.patch<{ status: string; memory: MemoryRecord }>(`/memories/${id}`, patch),
 	remove: (id: string) => client.delete<{ status: string }>(`/memories/${id}`),
+	getOrigin: (id: string) => client.get<{ origin: { text: string } | null }>(`/memories/${id}/origin`, undefined, { silent: true }),
 	getConfig: () => client.get<MemoryConfig>('/memory-config'),
 	saveConfig: (cfg: Partial<MemoryConfig>) => client.post<MemoryConfig>('/memory-config', cfg),
 };

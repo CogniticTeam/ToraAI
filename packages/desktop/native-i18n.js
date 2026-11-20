@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 const translations = JSON.parse(readFileSync(new URL('./native-locales.json', import.meta.url), 'utf8'));
+const regionalConsent = JSON.parse(readFileSync(new URL('./region-consent-locales.json', import.meta.url), 'utf8'));
 export const NATIVE_LANGUAGES = ['zh', 'zh-HK', 'zh-TW', 'en-GB', 'en-US', 'ja', 'ko', 'fr', 'de', 'it', 'ar', 'es', 'pt', 'ru', 'hi', 'lzh', 'zh-Neko', 'ja-Neko'];
 
 export function normalizeNativeLanguage(value = '') {
@@ -18,5 +19,7 @@ export function normalizeNativeLanguage(value = '') {
 }
 
 export function nativeText(language, english) {
-  return translations[normalizeNativeLanguage(language)]?.[english] || english;
+  const locale = normalizeNativeLanguage(language);
+  const consentLocale = locale === 'zh-HK' ? 'zh-TW' : locale;
+  return translations[locale]?.[english] || regionalConsent[consentLocale]?.[english] || english;
 }

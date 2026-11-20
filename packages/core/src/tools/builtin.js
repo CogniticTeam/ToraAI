@@ -7,9 +7,10 @@
 //
 // 安全：所有文件路径都经 resolveInRoots() 限制在工作目录（及显式放行的根）内；
 // bash 子进程不再继承完整 process.env（见 security.js）。
-import { readFileSync, writeFileSync, statSync, readdirSync, mkdirSync } from 'node:fs';
-import { relative, dirname } from 'node:path';
+import { readFileSync, statSync, readdirSync } from 'node:fs';
+import { relative } from 'node:path';
 import { redact, resolveInRoots, cachedRoots } from '../security.js';
+import { loadEditableText, rememberText, textWriteFailure, writeTextAtomically } from './text-write.js';
 import { acquireShell, installShellExitHook, runOnce, releaseShell } from './shell.js';
 import { sandboxOptionsForContext } from './shell-sandbox.js';
 import { gitIsWrite } from './git.js';
@@ -48,7 +49,8 @@ const ALIASES = {
   find_references: 'Lsp', references: 'Lsp', diagnostics: 'Lsp', hover: 'Lsp',
   browser: 'Browser', browse: 'Browser', web_browser: 'Browser', webbrowser: 'Browser',
   webpreview: 'WebPreview', web_preview: 'WebPreview',
-  computer: 'Computer', desktop: 'Computer', screen: 'Computer', mouse: 'Computer', keyboard: 'Computer'
+  computer: 'Computer', desktop: 'Computer', screen: 'Computer', mouse: 'Computer', keyboard: 'Computer',
+  toolsearch: 'ToolSearch', tool_search: 'ToolSearch', tooloutput: 'ToolOutput', tool_output: 'ToolOutput'
 };
 
 export function canonicalToolName(name) {
@@ -65,6 +67,7 @@ export function toolCategory(name, args = {}) {
   switch (canonicalToolName(name)) {
     case 'Read': case 'Glob': case 'Grep': case 'WebFetch': case 'WebSearch': case 'RepoMap':
     case 'Lsp': case 'Search': case 'WebPreview':
+    case 'ToolSearch': case 'ToolOutput':
       return 'read';
     case 'Write': case 'Edit':
       return 'write';
@@ -231,8 +234,8 @@ export function fileDiff(oldText, newText, path, regions, created = false) {
 export const bashTool = {
   name: 'Bash',
   description:
-    '在 shell 中执行命令。**持久会话**：同一次运行里的 cd / export / source venv/bin/activate 都会保留，' +
-    '所以跨多步的构建流程可以直接连写。输出超限会截断。密钥类环境变量不会传进子进程。',
+    '从工作区执行命令。用户给出的测试或构建命令可以直接运行。默认保留同次运行的 cd、export 和 source 状态。' +
+    '长输出会截断。密钥类环境变量不会传进子进程。',
   parameters: {
     type: 'object',
     properties: {
@@ -255,9 +258,10 @@ export const bashTool = {
       if (sh) {
         res = await sh.run(command, timeout, ctx.signal);
         if (res.broken) {
-          // shell 会话挂了 → 回退一次性执行，并让上层不再复用这条 shell
           releaseShell(ctx.cwd, ctx.shellOwner);
-          res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
+          if (!res.dispatched && !ctx.signal?.aborted) {
+            res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
+          }
         }
       } else {
         res = await runOnce(command, ctx.cwd, timeout, ctx.signal, sandbox);
@@ -272,8 +276,10 @@ export const bashTool = {
     let out = `exit_code: ${res.exitCode}\n${res.output ?? ''}`;
     if (res.aborted) out = `命令已被用户中止。\n` + out;
     if (res.timedOut) out = `命令超时（${timeout}ms）已终止。\n` + out;
-    if (res.truncated) out = '命令输出超过 200KB，已强制终止。\n' + out;
-    return truncate(redact(out), limit);
+    if (res.truncated) out = '命令输出超过安全上限，以下是已捕获的部分。\n' + out;
+    if (res.executionUnknown) out = '命令执行结果未知。请核对实际状态后再试。\n' + out;
+    const safeOutput = redact(out);
+    return ctx.archiveToolOutput ? safeOutput : truncate(safeOutput, limit);
   }
 };
 
@@ -341,7 +347,10 @@ export const readTool = {
     if (!r.ok) return r.reason;
     const abs = r.path;
     let st;
-    try { st = statSync(abs); } catch (e) { return `读取失败: ${e.message}`; }
+    try { st = statSync(abs); } catch (e) {
+      if (e.code === 'ENOENT') rememberText(ctx.fileRevisions, abs, null);
+      return `读取失败: ${e.message}`;
+    }
     if (st.isDirectory()) {
       let entries;
       try { entries = readdirSync(abs).slice(0, 300); } catch (e) { return `读取失败: ${e.message}`; }
@@ -371,6 +380,7 @@ export const readTool = {
     if (content.includes('\u0000')) {
       return `${rel(ctx, abs)} 是二进制文件（${(st.size / 1024).toFixed(1)}KB），无法按文本读取。`;
     }
+    rememberText(ctx.fileRevisions, abs, content);
     limit = Math.min(Math.max(1, limit), 2000);
     const lines = content.split('\n');
     const start = Math.max(1, offset | 0);
@@ -389,7 +399,7 @@ export const readTool = {
 
 export const writeTool = {
   name: 'Write',
-  description: '写入文件（整体覆盖）。新文件或全量重写时使用；局部修改请用 Edit 以节省 token。',
+  description: '写入文件（整体覆盖）。新文件或全量重写时使用；局部修改请用 Edit。已读取的文件若有变化，先重新 Read。',
   parameters: {
     type: 'object',
     properties: {
@@ -402,13 +412,13 @@ export const writeTool = {
     const r = safePath(path, ctx);
     if (!r.ok) return r.reason;
     const abs = r.path;
-    let before = null;
-    try { before = readFileSync(abs, 'utf8'); } catch { /* 新文件 */ }
+    let before;
     try {
-      mkdirSync(dirname(abs), { recursive: true });
-      writeFileSync(abs, content);
+      const original = loadEditableText(abs, ctx.fileRevisions);
+      before = original.text;
+      writeTextAtomically(abs, content, original.stat, ctx.fileRevisions);
     } catch (e) {
-      return `写入失败: ${e.message}`;
+      return textWriteFailure(e, '写入失败');
     }
     const d = before == null
       ? { added: String(content).split('\n').length, removed: 0, diff: '' }
@@ -442,11 +452,18 @@ export const editTool = {
     const r = safePath(path, ctx);
     if (!r.ok) return r.reason;
     const abs = r.path;
-    let content;
+    let original;
     try {
-      content = readFileSync(abs, 'utf8');
+      original = loadEditableText(abs, ctx.fileRevisions);
     } catch (e) {
-      return `读取失败: ${e.message}`;
+      return textWriteFailure(e, '读取失败');
+    }
+    const content = original.text;
+    if (content === null) return '读取失败: 文件不存在。请核对路径，或使用 Write 创建。';
+    if (old_string === '') return 'old_string 不能为空。';
+    if (content.includes('\r\n') && !/(?<!\r)\n/.test(content)) {
+      old_string = old_string.replace(/\r?\n/g, '\r\n');
+      new_string = new_string.replace(/\r?\n/g, '\r\n');
     }
     const count = content.split(old_string).length - 1;
     if (count === 0) return '未找到匹配的 old_string。请先用 Read 核对内容（注意空白与缩进）。';
@@ -454,13 +471,12 @@ export const editTool = {
       return `old_string 出现 ${count} 次。请提供更长上下文使其唯一，或设 replace_all=true。`;
     }
     if (old_string === new_string) return 'old_string 与 new_string 相同，无需修改。';
-    if (old_string === '') return 'old_string 不能为空。';
     const next = replace_all ? content.split(old_string).join(new_string)
-      : content.replace(old_string, new_string);
+      : content.replace(old_string, () => new_string);
     try {
-      writeFileSync(abs, next);
+      writeTextAtomically(abs, next, original.stat, ctx.fileRevisions);
     } catch (e) {
-      return `写入失败: ${e.message}`;
+      return textWriteFailure(e, '写入失败');
     }
     const d = miniDiff(content, next);
     const head = `已修改 ${rel(ctx, abs)}（替换 ${replace_all ? count : 1} 处，+${d.added}/-${d.removed} 行）`;
@@ -630,6 +646,7 @@ export const grepTool = {
  */
 export const askUserTool = {
   name: 'AskUserQuestion',
+  requiresWorkspace: false,
   description:
     '向用户提问并等待其选择后继续。用于需求不明确、需要在几个方案里替用户拍板、' +
     '或需要补充关键信息时。一次可问 1-4 题，每题给 2-4 个互斥选项（label 简短、' +

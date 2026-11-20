@@ -225,7 +225,7 @@ console.log('--- Memory 注入（agent 层）---');
 function sseOnce(chunks) {
   const events = chunks.map((c) => ({ choices: [{ delta: c }], usage: { prompt_tokens: 10, completion_tokens: 5 } }));
   events.push({ choices: [], usage: { prompt_tokens: 10, completion_tokens: 5 } });
-  const payload = 'data: ' + events.map((e) => JSON.stringify(e)).join('\ndata: ') + '\ndata: [DONE]\n\n';
+  const payload = events.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n';
   return new Response(payload, { status: 200, headers: { 'content-type': 'text/event-stream' } });
 }
 
@@ -375,7 +375,7 @@ console.log('--- Memory 批次5：可选提炼 ---');
   let lastBody = null;
   const sseOf = (content) => {
     const payload = 'data: ' + JSON.stringify({ choices: [{ delta: { content } }], usage: {} })
-      + '\ndata: ' + JSON.stringify({ choices: [], usage: {} }) + '\ndata: [DONE]\n\n';
+      + '\n\ndata: ' + JSON.stringify({ choices: [], usage: {} }) + '\n\ndata: [DONE]\n\n';
     return new Response(payload, { status: 200, headers: { 'content-type': 'text/event-stream' } });
   };
   const cfg = { baseURL: 'http://127.0.0.1:9', apiKey: 'k', model: 'distill-test' };

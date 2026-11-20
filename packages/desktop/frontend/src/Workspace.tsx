@@ -1,10 +1,9 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 
 import { RouteError } from '@/components/error/RouteError';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UploadProvider } from '@/context/UploadContext';
-import { installPollQueueSync } from '@/lib/pollQueue';
 import { ChatPage } from '@/pages/chat';
 
 // 聊天是首屏，保留同步加载；其余独立工作台按路由再取，避免账号页、知识库、
@@ -16,7 +15,6 @@ const KnowledgePage = lazy(async () => ({ default: (await import('@/pages/knowle
 const SchedulePage = lazy(async () => ({ default: (await import('@/pages/schedule')).SchedulePage }));
 const MCPHubPage = lazy(async () => ({ default: (await import('./pages/mcp')).MCPHubPage }));
 const SkillHubPage = lazy(async () => ({ default: (await import('./pages/skill')).SkillHubPage }));
-const PollsPage = lazy(async () => ({ default: (await import('./pages/polls')).PollsPage }));
 const ToChatPage = lazy(async () => ({ default: (await import('./pages/tochat')).ToChatPage }));
 
 function PageLoading() {
@@ -49,7 +47,8 @@ const router = createBrowserRouter([
 					{ path: '/skill', element: <Suspense fallback={<PageLoading />}><SkillHubPage /></Suspense> },
 					{ path: '/skill/:hubId', element: <Suspense fallback={<PageLoading />}><SkillHubPage /></Suspense> },
 					{ path: '/browser', element: <Suspense fallback={<PageLoading />}><BrowserPage /></Suspense> },
-					{ path: '/polls', element: <Suspense fallback={<PageLoading />}><PollsPage /></Suspense> },
+					{ path: '/music', element: <Navigate to="/chat" replace /> },
+					{ path: '/polls/*', element: <Navigate to="/chat" replace /> },
 					{ path: '/knowledge', element: <Suspense fallback={<PageLoading />}><KnowledgePage /></Suspense> },
 					{ path: '/knowledge/:kbId', element: <Suspense fallback={<PageLoading />}><KnowledgePage /></Suspense> },
 				],
@@ -59,7 +58,6 @@ const router = createBrowserRouter([
 ]);
 
 function Workspace() {
-	useEffect(() => installPollQueueSync(), []);
 	return (
 		<UploadProvider>
 			<RouterProvider router={router} />

@@ -32,7 +32,7 @@ try {
   let simulateInitialPages = true;
   let failNextPollLoad = false;
   let initialPolls;
-  await page.route('https://tora.ohfun.online/**', async route => {
+  await page.route('https://api.cogniticteam.com/**', async route => {
     const source = route.request();
     const url = new URL(source.url());
     if (url.pathname === '/polls' && source.method() === 'GET') {

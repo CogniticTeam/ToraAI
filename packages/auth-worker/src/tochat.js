@@ -3,7 +3,8 @@ import {readDoubaoWorkQuota,reserveDoubaoWorkStatements,settleDoubaoWorkStatemen
 import {readHumanVerification,publicHumanVerification,verificationRequired,trialTurnVerified,verifiedTrialStatement} from './human-verification.js';
 import {hasModelSubscription} from '../../core/src/model-access.js';
 import {readDeepSeekTrial,modelAccessAllowed,modelAccessFailure,reserveTrialStatement} from './model-access.js';
-import {DOUBAO_MODEL_ID, AUDIO_MIME_TYPES, VIDEO_MIME_TYPES} from '../../core/src/chat-media.js';
+import {AUDIO_MIME_TYPES, VIDEO_MIME_TYPES} from '../../core/src/chat-media.js';
+import {DOUBAO_MODEL_ID} from './official-model-defaults.js';
 import {generateOfficialTitle} from './tochat-title.js';
 import {normalizeTitleLanguage} from '../../core/src/title-rules.js';
 import { toResponsesBody, responsesChatStream } from './tochat-responses.js';

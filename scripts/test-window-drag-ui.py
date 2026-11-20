@@ -5,13 +5,13 @@ BASE = 'http://127.0.0.1:3218'
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True, executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
     page = browser.new_page(viewport={'width': 1440, 'height': 900}, locale='zh-CN')
-    page.add_init_script('const base=' + json.dumps(BASE) + ''';localStorage.setItem('server_url',base);localStorage.setItem('username','drag-test');localStorage.setItem('tora_auth_token','fixture-token');localStorage.setItem('tora_auth_api','https://tora.ohfun.online');localStorage.setItem('tora_language_preference','zh');localStorage.setItem('tora:first-run:intro:v1','1');localStorage.setItem('tora:first-run:tour:v1','1');localStorage.setItem('tora:first-use-consent:v1',JSON.stringify({terms:true,privacy:true,crossBorder:true}));''')
+    page.add_init_script('const base=' + json.dumps(BASE) + ''';localStorage.setItem('server_url',base);localStorage.setItem('username','drag-test');localStorage.setItem('tora_auth_token','fixture-token');localStorage.setItem('tora_auth_api','https://api.cogniticteam.com');localStorage.setItem('tora_language_preference','zh');localStorage.setItem('tora:first-run:intro:v1','1');localStorage.setItem('tora:first-run:tour:v1','1');localStorage.setItem('tora:first-use-consent:v1',JSON.stringify({terms:true,privacy:true,crossBorder:true}));''')
     def cloud(route):
-        path = route.request.url.split('ohfun.online', 1)[1].split('?')[0]
+        path = route.request.url.split('cogniticteam.com', 1)[1].split('?')[0]
         data = {'id':1,'username':'drag-test'} if path == '/auth/me' else {'enabled':True,'chatRemaining':150,'workDailyRemaining':1000000,'workWeeklyRemaining':10000000} if path == '/tochat/quota' else {'models':[]} if path == '/models' else {'messages':[],'unread':0} if path == '/account/messages' else {'settings':{'enabled':False,'showEntry':False},'polls':[]}
         route.fulfill(status=200, content_type='application/json', body=json.dumps(data))
-    page.route('https://tora.ohfun.online/**', cloud)
-    page.route_web_socket('wss://tora.ohfun.online/account/events*', lambda socket: socket.send(json.dumps({'type':'ready'})))
+    page.route('https://api.cogniticteam.com/**', cloud)
+    page.route_web_socket('wss://api.cogniticteam.com/account/events*', lambda socket: socket.send(json.dumps({'type':'ready'})))
     regions = []
     for route in ['/chat','/tochat','/schedule','/skill','/mcp','/browser','/polls','/channel','/credential','/knowledge']:
         page.goto(BASE + route, wait_until='domcontentloaded')

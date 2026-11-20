@@ -24,7 +24,7 @@ export const VOICE_DIR = join(TORA_DIR, 'voice');
 const CONFIG_FILE = join(VOICE_DIR, 'voice-config.json');
 
 const ASR_ENDPOINT = 'https://open.bigmodel.cn/api/paas/v4/audio/transcriptions';
-const TORA_ASR_GATEWAY = 'https://tora.ohfun.online/asr/v1';
+const TORA_ASR_GATEWAY = 'https://api.cogniticteam.com/asr/v1';
 const ASR_MODEL = 'glm-asr-2512';
 // 云端上限 30s，留 2s 余量
 const MAX_SECONDS = 28;

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo } from 'react';
 
 import { credentialApi, modelApi } from '@/api';
-import type { CredentialView, ModelCard } from '@/api';
+import type { ChatModelConfig, CredentialView, ModelCard } from '@/api';
 import { queryClient } from '@/lib/query-client';
 import { TOCHAT_MODELS, isBuiltinCredential, type BuiltinQuota, type ToChatModelAvailability } from '@/lib/tochatModels';
 import { fetchBuiltinQuota, syncBuiltinModelAuth } from '@/utils/modelSync';
@@ -12,6 +12,19 @@ export interface CredentialWithModels {
 	models: ModelCard[];
 	quota?: BuiltinQuota;
 	unavailable?: boolean;
+}
+
+export function isChatModelAvailable(groups: Record<string, CredentialWithModels[]>, model: ChatModelConfig): boolean {
+	if (!model.credential_id) return true;
+	const items = Object.hasOwn(groups, model.type) ? groups[model.type] : undefined;
+	if (!Array.isArray(items)) return false;
+	const item = items.find(candidate => candidate.credential.id === model.credential_id);
+	if (!item) return false;
+	const source = item.credential.data?.source;
+	if (source === 'models-config' || source === 'codex-subscription' || isBuiltinCredential(model.credential_id)) {
+		return !item.unavailable && item.models.some(candidate => candidate.name === model.model);
+	}
+	return true;
 }
 
 export function quotaModelCards(models:ToChatModelAvailability[]):ModelCard[]{
@@ -28,21 +41,33 @@ export function quotaModelCards(models:ToChatModelAvailability[]):ModelCard[]{
  * under the shared default window and re-fetched on demand through
  * `refetch`, which is what the "credential just added" trigger calls.
  */
-async function fetchGroups(): Promise<Record<string, CredentialWithModels[]>> {
-	await syncBuiltinModelAuth();
+async function fetchGroups(includeBuiltin = true): Promise<Record<string, CredentialWithModels[]>> {
+	// A retired/offline official endpoint must not hide the user's custom models.
+	let builtinAuthReady = true;
+	if (includeBuiltin) try { await syncBuiltinModelAuth(); } catch { builtinAuthReady = false; }
 	const { credentials } = await credentialApi.list();
 	const result: Record<string, CredentialWithModels[]> = {};
+	// 同一协议的凭证可能使用不同端点，其可调参数不能共用。
+	const modelRequests = new Map<string, Promise<ModelCard[]>>();
 
 	await Promise.all(
 		credentials.map(async (credential) => {
+			if (!includeBuiltin && isBuiltinCredential(credential.id)) return;
 			const type = credential.data.type as string | undefined;
 			if (!type) return;
 			if (!result[type]) result[type] = [];
 			let models: ModelCard[] = [];
 			try {
-				models = (await modelApi.list(type)).models;
+				const requestKey = `${type}:${credential.id}`;
+				let request = modelRequests.get(requestKey);
+				if (!request) {
+					request = modelApi.list(type, credential.id).then(response => response.models);
+					modelRequests.set(requestKey, request);
+				}
+				models = await request;
 				let quota: BuiltinQuota | undefined;
 				if (isBuiltinCredential(credential.id)) {
+					if (!builtinAuthReady) throw new Error('Built-in model auth unavailable');
 					const response = await fetchBuiltinQuota(AbortSignal.timeout(15000));
 					if (!response.ok) throw new Error('Built-in models unavailable');
 					quota = await response.json() as BuiltinQuota;
@@ -54,7 +79,7 @@ async function fetchGroups(): Promise<Record<string, CredentialWithModels[]>> {
 				result[type].push({
 					credential,
 					quota,
-					models: models.sort((a, b) =>
+					models: [...models].sort((a, b) =>
 						isBuiltinCredential(credential.id) ? TOCHAT_MODELS.findIndex(model => model.id === a.name) - TOCHAT_MODELS.findIndex(model => model.id === b.name) : b.name.localeCompare(a.name, undefined, { numeric: true }),
 					),
 				});
@@ -82,10 +107,10 @@ export function modelGroupsWithQuota(groups: Record<string, CredentialWithModels
 	})]));
 }
 
-export function useAvailableModels(live = false) {
+export function useAvailableModels(live = false, includeBuiltin = false) {
 	const { data, isPending, error, refetch } = useQuery({
-		queryKey: AVAILABLE_MODELS_KEY,
-		queryFn: fetchGroups,
+		queryKey: includeBuiltin ? AVAILABLE_MODELS_KEY : [...AVAILABLE_MODELS_KEY,'custom'],
+		queryFn: () => fetchGroups(includeBuiltin),
 	});
 	useEffect(() => {
 		const changed = () => { void queryClient.invalidateQueries({ queryKey: AVAILABLE_MODELS_KEY }); void queryClient.invalidateQueries({queryKey:['builtin-quota']}); };
@@ -95,7 +120,7 @@ export function useAvailableModels(live = false) {
 	}, []);
 	const builtin = Object.values(data ?? {}).flat().find(item => isBuiltinCredential(item.credential.id));
 	const liveQuota=useQuery({queryKey:['builtin-quota'],enabled:!!builtin,refetchInterval:live?2000:30000,queryFn:async()=>{const response=await fetchBuiltinQuota(AbortSignal.timeout(15000));if(!response.ok)throw Error('Built-in models unavailable');return await response.json() as BuiltinQuota;}});
-	const quota = liveQuota.data ?? builtin?.quota;
+	const quota = includeBuiltin ? liveQuota.data ?? builtin?.quota : undefined;
 	const unavailable = !!builtin && (!!error || liveQuota.isError || !quota?.enabled || (!liveQuota.data && !!builtin.unavailable));
 	const groups = useMemo(()=>modelGroupsWithQuota(data ?? {},quota,unavailable),[data,quota,unavailable]);
 	const hasBuiltin = !!builtin, refetchQuota = liveQuota.refetch;

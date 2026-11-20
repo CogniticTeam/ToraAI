@@ -6,13 +6,13 @@ with sync_playwright() as p:
  browser=p.chromium.launch(headless=True,executable_path='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome')
  page=browser.new_page(viewport={'width':1440,'height':960},locale='zh-CN')
  errors=[];page.on('pageerror',lambda error:errors.append(str(error)))
- page.add_init_script('const base='+json.dumps(BASE)+''';localStorage.setItem('server_url',base);localStorage.setItem('username','mode-test');localStorage.setItem('tora_auth_token','tochat-test-login');localStorage.setItem('tora_auth_api','https://tora.ohfun.online');localStorage.setItem('tora_language_preference','zh');localStorage.setItem('tora:first-run:intro:v1','1');localStorage.setItem('tora:first-run:tour:v1','1');localStorage.setItem('tora:first-use-consent:v1',JSON.stringify({terms:true,privacy:true,crossBorder:true}));''')
+ page.add_init_script('const base='+json.dumps(BASE)+''';localStorage.setItem('server_url',base);localStorage.setItem('username','mode-test');localStorage.setItem('tora_auth_token','tochat-test-login');localStorage.setItem('tora_auth_api','https://api.cogniticteam.com');localStorage.setItem('tora_language_preference','zh');localStorage.setItem('tora:first-run:intro:v1','1');localStorage.setItem('tora:first-run:tour:v1','1');localStorage.setItem('tora:first-use-consent:v1',JSON.stringify({terms:true,privacy:true,crossBorder:true}));''')
  def cloud(route):
-  path=route.request.url.split('ohfun.online',1)[1].split('?')[0]
+  path=route.request.url.split('cogniticteam.com',1)[1].split('?')[0]
   body={'id':1,'username':'mode-test'} if path=='/auth/me' else {'enabled':True,'chatRemaining':150,'workDailyRemaining':1000000,'workWeeklyRemaining':10000000} if path=='/tochat/quota' else {'models':[]} if path=='/models' else {'messages':[],'unread':0} if path=='/account/messages' else {}
   route.fulfill(status=200,content_type='application/json',body=json.dumps(body))
- page.route('https://tora.ohfun.online/**',cloud)
- page.route_web_socket('wss://tora.ohfun.online/account/events*',lambda socket:socket.send(json.dumps({'type':'ready'})))
+ page.route('https://api.cogniticteam.com/**',cloud)
+ page.route_web_socket('wss://api.cogniticteam.com/account/events*',lambda socket:socket.send(json.dumps({'type':'ready'})))
  page.goto(BASE+'/tochat',wait_until='networkidle')
  page.get_by_text('随时可以开始。',exact=True).wait_for()
  assert page.locator('.composer-context').count()==0

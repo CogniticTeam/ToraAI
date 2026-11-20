@@ -33,12 +33,12 @@ try {
 			openFolderDialog: async () => null, onMenuCommand: () => () => {}, getAppVersion: () => '1.0.0',
 		};
 	});
-	await page.route('https://tora.ohfun.online/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'browser-electron-test', username: 'browser-electron-test' }) }));
-	await page.route('https://tora.ohfun.online/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
-	await page.route('https://tora.ohfun.online/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
-	await page.route('https://tora.ohfun.online/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
-	await page.route('https://tora.ohfun.online/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'browser-electron-ticket' }) }));
-	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.route('https://api.cogniticteam.com/auth/me', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'browser-electron-test', username: 'browser-electron-test' }) }));
+	await page.route('https://api.cogniticteam.com/models', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ models: [] }) }));
+	await page.route('https://api.cogniticteam.com/polls/config', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true, entryVisible: true }) }));
+	await page.route('https://api.cogniticteam.com/account/messages', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ messages: [], unread: 0 }) }));
+	await page.route('https://api.cogniticteam.com/account/events-ticket', route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ticket: 'browser-electron-ticket' }) }));
+	await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);

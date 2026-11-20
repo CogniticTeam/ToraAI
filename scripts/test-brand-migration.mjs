@@ -27,7 +27,7 @@ test('迁移主题、登录与同意设置，不删除历史键', () => {
   assert.equal(values.get('tora.theme'), 'dark');
   assert.equal(values.get('tora_token'), 'fixture-token');
   assert.equal(values.get('tora:first-use-consent:v1'), '{"accepted":true}');
-  assert.equal(values.get('tora_auth_api'), 'https://tora.ohfun.online');
+  assert.equal(values.get('tora_auth_api'), 'https://api.cogniticteam.com');
   assert.equal(values.get('cocode.theme'), 'dark');
   assert.equal(values.get('other-app.theme'), 'light');
 });
@@ -38,6 +38,12 @@ test('重复迁移不覆盖 Tora 设置或用户自定义接口', () => {
   ]);
   assert.equal(values.get('tora.theme'), 'light');
   assert.equal(values.get('tora_auth_api'), 'https://custom.example.test');
+});
+test('已有 Tora 官方地址迁往新 API，保留旧存储键及自定义地址',()=>{
+ for(const origin of ['https://tora.ohfun.online','https://cocode.ohfun.online/']){
+  const values=migrate([['tora_auth_api',origin]]);assert.equal(values.get('tora_auth_api'),'https://api.cogniticteam.com');
+ }
+ for(const origin of ['https://private.example.test','https://tora.ohfun.online.evil.example'])assert.equal(migrate([['tora_auth_api',origin]]).get('tora_auth_api'),origin);
 });
 test('存储被限制时仍能启动', () => {
   assert.doesNotThrow(() => vm.runInNewContext(code, {

@@ -1,6 +1,6 @@
 // Claude 原生 Messages API 适配器。Agent 内部仍使用 OpenAI 风格消息，
 // 仅在边界转换输入、流式事件和工具调用；其他模型不经过此文件。
-import { modelFetch, modelConnectionError } from './model-transport.js';
+import { contextLengthError, modelFetch, modelConnectionError } from './model-transport.js';
 
 function clean(value) {
   const text = String(value ?? '');
@@ -183,10 +183,24 @@ function nativeStream(res, { signal, onDelta, onThinking }) {
     } catch (error) {
       if (signal?.aborted) throw Object.assign(new Error('已中止'), { code: 'ABORTED' });
       throw error;
-    } finally { reader.releaseLock(); }
+    } finally {
+      await reader.cancel().catch(() => {});
+      reader.releaseLock();
+    }
     if (!stopped) throw new Error('Claude 流式响应意外中断');
     return nativeResult([...blocks.entries()].sort((a, b) => a[0] - b[0]).map(([, block]) => block), usage);
   })();
+}
+
+export function anthropicThinkingParameters(model) {
+  const adaptive = /^claude-(?:(?:opus|sonnet)-(?:4-[6-9](?:[.-]|$)|[5-9](?:[.-]|$))|(?:fable|mythos)-)/i.test(model);
+  const alwaysThinking = /^claude-(?:opus-5-5(?:[.-]|$)|fable-|mythos-)/i.test(model);
+  if (adaptive) return {
+    ...(!alwaysThinking ? { thinking: { type: 'boolean', default: true } } : {}),
+    thinkingEffort: { type: 'string', enum: ['low', 'medium', 'high'], default: 'high' },
+  };
+  return /^claude-(?:3-7|(?:opus|sonnet|haiku)-4-[0-5])(?:[.-]|$)/i.test(model)
+    ? { thinking: { type: 'boolean', default: true } } : {};
 }
 
 export async function anthropicCompletion(client, { messages, tools, signal, onDelta, onThinking }) {
@@ -207,14 +221,12 @@ export async function anthropicCompletion(client, { messages, tools, signal, onD
     if (body.tools.length) body.tool_choice = { type: 'auto' };
     else delete body.tools;
   }
-  const adaptive = /^claude-(?:(?:opus|sonnet)-(?:4-[6-9](?:[.-]|$)|[5-9](?:[.-]|$))|(?:fable|mythos)-)/i.test(client.model);
-  const alwaysThinking = /^claude-(?:opus-5-5(?:[.-]|$)|fable-|mythos-)/i.test(client.model);
+  const thinkingParameters = anthropicThinkingParameters(client.model);
+  const adaptive = !!thinkingParameters.thinkingEffort;
   if (client.thinking) {
     if (adaptive) body.thinking = { type: 'adaptive' };
-    else if (/^claude-(?:3-7|(?:opus|sonnet|haiku)-4-[0-5])(?:[.-]|$)/i.test(client.model)) {
-      body.thinking = { type: 'enabled', budget_tokens: 2048 };
-    }
-  } else if (adaptive && !alwaysThinking) body.thinking = { type: 'disabled' };
+    else if (thinkingParameters.thinking) body.thinking = { type: 'enabled', budget_tokens: 2048 };
+  } else if (adaptive && thinkingParameters.thinking) body.thinking = { type: 'disabled' };
   if (adaptive) body.output_config = { effort: client.thinking === false ? 'low' :
     (['low', 'medium', 'high'].includes(client.thinkingEffort) ? client.thinkingEffort : 'high') };
   if (client.temperature != null && !body.thinking) body.temperature = Math.max(0, Math.min(1, Number(client.temperature)));
@@ -241,6 +253,8 @@ export async function anthropicCompletion(client, { messages, tools, signal, onD
       try { const parsed = JSON.parse(raw); detail = String(parsed.error?.message || parsed.message || raw); }
       catch { detail = raw; }
     } catch { /* 无错误正文 */ }
+    const lengthError = contextLengthError(res.status, detail);
+    if (lengthError) throw lengthError;
     if ((res.status === 400 || res.status === 422) && /tool/i.test(detail)) {
       const error = new Error(`Claude 不支持当前工具调用：${detail.slice(0, 300)}`);
       error.code = 'TOOL_UNSUPPORTED';

@@ -47,7 +47,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
     inFlight.current.add(key);
     setTranslations(previous => ({ ...previous, [key]: { loading: true } }));
     try {
-      const response = await cloudFetch('/account/messages/translate', {
+      const response = await cloudFetch('/account/messages/translate?platform=desktop', {
         method: 'POST', body: JSON.stringify({ id: message.id, targetLanguage: translationLanguage }), signal: AbortSignal.timeout(75000),
       });
       const data = await response.json();
@@ -75,7 +75,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
     const version = ++loadVersion.current;
     setLoading(true); setError('');
     try {
-      const response = await cloudFetch('/account/messages?offset=' + (more ? offset : 0));
+      const response = await cloudFetch('/account/messages?platform=desktop&offset=' + (more ? offset : 0));
       const data = await response.json();
       if (version !== loadVersion.current) return;
       if (!response.ok) throw new Error(data.detail || t('inbox.loadError'));
@@ -85,7 +85,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
       if (current) {
         let updated = data.messages.find((item: Message) => item.id === current.id) as Message | undefined;
         if (!updated) {
-          const detail = await cloudFetch('/account/messages/' + encodeURIComponent(current.id));
+          const detail = await cloudFetch('/account/messages/' + encodeURIComponent(current.id) + '?platform=desktop');
           if (version !== loadVersion.current) return;
           if (detail.status === 404) {
             recalled.current.add(current.id);
@@ -106,7 +106,7 @@ export function MessagesDialog({ onClose }: { onClose: () => void }) {
     setSelected(message);
     if (message.read_at) return;
     try {
-      const response = await cloudFetch('/account/messages/read', { method: 'POST', body: JSON.stringify({ ids: [message.id] }) });
+      const response = await cloudFetch('/account/messages/read?platform=desktop', { method: 'POST', body: JSON.stringify({ ids: [message.id] }) });
       if (!response.ok) throw new Error(t('inbox.readError'));
       setMessages(items => items.map(item => item.id === message.id ? { ...item, read_at: new Date().toISOString() } : item));
     } catch { setError(t('inbox.readError')); }

@@ -1,11 +1,12 @@
 // ASAPI 存储：agents / credentials / sessions（~/.tora/asapi/）
 // sessions 双轨存储：internal（OpenAI 格式，供 runAgent/压缩治理）+ display（agentscope Msg[]，供前端）
 import { readFileSync, writeFileSync, readdirSync, unlinkSync, mkdirSync, existsSync, statSync, renameSync, copyFileSync, rmSync } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, isAbsolute, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { loadConfig, saveConfig, TORA_DIR } from '../config.js';
 import { projectSessionEvents, readSessionEvents, sessionEventPath } from './session-events.js';
+import { clearSessionToolOutputs, copySessionToolOutputs, deleteSessionToolOutputs } from './tool-outputs.js';
 import { LEGACY_AGENT_NAME, PREVIOUS_AGENT_NAME } from '../legacy-migration.js';
 // 规则里的工具名必须归一化到 PascalCase，否则 decidePermission 查表时
 // 对不上（用户从 UI 存 "bash"，agent 里问的是 "Bash"）。builtin.js 不反向
@@ -61,45 +62,68 @@ function writeJson(path, data) {
 }
 
 // ---------- Agents ----------
+function defaultAgent() {
+  return {
+    id: uid(), created_at: now(), updated_at: now(), user_id: 'local',
+    editable: false, builtin: 'covey', role_version: 2,
+    data: {
+      name: 'Covey', avatar: null, personality: '', chat_model_config: null, system_prompt: '',
+      context_config: { trigger_ratio: 0.8, reserve_ratio: 0.2, tool_result_limit: 6000 },
+      react_config: { max_iters: 40, stop_on_reject: true },
+      review_config: { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true },
+      invite_config: { invitable: false, invite_description: null },
+    },
+  };
+}
+
 export function listAgents() {
   let agents = readJson(AGENTS_PATH, null);
-  if (!agents) {
-    // 首次使用自动创建默认 Agent
-    const id = uid();
-    agents = [{
-      id,
-      created_at: now(),
-      updated_at: now(),
-      user_id: 'local',
-      editable: true,
-      data: {
-        name: 'Corey',
-        system_prompt: '', // 空 = 使用 tora 内置紧凑系统提示词
-        context_config: { trigger_ratio: 0.8, reserve_ratio: 0.2, tool_result_limit: 6000 },
-        react_config: { max_iters: 40, stop_on_reject: true },
-        // 高成本的 critic 默认关闭；用户可在 Agent 表单按 Agent 开启。
-        review_config: { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true },
-        invite_config: { invitable: false, invite_description: null }
-      }
-    }];
-    writeJson(AGENTS_PATH, agents);
-  } else {
-    // 迁移：历史默认 Agent → 统一改名 Corey。
-    let migrated = false;
-    for (const a of agents) {
-      if (a.user_id === 'local' && [LEGACY_AGENT_NAME, PREVIOUS_AGENT_NAME, 'Tora'].includes(a.data?.name) && !a.data.system_prompt) {
-        a.data.name = 'Corey';
-        a.updated_at = now();
-        migrated = true;
-      }
-      if (!a.data?.review_config) {
-        a.data.review_config = { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true };
-        a.updated_at = now();
-        migrated = true;
-      }
-    }
-    if (migrated) writeJson(AGENTS_PATH, agents);
+  let migrated = false;
+  if (!agents?.length) {
+    agents = [defaultAgent()];
+    migrated = true;
   }
+  if (!agents.some(agent => agent.builtin === 'covey')) {
+    const first = agents[0];
+    // 旧版无来源标记，仅迁移未定制的预置角色，避免锁定同名自建角色。
+    if (first.user_id === 'local' && ['Corey', 'Covey', LEGACY_AGENT_NAME, PREVIOUS_AGENT_NAME, 'Tora'].includes(first.data?.name)
+      && !first.data.system_prompt && !first.data.personality && !first.data.avatar) {
+      first.builtin = 'covey';
+      first.data.name = 'Covey';
+      first.editable = false;
+      first.updated_at = now();
+    } else agents.unshift(defaultAgent());
+    migrated = true;
+  }
+  for (const agent of agents) {
+    if (agent.builtin === 'covey' && (agent.editable !== false || agent.data.name !== 'Covey')) {
+      agent.editable = false;
+      agent.data.name = 'Covey';
+      migrated = true;
+    }
+    if (typeof agent.data.name !== 'string' || !agent.data.name.trim()) {
+      agent.data.name = 'Agent';
+      migrated = true;
+    }
+    if (agent.data.system_prompt !== undefined && typeof agent.data.system_prompt !== 'string') {
+      agent.data.system_prompt = '';
+      migrated = true;
+    }
+    if (agent.role_version !== 2) {
+      agent.role_version = 2;
+      migrated = true;
+    }
+    if (!agent.data.review_config) {
+      agent.data.review_config = { enabled: false, max_rounds: 1, min_tool_calls: 1, only_after_mutation: true };
+      migrated = true;
+    }
+  }
+  const builtinIndex = agents.findIndex(agent => agent.builtin === 'covey');
+  if (builtinIndex > 0) {
+    agents.unshift(...agents.splice(builtinIndex, 1));
+    migrated = true;
+  }
+  if (migrated) writeJson(AGENTS_PATH, agents);
   return agents;
 }
 
@@ -110,9 +134,12 @@ export function getAgent(id) {
 export function createAgent(data) {
   const agents = listAgents();
   const agent = {
-    id: uid(), created_at: now(), updated_at: now(), user_id: 'local', editable: true,
+    id: uid(), created_at: now(), updated_at: now(), user_id: 'local', editable: true, role_version: 2,
     data: {
       name: data.name || 'Agent',
+      avatar: data.avatar || null,
+      personality: data.personality || '',
+      chat_model_config: data.chat_model_config ? structuredClone(data.chat_model_config) : null,
       system_prompt: data.system_prompt || '',
       context_config: { trigger_ratio: 0.8, reserve_ratio: 0.2, tool_result_limit: 6000, ...(data.context_config || {}) },
       react_config: { max_iters: 40, stop_on_reject: true, ...(data.react_config || {}) },
@@ -129,8 +156,11 @@ export function updateAgent(id, patch) {
   const agents = listAgents();
   const i = agents.findIndex((a) => a.id === id);
   if (i < 0) return null;
+  if (!agents[i].editable) throw Object.assign(new Error('角色为只读'), { status: 403 });
   const data = { ...agents[i].data };
-  for (const k of ['name', 'system_prompt']) if (patch[k] !== undefined) data[k] = patch[k];
+  for (const k of ['name', 'system_prompt', 'avatar', 'personality', 'chat_model_config']) {
+    if (patch[k] !== undefined) data[k] = structuredClone(patch[k]);
+  }
   for (const k of ['context_config', 'react_config', 'review_config', 'invite_config']) {
     if (patch[k] !== undefined) data[k] = { ...data[k], ...patch[k] };
   }
@@ -140,7 +170,9 @@ export function updateAgent(id, patch) {
 }
 
 export function deleteAgent(id) {
-  const agents = listAgents().filter((a) => a.id !== id);
+  const current = listAgents();
+  if (current.some(agent => agent.id === id && !agent.editable)) throw Object.assign(new Error('角色为只读'), { status: 403 });
+  const agents = current.filter((a) => a.id !== id);
   writeJson(AGENTS_PATH, agents);
   // 该 agent 的会话一并删除
   for (const s of listSessionRecords().filter((s) => s.agent_id === id)) deleteSession(s.id);
@@ -213,6 +245,27 @@ export function getSkill(id) {
   return readSkillsDb().skills.find((s) => s.id === id) || null;
 }
 
+export function setSkillEnabled(id, enabled) {
+  const db = readSkillsDb();
+  const skill = db.skills.find(row => row.id === id);
+  if (!skill) return null;
+  if ((skill.enabled !== false) !== enabled) {
+    skill.enabled = enabled;
+    writeSkillsDb(db);
+  }
+  const { markdown, ...view } = skill;
+  return { ...view, enabled };
+}
+
+function requireUniqueSkillName(db, name) {
+  const conflict = db.skills.find(skill => skill.name === name);
+  if (!conflict) return;
+  const err = new Error('name conflict');
+  err.code = 'NAME_CONFLICT';
+  err.existing = conflict;
+  throw err;
+}
+
 /**
  * Install 落盘：把 hub card 转成 SkillView，自动拉一次 detail 拿 markdown（best-effort）。
  * 失败：name 冲突 → 抛 'NAME_CONFLICT'；其他 → 'CONFLICT'。
@@ -220,21 +273,16 @@ export function getSkill(id) {
  * @returns {{ created: boolean, skill: SkillView & { markdown?: string|null } }}
  */
 export async function installSkill({ hub_id, card_id, name, display_name, description, description_zh, tags, author, icon_url, url, version, fetchMarkdown }) {
-  const db = readSkillsDb();
   const desiredName = name || card_id || 'skill';
-  // name 唯一性：同一 hub 内的 name 不冲突；不同 hub 可以重名
-  const conflict = db.skills.find((s) => s.name === desiredName);
-  if (conflict) {
-    const err = new Error('name conflict');
-    err.code = 'NAME_CONFLICT';
-    err.existing = conflict;
-    throw err;
-  }
+  requireUniqueSkillName(readSkillsDb(), desiredName);
 
   let markdown = null;
   if (typeof fetchMarkdown === 'function') {
     try { markdown = await fetchMarkdown(); } catch { /* markdown 拉不到不阻塞安装 */ }
   }
+
+  const db = readSkillsDb();
+  requireUniqueSkillName(db, desiredName);
 
   const skill = {
     id: uid(),
@@ -272,13 +320,16 @@ export function deleteSkill(id) {
  * 若已有 markdown 直接返回；若网络不可达返回现有库的（可能为 null）。
  */
 export async function loadSkillMarkdown(id, fetcher) {
-  const db = readSkillsDb();
-  const i = db.skills.findIndex((s) => s.id === id);
-  if (i < 0) return null;
-  if (db.skills[i].markdown) return db.skills[i].markdown;
+  const skill = getSkill(id);
+  if (!skill) return null;
+  if (skill.markdown) return skill.markdown;
   if (typeof fetcher !== 'function') return null;
   try {
     const md = await fetcher();
+    const db = readSkillsDb();
+    const i = db.skills.findIndex(row => row.id === id);
+    if (i < 0) return null;
+    if (db.skills[i].markdown) return db.skills[i].markdown;
     if (typeof md === 'string' && md.length > 0) {
       db.skills[i] = { ...db.skills[i], markdown: md };
       writeSkillsDb(db);
@@ -300,12 +351,12 @@ export async function loadSkillMarkdown(id, fetcher) {
  * 失败：目录不存在 / 没有 SKILL.md / name 冲突，都抛带 code 的 Error。
  */
 export function importSkillFromLocal({ path } = {}) {
-  if (!path || typeof path !== 'string' || !path.startsWith('/')) {
+  if (typeof path !== 'string' || !isAbsolute(path)) {
     const err = new Error('需要本地文件夹的绝对路径');
     err.code = 'INVALID_PATH';
     throw err;
   }
-  const root = path.replace(/\/+$/, '');
+  const root = resolve(path);
   let stat;
   try { stat = statSync(root); } catch {
     const err = new Error(`目录不存在：${root}`);
@@ -339,13 +390,7 @@ export function importSkillFromLocal({ path } = {}) {
   const rawName = (fm.name || base).trim().replace(/\s+/g, '-');
   const name = rawName.replace(/[^\w.-]/g, '-').slice(0, 64) || base;
   const db = readSkillsDb();
-  const conflict = db.skills.find((sk) => sk.name === name);
-  if (conflict) {
-    const err = new Error('name conflict');
-    err.code = 'NAME_CONFLICT';
-    err.existing = conflict;
-    throw err;
-  }
+  requireUniqueSkillName(db, name);
 
   const tags = (fm.tags ? String(fm.tags).split(/[,，\s]+/).filter(Boolean) : []).slice(0, 8);
   const skill = {
@@ -426,7 +471,7 @@ export function createSessionRecord({ agent_id, chat_model_config, fallback_chat
     config: {
       name: '',
       naming: { auto: true },
-      chat_model_config: chat_model_config || defaultModelConfig(toraCfg),
+      chat_model_config: structuredClone(chat_model_config || getAgent(agent_id)?.data.chat_model_config || defaultModelConfig(toraCfg)),
       fallback_chat_model_config: fallback_chat_model_config || null,
       tts_model_config: null,
       knowledge_config: null,
@@ -473,6 +518,29 @@ export function loadSessionRecord(id) {
   }
 }
 
+/** Permission updates write the JSON snapshot atomically. Transcript events do not change state. */
+export function createSessionPermissionReader(id) {
+  const path = sessionPath(id);
+  let revision = null;
+  let mode = 'default';
+  return () => {
+    try {
+      const stat = statSync(path, { bigint: true });
+      const current = `${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
+      if (current !== revision) {
+        const { state } = JSON.parse(readFileSync(path, 'utf8'));
+        mode = state?.permission_mode ?? state?.permission_context?.mode ?? 'default';
+        revision = current;
+      }
+      return mode;
+    } catch {
+      revision = null;
+      mode = 'default';
+      return mode;
+    }
+  };
+}
+
 export function saveSessionRecord(record) {
   try {
     const { events, nextOffset } = readSessionEvents(record.id, record.__journal_offset || 0);
@@ -498,6 +566,7 @@ export function deleteSession(id) {
   const journal = sessionEventPath(id);
   if (existsSync(journal)) unlinkSync(journal);
   rmSync(join(FORK_SNAPSHOTS_DIR, id), { recursive: true, force: true });
+  deleteSessionToolOutputs(id);
   return true;
 }
 
@@ -586,6 +655,13 @@ export function forkSession(id, { upto, name } = {}) {
   record.internal = (snapshot?.internal ?? internal).map((m) => JSON.parse(JSON.stringify(m)));
   try {
     saveSessionRecord(record);
+    const references = new Set(record.internal.map(message => message.tool_metadata?.tool_output_id).filter(Boolean));
+    for (const message of record.display) {
+      for (const block of message.content ?? []) {
+        if (block.type === 'tool_result' && block.metadata?.tool_output_id) references.add(block.metadata.tool_output_id);
+      }
+    }
+    copySessionToolOutputs(id, record.id, references);
     for (const message of record.display) {
       if (message.role !== 'assistant' || !message.id) continue;
       const source = forkSnapshotPath(id, message.id);
@@ -697,6 +773,7 @@ export function clearPermissionRules() {
     }
   }
   rmSync(FORK_SNAPSHOTS_DIR, { recursive: true, force: true });
+  clearSessionToolOutputs();
   const credentials = listCredentials().length;
   if (existsSync(CREDS_PATH)) { try { unlinkSync(CREDS_PATH); } catch { /* 忽略 */ } }
   const agents = listAgents().length;

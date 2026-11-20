@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { pathToFileURL } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
@@ -35,6 +36,9 @@ export async function validate(taskId, cwd) {
     return;
   }
   if (taskId === 'red-to-green') {
+    const fixtures = JSON.parse(readFileSync(new URL('./tasks.json', import.meta.url), 'utf8'));
+    const original = fixtures.find(task => task.id === taskId).files['test/display-name.test.mjs'];
+    assert.ok(readFileSync(join(cwd, 'test', 'display-name.test.mjs'), 'utf8').includes(original.trim()), '原有测试必须保留');
     const { formatDisplayName } = await source(cwd, 'display-name.mjs');
     for (const [input, expected] of [[null, '访客'], [undefined, '访客'], ['', '访客'], ['  \t  ', '访客'], ['  张\t三\n四  ', '张 三 四']]) {
       assert.equal(formatDisplayName(input), expected, `formatDisplayName(${JSON.stringify(input)})`);
@@ -44,4 +48,14 @@ export async function validate(taskId, cwd) {
     return;
   }
   throw new Error(`未知任务：${taskId}`);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  try {
+    await validate(process.argv[2], process.cwd());
+    console.log('\nTORA_EVAL_PASSED');
+  } catch (error) {
+    console.error(error.message);
+    process.exitCode = 1;
+  }
 }

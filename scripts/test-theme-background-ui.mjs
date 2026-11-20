@@ -42,10 +42,10 @@ try {
 		'polls/config': { enabled: true, entryVisible: false },
 		'account/messages': { messages: [], unread: 0 },
 		'account/events-ticket': { ticket: 'theme-test-ticket' },
-	})) await page.route(`https://tora.ohfun.online/${route}`, response => response.fulfill({
+	})) await page.route(`https://api.cogniticteam.com/${route}`, response => response.fulfill({
 		status: 200, contentType: 'application/json', body: JSON.stringify(payload),
 	}));
-	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => {
+	await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => {
 		socket.onMessage(message => { if (message === 'ping') socket.send('pong'); });
 	});
 	await page.evaluate(serverUrl => {

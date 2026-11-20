@@ -48,6 +48,12 @@ test('archive entries cannot escape, omit or replace signed assets, and damaged 
 test('a newer packaged build wins over older cached frontend assets',async t=>{
  const f=await fixture(t);await f.updater.check();await f.updater.activate();await f.updater.confirm('ui-2');const restarted=createUIUpdater({...f.options,bundledBuild:10});await restarted.initialize();assert.equal(restarted.info().active,'bundled');assert.equal((await restarted.check()).staged,null);
 });
+
+test('a staged download older than the bundled UI cannot restore a retired page',async t=>{
+ const f=await fixture(t);await f.updater.check();assert.equal(f.updater.info().staged,'ui-2');
+ const restarted=createUIUpdater({...f.options,bundledBuild:10});await restarted.initialize();
+ assert.equal(restarted.info().staged,null);assert.equal(restarted.info().active,'bundled');assert.equal(await restarted.activate(),null);
+});
 test('activation requires renderer checkpoint plus core idle lock; boot nonce, timeout and rollback are enforced',async t=>{
  const f=await fixture(t);await f.updater.check();let busy=true,held=false,reloads=0;const messages=[],timers=new Map();let seq=0;
  const win={isDestroyed:()=>false,webContents:{send:(...data)=>messages.push(data),reload:()=>reloads++}};

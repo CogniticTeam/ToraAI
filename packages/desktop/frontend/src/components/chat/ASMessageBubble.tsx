@@ -333,12 +333,15 @@ function AudioInlineControl({ block }: { block: DataBlock }) {
  */
 function CopyButton({ text }: { text: string }) {
 	const { t } = useTranslation();
-	const [copied, setCopied] = useState(false);
+	const [copySequence, flashCopied] = useState(0);
+	useEffect(() => {
+		if (!copySequence) return;
+		const timer = window.setTimeout(() => flashCopied(0), 1600);
+		return () => window.clearTimeout(timer);
+	}, [copySequence]);
 
 	const handleCopy = async () => {
-		if (!(await copyToClipboard(text))) return;
-		setCopied(true);
-		setTimeout(() => setCopied(false), 2000);
+		if (await copyToClipboard(text)) flashCopied(value => value + 1);
 	};
 
 	return (
@@ -350,7 +353,7 @@ function CopyButton({ text }: { text: string }) {
 			aria-label={t('messageBubble.copy')}
 			onClick={handleCopy}
 		>
-			{copied ? <Check /> : <Copy />}
+			{copySequence ? <Check key={copySequence} className="motion-safe:animate-[tora-copy-confirm_180ms_ease-out_both]" /> : <Copy />}
 		</Button>
 	);
 }
@@ -364,11 +367,11 @@ function MessageTimestamp({ value }: { value: string }) {
 	return <time dateTime={value} className="tabular-nums text-[11px] font-normal">{hour}:{minute}</time>;
 }
 
-/** 首个回复事件抵达前的紧凑状态提示，放在用户消息的时间之前。 */
+/** 首个回复内容抵达前，在 AI 正文位置展示等待状态。 */
 function ThinkingStatus() {
 	const { t } = useTranslation();
 	return (
-		<span className="inline-flex items-center gap-1.5 text-[11px] leading-none text-muted-foreground" role="status" aria-live="polite">
+		<span className="inline-flex items-center gap-1.5 self-start py-2 text-sm text-muted-foreground" role="status" aria-live="polite">
 			<span className="flex gap-0.5" aria-hidden>
 				<span className="size-1 animate-pulse rounded-full bg-current [animation-delay:-300ms]" />
 				<span className="size-1 animate-pulse rounded-full bg-current [animation-delay:-150ms]" />
@@ -377,6 +380,11 @@ function ThinkingStatus() {
 			{t('chat.thinking')}
 		</span>
 	);
+}
+
+/** REPLY_START 尚未创建 assistant 消息时，先占据同样的回复位置。 */
+export function AssistantThinkingMessage() {
+	return <Message align="start" data-role="assistant"><MessageContent><ThinkingStatus /></MessageContent></Message>;
 }
 
 const MCP_TOOL_PREFIX = 'mcp__';
@@ -533,7 +541,7 @@ interface MessageBubbleProps {
 	isGenerating?: boolean;
 	/** 由消息列表统一读取，避免长对话中每个气泡各自订阅技能查询。 */
 	skillLibrary: SkillView[];
-	/** 首个 assistant 内容块到达前，紧贴用户消息展示的等待状态。 */
+	/** 首个 assistant 内容块到达前，在 AI 回复区域展示等待状态。 */
 	showThinking?: boolean;
 	/** 是否渲染发送时间；与操作栏一起悬停／聚焦显示。 */
 	showTimestamp?: boolean;
@@ -672,6 +680,7 @@ function ASMessageBubbleComponent({
 				}}
 				onBlur={event => {if (!event.currentTarget.contains(event.relatedTarget as Node | null)) event.currentTarget.removeAttribute('tabindex');}}>
 			<MessageContent>
+				{!isUser && showThinking && <ThinkingStatus />}
 				{/* Selected-skill chip row — mirrors what the user attached before
 				    sending. Reads `metadata.selected_skill_ids` set by useMessages.send. */}
 				{selectedSkills.length > 0 && (
@@ -739,9 +748,8 @@ function ASMessageBubbleComponent({
 						))}
 				</AttachmentGroup>
 				{message.role === 'user' ? (
-					// 状态、时间与复制紧贴用户气泡；时间可常驻，复制沿用悬停规则。
+					// 时间和操作紧贴用户气泡，统一悬停显示。
 					<MessageFooter className="-mt-2 gap-1.5 py-0">
-						{showThinking && <ThinkingStatus />}
 						{timestamp}
 						{(plainText || deleteAction) && (
 							<span className="message-actions" data-visibility="hover" dir="ltr" onPointerDown={event=>event.stopPropagation()}>
@@ -812,7 +820,7 @@ function ThinkingBlockView({ block }: { block: ThinkingBlock }) {
 				    -webkit-text-fill-color: transparent 并用渐变当字色，而这个属性
 				    会被子元素继承。加在外层容器上等于把整块文字变透明（容器自己没有
 				    文字可画），界面看起来就是个空位。 */}
-				<div className="group w-full flex items-center gap-2 text-left text-sm text-muted-foreground cursor-pointer">
+				<div className="group w-full flex items-center gap-2 text-start text-sm tabular-nums text-muted-foreground cursor-pointer">
 					<span className={cn(isRunning && 'shimmer')}>
 						{t(
 							elapsedText === '0s'

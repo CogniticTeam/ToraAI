@@ -20,6 +20,7 @@ interface ServerRow {
 	name: string;
 	command: string;
 	args: string[];
+	url?: string;
 	probe?: McpProbeResult | null;
 }
 
@@ -52,7 +53,7 @@ export function McpWorkshopPanel() {
 
 	useEffect(() => {
 		void refresh();
-		void mcpWorkshopApi.templates().then((r) => setTemplates(r.templates)).catch(() => {});
+		void mcpWorkshopApi.templates().then((r) => setTemplates(r.templates.filter(template => !template.url))).catch(() => {});
 	}, [refresh]);
 
 	const applyTemplate = (id: string) => {
@@ -155,7 +156,7 @@ export function McpWorkshopPanel() {
 						<div className="flex items-center gap-1">
 							<span className="font-medium">{s.name}</span>
 							<span className="truncate text-[10px] text-muted-foreground">
-								{s.command} {s.args.join(' ')}
+								{s.url ?? [s.command, ...s.args].join(' ')}
 							</span>
 							<div className="ml-auto flex gap-0.5">
 								<Button variant="ghost" size="icon-sm" onClick={() => void probe(s.name)} aria-label={zh ? '探测' : 'Probe'}>

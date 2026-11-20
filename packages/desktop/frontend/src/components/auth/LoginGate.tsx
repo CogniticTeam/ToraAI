@@ -9,17 +9,17 @@
  *
  * 网络异常时保留凭据，显示独立的重试状态；不渲染账户设置或放行工作区。
  */
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { authBaseURL as authApi } from '@/lib/toraService';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import './login-surface.css';
 
 import { BrandLogo, LogoLoader, SuccessCheck } from '@/components/auth/LoginAnimation';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from '@/i18n/useI18n';
 import { getToken, delToken, delEmail } from '@/utils/authStore';
+import { signOutAccount } from '@/utils/authLogout';
 import { syncModelsFromCloud } from '@/utils/modelSync';
 
-const API_KEY = 'tora_auth_api';
-const DEFAULT_AUTH_API = 'https://tora.ohfun.online';
 
 // 已登录用户不应为了几乎不会打开的账户表单下载验证、头像、套餐等依赖。
 // 未登录时仍以同一个启动动画作为短暂 fallback，避免出现空白认证页。
@@ -27,20 +27,24 @@ const AccountSection = lazy(async () => ({
   default: (await import('@/components/dialog/AccountSection')).AccountSection,
 }));
 
-const authApi = () => (localStorage.getItem(API_KEY) || DEFAULT_AUTH_API).replace(/\/+$/, '');
 
-type Phase = 'checking' | 'unavailable' | 'login' | 'success' | 'ok';
+type Phase = 'checking' | 'unavailable' | 'blocked' | 'login' | 'success' | 'ok';
 type DesktopAuthResult = { status: 'ok' | 'banned' | 'expired' | 'unavailable' | 'stale' };
+
+function desktopAccount() {
+  return (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<DesktopAuthResult | void> } }).toraWindow;
+}
 
 export function LoginGate({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>('checking');
   const [attempt, setAttempt] = useState(0);
+  const interactiveToken = useRef<string | null>(null);
   const retry = useCallback(() => { setPhase('checking'); setAttempt(current => current + 1); }, []);
 
   useEffect(() => {
     if (phase !== 'success') return;
-    const timer = setTimeout(() => setPhase('ok'), 1000);
+    const timer = setTimeout(() => setPhase(getToken() ? 'ok' : 'login'), 1000);
     // 登录成功即同步云端模型列表 → 本地镜像，保证换设备/新登录后
     // core 运行时立即拿到该账号的最新模型配置。
     void syncModelsFromCloud();
@@ -51,7 +55,10 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
   // 不会重走启动校验；这里订阅 authStore 的凭证变化事件，token 一旦为空立即切回登录页。
   useEffect(() => {
     const onAuthChanged = () => {
-      setPhase((cur) => (cur === 'ok' && !getToken() ? 'login' : cur));
+      if (!getToken()) {
+        interactiveToken.current = null;
+        setPhase('login');
+      }
     };
     window.addEventListener('tora-auth-changed', onAuthChanged);
     return () => window.removeEventListener('tora-auth-changed', onAuthChanged);
@@ -67,7 +74,8 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let alive = true;
     const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 8000);
+    const bridge = desktopAccount();
+    const timer = window.setTimeout(() => controller.abort(), bridge?.refreshAccount ? 12000 : 8000);
     (async () => {
       const token = getToken();
       if (!token) {
@@ -75,40 +83,51 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
         setPhase('login');
         return;
       }
+      const isCurrent = () => {
+        if (!alive) return false;
+        const current = getToken();
+        if (current === token) return true;
+        if (current) retry();
+        else setPhase('login');
+        return false;
+      };
       try {
-        const r = await fetch(`${authApi()}/auth/me`, {
-          headers: { authorization: `Bearer ${token}` },
-          signal: controller.signal,
-        });
-        if (!alive || token !== getToken()) return;
-        if (r.ok) {
-          // 确认响应来自认证接口，避免代理错误页被误判为已登录。
-          await r.json();
-          if (!alive || token !== getToken()) return;
-          const desktop = await (window as unknown as { toraWindow?: { refreshAccount?: () => Promise<DesktopAuthResult | void> } }).toraWindow?.refreshAccount?.();
-          if (!alive || token !== getToken()) return;
-          if (desktop?.status === 'unavailable' || desktop?.status === 'stale') { setPhase('unavailable'); return; }
-          if (desktop?.status === 'expired') {
-            await delToken(); await delEmail();
-            if (alive) setPhase('login');
-            return;
+        const desktop = bridge?.refreshAccount ? await Promise.race([
+          bridge.refreshAccount(),
+          new Promise<DesktopAuthResult>(resolve => {
+            controller.signal.addEventListener('abort', () => resolve({ status: 'unavailable' }), { once: true });
+          }),
+        ]) : undefined;
+        if (!isCurrent()) return;
+        let status = desktop?.status;
+        if (!status) {
+          const r = await fetch(`${authApi()}/auth/me`, {
+            headers: { authorization: `Bearer ${token}` }, signal: controller.signal,
+          });
+          if (r.ok) {
+            const profile = await r.json();
+            status = profile.banned ? 'banned' : 'ok';
+          } else {
+            status = r.status === 401 && r.headers.get('content-type')?.includes('application/json') ? 'expired' : 'unavailable';
           }
-          // 恢复已有登录直接进入工作区，成功动画仅用于用户主动登录。
-          setPhase('ok');
-          void syncModelsFromCloud();
-        } else if (r.status === 401 && r.headers.get('content-type')?.includes('application/json')) {
-          // 仅服务端确认会话失效时清理；代理/WAF 的 403 不等于登出。
+          if (!isCurrent()) return;
+        }
+        if (status === 'expired') {
           await delToken();
           await delEmail();
           if (alive) setPhase('login');
+        } else if (status === 'banned') {
+          setPhase('blocked');
+        } else if (status === 'ok') {
+          const animate = interactiveToken.current === token;
+          interactiveToken.current = null;
+          setPhase(animate ? 'success' : 'ok');
+          if (!animate) void syncModelsFromCloud();
         } else {
-          // 服务暂时异常不等于凭证失效，保留凭证以便下次重试。
           setPhase('unavailable');
         }
       } catch {
-        if (alive) {
-          setPhase('unavailable');
-        }
+        if (isCurrent()) setPhase('unavailable');
       } finally {
         window.clearTimeout(timer);
       }
@@ -118,7 +137,7 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [attempt]);
+  }, [attempt, retry]);
 
   if (phase === 'ok') return <>{children}</>;
 
@@ -131,6 +150,19 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
             <h2 className="text-base font-semibold leading-relaxed">{t('settings.account.networkWarning')}</h2>
             <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t('settings.account.networkRetryHint')}</p>
             <Button className="mt-6" onClick={retry}>{t('error.retry')}</Button>
+          </div>
+        </div>
+      )}
+
+      {phase === 'blocked' && (
+        <div className="flex h-full items-center justify-center p-6">
+          <div role="alert" className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+            <h2 className="text-base font-semibold">{t('inbox.blocked')}</h2>
+            <p className="mt-3 text-sm text-muted-foreground">{t('inbox.blockedReason')}</p>
+            <div className="mt-6 flex flex-wrap justify-center gap-2">
+              <Button onClick={retry}>{t('error.retry')}</Button>
+              <Button variant="outline" onClick={() => void signOutAccount()}>{t('inbox.signOut')}</Button>
+            </div>
           </div>
         </div>
       )}
@@ -150,7 +182,14 @@ export function LoginGate({ children }: { children: React.ReactNode }) {
       {phase === 'login' && (
         <div className="h-full w-full">
           <Suspense fallback={<div className="flex h-full items-center justify-center"><LogoLoader /></div>}>
-            <AccountSection mode="auth" onAuthenticated={() => setPhase('success')} />
+            <AccountSection mode="auth" onAuthenticated={() => {
+              if (desktopAccount()?.refreshAccount) {
+                interactiveToken.current = getToken();
+                retry();
+              } else {
+                setPhase('success');
+              }
+            }} />
           </Suspense>
         </div>
       )}

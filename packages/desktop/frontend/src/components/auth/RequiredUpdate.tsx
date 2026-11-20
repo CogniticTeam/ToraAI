@@ -3,15 +3,23 @@ import { lazy, Suspense, useEffect, useState } from 'react';
 import { Progress } from '@/components/ui/progress';
 import { useTranslation } from '@/i18n/useI18n';
 import { releaseNotesBridge, type ReleaseNotes } from '@/lib/releaseNotes';
+import { downloadMetrics, formatDownloadSpeed, formatRemainingTime, type DownloadProgress } from '@/lib/updateDownload';
 
 const NotesView = lazy(() => import('@/components/updates/ReleaseNotesView'));
-type State = { version: string; platform: string; status: 'available' | 'downloading' | 'ready' | 'error'; percent?: number; releaseNotes?: ReleaseNotes | null };
+type State = DownloadProgress & { version: string; platform: string; status: 'available' | 'downloading' | 'ready' | 'error'; percent?: number; releaseNotes?: ReleaseNotes | null };
 type Bridge = { getRequiredUpdate: () => State | null; onRequiredUpdate: (cb: (value: State | null) => void) => () => void; updateAction: (action: string) => Promise<unknown> };
 const bridge = () => (window as unknown as { toraWindow?: Bridge }).toraWindow;
 
 export function RequiredUpdate({ children }: { children: React.ReactNode }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [state, setState] = useState<State | null>(() => bridge()?.getRequiredUpdate?.() ?? null);
+  const [now, setNow] = useState(Date.now);
+  const downloading = state?.status === 'downloading';
+  useEffect(() => {
+    if (!downloading) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [downloading]);
   useEffect(() => {
     const unsubscribe = bridge()?.onRequiredUpdate?.(setState);
     // 订阅后再读一次，覆盖首帧与订阅之间返回的更新结果。
@@ -20,6 +28,8 @@ export function RequiredUpdate({ children }: { children: React.ReactNode }) {
   }, []);
   if (!state) return <>{children}</>;
   const percent = Math.min(100, Math.max(0, Number.isFinite(state.percent) ? state.percent! : 0));
+  const { speed, seconds } = downloadMetrics(state, now);
+  const language = i18n.resolvedLanguage || i18n.language;
   const action = (name: string) => void bridge()?.updateAction(name);
   const retryNotes = async () => {
     const version = state.version;
@@ -43,6 +53,16 @@ export function RequiredUpdate({ children }: { children: React.ReactNode }) {
           aria-label={t('requiredUpdate.downloadLabel')}
           className="h-1.5 rounded-full bg-foreground/8 [&_[data-slot=progress-indicator]]:rounded-full [&_[data-slot=progress-indicator]]:bg-foreground/90 [&_[data-slot=progress-indicator]]:transition-transform [&_[data-slot=progress-indicator]]:duration-300 [&_[data-slot=progress-indicator]]:ease-out [&_[data-slot=progress-indicator]]:motion-reduce:transition-none"
         />
+        <dl className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 text-xs text-muted-foreground">
+          <div className="flex items-baseline gap-2">
+            <dt>{t('requiredUpdate.speedLabel')}</dt>
+            <dd className="tabular-nums"><bdi dir="ltr">{formatDownloadSpeed(speed, language)}</bdi></dd>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <dt>{t('requiredUpdate.remainingLabel')}</dt>
+            <dd className="tabular-nums"><bdi>{seconds === null ? t('requiredUpdate.estimating') : formatRemainingTime(seconds, language)}</bdi></dd>
+          </div>
+        </dl>
       </div>}
       {state.status === 'error' && <p role="alert" className="text-sm text-destructive">{t('requiredUpdate.error')}</p>}
       {state.releaseNotes?.version === state.version && <Suspense fallback={<p role="status" className="text-sm">{t('releaseNotes.loading')}</p>}><NotesView notes={state.releaseNotes} onRetry={() => void retryNotes()} /></Suspense>}

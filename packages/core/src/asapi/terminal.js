@@ -2,7 +2,7 @@
 // 有意不用 node-pty：原生模块需要编译链且破坏 core 零依赖策略。
 // 非 TTY 下 shell 自动走逐行模式（无 curses 全屏），TERM=dumb 让输出干净可渲染，
 // 覆盖"看输出、敲命令、跑构建"的日常场景；job control / 全屏 TUI 不在此承诺内。
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
@@ -65,7 +65,7 @@ export function createTerminal({ cwd, shell } = {}) {
     id: randomUUID(), proc, shell: sh, cwd: dir,
     subs: new Set(), history: [],
     created_at: Date.now(), last_active: Date.now(),
-    exited: false, code: null, exit_at: 0,
+    exited: false, closing: false, code: null, exit_at: 0,
   };
   proc.stdout?.on('data', (d) => {
     t.last_active = Date.now();
@@ -94,9 +94,10 @@ export function createTerminal({ cwd, shell } = {}) {
     t.subs.clear();
   });
   terminals.set(t.id, t);
-  if (terminals.size > MAX_TERMINALS) {
-    const idle = [...terminals.values()]
-      .filter((x) => !x.exited && x.subs.size === 0)
+  const active = [...terminals.values()].filter((entry) => !entry.exited && !entry.closing);
+  if (active.length > MAX_TERMINALS) {
+    const idle = active
+      .filter((entry) => entry.subs.size === 0)
       .sort((a, b) => a.last_active - b.last_active)[0];
     if (idle) killTerminal(idle.id, '超出并发上限，回收最旧空闲终端');
   }
@@ -105,7 +106,7 @@ export function createTerminal({ cwd, shell } = {}) {
 
 export function writeTerminal(id, data) {
   const t = terminals.get(id);
-  if (!t || t.exited) return false;
+  if (!t || t.exited || t.closing) return false;
   if (typeof data !== 'string') return false;
   if (!t.proc.stdin?.writable) return false;
   t.last_active = Date.now();
@@ -117,14 +118,31 @@ export function writeTerminal(id, data) {
 
 export function interruptTerminal(id) {
   const t = terminals.get(id);
-  if (!t || t.exited || process.platform === 'win32') return false;
+  if (!t || t.exited || t.closing || process.platform === 'win32') return false;
   t.last_active = Date.now();
+  const shellPid = t.proc.pid;
+  if (shellPid) {
+    // A group signal also interrupts the shell's input reader, which can discard
+    // commands written immediately after Ctrl+C. Leave the reader alone when a
+    // foreground command is running in this terminal's process group.
+    const processes = spawnSync('/bin/ps', ['-A', '-o', 'pid=', '-o', 'pgid='], {
+      encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 1000,
+    });
+    let interrupted = false;
+    for (const line of processes.stdout?.split('\n') ?? []) {
+      const [pid, group] = line.trim().split(/\s+/).map(Number);
+      if (!Number.isInteger(pid) || pid <= 0 || pid === shellPid || group !== shellPid) continue;
+      try { process.kill(pid, 'SIGINT'); interrupted = true; } catch { /* The command already ended. */ }
+    }
+    if (interrupted) return true;
+  }
   return signalTerminal(t, 'SIGINT');
 }
 
 export function killTerminal(id, reason) {
   const t = terminals.get(id);
-  if (!t || t.exited) return false;
+  if (!t || t.exited || t.closing) return false;
+  t.closing = true;
   t.kill_reason = reason || null;
   signalTerminal(t, 'SIGTERM');
   const hard = setTimeout(() => { if (!t.exited) signalTerminal(t, 'SIGKILL'); }, 2000);

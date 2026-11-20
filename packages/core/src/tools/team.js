@@ -161,7 +161,8 @@ function notifyTeamUpdated(ctx) {
 // bridge.resolveConfirm 的子代理分支唤醒这里的 resolver。
 async function runWorker({
   cfg, messages, permissionMode, sessionId, cwd,
-  leaderSessionId, workerAgentId, workerAgentName, signal, computerConsent, readCaptainPermissionMode
+  leaderSessionId, workerAgentId, workerAgentName, signal, computerConsent, readCaptainPermissionMode,
+  permissionRules = [], readCaptainPermissionRules, desktopMemory
 }) {
   const start = Date.now();
   let text = '';
@@ -218,6 +219,7 @@ async function runWorker({
       cfg,
       cwd,
       messages,
+      desktopMemory,
       signal: signal ?? null,
       computerConsent: computerConsent ?? null,
       permissionMode,
@@ -226,7 +228,8 @@ async function runWorker({
       spawnDepth: 1,
       sessionId,
       checkpoint: workerCheckpoint,
-      permissionRules: [], // worker 不继承队长的规则，保持干净
+      permissionRules,
+      readPermissionRules: readCaptainPermissionRules,
       permissionAsk,
       // 用户在子代理卡片上选"总是允许"：与队长同一套持久化口径，
       // 并广播 permission_rule_added 让前端规则面板同步。
@@ -528,8 +531,11 @@ export const agentRunTool = {
     const { text, toolCalls, denied, durationMs, doneReason } = await runWorker({
       cfg: ctx.cfg,
       messages,
+      desktopMemory: ctx.desktopMemory ? { query: args.task } : null,
       permissionMode: effectiveMode,
       readCaptainPermissionMode: ctx.readPermissionMode,
+      permissionRules: (ctx.readPermissionRules?.() ?? ctx.permissionRules ?? []).filter(rule => ['deny', 'ask'].includes(rule?.behavior)),
+      readCaptainPermissionRules: ctx.readPermissionRules,
       sessionId: workerSession.id,
       cwd: workerSession.config?.cwd || ctx.cwd,
       leaderSessionId: ctx.sessionId,

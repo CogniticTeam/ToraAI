@@ -210,6 +210,7 @@ export function useMessages(
 	const pendingCreateRef = useRef<Promise<string> | null>(null);
 	const optimisticSessionRef = useRef<string | null>(null);
 	const lifecycleRef = useRef<object>({});
+	const resumeRequestRef = useRef<object | null>(null);
 	const activeRouteRef = useRef<string | null>(null);
 	useLayoutEffect(() => {
 		lifecycleRef.current = {};
@@ -711,6 +712,27 @@ export function useMessages(
 		[agentId, sessionId, scheduleUpdate],
 	);
 
+	const resume = useCallback(async (replyId: string) => {
+		if (!agentId || !sessionId || phase !== 'idle' || msgsRef.current.at(-1)?.id !== replyId) return;
+		const lifecycle = lifecycleRef.current;
+		if (resumeRequestRef.current === lifecycle) return;
+		resumeRequestRef.current = lifecycle;
+		const opts = optionsRef.current;
+		setError(null);
+		setPhase('streaming');
+		try {
+			await opts?.beforeSend?.();
+			await sessionApi.resume(sessionId, agentId, replyId, opts?.viewMode);
+		} catch (e) {
+			if (lifecycleRef.current === lifecycle) {
+				setError(e as Error);
+				if (!currentReplyRef.current) setPhase('idle');
+			}
+		} finally {
+			if (resumeRequestRef.current === lifecycle) resumeRequestRef.current = null;
+		}
+	}, [agentId, sessionId, phase]);
+
 	/**
 	 * Confirm or deny a tool call (human-in-the-loop). Fires a
 	 * ``POST /chat/`` with a ``UserConfirmResultEvent``; events
@@ -972,6 +994,7 @@ export function useMessages(
 		phase: showConversation ? phase : ('idle' as ReplyPhase),
 		error: showConversation ? error : null,
 		send,
+		resume,
 		onUserConfirm,
 		onSubagentConfirm,
 		subagentHitl: showConversation ? subagentHitl : [],

@@ -167,7 +167,11 @@ export async function runRepl(cfg) {
         disposeShellOnEnd: false // REPL 里保留 shell 会话，跨轮次 cd 依然有效
       })) {
         renderer.feed(ev);
-        if (ev.type === 'done') break;
+        if (ev.type === 'done') {
+          session.lastRun = { reason: ev.reason, metrics: ev.metrics ?? null,
+            totalUsage: ev.metrics?.usageReportedCalls > 0 ? ev.totalUsage : null };
+          break;
+        }
       }
     } catch (e) {
       renderer.feed({ type: 'error', error: e.message });
@@ -453,7 +457,8 @@ export async function runOneShot(cfg, content) {
   session.messages.push({ role: 'user', content: String(content) });
   const renderer = createAgentRenderer();
   const ac = new AbortController();
-  process.on('SIGINT', () => { ac.abort(); });
+  const onInterrupt = () => ac.abort();
+  process.on('SIGINT', onInterrupt);
   let last = null;
   try {
     for await (const ev of runAgent({
@@ -475,7 +480,11 @@ export async function runOneShot(cfg, content) {
   } catch (e) {
     renderer.feed({ type: 'error', error: e.message });
     process.exitCode = 1;
+  } finally {
+    process.removeListener('SIGINT', onInterrupt);
   }
+  session.lastRun = { reason: last?.reason ?? 'error', metrics: last?.metrics ?? null,
+    totalUsage: last?.metrics?.usageReportedCalls > 0 ? last.totalUsage : null };
   saveSession(session);
-  if (last && last.reason === 'error') process.exitCode = 1;
+  if (last && last.reason !== 'completed') process.exitCode = last.reason === 'aborted' ? 130 : 1;
 }

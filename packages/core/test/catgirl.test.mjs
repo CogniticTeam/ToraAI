@@ -70,7 +70,7 @@ test('后端解锁、开关持久化和引擎系统注入覆盖自定义智能�
       assert.ok(system.endsWith(CATGIRL_PERSONA_PROMPT));
       assert.equal(system.split('[Tora 猫娘人格 /').length - 1, 1);
       if (mode === 'tocode') assert.ok(system.includes('调用者自定义提示词'));
-      else assert.ok(system.includes('You are ToChat'));
+      else assert.ok(system.includes('You are a conversational assistant in Tora'));
     }
     await post({ enabled: false });
     messages.push({ role: 'user', content: '继续' });

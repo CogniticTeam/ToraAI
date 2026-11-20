@@ -75,9 +75,9 @@ try {
 			: path === '/polls/config' ? { enabled: true, entryVisible: true }
 			: path === '/account/messages' ? { messages: [], unread: 0 }
 			: { ticket: 'task-test-ticket' };
-		await page.route(`https://tora.ohfun.online${path}`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(value) }));
+		await page.route(`https://api.cogniticteam.com${path}`, route => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(value) }));
 	}
-	await page.routeWebSocket('wss://tora.ohfun.online/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
+	await page.routeWebSocket('wss://api.cogniticteam.com/account/events*', socket => { socket.onMessage(message => { if (message === 'ping') socket.send('pong'); }); });
 	await page.evaluate(serverUrl => {
 		localStorage.setItem('server_url', serverUrl);
 		localStorage.setItem('tora_auth_token', 'task-test-token');
