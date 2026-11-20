@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { execFile, execFileSync, spawn } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readFileSync, mkdirSync, realpathSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -54,7 +54,13 @@ const status = execFileSync('pwsh.exe', ['-NoProfile', '-Command', `(Get-Authent
 assert.equal(status, 'NotSigned', 'First Windows release is explicitly unsigned');
 const env = { ...process.env, TORA_HOME: join(directory, 'data') };
 delete env.ELECTRON_RUN_AS_NODE;
-const gui = spawn(app, [`--user-data-dir=${join(directory, 'profile')}`], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+// The startup smoke test uses a disposable profile with prior consent. Regional prompts have separate tests.
+const profile = join(directory, 'profile');
+mkdirSync(profile);
+writeFileSync(join(profile, 'region-consent-v1.json'), JSON.stringify({
+  hideCloudflareNotice: true, acceptedMainlandTransfer: true, acceptedGlobalTransfer: true,
+}));
+const gui = spawn(app, [`--user-data-dir=${profile}`], { env, stdio: ['ignore', 'pipe', 'pipe'] });
 let output = ''; gui.stdout.on('data', data => { output += data; }); gui.stderr.on('data', data => { output += data; });
 try {
   let ready = false;
